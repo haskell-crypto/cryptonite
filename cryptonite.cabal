@@ -17,7 +17,7 @@ extra-source-files:  README.md
 
 source-repository head
   type: git
-  location: https://github.com/vincenthz/hs-cryptonite
+  location: https://github.com/vincenthz/cryptonite
 
 Library
   Exposed-modules:   Crypto.Cipher.ChaCha
