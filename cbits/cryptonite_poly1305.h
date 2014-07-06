@@ -32,6 +32,7 @@
 
 typedef struct
 {
+	uint8_t block[16]; /* previous blocks */
 } poly1305_ctx;
 
 typedef uint8_t poly1305_mac[16];
