@@ -30,9 +30,14 @@
 #ifndef CRYPTONITE_POLY1305_H
 # define CRYPTONITE_POLY1305_H
 
+/* 8*8+1*16+1*4 = 84 */
 typedef struct
 {
-	uint8_t block[16]; /* previous blocks */
+	uint32_t r[5];
+	uint32_t h[5];
+	uint32_t pad[4];
+	uint32_t index;
+	uint8_t buf[16]; /* previous partial block */
 } poly1305_ctx;
 
 typedef uint8_t poly1305_mac[16];

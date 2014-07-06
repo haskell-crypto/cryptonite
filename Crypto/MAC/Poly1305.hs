@@ -11,7 +11,7 @@
 --
 module Crypto.MAC.Poly1305
     ( Ctx
-    , Auth
+    , Auth(..)
 
     -- * Incremental MAC Functions
     , initialize -- :: Ctx
@@ -39,6 +39,8 @@ newtype Ctx = Ctx SecureMem
 -- | Poly1305 Auth
 newtype Auth = Auth ByteString
 
+instance Eq Auth where
+    (Auth a1) == (Auth a2) = constEqBytes a1 a2
 instance Byteable Auth where
     toBytes (Auth b) = b
 
@@ -59,7 +61,7 @@ initialize key
     | byteableLength key /= 32 = error "Poly1305: key length expected 32 bytes"
     | otherwise          = Ctx $ unsafePerformIO $ do
         withBytePtr key $ \keyPtr ->
-            createSecureMem 64 {- FIXME -} $ \ctxPtr ->
+            createSecureMem 84 $ \ctxPtr ->
                 c_poly1305_init (castPtr ctxPtr) keyPtr
 {-# NOINLINE initialize #-}
 
@@ -92,6 +94,6 @@ finalize (Ctx prevCtx) = Auth $ B.unsafeCreate 16 $ \dst -> do
     withSecureMemPtr ctx $ \ctxPtr -> c_poly1305_finalize dst (castPtr ctxPtr)
 {-# NOINLINE finalize #-}
 
--- | Auth
+-- | One-pass authorization creation
 auth :: Byteable key => key -> ByteString -> Auth
 auth key = finalize . update (initialize key)
