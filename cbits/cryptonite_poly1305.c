@@ -148,7 +148,7 @@ void cryptonite_poly1305_finalize(poly1305_mac mac8, poly1305_ctx *ctx)
 	if (ctx->index) {
 		/* append partial final buffer with 10* then process */
 		ctx->buf[ctx->index] = 0x1;
-		for (i = ctx->index + 1; i < 16; i++);
+		for (i = ctx->index + 1; i < 16; i++)
 			ctx->buf[i] = 0x0;
 		poly1305_do_chunk(ctx, ctx->buf, 1, 1);
 	}
