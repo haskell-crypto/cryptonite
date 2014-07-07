@@ -18,6 +18,10 @@ Links
 * [ChaCha](http://cr.yp.to/chacha.html)
 * [ChaCha-test-vectors](https://github.com/secworks/chacha_testvectors.git)
 
+* [Salsa](http://cr.yp.to/snuffle.html)
+* [Salsa128-test-vectors](https://github.com/alexwebr/salsa20/blob/master/test_vectors.128)
+* [Salsa256-test-vectors](https://github.com/alexwebr/salsa20/blob/master/test_vectors.256)
+
 TODO
 ----
 

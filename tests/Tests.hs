@@ -7,6 +7,9 @@ import Test.Tasty.QuickCheck
 import Test.Tasty.HUnit
 
 import qualified Crypto.Cipher.ChaCha as ChaCha
+import qualified Crypto.Cipher.Salsa as Salsa
+
+import qualified KATSalsa
 
 b8_128_k0_i0 = "\xe2\x8a\x5f\xa4\xa6\x7f\x8c\x5d\xef\xed\x3e\x6f\xb7\x30\x34\x86\xaa\x84\x27\xd3\x14\x19\xa7\x29\x57\x2d\x77\x79\x53\x49\x11\x20\xb6\x4a\xb8\xe7\x2b\x8d\xeb\x85\xcd\x6a\xea\x7c\xb6\x08\x9a\x10\x18\x24\xbe\xeb\x08\x81\x4a\x42\x8a\xab\x1f\xa2\xc8\x16\x08\x1b\x8a\x26\xaf\x44\x8a\x1b\xa9\x06\x36\x8f\xd8\xc8\x38\x31\xc1\x8c\xec\x8c\xed\x81\x1a\x02\x8e\x67\x5b\x8d\x2b\xe8\xfc\xe0\x81\x16\x5c\xea\xe9\xf1\xd1\xb7\xa9\x75\x49\x77\x49\x48\x05\x69\xce\xb8\x3d\xe6\xa0\xa5\x87\xd4\x98\x4f\x19\x92\x5f\x5d\x33\x8e\x43\x0d"
 
@@ -34,9 +37,26 @@ tests = testGroup "cryptonite"
         , testCase "12-256-K0-I0" (chachaRunSimple b12_256_k0_i0 12 32 8)
         , testCase "20-256-K0-I0" (chachaRunSimple b20_256_k0_i0 20 32 8)
         ]
+    , testGroup "Salsa"
+        [ testGroup "KAT" $
+              map (\(i,f) -> testCase (show (i :: Int)) f) $ zip [1..] $ map (\(r, k,i,e) -> salsaRunSimple e r k i) KATSalsa.vectors
+        ]
     ]
   where chachaRunSimple expected rounds klen nonceLen =
             let chacha = ChaCha.initialize rounds (B.replicate klen 0) (B.replicate nonceLen 0)
              in expected @=? fst (ChaCha.generate chacha (B.length expected))
+        salsaRunSimple expected rounds key nonce =
+            let salsa = Salsa.initialize rounds key nonce
+             in map snd expected @=? salsaLoop 0 salsa expected
+
+        salsaLoop _       _     [] = []
+        salsaLoop current salsa (r@(ofs,expectBs):rs)
+            | current < ofs  =
+                let (_, salsaNext) = Salsa.generate salsa (ofs - current)
+                 in salsaLoop ofs salsaNext (r:rs)
+            | current == ofs =
+                let (e, salsaNext) = Salsa.generate salsa (B.length expectBs)
+                 in e : salsaLoop (current + B.length expectBs) salsaNext rs
+            | otherwise = error "internal error in salsaLoop"
 
 main = defaultMain tests
