@@ -41,10 +41,10 @@
 	a += b; d = rol32(d ^ a, 8); \
 	c += d; b = rol32(b ^ c, 7);
 
-static const char sigma[16] = "expand 32-byte k";
-static const char tau[16] = "expand 16-byte k";
+static const uint8_t sigma[16] = "expand 32-byte k";
+static const uint8_t tau[16] = "expand 16-byte k";
 
-uint32_t load32(const uint8_t *p)
+static inline uint32_t load32(const uint8_t *p)
 {
 	return le32_to_cpu(*((uint32_t *) p));
 }
@@ -99,7 +99,7 @@ void cryptonite_chacha_init(cryptonite_chacha_state *st,
                             uint32_t keylen, const uint8_t *key,
                             uint32_t ivlen, const uint8_t *iv)
 {
-	const char *constants = (keylen == 32) ? sigma : tau;
+	const uint8_t *constants = (keylen == 32) ? sigma : tau;
 	int i;
 
 	st->d[0] = load32(constants + 0);
