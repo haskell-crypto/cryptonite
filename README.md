@@ -21,6 +21,10 @@ Links
 * [Poly1305](http://cr.yp.to/mac.html)
 * [Poly1305-test-vectors](http://tools.ietf.org/html/draft-nir-cfrg-chacha20-poly1305-06#page-12)
 
+* [Salsa](http://cr.yp.to/snuffle.html)
+* [Salsa128-test-vectors](https://github.com/alexwebr/salsa20/blob/master/test_vectors.128)
+* [Salsa256-test-vectors](https://github.com/alexwebr/salsa20/blob/master/test_vectors.256)
+
 TODO
 ----
 
