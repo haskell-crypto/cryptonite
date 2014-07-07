@@ -176,7 +176,7 @@ void cryptonite_chacha_generate(uint32_t rounds, block *dst, cryptonite_chacha_s
 	if (!bytes)
 		return;
 
-	for (;; bytes -= 64, dst += 64) {
+	for (;; bytes -= 64, dst += 1) {
 		chacha_core(rounds, &out, st);
 
 		st->d[12] += 1;
