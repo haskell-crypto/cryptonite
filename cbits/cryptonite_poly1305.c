@@ -119,6 +119,8 @@ void cryptonite_poly1305_update(poly1305_ctx *ctx, uint8_t *data, uint32_t lengt
 		memcpy(ctx->buf + ctx->index, data, to_fill);
 		poly1305_do_chunk(ctx, ctx->buf, 1, 0);
 		ctx->index = 0;
+		length -= to_fill;
+		data += to_fill;
 	}
 
 	/* process as much 16-block as possible */

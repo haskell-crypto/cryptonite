@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
+import Control.Applicative
 import Data.Byteable
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
@@ -31,6 +32,12 @@ b20_256_k0_i0 =
 instance Show Poly1305.Auth where
     show = show . toBytes
 
+data Chunking = Chunking Int Int
+    deriving (Show,Eq)
+
+instance Arbitrary Chunking where
+    arbitrary = Chunking <$> choose (1,34) <*> choose (1,2048)
+
 tests = testGroup "cryptonite"
     [ testGroup "ChaCha"
         [ testCase "8-128-K0-I0"  (chachaRunSimple b8_128_k0_i0 8 16 8)
@@ -46,10 +53,18 @@ tests = testGroup "cryptonite"
                 msg = "Cryptographic Forum Research Group"
                 tag = Poly1305.Auth "\xa8\x06\x1d\xc1\x30\x51\x36\xc6\xc2\x2b\x8b\xaf\x0c\x01\x27\xa9"
              in tag @=? Poly1305.auth key msg
+        , testProperty "Chunking" $ \(Chunking chunkLen totalLen) ->
+            let key = B.replicate 32 0
+                msg = B.pack $ take totalLen $ concat (replicate 10 [1..255])
+             in Poly1305.auth key msg == Poly1305.finalize (foldr (flip Poly1305.update) (Poly1305.initialize key) (chunks chunkLen msg))
         ]
     ]
   where chachaRunSimple expected rounds klen nonceLen =
             let chacha = ChaCha.initialize rounds (B.replicate klen 0) (B.replicate nonceLen 0)
              in expected @=? fst (ChaCha.generate chacha (B.length expected))
+
+        chunks i bs
+            | B.length bs < i = [bs]
+            | otherwise       = let (b1,b2) = B.splitAt i bs in b1 : chunks i b2
 
 main = defaultMain tests
