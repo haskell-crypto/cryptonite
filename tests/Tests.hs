@@ -1,12 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
+import Control.Applicative
+import Data.Byteable
+import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 import Test.Tasty
 import Test.Tasty.QuickCheck
 import Test.Tasty.HUnit
 
 import qualified Crypto.Cipher.ChaCha as ChaCha
+import qualified Crypto.MAC.Poly1305 as Poly1305
 
 b8_128_k0_i0 = "\xe2\x8a\x5f\xa4\xa6\x7f\x8c\x5d\xef\xed\x3e\x6f\xb7\x30\x34\x86\xaa\x84\x27\xd3\x14\x19\xa7\x29\x57\x2d\x77\x79\x53\x49\x11\x20\xb6\x4a\xb8\xe7\x2b\x8d\xeb\x85\xcd\x6a\xea\x7c\xb6\x08\x9a\x10\x18\x24\xbe\xeb\x08\x81\x4a\x42\x8a\xab\x1f\xa2\xc8\x16\x08\x1b\x8a\x26\xaf\x44\x8a\x1b\xa9\x06\x36\x8f\xd8\xc8\x38\x31\xc1\x8c\xec\x8c\xed\x81\x1a\x02\x8e\x67\x5b\x8d\x2b\xe8\xfc\xe0\x81\x16\x5c\xea\xe9\xf1\xd1\xb7\xa9\x75\x49\x77\x49\x48\x05\x69\xce\xb8\x3d\xe6\xa0\xa5\x87\xd4\x98\x4f\x19\x92\x5f\x5d\x33\x8e\x43\x0d"
 
@@ -25,6 +29,15 @@ b12_256_k0_i0 =
 b20_256_k0_i0 =
     "\x76\xb8\xe0\xad\xa0\xf1\x3d\x90\x40\x5d\x6a\xe5\x53\x86\xbd\x28\xbd\xd2\x19\xb8\xa0\x8d\xed\x1a\xa8\x36\xef\xcc\x8b\x77\x0d\xc7\xda\x41\x59\x7c\x51\x57\x48\x8d\x77\x24\xe0\x3f\xb8\xd8\x4a\x37\x6a\x43\xb8\xf4\x15\x18\xa1\x1c\xc3\x87\xb6\x69\xb2\xee\x65\x86\x9f\x07\xe7\xbe\x55\x51\x38\x7a\x98\xba\x97\x7c\x73\x2d\x08\x0d\xcb\x0f\x29\xa0\x48\xe3\x65\x69\x12\xc6\x53\x3e\x32\xee\x7a\xed\x29\xb7\x21\x76\x9c\xe6\x4e\x43\xd5\x71\x33\xb0\x74\xd8\x39\xd5\x31\xed\x1f\x28\x51\x0a\xfb\x45\xac\xe1\x0a\x1f\x4b\x79\x4d\x6f"
 
+instance Show Poly1305.Auth where
+    show = show . toBytes
+
+data Chunking = Chunking Int Int
+    deriving (Show,Eq)
+
+instance Arbitrary Chunking where
+    arbitrary = Chunking <$> choose (1,34) <*> choose (1,2048)
+
 tests = testGroup "cryptonite"
     [ testGroup "ChaCha"
         [ testCase "8-128-K0-I0"  (chachaRunSimple b8_128_k0_i0 8 16 8)
@@ -34,9 +47,24 @@ tests = testGroup "cryptonite"
         , testCase "12-256-K0-I0" (chachaRunSimple b12_256_k0_i0 12 32 8)
         , testCase "20-256-K0-I0" (chachaRunSimple b20_256_k0_i0 20 32 8)
         ]
+    , testGroup "Poly1305"
+        [ testCase "V0" $
+            let key = "\x85\xd6\xbe\x78\x57\x55\x6d\x33\x7f\x44\x52\xfe\x42\xd5\x06\xa8\x01\x03\x80\x8a\xfb\x0d\xb2\xfd\x4a\xbf\xf6\xaf\x41\x49\xf5\x1b" :: ByteString
+                msg = "Cryptographic Forum Research Group"
+                tag = Poly1305.Auth "\xa8\x06\x1d\xc1\x30\x51\x36\xc6\xc2\x2b\x8b\xaf\x0c\x01\x27\xa9"
+             in tag @=? Poly1305.auth key msg
+        , testProperty "Chunking" $ \(Chunking chunkLen totalLen) ->
+            let key = B.replicate 32 0
+                msg = B.pack $ take totalLen $ concat (replicate 10 [1..255])
+             in Poly1305.auth key msg == Poly1305.finalize (foldr (flip Poly1305.update) (Poly1305.initialize key) (chunks chunkLen msg))
+        ]
     ]
   where chachaRunSimple expected rounds klen nonceLen =
             let chacha = ChaCha.initialize rounds (B.replicate klen 0) (B.replicate nonceLen 0)
              in expected @=? fst (ChaCha.generate chacha (B.length expected))
+
+        chunks i bs
+            | B.length bs < i = [bs]
+            | otherwise       = let (b1,b2) = B.splitAt i bs in b1 : chunks i b2
 
 main = defaultMain tests

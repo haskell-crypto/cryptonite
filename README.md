@@ -18,6 +18,9 @@ Links
 * [ChaCha](http://cr.yp.to/chacha.html)
 * [ChaCha-test-vectors](https://github.com/secworks/chacha_testvectors.git)
 
+* [Poly1305](http://cr.yp.to/mac.html)
+* [Poly1305-test-vectors](http://tools.ietf.org/html/draft-nir-cfrg-chacha20-poly1305-06#page-12)
+
 TODO
 ----
 
