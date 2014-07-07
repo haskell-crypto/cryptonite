@@ -22,7 +22,7 @@ module Crypto.MAC.Poly1305
     , auth
     ) where
 
-import Prelude hiding (init)
+import Control.Monad (void)
 import Foreign.Ptr
 import Foreign.C.Types
 import qualified Data.ByteString as B
@@ -96,4 +96,13 @@ finalize (Ctx prevCtx) = Auth $ B.unsafeCreate 16 $ \dst -> do
 
 -- | One-pass authorization creation
 auth :: Byteable key => key -> ByteString -> Auth
-auth key = finalize . update (initialize key)
+auth key d
+    | byteableLength key /= 32 = error "Poly1305: key length expected 32 bytes"
+    | otherwise                = Auth $ B.unsafeCreate 16 $ \dst -> do
+        -- initialize the context
+        void $ createSecureMem 84 $ \ctxPtr -> withBytePtr key $ \keyPtr -> do
+                    c_poly1305_init (castPtr ctxPtr) keyPtr
+                    withBytePtr d $ \dataPtr ->
+                        c_poly1305_update (castPtr ctxPtr) dataPtr (fromIntegral $ B.length d)
+                    -- finalize
+                    c_poly1305_finalize dst (castPtr ctxPtr)
