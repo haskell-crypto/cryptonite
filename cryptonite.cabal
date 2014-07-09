@@ -23,6 +23,8 @@ Library
   Exposed-modules:   Crypto.Cipher.ChaCha
                      Crypto.Cipher.Salsa
                      Crypto.MAC.Poly1305
+                     Crypto.Random.Entropy
+  Other-modules:     Crypto.Random.Entropy.Source
   Build-depends:     base >= 4 && < 5
                    , bytestring
                    , securemem
@@ -34,6 +36,20 @@ Library
                    , cbits/cryptonite_poly1305.c
   if (arch(i386) || arch(x86_64))
     CPP-options: -DARCH_IS_LITTLE_ENDIAN
+
+  if arch(x86_64)
+    cpp-options:    -DSUPPORT_RDRAND
+    Other-modules:  Crypto.Random.Entropy.RDRand
+    c-sources:      cbits/cryptonite_rdrand.c
+
+  if os(windows)
+    cpp-options:    -DWINDOWS
+    Build-Depends:  Win32
+    Other-modules:  Crypto.Random.Entropy.Windows
+    extra-libraries: advapi32
+  else
+    Build-Depends:  unix
+    Other-modules:  Crypto.Random.Entropy.Unix
 
 Test-Suite test-cryptonite
   type:              exitcode-stdio-1.0
