@@ -17,10 +17,8 @@ Links
 
 * [ChaCha](http://cr.yp.to/chacha.html)
 * [ChaCha-test-vectors](https://github.com/secworks/chacha_testvectors.git)
-
 * [Poly1305](http://cr.yp.to/mac.html)
 * [Poly1305-test-vectors](http://tools.ietf.org/html/draft-nir-cfrg-chacha20-poly1305-06#page-12)
-
 * [Salsa](http://cr.yp.to/snuffle.html)
 * [Salsa128-test-vectors](https://github.com/alexwebr/salsa20/blob/master/test_vectors.128)
 * [Salsa256-test-vectors](https://github.com/alexwebr/salsa20/blob/master/test_vectors.256)
@@ -28,4 +26,5 @@ Links
 TODO
 ----
 
-* remove copy of read-only part of ChaCha state by splitting the stuff in two.
+* remove copy of read-only part of ChaCha / Salsa state by splitting the stuff in two.
+* add support for XSalsa
