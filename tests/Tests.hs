@@ -5,6 +5,7 @@ import Control.Applicative
 import Data.Byteable
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
+import Data.ByteString.Char8 ()
 import Test.Tasty
 import Test.Tasty.QuickCheck
 import Test.Tasty.HUnit
