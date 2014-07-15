@@ -44,7 +44,6 @@ Test-Suite test-cryptonite
   Build-Depends:     base >= 3 && < 5
                    , bytestring
                    , byteable
-                   , mtl
                    , tasty
                    , tasty-quickcheck
                    , tasty-hunit
