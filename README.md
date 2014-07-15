@@ -1,6 +1,10 @@
 cryptonite
 ==========
 
+[![Build Status](https://travis-ci.org/vincenthz/cryptonite.png?branch=master)](https://travis-ci.org/vincenthz/cryptonite)
+[![BSD](http://b.repl.ca/v1/license-BSD-blue.png)](http://en.wikipedia.org/wiki/BSD_licenses)
+[![Haskell](http://b.repl.ca/v1/language-haskell-lightgrey.png)](http://haskell.org)
+
 Cryptonite is a haskell repository of cryptographic primitives. Each crypto
 algorithm have specificities, that are hard to wrap in common APIs and types,
 so instead of trying to provide a common ground for algorithms that wouldn't
