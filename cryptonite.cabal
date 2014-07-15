@@ -12,7 +12,6 @@ Stability:           experimental
 Build-Type:          Simple
 Homepage:            https://github.com/vincenthz/cryptonite
 Bug-reports:         https://github.com/vincenthz/cryptonite/issues
-
 Cabal-Version:       >=1.10
 extra-source-files:  README.md
                      cbits/*.h
