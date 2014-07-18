@@ -24,6 +24,7 @@ Library
                      Crypto.Cipher.Salsa
                      Crypto.MAC.Poly1305
                      Crypto.MAC.HMAC
+                     Crypto.KDF.PBKDF2
                      Crypto.Hash
                      Crypto.Hash.SHA1
                      Crypto.Hash.SHA224

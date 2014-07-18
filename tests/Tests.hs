@@ -70,6 +70,7 @@ tests = testGroup "cryptonite"
         ]
     , KATHash.tests
     , KAT_HMAC.tests
+    , KAT_PBKDF2.tests
     ]
   where chachaRunSimple expected rounds klen nonceLen =
             let chacha = ChaCha.initialize rounds (B.replicate klen 0) (B.replicate nonceLen 0)
