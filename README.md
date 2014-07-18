@@ -25,6 +25,9 @@ Links
 * [Salsa128-test-vectors](https://github.com/alexwebr/salsa20/blob/master/test_vectors.128)
 * [Salsa256-test-vectors](https://github.com/alexwebr/salsa20/blob/master/test_vectors.256)
 
+* [PBKDF2](http://tools.ietf.org/html/rfc2898)
+* [PBKDF2-test-vectors](http://www.ietf.org/rfc/rfc6070.txt)
+
 TODO
 ----
 
