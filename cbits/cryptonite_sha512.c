@@ -233,7 +233,7 @@ void cryptonite_sha512_init_t(struct sha512_ctx *ctx, int t)
 			ctx->h[i] ^= 0xa5a5a5a5a5a5a5a5ULL;
 
 		i = sprintf(buf, "SHA-512/%d", t);
-		cryptonite_sha512_update(ctx, buf, i);
+		cryptonite_sha512_update(ctx, (uint8_t *) buf, i);
 		cryptonite_sha512_finalize(ctx, out);
 
 		/* re-init the context, otherwise len is changed */
