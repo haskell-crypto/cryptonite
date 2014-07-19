@@ -42,9 +42,12 @@ Library
                      Crypto.Hash.Skein512
                      Crypto.Hash.Tiger
                      Crypto.Hash.Whirlpool
+                     Crypto.Random.Types
+                     Crypto.Random.Entropy
   Other-modules:     Crypto.Hash.Internal
                    , Crypto.Hash.Utils
                    , Crypto.Hash.Types
+                   , Crypto.Random.Entropy.Source
   Build-depends:     base >= 4 && < 5
                    , bytestring
                    , securemem
@@ -69,6 +72,19 @@ Library
                    , cbits/cryptonite_whirlpool.c
   if (arch(i386) || arch(x86_64))
     CPP-options: -DARCH_IS_LITTLE_ENDIAN
+
+  if arch(x86_64)
+    cpp-options:    -DSUPPORT_RDRAND
+    Other-modules:  Crypto.Random.Entropy.RDRand
+    c-sources:      cbits/cryptonite_rdrand.c
+
+  if os(windows)
+    cpp-options:    -DWINDOWS
+    Build-Depends:  Win32
+    Other-modules:  Crypto.Random.Entropy.Windows
+    extra-libraries: advapi32
+  else
+    Other-modules:  Crypto.Random.Entropy.Unix
 
 Test-Suite test-cryptonite
   type:              exitcode-stdio-1.0
