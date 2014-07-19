@@ -10,17 +10,19 @@
 module Crypto.Random.Entropy
     ( EntropyPool
     , createEntropyPool
-    , grabEntropyPtr
-    , grabEntropy
+    , getEntropyPtr
+    , getEntropyFrom
+    , getEntropy
     ) where
 
-import Control.Monad (when)
 import Control.Concurrent.MVar
 import Data.Maybe (catMaybes)
 import Data.SecureMem
 import Data.Word (Word8)
 import Foreign.Marshal.Utils (copyBytes)
 import Foreign.Ptr (plusPtr, Ptr)
+
+import Crypto.Random.Types
 
 import Crypto.Random.Entropy.Source
 #ifdef SUPPORT_RDRAND
@@ -68,7 +70,6 @@ defaultPoolSize = 4096
 -- While you can create as many entropy pool as you want, the pool can be shared between multiples RNGs.
 createEntropyPoolWith :: Int -> [EntropyBackend] -> IO EntropyPool
 createEntropyPoolWith poolSize backends = do
-    when (null backends) $ fail "cannot get any source of entropy on this system"
     sm <- allocateSecureMem poolSize
     m  <- newMVar 0
     withSecureMemPtr sm $ replenish poolSize backends
@@ -83,8 +84,8 @@ createEntropyPool = do
     createEntropyPoolWith defaultPoolSize backends
 
 -- | Put a chunk of the entropy pool into a buffer
-grabEntropyPtr :: Int -> EntropyPool -> Ptr Word8 -> IO ()
-grabEntropyPtr n (EntropyPool backends posM sm) outPtr =
+getEntropyPtr :: EntropyPool -> Int -> Ptr Word8 -> IO ()
+getEntropyPtr (EntropyPool backends posM sm) n outPtr =
     withSecureMemPtr sm $ \entropyPoolPtr ->
         modifyMVar_ posM $ \pos ->
             copyLoop outPtr entropyPoolPtr pos n
@@ -101,17 +102,27 @@ grabEntropyPtr n (EntropyPool backends posM sm) outPtr =
                 copyLoop (d `plusPtr` m) s (wrappedPos + m) (left - m)
 
 -- | Grab a chunk of entropy from the entropy pool.
-grabEntropy :: Int -> EntropyPool -> IO SecureMem
-grabEntropy n pool = do
+getEntropyFrom :: EntropyPool -> Int -> IO Random
+getEntropyFrom pool n = do
     out <- allocateSecureMem n
-    withSecureMemPtr out $ grabEntropyPtr n pool
-    return $ out
+    withSecureMemPtr out $ getEntropyPtr pool n
+    return $ Random out
 
+-- | Get some entropy from the system source of entropy
+getEntropy :: Int -> IO Random
+getEntropy n = do
+    backends <- catMaybes `fmap` sequence supportedBackends
+    out      <- allocateSecureMem n
+    withSecureMemPtr out $ replenish n backends
+    return $ Random out
+
+-- Refill the entropy in a buffer
 replenish :: Int -> [EntropyBackend] -> Ptr Word8 -> IO ()
+replenish _        []       _   = fail "cryptonite: random: cannot get any source of entropy on this system"
 replenish poolSize backends ptr = loop 0 backends ptr poolSize
   where loop :: Int -> [EntropyBackend] -> Ptr Word8 -> Int -> IO ()
         loop retry [] p n | n == 0     = return ()
-                          | retry == 3 = error "cannot fully replenish"
+                          | retry == 3 = error "cryptonite: random: cannot fully replenish"
                           | otherwise  = loop (retry+1) backends p n
         loop _     (_:_)  _ 0 = return ()
         loop retry (b:bs) p n = do

@@ -16,10 +16,10 @@ import Data.Word (Word8)
 import Crypto.Random.Entropy.Source
 import Control.Exception as E
 
-import System.Posix.Types (Fd)
-import System.Posix.IO
+--import System.Posix.Types (Fd)
+import System.IO
 
-type H = Fd
+type H = Handle
 type DeviceName = String
 
 -- | Entropy device /dev/random on unix system 
@@ -48,9 +48,11 @@ testOpen filepath = do
         Just h  -> closeDev h >> return (Just filepath)
 
 openDev :: String -> IO (Maybe H)
-openDev filepath = (Just `fmap` openFd filepath ReadOnly Nothing fileFlags)
-    `E.catch` \(_ :: IOException) -> return Nothing
-  where fileFlags = defaultFileFlags { nonBlock = True }
+openDev filepath = (Just `fmap` openAndNoBuffering) `E.catch` \(_ :: IOException) -> return Nothing
+  where openAndNoBuffering = do
+            h <- openBinaryFile filepath ReadMode
+            hSetBuffering h NoBuffering
+            return h
 
 withDev :: String -> (H -> IO a) -> IO a
 withDev filepath f = openDev filepath >>= \h ->
@@ -59,9 +61,9 @@ withDev filepath f = openDev filepath >>= \h ->
         Just fd -> f fd >>= \r -> (closeDev fd >> return r)
 
 closeDev :: H -> IO ()
-closeDev h = closeFd h
+closeDev h = hClose h
 
 gatherDevEntropy :: H -> Ptr Word8 -> Int -> IO Int
 gatherDevEntropy h ptr sz =
-     (fromIntegral `fmap` fdReadBuf h ptr (fromIntegral sz))
+     (fromIntegral `fmap` hGetBufSome h ptr (fromIntegral sz))
     `E.catch` \(_ :: IOException) -> return 0
