@@ -44,7 +44,7 @@ static const uint8_t tau[16] = "expand 16-byte k";
 	d ^= rol32(c+b, 13); \
 	a ^= rol32(d+c, 18);
 
-uint32_t load32(const uint8_t *p)
+static inline uint32_t load32(const uint8_t *p)
 {
 	return le32_to_cpu(*((uint32_t *) p));
 }
