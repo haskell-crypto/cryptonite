@@ -4,15 +4,10 @@ module KATHash
     ( tests
     ) where
 
-import Data.Char
-import Data.Bits
-import Data.Word
+import Data.Char (ord)
 import Data.ByteString (ByteString)
-import Data.Byteable
-import Data.Foldable (foldl')
-import Data.Monoid (mconcat)
 import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as BC
+import qualified Data.ByteString.Char8 as BC ()
 
 import qualified Crypto.Hash.MD2 as MD2
 import qualified Crypto.Hash.MD4 as MD4
@@ -73,8 +68,8 @@ skein512Hash x = HashFct { fctHash = Skein512.hash x, fctInc = hashinc (Skein512
 
 whirlpoolHash = HashFct { fctHash = Whirlpool.hash, fctInc = hashinc Whirlpool.init Whirlpool.update Whirlpool.finalize }
 
-results :: [ (String, HashFct, [String]) ]
-results = [
+expected :: [ (String, HashFct, [String]) ]
+expected = [
     ("MD2", md2Hash, [
         "8350e5a3e24c153df2275c9f80692773",
         "03d85a0d629d2c442e987525319fc471",
@@ -176,9 +171,6 @@ hexalise s = concatMap (\c -> [ hex $ c `div` 16, hex $ c `mod` 16 ]) s
                 | i >= 10 && i <= 15 = fromIntegral (ord 'a') + i - 10
                 | otherwise          = 0
 
-hexaliseB :: B.ByteString -> B.ByteString
-hexaliseB = B.pack . hexalise . B.unpack
-
 splitB :: Int -> ByteString -> [ByteString]
 splitB l b =
     if B.length b > l
@@ -194,10 +186,13 @@ showHash = map (toEnum.fromEnum) . hexalise . B.unpack
 runhash hash v = showHash $ (fctHash hash) $ v
 runhashinc hash v = showHash $ (fctInc hash) $ v
 
-makeTestAlg (name, hash, results) = testGroup name $ concatMap maketest (zip3 [0..] vectors results)
+makeTestAlg (name, hash, results) = testGroup name $ concatMap maketest (zip3 is vectors results)
     where
         runtest :: ByteString -> String
         runtest v = runhash hash v
+
+        is :: [Int]
+        is = [0..]
 
         runtestinc :: Int -> ByteString -> String
         runtestinc i v = runhashinc hash $ splitB i v
@@ -214,7 +209,7 @@ makeTestAlg (name, hash, results) = testGroup name $ concatMap maketest (zip3 [0
             ]
 
 katTests :: [TestTree]
-katTests = map makeTestAlg results
+katTests = map makeTestAlg expected
 
 tests = testGroup "hash"
     [ testGroup "KATs" katTests
