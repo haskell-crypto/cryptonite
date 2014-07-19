@@ -38,7 +38,7 @@
 static const uint8_t sigma[16] = "expand 32-byte k";
 static const uint8_t tau[16] = "expand 16-byte k";
 
-#define QR (a,b,c,d) \
+#define QR(a,b,c,d) \
 	b ^= rol32(a+d, 7); \
 	c ^= rol32(b+a, 9); \
 	d ^= rol32(c+b, 13); \
@@ -60,55 +60,15 @@ static void salsa_core(int rounds, block *out, const cryptonite_salsa_state *in)
 	x12 = in->d[12]; x13 = in->d[13]; x14 = in->d[14]; x15 = in->d[15];
 
 	for (i = rounds; i > 0; i -= 2) {
-        //QR (x0,x4,x8,x12);
-        //QR (x5,x9,x13,x1);
-        //QR (x10,x14,x2,x6);
-        //QR (x15,x3,x7,x11);
-		x4 ^= rol32( x0+x12, 7);
-		x8 ^= rol32( x4+ x0, 9);
-		x12 ^= rol32( x8+ x4,13);
-		x0 ^= rol32(x12+ x8,18);
+		QR (x0,x4,x8,x12);
+		QR (x5,x9,x13,x1);
+		QR (x10,x14,x2,x6);
+		QR (x15,x3,x7,x11);
 
-		x9 ^= rol32( x5+ x1, 7);
-		x13 ^= rol32( x9+ x5, 9);
-		x1 ^= rol32(x13+ x9,13);
-		x5 ^= rol32( x1+x13,18);
-
-		x14 ^= rol32(x10+ x6, 7);
-		x2 ^= rol32(x14+x10, 9);
-		x6 ^= rol32( x2+x14,13);
-		x10 ^= rol32( x6+ x2,18);
-
-		x3 ^= rol32(x15+x11, 7);
-		x7 ^= rol32( x3+x15, 9);
-		x11 ^= rol32( x7+ x3,13);
-		x15 ^= rol32(x11+ x7,18);
-
-        //QR (x0,x1,x2,x3);
-        //QR (x5,x6,x7,x4);
-        //QR (x10,x11,x8,x9);
-        //QR (x15,x12,x13,x14);
-
-		x1 ^= rol32( x0+ x3, 7);
-		x2 ^= rol32( x1+ x0, 9);
-		x3 ^= rol32( x2+ x1,13);
-		x0 ^= rol32( x3+ x2,18);
-
-		x6 ^= rol32( x5+ x4, 7);
-		x7 ^= rol32( x6+ x5, 9);
-		x4 ^= rol32( x7+ x6,13);
-		x5 ^= rol32( x4+ x7,18);
-
-		x11 ^= rol32(x10+ x9, 7);
-		x8 ^= rol32(x11+x10, 9);
-		x9 ^= rol32( x8+x11,13);
-		x10 ^= rol32( x9+ x8,18);
-
-		x12 ^= rol32(x15+x14, 7);
-		x13 ^= rol32(x12+x15, 9);
-		x14 ^= rol32(x13+x12,13);
-		x15 ^= rol32(x14+x13,18);
-
+		QR (x0,x1,x2,x3);
+		QR (x5,x6,x7,x4);
+		QR (x10,x11,x8,x9);
+		QR (x15,x12,x13,x14);
 	}
 
 	x0 += in->d[0]; x1 += in->d[1]; x2 += in->d[2]; x3 += in->d[3];
