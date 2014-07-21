@@ -22,14 +22,13 @@ module Crypto.Cipher.RC4
 
 import Data.Word
 import Data.Byteable
+import Data.SecureMem
 import Foreign.Ptr
 import Foreign.ForeignPtr
 import System.IO.Unsafe
-import Data.Byteable
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Internal as B
-import Control.Applicative ((<$>))
 
 ----------------------------------------------------------------------
 unsafeDoIO :: IO a -> a
@@ -40,13 +39,13 @@ unsafeDoIO = unsafePerformIO
 #endif
 
 -- | The encryption state for RC4
-newtype State = State ByteString
+newtype State = State SecureMem
 
 -- | C Call for initializing the encryptor
 foreign import ccall unsafe "cryptonite_rc4.h cryptonite_rc4_init"
     c_rc4_init :: Ptr Word8 -- ^ The rc4 key
                -> Word32    -- ^ The key length
-               -> Ptr State   -- ^ The context
+               -> Ptr State -- ^ The context
                -> IO ()
 
 foreign import ccall unsafe "cryptonite_rc4.h cryptonite_rc4_combine"
@@ -56,10 +55,6 @@ foreign import ccall unsafe "cryptonite_rc4.h cryptonite_rc4_combine"
                   -> Ptr Word8      -- ^ Output buffer
                   -> IO ()
 
-withByteStringPtr :: ByteString -> (Ptr Word8 -> IO a) -> IO a
-withByteStringPtr b f = withForeignPtr fptr $ \ptr -> f (ptr `plusPtr` off)
-    where (fptr, off, _) = B.toForeignPtr b
-
 -- | RC4 context initialization.
 --
 -- seed the context with an initial key. the key size need to be
@@ -68,7 +63,9 @@ initialize :: Byteable key
            => key   -- ^ The key
            -> State -- ^ The RC4 context with the key mixed in
 initialize key = unsafeDoIO $ do
-    State <$> (B.create 264 $ \ctx -> withBytePtr key $ \keyPtr -> c_rc4_init (castPtr keyPtr) (fromIntegral $ byteableLength key) (castPtr ctx))
+    st <- createSecureMem 264 $ \stPtr ->
+        withBytePtr key $ \keyPtr -> c_rc4_init keyPtr (fromIntegral $ byteableLength key) (castPtr stPtr)
+    return $ State st
 
 -- | generate the next len bytes of the rc4 stream without combining
 -- it to anything.
@@ -79,14 +76,12 @@ generate ctx len = combine ctx (B.replicate len 0)
 combine :: State               -- ^ rc4 context
         -> ByteString          -- ^ input
         -> (State, ByteString) -- ^ new rc4 context, and the output
-combine (State cctx) clearText = unsafeDoIO $
-    B.mallocByteString 264 >>= \dctx ->
-    B.mallocByteString len >>= \outfptr ->
-    withByteStringPtr clearText $ \clearPtr ->
-    withByteStringPtr cctx $ \srcState ->
-    withForeignPtr dctx $ \dstState -> do
-    withForeignPtr outfptr $ \outptr -> do
-        B.memcpy dstState srcState 264
-        c_rc4_combine (castPtr dstState) clearPtr (fromIntegral len) outptr
-        return $! (State $! B.PS dctx 0 264, B.PS outfptr 0 len)
-    where len = B.length clearText
+combine (State prevSt) clearText = unsafeDoIO $ do
+    outfptr <- B.mallocByteString len
+    st      <- secureMemCopy prevSt
+    withSecureMemPtr st $ \stPtr ->
+        withForeignPtr outfptr $ \outptr ->
+        withBytePtr clearText $ \clearPtr ->
+            c_rc4_combine (castPtr stPtr) clearPtr (fromIntegral len) outptr
+    return $! (State st, B.PS outfptr 0 len)
+  where len = B.length clearText
