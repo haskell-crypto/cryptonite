@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns       #-}
 -- |
 -- Module      : Crypto.KDF.PBKDF2
 -- License     : BSD-style
@@ -8,6 +7,7 @@
 --
 -- Password Based Key Derivation Function 2
 --
+{-# LANGUAGE BangPatterns #-}
 module Crypto.KDF.PBKDF2
     ( PRF
     , prfHMAC
@@ -44,10 +44,10 @@ prfHMAC alg k = hmacIncr alg (HMAC.initialize k)
 
 -- | Parameters for PBKDF2
 data Parameters = Parameters
-    { password     :: ByteString
-    , salt         :: ByteString
-    , iterCounts   :: Int
-    , outputLength :: Int
+    { password     :: ByteString -- ^ Password (bytes encoded)
+    , salt         :: ByteString -- ^ Salut (bytes encoded)
+    , iterCounts   :: Int        -- ^ the number of user-defined iterations for the algorithms. e.g. WPA2 uses 4000.
+    , outputLength :: Int        -- ^ the number of bytes to generate out of PBKDF2
     }
 
 -- | generate the pbkdf2 key derivation function from the output
