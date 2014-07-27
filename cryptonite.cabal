@@ -48,6 +48,7 @@ Library
   Other-modules:     Crypto.Hash.Internal
                    , Crypto.Hash.Utils
                    , Crypto.Hash.Types
+                   , Crypto.KDF.Scrypt
                    , Crypto.Random.Entropy.Source
   Build-depends:     base >= 4 && < 5
                    , bytestring
