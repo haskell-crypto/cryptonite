@@ -45,7 +45,7 @@ prfHMAC alg k = hmacIncr alg (HMAC.initialize k)
 -- | Parameters for PBKDF2
 data Parameters = Parameters
     { password     :: ByteString -- ^ Password (bytes encoded)
-    , salt         :: ByteString -- ^ Salut (bytes encoded)
+    , salt         :: ByteString -- ^ Salt (bytes encoded)
     , iterCounts   :: Int        -- ^ the number of user-defined iterations for the algorithms. e.g. WPA2 uses 4000.
     , outputLength :: Int        -- ^ the number of bytes to generate out of PBKDF2
     }
