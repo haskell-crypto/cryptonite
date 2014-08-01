@@ -27,6 +27,7 @@ Library
                      Crypto.MAC.Poly1305
                      Crypto.MAC.HMAC
                      Crypto.KDF.PBKDF2
+                     Crypto.KDF.Scrypt
                      Crypto.Hash
                      Crypto.Hash.SHA1
                      Crypto.Hash.SHA224
@@ -49,9 +50,8 @@ Library
   Other-modules:     Crypto.Hash.Internal
                    , Crypto.Hash.Utils
                    , Crypto.Hash.Types
-                   , Crypto.KDF.Scrypt
                    , Crypto.Random.Entropy.Source
-  Build-depends:     base >= 4 && < 5
+  Build-depends:     base >= 4.5 && < 5
                    , bytestring
                    , securemem
                    , byteable
@@ -75,6 +75,7 @@ Library
                    , cbits/cryptonite_skein512.c
                    , cbits/cryptonite_tiger.c
                    , cbits/cryptonite_whirlpool.c
+                   , cbits/cryptonite_scrypt.c
   if (arch(i386) || arch(x86_64))
     CPP-options: -DARCH_IS_LITTLE_ENDIAN
 

@@ -6,8 +6,11 @@ import Data.ByteString.Char8 ()
 
 import Test.Tasty
 import Test.Tasty.HUnit
+import Data.Word
 
-vectors :: [ ((ByteString, ByteString, Int, Int, Int, Int), ByteString) ]
+import qualified Crypto.KDF.Scrypt as Scrypt
+
+vectors :: [ ((ByteString, ByteString, Word64, Int, Int, Int), ByteString) ]
 vectors =
     [
         ( ("", "", 16, 1, 1, 64)
@@ -25,5 +28,6 @@ vectors =
     ]
 
 tests = testGroup "Scrypt"
-    [
-    ]
+    $ map toCase $ zip [(1::Int)..] vectors
+  where toCase (i, ((pass,salt,n,r,p,dklen), output)) =
+            testCase (show i) (output @=? Scrypt.generate (Scrypt.Parameters pass salt n r p dklen))
