@@ -151,6 +151,13 @@ static inline void array_copy32(uint32_t *d, uint32_t *s, uint32_t nb)
 }
 #endif
 
+#ifndef ARCH_HAS_ARRAY_XOR32
+static inline void array_xor32(uint32_t *d, uint32_t *s, uint32_t nb)
+{
+	while (nb--) *d++ ^= *s++;
+}
+#endif
+
 #ifndef ARCH_HAS_ARRAY_COPY64
 static inline void array_copy64(uint64_t *d, uint64_t *s, uint32_t nb)
 {
