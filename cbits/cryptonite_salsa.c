@@ -116,7 +116,7 @@ void cryptonite_salsa_core_xor(int rounds, block *out, block *in)
 	out->d[12] += x12; out->d[13] += x13; out->d[14] += x14; out->d[15] += x15;
 }
 
-/* only 2 valids values are 256 (32) and 128 (16) */
+/* only 2 valid values for keylen are 256 (32) and 128 (16) */
 void cryptonite_salsa_init(cryptonite_salsa_state *st,
                             uint32_t keylen, const uint8_t *key,
                             uint32_t ivlen, const uint8_t *iv)
