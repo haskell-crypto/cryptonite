@@ -38,6 +38,9 @@ typedef union {
 
 typedef block cryptonite_salsa_state;
 
+/* for scrypt */
+void cryptonite_salsa_core_xor(int rounds, block *out, block *in);
+
 void cryptonite_salsa_init(cryptonite_salsa_state *st, uint32_t keylen, const uint8_t *key, uint32_t ivlen, const uint8_t *iv);
 void cryptonite_salsa_combine(uint32_t rounds, block *dst, cryptonite_salsa_state *st, const block *src, uint32_t bytes);
 void cryptonite_salsa_generate(uint32_t rounds, block *dst, cryptonite_salsa_state *st, uint32_t bytes);

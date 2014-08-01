@@ -44,6 +44,18 @@ static const uint8_t tau[16] = "expand 16-byte k";
 	d ^= rol32(c+b, 13); \
 	a ^= rol32(d+c, 18);
 
+#define SALSA_CORE_LOOP \
+	for (i = rounds; i > 0; i -= 2) { \
+		QR (x0,x4,x8,x12); \
+		QR (x5,x9,x13,x1); \
+		QR (x10,x14,x2,x6); \
+		QR (x15,x3,x7,x11); \
+		QR (x0,x1,x2,x3); \
+		QR (x5,x6,x7,x4); \
+		QR (x10,x11,x8,x9); \
+		QR (x15,x12,x13,x14); \
+	}
+
 static inline uint32_t load32(const uint8_t *p)
 {
 	return le32_to_cpu(*((uint32_t *) p));
@@ -59,17 +71,7 @@ static void salsa_core(int rounds, block *out, const cryptonite_salsa_state *in)
 	x8 = in->d[8]; x9 = in->d[9]; x10 = in->d[10]; x11 = in->d[11];
 	x12 = in->d[12]; x13 = in->d[13]; x14 = in->d[14]; x15 = in->d[15];
 
-	for (i = rounds; i > 0; i -= 2) {
-		QR (x0,x4,x8,x12);
-		QR (x5,x9,x13,x1);
-		QR (x10,x14,x2,x6);
-		QR (x15,x3,x7,x11);
-
-		QR (x0,x1,x2,x3);
-		QR (x5,x6,x7,x4);
-		QR (x10,x11,x8,x9);
-		QR (x15,x12,x13,x14);
-	}
+	SALSA_CORE_LOOP;
 
 	x0 += in->d[0]; x1 += in->d[1]; x2 += in->d[2]; x3 += in->d[3];
 	x4 += in->d[4]; x5 += in->d[5]; x6 += in->d[6]; x7 += in->d[7];
@@ -92,6 +94,26 @@ static void salsa_core(int rounds, block *out, const cryptonite_salsa_state *in)
 	out->d[13] = cpu_to_le32(x13);
 	out->d[14] = cpu_to_le32(x14);
 	out->d[15] = cpu_to_le32(x15);
+}
+
+void cryptonite_salsa_core_xor(int rounds, block *out, block *in)
+{
+	uint32_t x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15;
+	int i;
+
+#define LOAD(i) (out->d[i] ^= in->d[i])
+	x0 = LOAD(0); x1 = LOAD(1); x2 = LOAD(2); x3 = LOAD(3);
+	x4 = LOAD(4); x5 = LOAD(5); x6 = LOAD(6); x7 = LOAD(7);
+	x8 = LOAD(8); x9 = LOAD(9); x10 = LOAD(10); x11 = LOAD(11);
+	x12 = LOAD(12); x13 = LOAD(13); x14 = LOAD(14); x15 = LOAD(15);
+#undef LOAD
+
+	SALSA_CORE_LOOP;
+
+	out->d[0] += x0; out->d[1] += x1; out->d[2] += x2; out->d[3] += x3;
+	out->d[4] += x4; out->d[5] += x5; out->d[6] += x6; out->d[7] += x7;
+	out->d[8] += x8; out->d[9] += x9; out->d[10] += x10; out->d[11] += x11;
+	out->d[12] += x12; out->d[13] += x13; out->d[14] += x14; out->d[15] += x15;
 }
 
 /* only 2 valids values are 256 (32) and 128 (16) */
