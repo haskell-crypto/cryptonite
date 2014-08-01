@@ -19,6 +19,7 @@ import qualified Crypto.Hash.SHA384 as SHA384
 import qualified Crypto.Hash.SHA512 as SHA512
 import qualified Crypto.Hash.SHA512t as SHA512t
 import qualified Crypto.Hash.SHA3 as SHA3
+import qualified Crypto.Hash.Kekkak as Kekkak
 import qualified Crypto.Hash.RIPEMD160 as RIPEMD160
 import qualified Crypto.Hash.Tiger as Tiger
 import qualified Crypto.Hash.Skein256 as Skein256
@@ -59,6 +60,7 @@ sha512_224Hash = HashFct { fctHash = SHA512t.hash 224, fctInc = hashinc (SHA512t
 sha512_256Hash = HashFct { fctHash = SHA512t.hash 256, fctInc = hashinc (SHA512t.init 256) SHA512t.update SHA512t.finalize }
 
 sha3Hash i = HashFct { fctHash = SHA3.hash i, fctInc = hashinc (SHA3.init i) SHA3.update SHA3.finalize }
+kekkakHash i = HashFct { fctHash = Kekkak.hash i, fctInc = hashinc (Kekkak.init i) Kekkak.update Kekkak.finalize }
 
 ripemd160Hash = HashFct { fctHash = RIPEMD160.hash, fctInc = hashinc RIPEMD160.init RIPEMD160.update RIPEMD160.finalize }
 tigerHash = HashFct { fctHash = Tiger.hash, fctInc = hashinc Tiger.init Tiger.update Tiger.finalize }
@@ -147,6 +149,22 @@ expected = [
         "19fa61d75522a4669b44e39c1d2e1726c530232130d407f89afee0964997f7a73e83be698b288febcf88e3e03c4f0757ea8964e59b63d93708b138cc42a66eb3",
         "b97de512e91e3828b40d2b0fdce9ceb3c4a71f9bea8d88e75c4fa854df36725fd2b52eb6544edcacd6f8beddfea403cb55ae31f03ad62a5ef54e42ee82c3fb35",
         "dce81fc695cfea3d7e1446509238daf89f24cc61896f2d265927daa70f2108f8902f0dfd68be085d5abb9fcd2e482c1dc24f2fabf81f40b73495cad44d7360d3"])
+    , ("Kekkak-224", kekkakHash 224, [
+        "f71837502ba8e10837bdd8d365adb85591895602fc552b48b7390abd",
+        "310aee6b30c47350576ac2873fa89fd190cdc488442f3ef654cf23fe",
+        "0b27ff3b732133287f6831e2af47cf342b7ef1f3fcdee248811090cd" ])
+    , ("Kekkak-256", kekkakHash 256, [
+        "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
+        "4d741b6f1eb29cb2a9b9911c82f56fa8d73b04959d3d9d222895df6c0b28aa15",
+        "ed6c07f044d7573cc53bf1276f8cba3dac497919597a45b4599c8f73e22aa334" ])
+    , ("Kekkak-384", kekkakHash 384, [
+        "2c23146a63a29acf99e73b88f8c24eaa7dc60aa771780ccc006afbfa8fe2479b2dd2b21362337441ac12b515911957ff",
+        "283990fa9d5fb731d786c5bbee94ea4db4910f18c62c03d173fc0a5e494422e8a0b3da7574dae7fa0baf005e504063b3",
+        "1cc515e1812491058d8b8b226fd85045e746b4937a58b0111b6b7a39dd431b6295bd6b6d05e01e225586b4dab3cbb87a" ])
+    , ("Kekkak-512", kekkakHash 512, [
+        "0eab42de4c3ceb9235fc91acffe746b29c29a8c366b7c60e4e67c466f36a4304c00fa9caf9d87976ba469bcbe06713b435f091ef2769fb160cdab33d3670680e",
+        "d135bb84d0439dbac432247ee573a23ea7d3c9deb2a968eb31d47c4fb45f1ef4422d6c531b5b9bd6f449ebcc449ea94d0a8f05f62130fda612da53c79659f609",
+        "10f8caabb5b179861da5e447d34b84d604e3eb81830880e1c2135ffc94580a47cb21f6243ec0053d58b1124d13af2090033659075ee718e0f111bb3f69fb24cf" ])
     , ("SHA3-224", sha3Hash 224, [
         "f71837502ba8e10837bdd8d365adb85591895602fc552b48b7390abd",
         "310aee6b30c47350576ac2873fa89fd190cdc488442f3ef654cf23fe",

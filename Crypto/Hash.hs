@@ -43,6 +43,10 @@ module Crypto.Hash
     , SHA512(..)
     , RIPEMD160(..)
     , Tiger(..)
+    , Kekkak_224(..)
+    , Kekkak_256(..)
+    , Kekkak_384(..)
+    , Kekkak_512(..)
     , SHA3_224(..)
     , SHA3_256(..)
     , SHA3_384(..)
@@ -72,6 +76,7 @@ import qualified Crypto.Hash.SHA256 as SHA256
 import qualified Crypto.Hash.SHA384 as SHA384
 import qualified Crypto.Hash.SHA512 as SHA512
 import qualified Crypto.Hash.SHA3 as SHA3
+import qualified Crypto.Hash.Kekkak as Kekkak
 import qualified Crypto.Hash.RIPEMD160 as RIPEMD160
 import qualified Crypto.Hash.Tiger as Tiger
 import qualified Crypto.Hash.Skein256 as Skein256
@@ -143,6 +148,15 @@ DEFINE_INSTANCE(RIPEMD160, RIPEMD160, 64)
 DEFINE_INSTANCE(Whirlpool, Whirlpool, 64)
 -- | Tiger cryptographic hash
 DEFINE_INSTANCE(Tiger, Tiger, 64)
+
+-- | Kekkak (224 bits version) cryptographic hash
+DEFINE_INSTANCE_LEN(Kekkak_224, Kekkak, 224, 144)
+-- | Kekkak (256 bits version) cryptographic hash
+DEFINE_INSTANCE_LEN(Kekkak_256, Kekkak, 256, 136)
+-- | Kekkak (384 bits version) cryptographic hash
+DEFINE_INSTANCE_LEN(Kekkak_384, Kekkak, 384, 104)
+-- | Kekkak (512 bits version) cryptographic hash
+DEFINE_INSTANCE_LEN(Kekkak_512, Kekkak, 512, 72)
 
 -- | SHA3 (224 bits version) cryptographic hash
 DEFINE_INSTANCE_LEN(SHA3_224, SHA3, 224, 144)
