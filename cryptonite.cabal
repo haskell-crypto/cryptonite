@@ -47,10 +47,13 @@ Library
                      Crypto.Hash.Whirlpool
                      Crypto.Random.Types
                      Crypto.Random.Entropy
+                   , Crypto.Random.EntropyPool
+                   , Crypto.Random.Entropy.Unsafe
   Other-modules:     Crypto.Hash.Internal
                    , Crypto.Hash.Utils
                    , Crypto.Hash.Types
                    , Crypto.Random.Entropy.Source
+                   , Crypto.Random.Entropy.Backend
   Build-depends:     base >= 4.5 && < 5
                    , bytestring
                    , securemem
