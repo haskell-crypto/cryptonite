@@ -47,8 +47,8 @@ Library
                      Crypto.Hash.Whirlpool
                      Crypto.Random.Types
                      Crypto.Random.Entropy
-                   , Crypto.Random.EntropyPool
-                   , Crypto.Random.Entropy.Unsafe
+                     Crypto.Random.EntropyPool
+                     Crypto.Random.Entropy.Unsafe
   Other-modules:     Crypto.Hash.Internal
                    , Crypto.Hash.Utils
                    , Crypto.Hash.Types
