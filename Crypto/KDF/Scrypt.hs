@@ -16,11 +16,13 @@ module Crypto.KDF.Scrypt
 
 import Data.Word
 import Data.Bits
+import Data.Byteable
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
-import Data.Byteable
+import qualified Data.ByteString.Internal as B
 import Foreign.Marshal.Alloc
 import Foreign.Ptr (Ptr, plusPtr)
+import Foreign.ForeignPtr (withForeignPtr)
 import Control.Monad (forM_)
 
 import System.IO.Unsafe
@@ -49,14 +51,16 @@ generate params
     | popCount (n params) /= 1 =
         error "Scrypt: invalid parameters: n not a power of 2"
     | otherwise = unsafePerformIO $ do
-        let b = PBKDF2.generate prf
-                   (PBKDF2.Parameters (password params) (salt params) 1 (p params * 128 * r params))
+        let b = PBKDF2.generate prf (PBKDF2.Parameters (password params) (salt params) 1 intLen)
+        fptr <- B.mallocByteString intLen
         allocaBytesAligned (128*(fromIntegral $ n params)*(r params)) 8 $ \v ->
             allocaBytesAligned (256*r params) 8 $ \xy ->
-            withBytePtr b $ \bPtr ->
+            withForeignPtr fptr $ \bPtr -> do
+                withBytePtr b $ \bOrig -> B.memcpy bPtr bOrig intLen
                 forM_ [0..(p params-1)] $ \i ->
                     ccryptonite_scrypt_smix (bPtr `plusPtr` (i * 128 * (r params)))
                                             (fromIntegral $ r params) (n params) v xy
 
-        return $ PBKDF2.generate prf (PBKDF2.Parameters (password params) b 1 (outputLength params))
-  where prf = PBKDF2.prfHMAC SHA256
+        return $ PBKDF2.generate prf (PBKDF2.Parameters (password params) (B.PS fptr 0 intLen) 1 (outputLength params))
+  where prf    = PBKDF2.prfHMAC SHA256
+        intLen = p params * 128 * r params
