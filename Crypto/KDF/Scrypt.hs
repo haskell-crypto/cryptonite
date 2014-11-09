@@ -56,7 +56,7 @@ generate params
         allocaBytesAligned (128*(fromIntegral $ n params)*(r params)) 8 $ \v ->
             allocaBytesAligned (256*r params) 8 $ \xy ->
             withForeignPtr fptr $ \bPtr -> do
-                withBytePtr b $ \bOrig -> B.memcpy bPtr bOrig intLen
+                withBytePtr b $ \bOrig -> B.memcpy bPtr bOrig (fromIntegral intLen)
                 forM_ [0..(p params-1)] $ \i ->
                     ccryptonite_scrypt_smix (bPtr `plusPtr` (i * 128 * (r params)))
                                             (fromIntegral $ r params) (n params) v xy
