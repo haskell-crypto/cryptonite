@@ -165,6 +165,12 @@ static inline void array_copy64(uint64_t *d, uint64_t *s, uint32_t nb)
 }
 #endif
 
+#ifdef __GNUC__
+#define bitfn_ntz(n) __builtin_ctz(n)
+#else
+#error "define ntz for your platform"
+#endif
+
 #ifdef __MINGW32__
   # define LITTLE_ENDIAN 1234
   # define BYTE_ORDER    LITTLE_ENDIAN

@@ -20,6 +20,10 @@ source-repository head
   type: git
   location: https://github.com/vincenthz/cryptonite
 
+Flag support_aesni
+  Description:       allow compilation with AESNI on system and architecture that supports it
+  Default:           True
+
 Library
   Exposed-modules:   Crypto.Cipher.ChaCha
                      Crypto.Cipher.Salsa
@@ -64,6 +68,10 @@ Library
   C-sources:         cbits/cryptonite_chacha.c
                    , cbits/cryptonite_salsa.c
                    , cbits/cryptonite_rc4.c
+                   , cbits/cryptonite_cpu.c
+                   , cbits/aes/generic.c
+                   , cbits/aes/gf.c
+                   , cbits/cryptonite_aes.c
                    , cbits/cryptonite_poly1305.c
                    , cbits/cryptonite_sha1.c
                    , cbits/cryptonite_sha256.c
@@ -79,13 +87,18 @@ Library
                    , cbits/cryptonite_tiger.c
                    , cbits/cryptonite_whirlpool.c
                    , cbits/cryptonite_scrypt.c
+  include-dirs:  cbits
   if (arch(i386) || arch(x86_64))
     CPP-options: -DARCH_IS_LITTLE_ENDIAN
 
   if arch(x86_64)
-    cpp-options:    -DSUPPORT_RDRAND
+    CPP-options:    -DSUPPORT_RDRAND
     Other-modules:  Crypto.Random.Entropy.RDRand
     c-sources:      cbits/cryptonite_rdrand.c
+
+  if flag(support_aesni) && (os(linux) || os(freebsd) || os(osx)) && (arch(i386) || arch(x86_64))
+    CC-options:     -mssse3 -maes -mpclmul -DWITH_AESNI
+    C-sources:      cbits/aes/x86ni.c
 
   if os(windows)
     cpp-options:    -DWINDOWS
