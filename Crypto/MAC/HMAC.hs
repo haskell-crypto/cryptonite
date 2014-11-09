@@ -16,6 +16,7 @@ module Crypto.MAC.HMAC
     , Context(..)
     , initialize
     , update
+    , updates
     , finalize
     ) where
 
@@ -54,7 +55,7 @@ hmac secret msg = doHMAC hashInit
                 hashF = hashFinalize . hashUpdate ctxInit
                 blockSize = hashBlockSize ctxInit
 
--- | Represent an ongoing HMAC state, that can be appended with 'hmacUpdate'
+-- | Represent an ongoing HMAC state, that can be appended with 'update'
 -- and finalize to an HMAC with 'hmacFinalize'
 data Context hashalg = Context !(Hash.Context hashalg) !(Hash.Context hashalg)
 
@@ -78,10 +79,18 @@ initialize secret = Context octx ictx
 -- | Incrementally update a HMAC context
 update :: HashAlgorithm a
        => Context a  -- ^ Current HMAC context
-       -> ByteString -- ^ Message to Mac
+       -> ByteString -- ^ Message to append to the MAC
        -> Context a  -- ^ Updated HMAC context
 update (Context octx ictx) msg =
     Context octx (hashUpdate ictx msg)
+
+-- | Increamentally update a HMAC context with multiple inputs
+updates :: HashAlgorithm a
+        => Context a    -- ^ Current HMAC context
+        -> [ByteString] -- ^ Messages to append to the MAC
+        -> Context a    -- ^ Updated HMAC context
+updates (Context octx ictx) msgs =
+    Context octx (hashUpdates ictx msgs)
 
 -- | Finalize a HMAC context and return the HMAC.
 finalize :: HashAlgorithm a
