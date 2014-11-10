@@ -16,6 +16,12 @@ higher level protocols or higher level implementation.
 
 Documentation: [cryptonite on hackage](http://hackage.haskell.org/package/cryptonite)
 
+Coding Style
+------------
+
+The coding style of this project mostly follows:
+[haskell-style](https://github.com/tibbe/haskell-style-guide/blob/master/haskell-style.md)
+
 Links
 -----
 
