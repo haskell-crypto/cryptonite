@@ -302,7 +302,7 @@ static __m128i ghash_add(__m128i tag, __m128i h, __m128i m)
 #define DO_ENC_BLOCK DO_ENC_BLOCK128
 #define PRELOAD_DEC PRELOAD_DEC_KEYS128
 #define DO_DEC_BLOCK DO_DEC_BLOCK128
-#include "aes_x86ni_impl.c"
+#include <aes/x86ni_impl.c>
 
 #undef SIZE
 #undef SIZED
@@ -317,7 +317,7 @@ static __m128i ghash_add(__m128i tag, __m128i h, __m128i m)
 #define DO_ENC_BLOCK DO_ENC_BLOCK256
 #define PRELOAD_DEC PRELOAD_DEC_KEYS256
 #define DO_DEC_BLOCK DO_DEC_BLOCK256
-#include "aes_x86ni_impl.c"
+#include <aes/x86ni_impl.c>
 
 #undef SIZE
 #undef SIZED
