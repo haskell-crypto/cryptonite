@@ -146,7 +146,7 @@ void cryptonite_sha3_finalize(struct sha3_ctx *ctx, uint8_t *out)
 	}
 
 	/* add the 10*1 padding */
-	ctx->buf[ctx->bufindex++] = 1;
+	ctx->buf[ctx->bufindex++] = 0x06;
 	memset(ctx->buf + ctx->bufindex, 0, ctx->bufsz - ctx->bufindex);
 	ctx->buf[ctx->bufsz - 1] |= 0x80;
 
