@@ -26,6 +26,8 @@ import qualified Crypto.Hash.Skein256 as Skein256
 import qualified Crypto.Hash.Skein512 as Skein512
 import qualified Crypto.Hash.Whirlpool as Whirlpool
 
+import Utils
+
 import Test.Tasty
 import Test.Tasty.QuickCheck
 import Test.Tasty.HUnit
@@ -182,21 +184,6 @@ expected = [
         "01dedd5de4ef14642445ba5f5b97c15e47b9ad931326e4b0727cd94cefc44fff23f07bf543139939b49128caf436dc1bdee54fcb24023a08d9403f9b4bf0d450",
         "28e361fe8c56e617caa56c28c7c36e5c13be552b77081be82b642f08bb7ef085b9a81910fe98269386b9aacfd2349076c9506126e198f6f6ad44c12017ca77b1" ])
     ]
-
-hexalise s = concatMap (\c -> [ hex $ c `div` 16, hex $ c `mod` 16 ]) s
-        where hex i
-                | i >= 0 && i <= 9   = fromIntegral (ord '0') + i
-                | i >= 10 && i <= 15 = fromIntegral (ord 'a') + i - 10
-                | otherwise          = 0
-
-splitB :: Int -> ByteString -> [ByteString]
-splitB l b =
-    if B.length b > l
-        then
-            let (b1, b2) = B.splitAt l b in
-            b1 : splitB l b2
-        else    
-            [ b ]
 
 showHash :: B.ByteString -> String
 showHash = map (toEnum.fromEnum) . hexalise . B.unpack
