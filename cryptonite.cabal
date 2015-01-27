@@ -62,7 +62,7 @@ Library
                    , Crypto.Internal.Compat
   Build-depends:     base >= 4.5 && < 5
                    , bytestring
-                   , securemem
+                   , securemem >= 0.1.7
                    , byteable
                    , ghc-prim
   ghc-options:       -Wall -fwarn-tabs -optc-O3
