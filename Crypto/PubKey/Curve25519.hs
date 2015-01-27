@@ -26,7 +26,7 @@ import           Control.Applicative
 import           Data.Bits
 import           Data.Byteable
 import           Data.ByteString (ByteString)
-import qualified Data.ByteString as B ()
+import           Data.ByteString.Char8 ()
 import qualified Data.ByteString.Internal as B
 import           Data.SecureMem
 import           Data.Word
