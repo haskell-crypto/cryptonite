@@ -49,6 +49,7 @@ Library
                      Crypto.Hash.Skein512
                      Crypto.Hash.Tiger
                      Crypto.Hash.Whirlpool
+                     Crypto.PubKey.Curve25519
                      Crypto.Random.Types
                      Crypto.Random.Entropy
                      Crypto.Random.EntropyPool
@@ -73,6 +74,7 @@ Library
                    , cbits/aes/generic.c
                    , cbits/aes/gf.c
                    , cbits/cryptonite_aes.c
+                   , cbits/curve25519/curve25519-donna.c
                    , cbits/cryptonite_poly1305.c
                    , cbits/cryptonite_sha1.c
                    , cbits/cryptonite_sha256.c
