@@ -36,6 +36,8 @@ Links
 * [PBKDF2](http://tools.ietf.org/html/rfc2898)
 * [PBKDF2-test-vectors](http://www.ietf.org/rfc/rfc6070.txt)
 
+* [Curve25519](http://cr.yp.to/ecdh.html)
+
 TODO
 ----
 
