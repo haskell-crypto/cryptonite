@@ -56,6 +56,7 @@ Library
                      Crypto.Random.Entropy.Unsafe
   Other-modules:     Crypto.Hash.Internal
                    , Crypto.Hash.Utils
+                   , Crypto.Hash.Utils.Cpu
                    , Crypto.Hash.Types
                      Crypto.Hash.Internal.SHA1
                      Crypto.Hash.Internal.SHA224
