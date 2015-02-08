@@ -13,8 +13,9 @@ Build-Type:          Simple
 Homepage:            https://github.com/vincenthz/cryptonite
 Bug-reports:         https://github.com/vincenthz/cryptonite/issues
 Cabal-Version:       >=1.10
-extra-source-files:  README.md
-                     cbits/*.h
+extra-doc-files:     README.md
+extra-source-files:  cbits/*.h
+                     cbits/aes/*.h
 
 source-repository head
   type: git
