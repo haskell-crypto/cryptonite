@@ -49,10 +49,10 @@ toHex (B.PS fp off len) = B.unsafeCreate (len*2) $ \d ->
 
           -- little endian version
           to32 (I# i1) (I# i2) = W32# (or# (or# (or# hi2 lo2) hi1) lo1)
-            where hi2 = uncheckedShiftL# (indexWord8OffAddr# tableLo i2) 24#
-                  lo2 = uncheckedShiftL# (indexWord8OffAddr# tableHi i2) 16#
-                  hi1 = uncheckedShiftL# (indexWord8OffAddr# tableLo i1) 8#
-                  lo1 = indexWord8OffAddr# tableHi i1
+            where !hi2 = uncheckedShiftL# (indexWord8OffAddr# tableLo i2) 24#
+                  !lo2 = uncheckedShiftL# (indexWord8OffAddr# tableHi i2) 16#
+                  !hi1 = uncheckedShiftL# (indexWord8OffAddr# tableLo i1) 8#
+                  !lo1 = indexWord8OffAddr# tableHi i1
 
           r :: Addr# -> Int -> Word8
           r table (I# index) = W8# (indexWord8OffAddr# table index)
