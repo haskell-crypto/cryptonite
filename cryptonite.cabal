@@ -16,6 +16,7 @@ Cabal-Version:       >=1.10
 extra-doc-files:     README.md
 extra-source-files:  cbits/*.h
                      cbits/aes/*.h
+                     cbits/aes/x86ni_impl.c
 
 source-repository head
   type: git
