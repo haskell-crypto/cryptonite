@@ -7,8 +7,10 @@
 -- Stability   : experimental
 -- Portability : unknown
 --
--- module containing the basic functions to work with the
+-- module containing the pure functions to work with the
 -- MD4 cryptographic hash.
+--
+-- it is recommended to import this module qualified.
 --
 module Crypto.Hash.MD4
     ( Ctx(..)
