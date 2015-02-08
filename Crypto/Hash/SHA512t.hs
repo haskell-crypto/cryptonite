@@ -27,13 +27,17 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as L
 
 import qualified Crypto.Hash.SHA512 as SHA512
+import Crypto.Internal.Compat
+--import qualified Crypto.Hash.Internal.SHA512 as SHA512
+import qualified Crypto.Hash.Internal.SHA512t as SHA512t
+import Crypto.Hash.Internal.SHA512 (withCtxNew)
 
 -- | SHA512 Context with variable size output
 data Ctx = Ctx !Int !SHA512.Ctx
 
 -- | init a context
 init :: Int -> Ctx
-init t = Ctx t (SHA512.init_t t)
+init t = Ctx t $ unsafeDoIO $ withCtxNew $ \ptr -> SHA512t.internalInitAt t ptr
 
 -- | update a context with a bytestring
 update :: Ctx -> ByteString -> Ctx
