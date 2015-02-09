@@ -32,6 +32,12 @@ Library
                      Crypto.Cipher.RC4
                      Crypto.MAC.Poly1305
                      Crypto.MAC.HMAC
+                     Crypto.Number.Basic
+                     Crypto.Number.F2m
+                     Crypto.Number.Generate
+                     Crypto.Number.ModArithmetic
+                     Crypto.Number.Prime
+                     Crypto.Number.Serialize
                      Crypto.KDF.PBKDF2
                      Crypto.KDF.Scrypt
                      Crypto.Hash
