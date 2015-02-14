@@ -18,6 +18,7 @@ module Crypto.Hash.Internal.SHA512
     , internalInit
     , internalInitAt
     , internalUpdate
+    , internalUpdateUnsafe
     , internalFinalize
     -- * Context copy and creation
     , withCtxNew
@@ -82,6 +83,9 @@ foreign import ccall unsafe "cryptonite_sha512.h cryptonite_sha512_init"
 foreign import ccall "cryptonite_sha512.h cryptonite_sha512_update"
     c_sha512_update :: Ptr Ctx -> Ptr Word8 -> Word32 -> IO ()
 
+foreign import ccall unsafe "cryptonite_sha512.h cryptonite_sha512_update"
+    c_sha512_update_unsafe :: Ptr Ctx -> Ptr Word8 -> Word32 -> IO ()
+
 foreign import ccall unsafe "cryptonite_sha512.h cryptonite_sha512_finalize"
     c_sha512_finalize :: Ptr Ctx -> Ptr Word8 -> IO ()
 
@@ -96,6 +100,14 @@ internalInit = withCtxNew internalInitAt
 internalUpdate :: Ptr Ctx -> ByteString -> IO ()
 internalUpdate ptr d =
     unsafeUseAsCStringLen d (\(cs, len) -> c_sha512_update ptr (castPtr cs) (fromIntegral len))
+
+-- | Update a context in place using an unsafe foreign function call.
+--
+-- It is faster than `internalUpdate`, but will block the haskell runtime.
+-- This shouldn't be used if the input data is large.
+internalUpdateUnsafe :: Ptr Ctx -> ByteString -> IO ()
+internalUpdateUnsafe ptr d =
+    unsafeUseAsCStringLen d (\(cs, len) -> c_sha512_update_unsafe ptr (castPtr cs) (fromIntegral len))
 
 -- | Finalize a context in place
 internalFinalize :: Ptr Ctx -> IO ByteString

@@ -18,6 +18,7 @@ module Crypto.Hash.Internal.%%MODULENAME%%
     , internalInit
     , internalInitAt
     , internalUpdate
+    , internalUpdateUnsafe
     , internalFinalize
     -- * Context copy and creation
     , withCtxCopy
@@ -81,6 +82,9 @@ foreign import ccall unsafe "cryptonite_%%HEADER_FILE%% cryptonite_%%HASHNAME%%_
 foreign import ccall "cryptonite_%%HEADER_FILE%% cryptonite_%%HASHNAME%%_update"
     c_%%HASHNAME%%_update :: Ptr Ctx -> Ptr Word8 -> Word32 -> IO ()
 
+foreign import ccall unsafe "cryptonite_%%HEADER_FILE%% cryptonite_%%HASHNAME%%_update"
+    c_%%HASHNAME%%_update_unsafe :: Ptr Ctx -> Ptr Word8 -> Word32 -> IO ()
+
 foreign import ccall unsafe "cryptonite_%%HEADER_FILE%% cryptonite_%%HASHNAME%%_finalize"
     c_%%HASHNAME%%_finalize :: Ptr Ctx -> Ptr Word8 -> IO ()
 
@@ -95,6 +99,14 @@ internalInit = withCtxNew internalInitAt
 internalUpdate :: Ptr Ctx -> ByteString -> IO ()
 internalUpdate ptr d =
     unsafeUseAsCStringLen d (\(cs, len) -> c_%%HASHNAME%%_update ptr (castPtr cs) (fromIntegral len))
+
+-- | Update a context in place using an unsafe foreign function call.
+--
+-- It is faster than `internalUpdate`, but will block the haskell runtime.
+-- This shouldn't be used if the input data is large.
+internalUpdateUnsafe :: Ptr Ctx -> ByteString -> IO ()
+internalUpdateUnsafe ptr d =
+    unsafeUseAsCStringLen d (\(cs, len) -> c_%%HASHNAME%%_update_unsafe ptr (castPtr cs) (fromIntegral len))
 
 -- | Finalize a context in place
 internalFinalize :: Ptr Ctx -> IO ByteString
