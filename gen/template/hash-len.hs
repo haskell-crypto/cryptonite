@@ -29,7 +29,7 @@ module Crypto.Hash.%%MODULENAME%%
 import Prelude hiding (init)
 import qualified Data.ByteString.Lazy as L
 import Data.ByteString (ByteString)
-import Crypto.Hash.Internal (unsafeDoIO)
+import Crypto.Internal.Compat (unsafeDoIO)
 import Crypto.Hash.Internal.%%MODULENAME%%
 
 {-# NOINLINE init #-}

@@ -4,6 +4,6 @@
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
 -- Portability : unknown
-module Crypto.Hash.Internal (unsafeDoIO) where
-
-import Crypto.Internal.Compat (unsafeDoIO)
+module Crypto.Hash.Internal
+    (
+    ) where
