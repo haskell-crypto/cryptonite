@@ -53,7 +53,7 @@ initialize nbRounds key nonce
     | otherwise = unsafePerformIO $ do
         stPtr <- createSecureMem 64 $ \stPtr ->
             withBytePtr nonce $ \noncePtr  ->
-            withBytePtr key $ \keyPtr ->
+            withBytePtr key   $ \keyPtr ->
                 ccryptonite_salsa_init (castPtr stPtr) kLen keyPtr nonceLen noncePtr
         return $ State nbRounds stPtr B.empty
   where kLen     = byteableLength key
