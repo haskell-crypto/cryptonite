@@ -85,6 +85,7 @@ Library
                    , Crypto.Random.Entropy.Source
                    , Crypto.Random.Entropy.Backend
                    , Crypto.Internal.Compat
+                   , Crypto.Internal.Bytes
   Build-depends:     base >= 4.3 && < 5
                    , bytestring
                    , securemem >= 0.1.7
