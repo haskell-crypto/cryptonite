@@ -27,15 +27,13 @@ module Crypto.Hash.Internal.MD2
     ) where
 
 import Foreign.Ptr
-import Foreign.ForeignPtr (withForeignPtr)
-import Foreign.Storable
-import Foreign.Marshal.Alloc
 import Data.ByteString (ByteString)
 import Data.ByteString.Unsafe (unsafeUseAsCStringLen)
-import Data.ByteString.Internal (create, toForeignPtr)
+import Data.ByteString.Internal (create)
 import Data.Word
+import Crypto.Internal.Memory
 
-newtype Ctx = Ctx ByteString
+newtype Ctx = Ctx Bytes
 
 {-# INLINE digestSize #-}
 digestSize :: Int
@@ -45,36 +43,14 @@ digestSize = 16
 sizeCtx :: Int
 sizeCtx = 96
 
-{-# INLINE withByteStringPtr #-}
-withByteStringPtr :: ByteString -> (Ptr Word8 -> IO a) -> IO a
-withByteStringPtr b f =
-    withForeignPtr fptr $ \ptr -> f (ptr `plusPtr` off)
-    where (fptr, off, _) = toForeignPtr b
-
-{-# INLINE memcopy64 #-}
-memcopy64 :: Ptr Word64 -> Ptr Word64 -> IO ()
-memcopy64 dst src = mapM_ peekAndPoke [0..(12-1)]
-    where peekAndPoke i = peekElemOff src i >>= pokeElemOff dst i
-
 withCtxCopy :: Ctx -> (Ptr Ctx -> IO ()) -> IO Ctx
-withCtxCopy (Ctx ctxB) f = Ctx `fmap` createCtx
-    where createCtx = create sizeCtx $ \dstPtr ->
-                      withByteStringPtr ctxB $ \srcPtr -> do
-                          memcopy64 (castPtr dstPtr) (castPtr srcPtr)
-                          f (castPtr dstPtr)
+withCtxCopy (Ctx b) f = Ctx `fmap` bytesCopyAndModify b f
 
 withCtxThrow :: Ctx -> (Ptr Ctx -> IO a) -> IO a
-withCtxThrow (Ctx ctxB) f =
-    allocaBytes sizeCtx $ \dstPtr ->
-    withByteStringPtr ctxB $ \srcPtr -> do
-        memcopy64 (castPtr dstPtr) (castPtr srcPtr)
-        f (castPtr dstPtr)
-
-withCtxNew :: (Ptr Ctx -> IO ()) -> IO Ctx
-withCtxNew f = Ctx `fmap` create sizeCtx (f . castPtr)
+withCtxThrow (Ctx b) f = bytesCopyTemporary b f
 
 withCtxNewThrow :: (Ptr Ctx -> IO a) -> IO a
-withCtxNewThrow f = allocaBytes sizeCtx (f . castPtr)
+withCtxNewThrow f = bytesTemporary 96 f
 
 foreign import ccall unsafe "cryptonite_md2.h cryptonite_md2_init"
     c_md2_init :: Ptr Ctx -> IO ()
@@ -93,7 +69,7 @@ internalInitAt = c_md2_init
 
 -- | init a context
 internalInit :: IO Ctx
-internalInit = withCtxNew internalInitAt
+internalInit = Ctx `fmap` bytesAlloc 96 internalInitAt
 
 -- | Update a context in place
 internalUpdate :: Ptr Ctx -> ByteString -> IO ()

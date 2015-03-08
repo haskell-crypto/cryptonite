@@ -42,6 +42,7 @@ renderHashModules genOpts = do
     hashInternalTemplate    <- readTemplate "template/hash-internal.hs"
     hashLenTemplate         <- readTemplate "template/hash-len.hs"
     hashLenInternalTemplate <- readTemplate "template/hash-internal-len.hs"
+
     forM_ hashModules $ \ghm -> do
         let vars = [ ("MODULENAME", ghmModuleName ghm)
                    , ("HEADER_FILE", ghmHeaderFile ghm)
@@ -58,6 +59,7 @@ renderHashModules genOpts = do
 
         createDirectoryIfMissing True mainDir
         createDirectoryIfMissing True internalDir
+
         if ghmCustomizable ghm
             then do writeTemplate mainName vars hashLenTemplate
                     writeTemplate internalName vars hashLenInternalTemplate

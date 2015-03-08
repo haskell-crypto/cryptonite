@@ -25,17 +25,15 @@ module Crypto.Hash.Internal.Kekkak
     , withCtxThrow
     ) where
 
-import Prelude hiding (init)
 import Foreign.Ptr
-import Foreign.ForeignPtr (withForeignPtr)
-import Foreign.Storable
-import Foreign.Marshal.Alloc
+import Foreign.Storable (peek)
 import Data.ByteString (ByteString)
 import Data.ByteString.Unsafe (unsafeUseAsCStringLen)
-import Data.ByteString.Internal (create, toForeignPtr)
+import Data.ByteString.Internal (create)
 import Data.Word
+import Crypto.Internal.Memory
 
-newtype Ctx = Ctx ByteString
+newtype Ctx = Ctx Bytes
 
 {- return the number of bytes of output for the digest -}
 peekHashlen :: Ptr Ctx -> IO Int
@@ -47,36 +45,14 @@ peekHashlen ptr = peek iptr >>= \v -> return $! fromIntegral v
 sizeCtx :: Int
 sizeCtx = 360
 
-{-# INLINE withByteStringPtr #-}
-withByteStringPtr :: ByteString -> (Ptr Word8 -> IO a) -> IO a
-withByteStringPtr b f =
-    withForeignPtr fptr $ \ptr -> f (ptr `plusPtr` off)
-    where (fptr, off, _) = toForeignPtr b
-
-{-# INLINE memcopy64 #-}
-memcopy64 :: Ptr Word64 -> Ptr Word64 -> IO ()
-memcopy64 dst src = mapM_ peekAndPoke [0..(45-1)]
-    where peekAndPoke i = peekElemOff src i >>= pokeElemOff dst i
-
 withCtxCopy :: Ctx -> (Ptr Ctx -> IO ()) -> IO Ctx
-withCtxCopy (Ctx ctxB) f = Ctx `fmap` createCtx
-    where createCtx = create sizeCtx $ \dstPtr ->
-                      withByteStringPtr ctxB $ \srcPtr -> do
-                          memcopy64 (castPtr dstPtr) (castPtr srcPtr)
-                          f (castPtr dstPtr)
+withCtxCopy (Ctx b) f = Ctx `fmap` bytesCopyAndModify b f
 
 withCtxThrow :: Ctx -> (Ptr Ctx -> IO a) -> IO a
-withCtxThrow (Ctx ctxB) f =
-    allocaBytes sizeCtx $ \dstPtr ->
-    withByteStringPtr ctxB $ \srcPtr -> do
-        memcopy64 (castPtr dstPtr) (castPtr srcPtr)
-        f (castPtr dstPtr)
-
-withCtxNew :: (Ptr Ctx -> IO ()) -> IO Ctx
-withCtxNew f = Ctx `fmap` create sizeCtx (f . castPtr)
+withCtxThrow (Ctx b) f = bytesCopyTemporary b f
 
 withCtxNewThrow :: (Ptr Ctx -> IO a) -> IO a
-withCtxNewThrow f = allocaBytes sizeCtx (f . castPtr)
+withCtxNewThrow f = bytesTemporary 360 f
 
 foreign import ccall unsafe "cryptonite_kekkak.h cryptonite_kekkak_init"
     c_kekkak_init :: Ptr Ctx -> Word32 -> IO ()
@@ -95,7 +71,7 @@ internalInitAt hashlen ptr = c_kekkak_init ptr (fromIntegral hashlen)
 
 -- | init a context
 internalInit :: Int -> IO Ctx
-internalInit hashlen = withCtxNew (internalInitAt hashlen)
+internalInit hashlen = Ctx `fmap` bytesAlloc 360 (internalInitAt hashlen)
 
 -- | Update a context in place
 internalUpdate :: Ptr Ctx -> ByteString -> IO ()

@@ -21,7 +21,8 @@ module Crypto.Hash.Internal.SHA512t
 
 import Foreign.Ptr
 import Data.Word
-import Crypto.Hash.Internal.SHA512 (withCtxNew, Ctx)
+import Crypto.Hash.Internal.SHA512 (Ctx)
+import qualified Crypto.Hash.Internal.SHA512 as SHA512
 
 foreign import ccall unsafe "cryptonite_sha512.h cryptonite_sha512_init_t"
     c_sha512_init_t :: Ptr Ctx -> Word32 -> IO ()
@@ -32,4 +33,5 @@ internalInitAt hashlen ptr = c_sha512_init_t ptr (fromIntegral hashlen)
 
 -- | init a context using FIPS 180-4 for truncated SHA512
 internalInit :: Int -> IO Ctx
-internalInit hashlen = withCtxNew (internalInitAt hashlen)
+internalInit hashlen = do
+    SHA512.withCtxNew (internalInitAt hashlen)
