@@ -46,7 +46,7 @@ tempBufCreate size f = allocaBytesAligned size 8 f
 -- 
 -- d = s1 xor s2
 --
--- s1, nor s2 are modified unless
+-- s1, nor s2 are modified unless d point to s1 or s2
 bufXor :: Ptr Word8 -> Ptr Word8 -> Ptr Word8 -> Int -> IO ()
 bufXor _ _  _  0 = return ()
 bufXor d s1 s2 n = do
