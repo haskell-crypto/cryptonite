@@ -29,6 +29,7 @@
  */
 
 #include <stdint.h>
+#include <string.h>
 #include "cryptonite_chacha.h"
 #include "cryptonite_bitfn.h"
 #include <stdio.h>
@@ -197,3 +198,20 @@ void cryptonite_chacha_generate(uint32_t rounds, block *dst, cryptonite_chacha_s
 	}
 }
 
+void cryptonite_chacha_random(uint32_t rounds, uint8_t *dst, cryptonite_chacha_state *st, uint32_t bytes)
+{
+	block out;
+
+	if (!bytes)
+		return;
+	for (; bytes >= 16; bytes -= 16, dst += 16) {
+		chacha_core(rounds, &out, st);
+		memcpy(dst, out.b + 40, 16);
+		cryptonite_chacha_init(st, out.b, 32, out.b + 32, 8);
+	}
+	if (bytes) {
+		chacha_core(rounds, &out, st);
+		memcpy(dst, out.b + 40, bytes);
+		cryptonite_chacha_init(st, out.b, 32, out.b + 32, 8);
+	}
+}
