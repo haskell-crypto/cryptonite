@@ -11,7 +11,6 @@
 module Crypto.Internal.Bytes
     ( withByteStringPtr
     , tempBufCreate
-    , bufCreate
     , bufXor
     ) where
 
@@ -21,7 +20,6 @@ import Foreign.ForeignPtr       (withForeignPtr)
 import Foreign.Storable         (peek, poke)
 import Foreign.Marshal.Alloc    (allocaBytesAligned)
 import Data.ByteString          (ByteString)
-import Data.ByteString.Internal (ByteString(..), mallocByteString)
 import Data.Bits                (xor)
 import Data.Word                (Word8)
 import Data.ByteString.Internal (toForeignPtr)
@@ -31,13 +29,6 @@ withByteStringPtr b f =
     withForeignPtr fptr $ \ptr -> f (ptr `plusPtr` off)
   where (fptr, off, _) = toForeignPtr b
 
--- | Create a buffer, and turns the final resulting ByteString
-bufCreate :: Int -> (Ptr Word8 -> IO ()) -> IO ByteString
-bufCreate size f = do
-    fptr <- mallocByteString size
-    withForeignPtr fptr f
-    return $! PS fptr 0 size
-    
 -- | Create a new temporary buffer
 tempBufCreate :: Int -> (Ptr Word8 -> IO a) -> IO a
 tempBufCreate size f = allocaBytesAligned size 8 f
