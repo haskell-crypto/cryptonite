@@ -1,5 +1,5 @@
 -- |
--- Module      : Crypto.Internal.Bytes
+-- Module      : Crypto.Internal.Memory
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : stable

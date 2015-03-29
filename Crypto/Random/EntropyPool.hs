@@ -14,7 +14,7 @@ module Crypto.Random.EntropyPool
 
 import Control.Concurrent.MVar
 import Crypto.Random.Entropy.Unsafe
-import Crypto.Random.Types
+import Crypto.Internal.ByteArray
 import Data.SecureMem
 import Data.Word (Word8)
 import Data.Maybe (catMaybes)
@@ -66,8 +66,5 @@ getEntropyPtr (EntropyPool backends posM sm) n outPtr =
                 copyLoop (d `plusPtr` m) s (wrappedPos + m) (left - m)
 
 -- | Grab a chunk of entropy from the entropy pool.
-getEntropyFrom :: EntropyPool -> Int -> IO Random
-getEntropyFrom pool n = do
-    out <- allocateSecureMem n
-    withSecureMemPtr out $ getEntropyPtr pool n
-    return $ Random out
+getEntropyFrom :: ByteArray byteArray => EntropyPool -> Int -> IO byteArray
+getEntropyFrom pool n = byteArrayAlloc n (getEntropyPtr pool n)
