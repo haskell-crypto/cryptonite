@@ -85,6 +85,7 @@ Library
                    , Crypto.Random.Entropy.Backend
                    , Crypto.Internal.Compat
                    , Crypto.Internal.Bytes
+                   , Crypto.Internal.ByteArray
                    , Crypto.Internal.Memory
   Build-depends:     base >= 4.3 && < 5
                    , bytestring
