@@ -16,7 +16,7 @@ import Control.Applicative
 import Crypto.Random.Entropy
 import Crypto.Internal.ByteArray
 
-class Monad m => MonadRandom m where
+class (Functor m, Monad m) => MonadRandom m where
     getRandomBytes :: ByteArray byteArray => Int -> m byteArray
 
 class DRG gen where
