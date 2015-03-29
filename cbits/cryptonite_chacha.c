@@ -207,11 +207,11 @@ void cryptonite_chacha_random(uint32_t rounds, uint8_t *dst, cryptonite_chacha_s
 	for (; bytes >= 16; bytes -= 16, dst += 16) {
 		chacha_core(rounds, &out, st);
 		memcpy(dst, out.b + 40, 16);
-		cryptonite_chacha_init(st, out.b, 32, out.b + 32, 8);
+		cryptonite_chacha_init(st, 32, out.b, 8, out.b + 32);
 	}
 	if (bytes) {
 		chacha_core(rounds, &out, st);
 		memcpy(dst, out.b + 40, bytes);
-		cryptonite_chacha_init(st, out.b, 32, out.b + 32, 8);
+		cryptonite_chacha_init(st, 32, out.b, 8, out.b + 32);
 	}
 }
