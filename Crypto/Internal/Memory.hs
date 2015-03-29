@@ -16,6 +16,7 @@ module Crypto.Internal.Memory
     , bytesTemporary
     , bytesCopyTemporary
     , bytesAlloc
+    , bytesLength
     ) where
 
 import Data.Word
@@ -73,3 +74,6 @@ bytesAlloc sz f = do
     ba <- newBytes sz
     withPtr ba f
     return ba
+
+bytesLength :: Bytes -> Int
+bytesLength = sizeofBytes
