@@ -28,10 +28,12 @@ import qualified Data.ByteString.Internal as B
 class ByteArray ba where
     byteArrayAlloc  :: Int -> (Ptr p -> IO ()) -> IO ba
     byteArrayLength :: ba -> Int
+    withByteArray   :: ba -> (Ptr p -> IO a) -> IO a
 
 instance ByteArray Bytes where
-    byteArrayAlloc = bytesAlloc
+    byteArrayAlloc  = bytesAlloc
     byteArrayLength = bytesLength
+    withByteArray   = withBytes
 
 instance ByteArray ByteString where
     byteArrayAlloc sz f = do
@@ -39,6 +41,8 @@ instance ByteArray ByteString where
         withForeignPtr fptr (f . castPtr)
         return $! B.PS fptr 0 sz
     byteArrayLength = B.length
+    withByteArray b f = withForeignPtr fptr $ \ptr -> f (ptr `plusPtr` off)
+      where (fptr, off, _) = B.toForeignPtr b
 
 instance ByteArray SecureMem where
     byteArrayAlloc sz f = do
@@ -46,6 +50,7 @@ instance ByteArray SecureMem where
         withSecureMemPtr out (f . castPtr)
         return out
     byteArrayLength = secureMemGetSize
+    withByteArray b f = withSecureMemPtr b (f . castPtr)
 
 byteArrayAllocAndFreeze :: ByteArray a => Int -> (Ptr p -> IO ()) -> a
 byteArrayAllocAndFreeze sz f = unsafeDoIO (byteArrayAlloc sz f)

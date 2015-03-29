@@ -17,6 +17,7 @@ module Crypto.Internal.Memory
     , bytesCopyTemporary
     , bytesAlloc
     , bytesLength
+    , withBytes
     ) where
 
 import Data.Word
@@ -77,3 +78,6 @@ bytesAlloc sz f = do
 
 bytesLength :: Bytes -> Int
 bytesLength = sizeofBytes
+
+withBytes :: Bytes -> (Ptr p -> IO a) -> IO a
+withBytes = withPtr
