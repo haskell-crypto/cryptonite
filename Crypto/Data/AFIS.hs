@@ -145,6 +145,6 @@ diffuse hashF src sz = loop src 0
                 poke (ptr `plusPtr` 2) (f8 (n `shiftR` 8))
                 poke (ptr `plusPtr` 3) (f8 n)
                 --putWord32BE (fromIntegral n) >> putBytes src)
-                withBytePtr b $ \srcPtr -> B.memcpy (ptr `plusPtr` 4) srcPtr (B.length b)
+                withBytePtr b $ \srcPtr -> B.memcpy (ptr `plusPtr` 4) srcPtr (fromIntegral $ B.length b)
           where f8 :: Int -> Word8
                 f8 = fromIntegral
