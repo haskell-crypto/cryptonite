@@ -81,7 +81,7 @@ split hashF rng expandTimes src
             diffuse hashF lastBlock blockSize
         fillRandomBlock g blockPtr = do
             let (rand :: Bytes, g') = randomBytesGenerate blockSize g
-            withByteArray rand $ \randPtr -> B.memcpy blockPtr randPtr blockSize
+            withByteArray rand $ \randPtr -> B.memcpy blockPtr randPtr (fromIntegral blockSize)
             return g'
 
 -- | Merge previously diffused data back to the original data.
@@ -126,10 +126,10 @@ diffuse :: HashAlgorithm a
 diffuse hashF src sz = loop src 0
   where (full,pad) = sz `quotRem` digestSize 
         loop s i | i < full = do h <- hashBlock i `fmap` byteStringOfPtr s digestSize
-                                 withBytePtr h $ \hPtr -> B.memcpy s hPtr digestSize
+                                 withBytePtr h $ \hPtr -> B.memcpy s hPtr (fromIntegral digestSize)
                                  loop (s `plusPtr` digestSize) (i+1)
                  | pad /= 0 = do h <- hashBlock i `fmap` byteStringOfPtr s pad
-                                 withBytePtr h $ \hPtr -> B.memcpy s hPtr pad
+                                 withBytePtr h $ \hPtr -> B.memcpy s hPtr (fromIntegral pad)
                                  return ()
                  | otherwise = return ()
 
