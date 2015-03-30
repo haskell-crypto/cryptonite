@@ -21,12 +21,11 @@ module Crypto.PubKey.RSA.OAEP
     , decryptSafer
     ) where
 
-import Crypto.Random
-import Crypto.Types.PubKey.RSA
+import Crypto.Random.Types
+import Crypto.PubKey.RSA.Types
 import Crypto.PubKey.HashDescr
 import Crypto.PubKey.MaskGenFunction
 import Crypto.PubKey.RSA.Prim
-import Crypto.PubKey.RSA.Types
 import Crypto.PubKey.RSA (generateBlinder)
 import Crypto.PubKey.Internal (and')
 import Data.ByteString (ByteString)
@@ -77,16 +76,17 @@ encryptWithSeed seed oaep pk msg
           em         = B.concat [B.singleton 0x0,maskedSeed,maskedDB]
 
 -- | Encrypt a message using OAEP
-encrypt :: CPRG g
-        => g          -- ^ random number generator.
-        -> OAEPParams -- ^ OAEP params to use for encryption.
+encrypt :: MonadRandom m
+        => OAEPParams -- ^ OAEP params to use for encryption.
         -> PublicKey  -- ^ Public key.
         -> ByteString -- ^ Message to encrypt
-        -> (Either Error ByteString, g)
-encrypt g oaep pk msg = (encryptWithSeed seed oaep pk msg, g')
-    where hashF      = oaepHash oaep
-          hashLen    = B.length (hashF B.empty)
-          (seed, g') = cprgGenerate hashLen g
+        -> m (Either Error ByteString)
+encrypt oaep pk msg = do
+    seed <- getRandomBytes hashLen
+    return (encryptWithSeed seed oaep pk msg)
+  where
+    hashF      = oaepHash oaep
+    hashLen    = B.length (hashF B.empty)
 
 -- | un-pad a OAEP encoded message.
 --
@@ -141,11 +141,11 @@ decrypt blinder oaep pk cipher
           hashLen    = B.length (hashF B.empty)
 
 -- | Decrypt a ciphertext using OAEP and by automatically generating a blinder.
-decryptSafer :: CPRG g
-             => g          -- ^ random number generator
-             -> OAEPParams -- ^ OAEP params to use for decryption
+decryptSafer :: MonadRandom m
+             => OAEPParams -- ^ OAEP params to use for decryption
              -> PrivateKey -- ^ Private key
              -> ByteString -- ^ Cipher text
-             -> (Either Error ByteString, g)
-decryptSafer rng oaep pk cipher = (decrypt (Just blinder) oaep pk cipher, rng')
-    where (blinder, rng') = generateBlinder rng (private_n pk)
+             -> m (Either Error ByteString)
+decryptSafer oaep pk cipher = do
+    blinder <- generateBlinder (private_n pk)
+    return (decrypt (Just blinder) oaep pk cipher)

@@ -16,8 +16,8 @@ module Crypto.PubKey.RSA.PSS
     , verify
     ) where
 
-import Crypto.Random
-import Crypto.Types.PubKey.RSA
+import Crypto.Random.Types
+import Crypto.PubKey.RSA.Types
 import Data.ByteString (ByteString)
 import Data.Byteable
 import qualified Data.ByteString as B
@@ -78,25 +78,25 @@ signWithSalt salt blinder params pk m
           em       = B.concat [maskedDB, h, B.singleton (pssTrailerField params)]
 
 -- | Sign using the PSS Parameters
-sign :: CPRG g
-     => g               -- ^ random generator to use to generate the salt
-     -> Maybe Blinder   -- ^ optional blinder to use
+sign :: MonadRandom m
+     => Maybe Blinder   -- ^ optional blinder to use
      -> PSSParams       -- ^ PSS Parameters to use
      -> PrivateKey      -- ^ RSA Private Key
      -> ByteString      -- ^ Message to sign
-     -> (Either Error ByteString, g)
-sign rng blinder params pk m = (signWithSalt salt blinder params pk m, rng')
-    where (salt,rng') = cprgGenerate (pssSaltLength params) rng
+     -> m (Either Error ByteString)
+sign blinder params pk m = do
+    salt <- getRandomBytes (pssSaltLength params)
+    return (signWithSalt salt blinder params pk m)
 
 -- | Sign using the PSS Parameters and an automatically generated blinder.
-signSafer :: CPRG g
-          => g          -- ^ random generator
-          -> PSSParams  -- ^ PSS Parameters to use
+signSafer :: MonadRandom m
+          => PSSParams  -- ^ PSS Parameters to use
           -> PrivateKey -- ^ private key
           -> ByteString -- ^ message to sign
-          -> (Either Error ByteString, g)
-signSafer rng params pk m = sign rng' (Just blinder) params pk m
-    where (blinder, rng') = generateBlinder rng (private_n pk)
+          -> m (Either Error ByteString)
+signSafer params pk m = do
+    blinder <- generateBlinder (private_n pk)
+    sign (Just blinder) params pk m
 
 -- | Verify a signature using the PSS Parameters
 verify :: PSSParams  -- ^ PSS Parameters to use to verify,

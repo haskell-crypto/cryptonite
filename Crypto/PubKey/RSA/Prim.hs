@@ -14,8 +14,7 @@ module Crypto.PubKey.RSA.Prim
     ) where
 
 import Data.ByteString (ByteString)
-import Crypto.PubKey.RSA.Types (Blinder(..))
-import Crypto.Types.PubKey.RSA
+import Crypto.PubKey.RSA.Types
 import Crypto.Number.ModArithmetic (expFast, expSafe)
 import Crypto.Number.Serialize (os2ip, i2ospOf_)
 

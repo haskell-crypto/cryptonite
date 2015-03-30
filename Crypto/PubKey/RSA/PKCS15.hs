@@ -22,34 +22,33 @@ module Crypto.PubKey.RSA.PKCS15
     , verify
     ) where
 
-import Crypto.Random
+import Crypto.Random.Types
 import Crypto.PubKey.Internal (and')
-import Crypto.Types.PubKey.RSA
+import Crypto.PubKey.RSA.Types
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 import Crypto.PubKey.RSA.Prim
-import Crypto.PubKey.RSA.Types
 import Crypto.PubKey.RSA (generateBlinder)
 import Crypto.PubKey.HashDescr
 
 -- | This produce a standard PKCS1.5 padding for encryption
-pad :: CPRG g => g -> Int -> ByteString -> Either Error (ByteString, g)
-pad rng len m
-    | B.length m > len - 11 = Left MessageTooLong
-    | otherwise             =
-        let (padding, rng') = getNonNullRandom rng (len - B.length m - 3)
-         in Right (B.concat [ B.singleton 0, B.singleton 2, padding, B.singleton 0, m ], rng')
+pad :: MonadRandom m => Int -> ByteString -> m (Either Error ByteString)
+pad len m
+    | B.length m > len - 11 = return (Left MessageTooLong)
+    | otherwise             = do
+        padding <- getNonNullRandom (len - B.length m - 3)
+        return $ Right $ B.concat [ B.singleton 0, B.singleton 2, padding, B.singleton 0, m ]
 
-        where {- get random non-null bytes -}
-              getNonNullRandom :: CPRG g => g -> Int -> (ByteString, g)
-              getNonNullRandom g n =
-                    let (bs0,g') = cprgGenerate n g
-                        bytes    = B.pack $ filter (/= 0) $ B.unpack $ bs0
-                        left     = (n - B.length bytes)
-                     in if left == 0
-                        then (bytes, g')
-                        else let (bend, g'') = getNonNullRandom g' left
-                              in (bytes `B.append` bend, g'')
+  where {- get random non-null bytes -}
+    getNonNullRandom :: MonadRandom m => Int -> m ByteString
+    getNonNullRandom n = do
+        bs0 <- getRandomBytes n
+        let bytes = B.pack $ filter (/= 0) $ B.unpack $ bs0
+            left  = n - B.length bytes
+        if left == 0
+            then return bytes
+            else do bend <- getNonNullRandom left
+                    return (bytes `B.append` bend)
 
 -- | Produce a standard PKCS1.5 padding for signature
 padSignature :: Int -> ByteString -> Either Error ByteString
@@ -89,23 +88,23 @@ decrypt blinder pk c
     | otherwise                       = unpad $ dp blinder pk c
 
 -- | decrypt message using the private key and by automatically generating a blinder.
-decryptSafer :: CPRG g
-             => g          -- ^ random generator
-             -> PrivateKey -- ^ RSA private key
+decryptSafer :: MonadRandom m
+             => PrivateKey -- ^ RSA private key
              -> ByteString -- ^ cipher text
-             -> (Either Error ByteString, g)
-decryptSafer rng pk b =
-    let (blinder, rng') = generateBlinder rng (private_n pk)
-     in (decrypt (Just blinder) pk b, rng')
+             -> m (Either Error ByteString)
+decryptSafer pk b = do
+    blinder <- generateBlinder (private_n pk)
+    return (decrypt (Just blinder) pk b)
 
 -- | encrypt a bytestring using the public key and a CPRG random generator.
 --
 -- the message need to be smaller than the key size - 11
-encrypt :: CPRG g => g -> PublicKey -> ByteString -> (Either Error ByteString, g)
-encrypt rng pk m = do
-    case pad rng (public_size pk) m of
-        Left err         -> (Left err, rng)
-        Right (em, rng') -> (Right (ep pk em), rng')
+encrypt :: MonadRandom m => PublicKey -> ByteString -> m (Either Error ByteString)
+encrypt pk m = do
+    r <- pad (public_size pk) m
+    case r of
+        Left err -> return $ Left err
+        Right em -> return $ Right (ep pk em)
 
 -- | sign message using private key, a hash and its ASN1 description
 --
@@ -121,15 +120,14 @@ sign :: Maybe Blinder -- ^ optional blinder
 sign blinder hashDescr pk m = dp blinder pk `fmap` makeSignature hashDescr (private_size pk) m
 
 -- | sign message using the private key and by automatically generating a blinder.
-signSafer :: CPRG g
-          => g          -- ^ random generator
-          -> HashDescr  -- ^ Hash descriptor
+signSafer :: MonadRandom m
+          => HashDescr  -- ^ Hash descriptor
           -> PrivateKey -- ^ private key
           -> ByteString -- ^ message to sign
-          -> (Either Error ByteString, g)
-signSafer rng hashDescr pk m =
-    let (blinder, rng') = generateBlinder rng (private_n pk)
-     in (sign (Just blinder) hashDescr pk m, rng')
+          -> m (Either Error ByteString)
+signSafer hashDescr pk m = do
+    blinder <- generateBlinder (private_n pk)
+    return (sign (Just blinder) hashDescr pk m)
 
 -- | verify message with the signed message
 verify :: HashDescr -> PublicKey -> ByteString -> ByteString -> Bool

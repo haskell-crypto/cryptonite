@@ -69,6 +69,10 @@ Library
                      Crypto.PubKey.ECC.ECDSA
                      Crypto.PubKey.ECC.Types
                      Crypto.PubKey.RSA
+                     Crypto.PubKey.RSA.PKCS15
+                     Crypto.PubKey.RSA.Prim
+                     Crypto.PubKey.RSA.PSS
+                     Crypto.PubKey.RSA.OAEP
                      Crypto.PubKey.RSA.Types
                      Crypto.Random
                      Crypto.Random.Types
