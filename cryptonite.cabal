@@ -30,6 +30,7 @@ Library
   Exposed-modules:   Crypto.Cipher.ChaCha
                      Crypto.Cipher.Salsa
                      Crypto.Cipher.RC4
+                     Crypto.Data.AFIS
                      Crypto.MAC.Poly1305
                      Crypto.MAC.HMAC
                      Crypto.Number.Basic
