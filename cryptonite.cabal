@@ -59,6 +59,17 @@ Library
                      Crypto.Hash.Tiger
                      Crypto.Hash.Whirlpool
                      Crypto.PubKey.Curve25519
+                     Crypto.PubKey.HashDescr
+                     Crypto.PubKey.MaskGenFunction
+                     Crypto.PubKey.DH
+                     Crypto.PubKey.DSA
+                     Crypto.PubKey.ECC.Generate
+                     Crypto.PubKey.ECC.Prim
+                     Crypto.PubKey.ECC.DH
+                     Crypto.PubKey.ECC.ECDSA
+                     Crypto.PubKey.ECC.Types
+                     Crypto.PubKey.RSA
+                     Crypto.PubKey.RSA.Types
                      Crypto.Random
                      Crypto.Random.Types
                      Crypto.Random.Entropy
@@ -86,6 +97,8 @@ Library
                      Crypto.Random.Entropy.Source
                      Crypto.Random.Entropy.Backend
                      Crypto.Random.ChaChaDRG
+                     Crypto.PubKey.Internal
+                     Crypto.PubKey.ElGamal
                      Crypto.Internal.Compat
                      Crypto.Internal.Bytes
                      Crypto.Internal.ByteArray
