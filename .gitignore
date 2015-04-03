@@ -3,6 +3,7 @@
 *.tix
 *.mix
 gen/Gen
-gen/Crypto
+gen/Crypto/*
 dist
+QA
 *.sublime-workspace
