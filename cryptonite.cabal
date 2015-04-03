@@ -59,6 +59,7 @@ Library
                      Crypto.Hash.Tiger
                      Crypto.Hash.Whirlpool
                      Crypto.PubKey.Curve25519
+                     Crypto.Random
                      Crypto.Random.Types
                      Crypto.Random.Entropy
                      Crypto.Random.EntropyPool
