@@ -18,6 +18,7 @@ module Crypto.Internal.Memory
     , bytesAlloc
     , bytesLength
     , withBytes
+    , SecureBytes
     ) where
 
 import Data.Word
@@ -29,8 +30,11 @@ import Foreign.ForeignPtr
 import Foreign.Storable      (pokeElemOff)
 import Foreign.Marshal.Alloc
 import Foreign.Marshal.Utils (copyBytes)
+import Data.SecureMem (SecureMem)
 
 data Bytes = Bytes (MutableByteArray# RealWorld)
+
+type SecureBytes = SecureMem
 
 ------------------------------------------------------------------------
 newBytes :: Int -> IO Bytes
