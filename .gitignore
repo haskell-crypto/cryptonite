@@ -5,3 +5,4 @@
 gen/Gen
 gen/Crypto
 dist
+*.sublime-workspace

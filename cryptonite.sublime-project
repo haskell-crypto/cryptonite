@@ -1,0 +1,23 @@
+{
+    "folders":
+    [
+        { "path": "Crypto", "file_exclude_patterns": ["*.hi", "*.o"] },
+        { "path": "cbits" },
+        { "path": "tests", "file_exclude_patterns": ["*.html"] },
+        { "path": "benchs" },
+        { "path": "gen" },
+    ],
+    "settings":
+    {
+        "tab_size": 4,
+        "translate_tabs_to_spaces": true
+    },
+    "build_systems":
+    [
+        {
+            "name": "Cabal-build",
+            "cmd": ["cabal", "build"],
+            "path": "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin"
+        }
+    ]
+}
