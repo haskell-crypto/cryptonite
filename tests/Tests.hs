@@ -19,6 +19,7 @@ import qualified KATHash
 import qualified KAT_HMAC
 import qualified KAT_PBKDF2
 import qualified KAT_Curve25519
+import qualified KAT_PubKey
 import qualified KAT_Scrypt
 import qualified KAT_RC4
 import qualified KAT_Blowfish
@@ -78,6 +79,7 @@ tests = testGroup "cryptonite"
     , KATHash.tests
     , KAT_HMAC.tests
     , KAT_Curve25519.tests
+    , KAT_PubKey.tests
     , KAT_PBKDF2.tests
     , KAT_Scrypt.tests
     , KAT_RC4.tests

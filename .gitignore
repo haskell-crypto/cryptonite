@@ -3,4 +3,5 @@
 *.tix
 *.mix
 gen/Gen
+gen/Crypto
 dist
