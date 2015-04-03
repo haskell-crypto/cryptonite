@@ -21,10 +21,10 @@ module Crypto.Data.AFIS
 import Crypto.Hash
 import Crypto.Random.Types
 import Crypto.Internal.Memory (Bytes)
-import Crypto.Internal.ByteArray
+import Crypto.Internal.ByteArray (withByteArray)
 import Control.Monad (forM_, foldM)
-import Data.ByteString (ByteString)
 import Data.Byteable
+import Data.ByteString (ByteString)
 import Data.Word
 import Data.Bits
 import Foreign.Storable
