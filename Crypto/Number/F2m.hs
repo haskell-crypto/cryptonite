@@ -34,7 +34,7 @@ addF2m = xor
 {-# INLINE addF2m #-}
 
 -- | Binary polynomial reduction modulo using long division algorithm.
-modF2m :: Integer  -- ^ Irreducible binary polynomial
+modF2m :: BinaryPolynomial -- ^ Irreducible binary polynomial
        -> Integer -> Integer
 modF2m fx = go
   where
