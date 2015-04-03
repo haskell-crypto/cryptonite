@@ -12,6 +12,7 @@ module Crypto.Internal.Bytes
     ( withByteStringPtr
     , tempBufCreate
     , bufXor
+    , bufCopy
     ) where
 
 import Control.Applicative      ((<$>), (<*>))
@@ -23,6 +24,7 @@ import Data.ByteString          (ByteString)
 import Data.Bits                (xor)
 import Data.Word                (Word8)
 import Data.ByteString.Internal (toForeignPtr)
+import Data.ByteString.Internal (memcpy)
 
 withByteStringPtr :: ByteString -> (Ptr Word8 -> IO a) -> IO a
 withByteStringPtr b f =
@@ -43,3 +45,6 @@ bufXor _ _  _  0 = return ()
 bufXor d s1 s2 n = do
     (xor <$> peek s1 <*> peek s2) >>= poke d
     bufXor (d `plusPtr` 1) (s1 `plusPtr` 1) (s2 `plusPtr` 1) (n-1)
+
+bufCopy :: Ptr Word8 -> Ptr Word8 -> Int -> IO ()
+bufCopy dst src n = memcpy dst src (fromIntegral n)
