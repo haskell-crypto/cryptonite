@@ -13,11 +13,14 @@
 module Crypto.Internal.ByteArray
     ( ByteArray(..)
     , byteArrayAllocAndFreeze
+    , empty
+    -- , split
     ) where
 
 import Data.SecureMem
 import Crypto.Internal.Memory
 import Crypto.Internal.Compat
+import Crypto.Internal.Bytes
 import Foreign.Ptr
 import Foreign.ForeignPtr
 
@@ -54,3 +57,19 @@ instance ByteArray SecureMem where
 
 byteArrayAllocAndFreeze :: ByteArray a => Int -> (Ptr p -> IO ()) -> a
 byteArrayAllocAndFreeze sz f = unsafeDoIO (byteArrayAlloc sz f)
+
+empty :: ByteArray a => a
+empty = unsafeDoIO (byteArrayAlloc 0 $ \_ -> return ())
+
+{-
+split :: ByteArray bs => Int -> bs -> (bs, bs)
+split n bs
+    | n <= 0    = (empty, bs)
+    | n >= len  = (bs, empty)
+    | otherwise = unsafeDoIO $ do
+        withByteArray bs $ \p -> do
+            b1 <- byteArrayAlloc n $ \r -> bufCopy r p n
+            b2 <- byteArrayAlloc (len - n) $ \r -> bufCopy r (p `plusPtr` n) (len - n)
+            return (b1, b2)
+  where len = byteArrayLength bs
+-}
