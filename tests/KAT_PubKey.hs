@@ -3,14 +3,11 @@ module KAT_PubKey (tests) where
 
 import Test.Tasty
 import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck
-import System.IO (hFlush, stdout)
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as BC
+import Data.ByteString.Char8 ()
 
-import Crypto.PubKey.RSA
 import Crypto.PubKey.MaskGenFunction
 import qualified Crypto.Hash.SHA1 as SHA1
 
@@ -19,6 +16,7 @@ import KAT_PubKey.PSS
 import KAT_PubKey.DSA
 import KAT_PubKey.ECC
 import KAT_PubKey.ECDSA
+import Utils
 
 data VectorMgf = VectorMgf { seed :: ByteString
                            , dbMask :: ByteString
@@ -35,7 +33,7 @@ vectorsMGF =
     ]
 
 tests = testGroup "PubKey"
-    [ testGroup "MGF1" $ map doMGFTest (zip [0..] vectorsMGF)
+    [ testGroup "MGF1" $ map doMGFTest (zip [katZero..] vectorsMGF)
     , pssTests
     , oaepTests
     , dsaTests

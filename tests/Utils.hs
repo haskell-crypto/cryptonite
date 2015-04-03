@@ -1,13 +1,13 @@
 module Utils where
 
 import Data.Char
-import Data.Bits
 import Data.Word
 import Data.ByteString (ByteString)
-import Data.Byteable
-import Data.Foldable (foldl')
 import Data.Monoid (mconcat)
 import qualified Data.ByteString as B
+
+katZero :: Int
+katZero = 0
 
 --hexalise :: String -> [Word8]
 hexalise s = concatMap (\c -> [ hex $ c `div` 16, hex $ c `mod` 16 ]) s
