@@ -84,6 +84,7 @@ Library
                      Crypto.Hash.Internal.Whirlpool
                      Crypto.Random.Entropy.Source
                      Crypto.Random.Entropy.Backend
+                     Crypto.Random.ChaChaDRG
                      Crypto.Internal.Compat
                      Crypto.Internal.Bytes
                      Crypto.Internal.ByteArray
