@@ -82,12 +82,12 @@ Library
                      Crypto.Hash.Internal.Skein512
                      Crypto.Hash.Internal.Tiger
                      Crypto.Hash.Internal.Whirlpool
-                   , Crypto.Random.Entropy.Source
-                   , Crypto.Random.Entropy.Backend
-                   , Crypto.Internal.Compat
-                   , Crypto.Internal.Bytes
-                   , Crypto.Internal.ByteArray
-                   , Crypto.Internal.Memory
+                     Crypto.Random.Entropy.Source
+                     Crypto.Random.Entropy.Backend
+                     Crypto.Internal.Compat
+                     Crypto.Internal.Bytes
+                     Crypto.Internal.ByteArray
+                     Crypto.Internal.Memory
   Build-depends:     base >= 4.3 && < 5
                    , bytestring
                    , securemem >= 0.1.7
