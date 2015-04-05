@@ -16,7 +16,6 @@ module Crypto.KDF.Scrypt
     ) where
 
 import Data.Word
-import Data.Bits
 import Data.Byteable
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
@@ -30,6 +29,7 @@ import System.IO.Unsafe
 
 import Crypto.Hash (SHA256(..))
 import qualified Crypto.KDF.PBKDF2 as PBKDF2
+import Crypto.Internal.Compat (popCount)
 
 -- | Parameters for Scrypt
 data Parameters = Parameters
@@ -43,13 +43,6 @@ data Parameters = Parameters
 
 foreign import ccall "cryptonite_scrypt_smix"
     ccryptonite_scrypt_smix :: Ptr Word8 -> Word32 -> Word64 -> Ptr Word8 -> Ptr Word8 -> IO ()
-
-#if !(MIN_VERSION_base(4,5,0))
-popCount :: Word64 -> Int
-popCount n = loop 0 n
-  where loop c 0 = c
-        loop c i = loop (c + if testBit c 0 then 1 else 0) (i `shiftR` 1)
-#endif
 
 -- | Generate the scrypt key derivation data
 generate :: Parameters -> B.ByteString

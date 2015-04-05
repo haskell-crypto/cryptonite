@@ -11,9 +11,11 @@
 {-# LANGUAGE CPP #-}
 module Crypto.Internal.Compat
     ( unsafeDoIO
+    , popCount
     ) where
 
 import System.IO.Unsafe
+import Data.Bits (popCount)
 
 -- | perform io for hashes that do allocation and ffi.
 -- unsafeDupablePerformIO is used when possible as the
@@ -25,4 +27,11 @@ unsafeDoIO :: IO a -> a
 unsafeDoIO = unsafeDupablePerformIO
 #else
 unsafeDoIO = unsafePerformIO
+#endif
+
+#if !(MIN_VERSION_base(4,5,0))
+popCount :: Word64 -> Int
+popCount n = loop 0 n
+  where loop c 0 = c
+        loop c i = loop (c + if testBit c 0 then 1 else 0) (i `shiftR` 1)
 #endif
