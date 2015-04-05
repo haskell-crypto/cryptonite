@@ -15,7 +15,9 @@ module Crypto.Internal.Compat
     ) where
 
 import System.IO.Unsafe
+#if MIN_VERSION_base(4,5,0)
 import Data.Bits (popCount)
+#endif
 
 -- | perform io for hashes that do allocation and ffi.
 -- unsafeDupablePerformIO is used when possible as the
