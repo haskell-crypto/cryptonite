@@ -21,12 +21,12 @@ main = do
             let mexts = readExtensions content
             case mexts of
                 Nothing        -> printError "failed to parsed extensions"
-                Just (_, exts) -> qaExts content exts
+                Just (_, exts) -> qaExts file content exts
 
-        qaExts content exts = do
+        qaExts file content exts = do
             putStrLn ("extensions : " ++ (intercalate ", " $ map show exts))
 
-            let mode = defaultParseMode { extensions = exts }
+            let mode = defaultParseMode { parseFilename = file, extensions = exts }
 
             case parseModuleWithMode mode content of
                 ParseFailed srcLoc s -> printError ("failed to parse module: " ++ show srcLoc ++ " : " ++ s)
