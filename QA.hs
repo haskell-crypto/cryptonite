@@ -10,18 +10,36 @@ import Control.Monad
 import Control.Applicative ((<$>))
 import Control.Exception
 
+import System.Console.ANSI
 
 main = do
     modules <- findAllModules
     mapM_ qa modules
   where qa file = do
-            putStrLn ("==== " ++ file)
+            printHeader ("==== " ++ file)
             content <- readFile file
             let mexts = readExtensions content
             case mexts of
-                Nothing        -> printError "[ERR] failed to parsed extension"
-                Just (_, exts) -> putStrLn ("extensions : " ++ (intercalate ", " $ map show exts))
-        printError = putStrLn
+                Nothing        -> printError "failed to parsed extensions"
+                Just (_, exts) -> qaExts content exts
+
+        qaExts content exts = do
+            putStrLn ("extensions : " ++ (intercalate ", " $ map show exts))
+
+            let mode = defaultParseMode { extensions = exts }
+
+            case parseModuleWithMode mode content of
+                ParseFailed srcLoc s -> printError ("failed to parse module: " ++ show srcLoc ++ " : " ++ s)
+                ParseOk mod          -> do
+                    let imports = getModulesImports mod
+                    putStrLn (show (map importModule imports))
+
+        printHeader s =
+            setSGR [SetColor Foreground Vivid Green] >> putStrLn s >> setSGR []
+        printError s =
+            setSGR [SetColor Foreground Vivid Red] >> putStrLn s >> setSGR []
+
+        getModulesImports (Module _ _ _ _ _ imports _) = imports
 
 findAllModules :: IO [FilePath]
 findAllModules = dirTraverse "Crypto" fileCallback dirCallback []
