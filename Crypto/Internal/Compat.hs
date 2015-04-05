@@ -17,6 +17,9 @@ module Crypto.Internal.Compat
 import System.IO.Unsafe
 #if MIN_VERSION_base(4,5,0)
 import Data.Bits (popCount)
+#else
+import Data.Word (Word64)
+import Data.Bits (testBit, shiftR)
 #endif
 
 -- | perform io for hashes that do allocation and ffi.

@@ -20,7 +20,6 @@ import Crypto.Internal.Memory
 import Data.Byteable
 import qualified Data.ByteString.Char8 as BC
 import Crypto.Hash.Utils (toHex)
-import Data.Word
 
 -- | Class representing hashing algorithms.
 --
