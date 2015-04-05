@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface, CPP #-}
+{-# LANGUAGE ForeignFunctionInterface #-}
 -- |
 -- Module      : Crypto.Cipher.RC4
 -- License     : BSD-style
@@ -25,18 +25,12 @@ import Data.Byteable
 import Data.SecureMem
 import Foreign.Ptr
 import Foreign.ForeignPtr
-import System.IO.Unsafe
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Internal as B
 
 ----------------------------------------------------------------------
-unsafeDoIO :: IO a -> a
-#if __GLASGOW_HASKELL__ > 704
-unsafeDoIO = unsafeDupablePerformIO
-#else
-unsafeDoIO = unsafePerformIO
-#endif
+import Crypto.Internal.Compat
 
 -- | The encryption state for RC4
 newtype State = State SecureMem

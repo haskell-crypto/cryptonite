@@ -59,7 +59,7 @@ initialize nbRounds key nonce
     | not (kLen `elem` [16,32])       = error "ChaCha: key length should be 128 or 256 bits"
     | not (nonceLen `elem` [8,12])    = error "ChaCha: nonce length should be 64 or 96 bits"
     | not (nbRounds `elem` [8,12,20]) = error "ChaCha: rounds should be 8, 12 or 20"
-    | otherwise = unsafePerformIO $ do
+    | otherwise = unsafeDoIO $ do
         stPtr <- createSecureMem 64 $ \stPtr ->
             withBytePtr nonce $ \noncePtr  ->
             withBytePtr key $ \keyPtr ->
