@@ -3,10 +3,7 @@ module KAT_Curve25519 ( tests ) where
 
 import qualified Crypto.PubKey.Curve25519 as Curve25519
 import           Data.Byteable
-import           Data.ByteString (ByteString)
-
-import           Test.Tasty
-import           Test.Tasty.HUnit
+import           Imports
 
 alicePrivate = either error id $ Curve25519.secretKey ("\x77\x07\x6d\x0a\x73\x18\xa5\x7d\x3c\x16\xc1\x72\x51\xb2\x66\x45\xdf\x4c\x2f\x87\xeb\xc0\x99\x2a\xb1\x77\xfb\xa5\x1d\xb9\x2c\x2a" :: ByteString)
 alicePublic  = either error id $ Curve25519.publicKey ("\x85\x20\xf0\x09\x89\x30\xa7\x54\x74\x8b\x7d\xdc\xb4\x3e\xf7\x5a\x0d\xbf\x3a\x0d\x26\x38\x1a\xf4\xeb\xa4\xa9\x8e\xaa\x9b\x4e\x6a" :: ByteString)

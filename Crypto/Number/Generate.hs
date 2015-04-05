@@ -46,9 +46,9 @@ generateBetween low high = (low +) <$> generateMax (high - low + 1)
 -- the number of bits need to be multiple of 8. It will always returns
 -- an integer that is close to 2^(1+bits/8) by setting the 2 highest bits to 1.
 generateOfSize :: MonadRandom m => Int -> m Integer
-generateOfSize bits = toInteger <$> getRandomBytes (bits `div` 8)
+generateOfSize bits = unmarshall <$> getRandomBytes (bits `div` 8)
   where
-    toInteger bs = os2ip $ snd $ B.mapAccumL (\acc w -> (0, w .|. acc)) 0xc0 bs
+    unmarshall bs = os2ip $ snd $ B.mapAccumL (\acc w -> (0, w .|. acc)) 0xc0 bs
 
 -- | Generate a number with the specified number of bits
 generateBits :: MonadRandom m => Int -> m Integer

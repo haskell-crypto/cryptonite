@@ -9,7 +9,6 @@ import Crypto.Hash
 import Crypto.Random
 import qualified Crypto.Data.AFIS as AFIS
 
-import Data.ByteString (ByteString)
 import Data.ByteString.Char8 ()
 import qualified Data.ByteString as B
 

@@ -2,9 +2,6 @@
 module KAT_PubKey.ECC (eccTests, eccKatTests) where
 
 import Control.Arrow (second)
-import Control.Applicative
-import Data.ByteString (ByteString)
-import Crypto.Number.Serialize
 
 import qualified Crypto.PubKey.ECC.Types as ECC
 import qualified Crypto.PubKey.ECC.Prim as ECC
@@ -12,9 +9,7 @@ import qualified Crypto.PubKey.ECC.Prim as ECC
 import Test.Tasty.KAT
 import Test.Tasty.KAT.FileLoader
 
-import Test.Tasty
-import Test.Tasty.HUnit
-
+import Imports
 
 data VectorPoint = VectorPoint
     { curve :: ECC.Curve
@@ -107,13 +102,13 @@ vectorsPoint =
 doPointValidTest (i, vector) = testCase (show i) (valid vector @=? ECC.isPointValid (curve vector) (ECC.Point (x vector) (y vector)))
 
 eccTests = testGroup "ECC"
-    [ testGroup "valid-point" $ map doPointValidTest (zip [0..] vectorsPoint)
+    [ testGroup "valid-point" $ map doPointValidTest (zip [katZero..] vectorsPoint)
     ]
 
 eccKatTests = do
     res <- testKatLoad "KATs/ECC-PKV.txt" (map (second (map toVector)) . katLoaderSimple)
     return $ testKatDetailed {-Grouped-} "ECC/valid-point" res (\g vect -> do
-        let c = ECC.getCurveByName <$> case g of
+        let mCurve = ECC.getCurveByName <$> case g of
                         "P-192" -> Just ECC.SEC_p192r1
                         "P-224" -> Just ECC.SEC_p224r1
                         "P-256" -> Just ECC.SEC_p256r1
@@ -133,13 +128,14 @@ eccKatTests = do
                         "K-409" -> Just ECC.SEC_t409k1
                         "K-571" -> Just ECC.SEC_t571k1
 -}
-        case c of
-            Nothing    -> return True
-            Just curve -> do
-                return (ECC.isPointValid curve (ECC.Point (x vect) (y vect)) == valid vect)
+        case mCurve of
+            Nothing -> return True
+            Just c  -> do
+                return (ECC.isPointValid c (ECC.Point (x vect) (y vect)) == valid vect)
         )
 
   where toVector kvs =
             case sequence $ map (flip lookup kvs) [ "Qx", "Qy", "Result" ] of
                 Just [qx,qy,res] -> VectorPoint undefined (valueHexInteger qx) (valueHexInteger qy) (head res /= 'F')
-                Nothing          -> error ("ERROR CRAP: " ++ show kvs) -- VectorPoint undefined 0 0 True
+                Just _           -> error ("ERROR: " ++ show kvs)
+                Nothing          -> error ("ERROR: " ++ show kvs) -- VectorPoint undefined 0 0 True

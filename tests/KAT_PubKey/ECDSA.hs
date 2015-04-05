@@ -2,16 +2,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module KAT_PubKey.ECDSA (ecdsaTests) where
 
-import Data.ByteString (ByteString)
-
 import Crypto.Number.Serialize
 
 import qualified Crypto.PubKey.ECC.ECDSA as ECDSA
 import qualified Crypto.PubKey.ECC.Types as ECC
 import qualified Crypto.Hash.SHA1 as SHA1
 
-import Test.Tasty.HUnit
-import Test.Tasty
+import Imports
 
 data VectorECDSA = VectorECDSA
     { curve :: ECC.Curve
@@ -89,7 +86,7 @@ doVerifyTest (i, vector) = testCase (show i) (True @=? actual)
 
 ecdsaTests = testGroup "ECDSA"
     [ testGroup "SHA1"
-        [ testGroup "signature" $ map doSignatureTest (zip [0..] vectorsSHA1)
-        , testGroup "verify" $ map doVerifyTest (zip [0..] vectorsSHA1)
+        [ testGroup "signature" $ map doSignatureTest (zip [katZero..] vectorsSHA1)
+        , testGroup "verify" $ map doVerifyTest (zip [katZero..] vectorsSHA1)
         ]
     ]

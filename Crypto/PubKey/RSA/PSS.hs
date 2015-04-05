@@ -22,7 +22,6 @@ import Data.ByteString (ByteString)
 import Data.Byteable
 import qualified Data.ByteString as B
 import Crypto.PubKey.RSA.Prim
-import Crypto.PubKey.RSA.Types
 import Crypto.PubKey.RSA (generateBlinder)
 import Crypto.PubKey.HashDescr
 import Crypto.PubKey.MaskGenFunction

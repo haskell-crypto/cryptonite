@@ -2,10 +2,9 @@
 module KAT_Blowfish where
 
 --import Crypto.Cipher.Blowfish
-import Data.ByteString.Char8 () -- orphan IsString for older bytestring versions
+--import Data.ByteString.Char8 () -- orphan IsString for older bytestring versions
+import Imports
 import BlockCipher
-
-import Test.Tasty
 
 vectors_ecb = -- key plaintext cipher
     [ KAT_ECB "\x00\x00\x00\x00\x00\x00\x00\x00" "\x00\x00\x00\x00\x00\x00\x00\x00" "\x4E\xF9\x97\x45\x61\x98\xDD\x78"

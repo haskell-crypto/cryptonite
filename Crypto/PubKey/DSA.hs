@@ -20,6 +20,10 @@ module Crypto.PubKey.DSA
     , signWith
     -- * verification primitive
     , verify
+    -- * Key pair
+    , KeyPair(..)
+    , toPublicKey
+    , toPrivateKey
     ) where
 
 import Crypto.Random.Types

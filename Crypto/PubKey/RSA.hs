@@ -16,8 +16,6 @@ module Crypto.PubKey.RSA
     , generateBlinder
     ) where
 
-import Data.Bits
-import Data.Word
 import Control.Applicative
 import Crypto.Random.Types
 import Crypto.Number.ModArithmetic (inverse, inverseCoprimes)
@@ -25,6 +23,7 @@ import Crypto.Number.Generate (generateMax)
 import Crypto.Number.Prime (generatePrime)
 import Crypto.PubKey.RSA.Types
 
+{-
 -- some bad implementation will not serialize ASN.1 integer properly, leading
 -- to negative modulus.
 -- TODO : Find a better place for this
@@ -40,6 +39,7 @@ toPositive int
                 plusOne (x:xs) = if x == 0xff then 0 : plusOne xs else (x+1) : xs
                 bytesOfUInt x = reverse (list x)
                   where list i = if i <= 0xff then [fromIntegral i] else (fromIntegral i .&. 0xff) : list (i `shiftR` 8)
+-}
 
 -- | Generate a key pair given p and q.
 --

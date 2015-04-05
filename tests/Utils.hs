@@ -1,9 +1,7 @@
 module Utils where
 
 import Data.Char
-import Data.Word
 import Data.ByteString (ByteString)
-import Data.Monoid (mconcat)
 import qualified Data.ByteString as B
 
 katZero :: Int

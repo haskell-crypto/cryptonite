@@ -4,10 +4,6 @@ module KATHash
     ( tests
     ) where
 
-import Data.Char (ord)
-import Data.ByteString (ByteString)
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as BC ()
 
 import qualified Crypto.Hash.MD2 as MD2
 import qualified Crypto.Hash.MD4 as MD4
@@ -26,11 +22,8 @@ import qualified Crypto.Hash.Skein256 as Skein256
 import qualified Crypto.Hash.Skein512 as Skein512
 import qualified Crypto.Hash.Whirlpool as Whirlpool
 
-import Utils
-
-import Test.Tasty
-import Test.Tasty.QuickCheck
-import Test.Tasty.HUnit
+import qualified Data.ByteString as B
+import Imports
 
 v0,v1,v2 :: ByteString
 v0 = ""

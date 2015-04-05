@@ -23,7 +23,6 @@ module Crypto.PubKey.Curve25519
     ) where
 
 import           Control.Applicative
-import           Data.Bits
 import           Data.Byteable
 import           Data.ByteString (ByteString)
 import           Data.ByteString.Char8 ()
@@ -31,7 +30,6 @@ import qualified Data.ByteString.Internal as B
 import           Data.SecureMem
 import           Data.Word
 import           Foreign.Ptr
-import           Foreign.Storable
 
 import           Crypto.Internal.Compat
 
@@ -69,9 +67,9 @@ secretKey bs
         --  e[31] &= 0x7f;
         --  e[31] |= 40;
         isValidPtr :: Ptr Word8 -> IO Bool
-        isValidPtr inp = do
-            b0  <- peekElemOff inp 0
-            b31 <- peekElemOff inp 31
+        isValidPtr _ = do
+            --b0  <- peekElemOff inp 0
+            --b31 <- peekElemOff inp 31
             return True
 {-
             return $ and [ testBit b0  0 == False

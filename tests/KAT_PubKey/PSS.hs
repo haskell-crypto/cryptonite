@@ -1,17 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module KAT_PubKey.PSS (pssTests) where
 
-import Data.ByteString (ByteString)
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as BC
-
 import Crypto.PubKey.RSA
-import Crypto.PubKey.MaskGenFunction
 import qualified Crypto.PubKey.RSA.PSS as PSS
-import qualified Crypto.Hash.SHA1 as SHA1
 
-import Test.Tasty
-import Test.Tasty.HUnit
+import Imports
 
 data VectorPSS = VectorPSS { message :: ByteString
                            , salt :: ByteString
@@ -472,9 +465,9 @@ doVerifyTest key (i, vector) = testCase (show i) (True @=? actual)
 
 pssTests = testGroup "RSA-PSS"
     [ testGroup "signature internal"
-        [ doSignTest rsaKeyInt (0, vectorInt) ]
+        [ doSignTest rsaKeyInt (katZero, vectorInt) ]
     , testGroup "verify internal"
-        [ doVerifyTest rsaKeyInt (0, vectorInt) ]
-    , testGroup "signature key 1024" $ map (doSignTest rsaKey1) (zip [0..] vectorsKey1)
-    , testGroup "verify key 1024" $ map (doVerifyTest rsaKey1) (zip [0..] vectorsKey1)
+        [ doVerifyTest rsaKeyInt (katZero, vectorInt) ]
+    , testGroup "signature key 1024" $ map (doSignTest rsaKey1) (zip [katZero..] vectorsKey1)
+    , testGroup "verify key 1024" $ map (doVerifyTest rsaKey1) (zip [katZero..] vectorsKey1)
     ]

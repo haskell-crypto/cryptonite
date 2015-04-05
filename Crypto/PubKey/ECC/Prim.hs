@@ -106,7 +106,7 @@ isPointValid (CurveFP (CurvePrime p cc)) (Point x y) =
         b  = ecc_b cc
         eqModP z1 z2 = (z1 `mod` p) == (z2 `mod` p)
         isValid e = e >= 0 && e < p
-isPointValid curve@(CurveF2m (CurveBinary fx cc)) pt@(Point x y) =
+isPointValid (CurveF2m (CurveBinary fx cc)) (Point x y) =
     and [ isValid x
         , isValid y
         , ((((x `add` a) `mul` x `add` y) `mul` x) `add` b `add` (squareF2m fx y)) == 0

@@ -1,17 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module KAT_PubKey.OAEP (oaepTests) where
 
-import Data.ByteString (ByteString)
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as BC
-
 import Crypto.PubKey.RSA
-import Crypto.PubKey.MaskGenFunction
 import qualified Crypto.PubKey.RSA.OAEP as OAEP
 import qualified Crypto.Hash.SHA1 as SHA1
 
-import Test.Tasty
-import Test.Tasty.HUnit
+import Imports
 
 rsaKeyInt = PrivateKey
     { private_pub = PublicKey
@@ -87,18 +81,17 @@ vectorsKey1 =
         }
     ]
 
+doEncryptionTest key (i, vec) = testCase (show i) (Right (cipherText vec) @=? actual)
+    where actual = OAEP.encryptWithSeed (seed vec) (OAEP.defaultOAEPParams SHA1.hash) key (message vec) 
 
-doEncryptionTest key (i, vector) = testCase (show i) (Right (cipherText vector) @=? actual)
-    where actual = OAEP.encryptWithSeed (seed vector) (OAEP.defaultOAEPParams SHA1.hash) key (message vector) 
-
-doDecryptionTest key (i, vector) = testCase (show i) (Right (message vector) @=? actual)
-    where actual = OAEP.decrypt Nothing (OAEP.defaultOAEPParams SHA1.hash) key (cipherText vector)
+doDecryptionTest key (i, vec) = testCase (show i) (Right (message vec) @=? actual)
+    where actual = OAEP.decrypt Nothing (OAEP.defaultOAEPParams SHA1.hash) key (cipherText vec)
 
 oaepTests = testGroup "RSA-OAEP"
     [ testGroup "internal"
-        [ doEncryptionTest (private_pub rsaKeyInt) (0, vectorInt)
-        , doDecryptionTest rsaKeyInt (0, vectorInt)
+        [ doEncryptionTest (private_pub rsaKeyInt) (0 :: Int, vectorInt)
+        , doDecryptionTest rsaKeyInt (0 :: Int, vectorInt)
         ]
-    , testGroup "encryption key 1024 bits" $ map (doEncryptionTest $ private_pub rsaKey1) (zip [0..] vectorsKey1)
-    , testGroup "decryption key 1024 bits" $ map (doDecryptionTest rsaKey1) (zip [0..] vectorsKey1)
+    , testGroup "encryption key 1024 bits" $ map (doEncryptionTest $ private_pub rsaKey1) (zip [katZero..] vectorsKey1)
+    , testGroup "decryption key 1024 bits" $ map (doDecryptionTest rsaKey1) (zip [katZero..] vectorsKey1)
     ]

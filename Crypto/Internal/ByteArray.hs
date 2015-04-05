@@ -20,7 +20,6 @@ module Crypto.Internal.ByteArray
 import Data.SecureMem
 import Crypto.Internal.Memory
 import Crypto.Internal.Compat
-import Crypto.Internal.Bytes
 import Foreign.Ptr
 import Foreign.ForeignPtr
 

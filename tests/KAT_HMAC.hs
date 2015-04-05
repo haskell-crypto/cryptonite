@@ -6,20 +6,10 @@ import Crypto.Hash (MD5(..), SHA1(..), SHA256(..)
                    , Kekkak_224(..), Kekkak_256(..), Kekkak_384(..), Kekkak_512(..)
                    , SHA3_224(..), SHA3_256(..), SHA3_384(..), SHA3_512(..)
                    , HashAlgorithm, digestFromByteString)
-import Control.Applicative ((<$>))
-import Control.Monad (replicateM)
-import Data.Char
-import Data.Bits
-import Data.Word
-import Data.ByteString (ByteString)
-import Data.Byteable
-import Data.Foldable (foldl')
-import Data.Monoid (mconcat)
+--import Data.Foldable (foldl')
 import qualified Data.ByteString as B
 
-import Test.Tasty
-import Test.Tasty.QuickCheck
-import Test.Tasty.HUnit
+import Imports
 
 data MACVector hash = MACVector
     { macKey :: ByteString
@@ -33,11 +23,8 @@ instance Show (HMAC.HMAC a) where
 digest :: HashAlgorithm hash => ByteString -> HMAC.HMAC hash
 digest = maybe (error "cannot get digest") HMAC.HMAC . digestFromByteString
 
-v0,v1,v2 :: ByteString
-v0 = ""
+v1 :: ByteString
 v1 = "The quick brown fox jumps over the lazy dog"
-v2 = "The quick brown fox jumps over the lazy cog"
-vectors = [ v0, v1, v2 ]
 
 md5MACVectors :: [MACVector MD5]
 md5MACVectors =

@@ -11,13 +11,10 @@ module BlockCipher
     , testKatCTR
     , testKatXTS
     , testKatAEAD
+    , CipherInfo
     ) where
 
-import Data.ByteString (ByteString)
-
-import Test.Tasty
-import Test.Tasty.QuickCheck
-import Test.Tasty.HUnit
+import Imports
 
 type BlockSize = Int
 type KeySize = Int
@@ -74,7 +71,7 @@ data KAT_AEAD = KAT_AEAD
     , aeadTag        :: ByteString -- ^ expected tag
     } deriving (Show,Eq)
 
-testECB (blockSize, keySize, cipherInit) ecbEncrypt ecbDecrypt kats =
+testECB (_, _, cipherInit) ecbEncrypt ecbDecrypt kats =
     testGroup "ECB" (concatMap katTest (zip is kats) {- ++ propTests-})
   where katTest (i,d) =
             [ testCase ("E" ++ show i) (ecbEncrypt ctx (ecbPlaintext d) @?= ecbCiphertext d)

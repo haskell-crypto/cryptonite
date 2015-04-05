@@ -21,14 +21,9 @@ module Crypto.Internal.Memory
     , SecureBytes
     ) where
 
-import Data.Word
 import GHC.Types
 import GHC.Prim
 import GHC.Ptr
-import Foreign.Ptr
-import Foreign.ForeignPtr
-import Foreign.Storable      (pokeElemOff)
-import Foreign.Marshal.Alloc
 import Foreign.Marshal.Utils (copyBytes)
 import Data.SecureMem (SecureMem)
 

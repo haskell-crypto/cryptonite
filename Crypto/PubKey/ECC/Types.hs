@@ -26,7 +26,6 @@ module Crypto.PubKey.ECC.Types
     ) where
 
 import Data.Data
-import Data.Tuple (swap)
 
 -- | Define either a binary curve or a prime curve.
 data Curve = CurveF2m CurveBinary -- ^ 𝔽(2^m)
@@ -114,6 +113,7 @@ data CurveName =
     | SEC_t571r1
     deriving (Show,Read,Eq,Ord,Enum,Data,Typeable)
 
+{-
 curvesOIDs :: [ (CurveName, [Integer]) ]
 curvesOIDs =
     [ (SEC_p112r1, [1,3,132,0,6])
@@ -150,6 +150,7 @@ curvesOIDs =
     , (SEC_t571k1, [1,3,132,0,38])
     , (SEC_t571r1, [1,3,132,0,39])
     ]
+-}
 
 -- | Get the curve definition associated with a recommended known curve name.
 getCurveByName :: CurveName -> Curve

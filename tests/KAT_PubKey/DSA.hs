@@ -1,15 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module KAT_PubKey.DSA (dsaTests) where
 
-import Data.ByteString (ByteString)
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as BC
-
 import qualified Crypto.PubKey.DSA as DSA
 import qualified Crypto.Hash.SHA1 as SHA1
 
-import Test.Tasty
-import Test.Tasty.HUnit
+import Imports
 
 data VectorDSA = VectorDSA
     { pgq :: DSA.Params
@@ -141,7 +136,7 @@ doVerifyTest (i, vector) = testCase (show i) (True @=? actual)
 
 dsaTests = testGroup "DSA"
     [ testGroup "SHA1"
-        [ testGroup "signature" $ map doSignatureTest (zip [0..] vectorsSHA1)
-        , testGroup "verify" $ map doVerifyTest (zip [0..] vectorsSHA1)
+        [ testGroup "signature" $ map doSignatureTest (zip [katZero..] vectorsSHA1)
+        , testGroup "verify" $ map doVerifyTest (zip [katZero..] vectorsSHA1)
         ]
     ]

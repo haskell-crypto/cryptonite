@@ -12,13 +12,14 @@ module Crypto.PubKey.RSA.Types
     , PublicKey(..)
     , PrivateKey(..)
     , KeyPair(..)
+    , toPublicKey
+    , toPrivateKey
     , private_size
     , private_n
     , private_e
     ) where
 
 import Data.Data
-import Data.Typeable
 
 -- | Blinder which is used to obfuscate the timing
 -- of the decryption primitive (used by decryption and signing).
@@ -62,13 +63,16 @@ data PrivateKey = PrivateKey
     } deriving (Show,Read,Eq,Data,Typeable)
 
 -- | get the size in bytes from a private key
+private_size :: PrivateKey -> Int
 private_size = public_size . private_pub
 
 -- | get n from a private key
-private_n    = public_n . private_pub
+private_n :: PrivateKey -> Integer
+private_n = public_n . private_pub
 
 -- | get e from a private key
-private_e    = public_e . private_pub
+private_e :: PrivateKey -> Integer
+private_e = public_e . private_pub
 
 -- | Represent RSA KeyPair
 --
@@ -83,4 +87,3 @@ toPublicKey (KeyPair priv) = private_pub priv
 -- | Private key of a RSA KeyPair
 toPrivateKey :: KeyPair -> PrivateKey
 toPrivateKey (KeyPair priv) = priv
-
