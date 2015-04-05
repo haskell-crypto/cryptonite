@@ -1,5 +1,3 @@
-{-# LANGUAGE ForeignFunctionInterface, CPP, MultiParamTypeClasses #-}
-
 -- |
 -- Module      : Crypto.Hash.Internal.%%MODULENAME%%
 -- License     : BSD-style
@@ -9,6 +7,7 @@
 --
 -- A module containing %%MODULENAME%% bindings
 --
+{-# LANGUAGE ForeignFunctionInterface #-}
 module Crypto.Hash.Internal.%%MODULENAME%%
     ( Ctx(..)
     -- * Internal values
