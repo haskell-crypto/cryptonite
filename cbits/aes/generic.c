@@ -403,7 +403,7 @@ static void aes_main_inv(aes_key *key, uint8_t *state)
 	t[2] = f[8]; t[6] = f[9]; t[10] = f[10]; t[14] = f[11]; \
 	t[3] = f[12]; t[7] = f[13]; t[11] = f[14]; t[15] = f[15]
 
-void aes_generic_encrypt_block(aes_block *output, aes_key *key, aes_block *input)
+void cryptonite_aes_generic_encrypt_block(aes_block *output, aes_key *key, aes_block *input)
 {
 	uint8_t block[16];
 	uint8_t *iptr, *optr;
@@ -415,7 +415,7 @@ void aes_generic_encrypt_block(aes_block *output, aes_key *key, aes_block *input
 	swap_block(optr, block);
 }
 
-void aes_generic_decrypt_block(aes_block *output, aes_key *key, aes_block *input)
+void cryptonite_aes_generic_decrypt_block(aes_block *output, aes_key *key, aes_block *input)
 {
 	uint8_t block[16];
 	uint8_t *iptr, *optr;
@@ -427,7 +427,7 @@ void aes_generic_decrypt_block(aes_block *output, aes_key *key, aes_block *input
 	swap_block(optr, block);
 }
 
-void aes_generic_init(aes_key *key, uint8_t *origkey, uint8_t size)
+void cryptonite_aes_generic_init(aes_key *key, uint8_t *origkey, uint8_t size)
 {
 	int esz;
 

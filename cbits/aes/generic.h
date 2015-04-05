@@ -29,6 +29,6 @@
  */
 #include "cryptonite_aes.h"
 
-void aes_generic_encrypt_block(aes_block *output, aes_key *key, aes_block *input);
-void aes_generic_decrypt_block(aes_block *output, aes_key *key, aes_block *input);
-void aes_generic_init(aes_key *key, uint8_t *origkey, uint8_t size);
+void cryptonite_aes_generic_encrypt_block(aes_block *output, aes_key *key, aes_block *input);
+void cryptonite_aes_generic_decrypt_block(aes_block *output, aes_key *key, aes_block *input);
+void cryptonite_aes_generic_init(aes_key *key, uint8_t *origkey, uint8_t size);
