@@ -1,5 +1,3 @@
-{-# LANGUAGE ForeignFunctionInterface, CPP, MultiParamTypeClasses #-}
-
 -- |
 -- Module      : Crypto.Hash.Internal.SHA1
 -- License     : BSD-style
@@ -9,6 +7,7 @@
 --
 -- A module containing SHA1 bindings
 --
+{-# LANGUAGE ForeignFunctionInterface #-}
 module Crypto.Hash.Internal.SHA1
     ( Ctx(..)
     -- * Internal values

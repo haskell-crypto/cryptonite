@@ -1,5 +1,3 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
-
 -- |
 -- Module      : Crypto.Hash.RIPEMD160
 -- License     : BSD-style

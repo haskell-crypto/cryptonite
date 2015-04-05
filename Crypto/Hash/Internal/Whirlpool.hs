@@ -1,5 +1,3 @@
-{-# LANGUAGE ForeignFunctionInterface, CPP, MultiParamTypeClasses #-}
-
 -- |
 -- Module      : Crypto.Hash.Internal.Whirlpool
 -- License     : BSD-style
@@ -9,6 +7,7 @@
 --
 -- A module containing Whirlpool bindings
 --
+{-# LANGUAGE ForeignFunctionInterface #-}
 module Crypto.Hash.Internal.Whirlpool
     ( Ctx(..)
     -- * Internal values

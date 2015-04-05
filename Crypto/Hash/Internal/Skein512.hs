@@ -1,5 +1,3 @@
-{-# LANGUAGE ForeignFunctionInterface, CPP, MultiParamTypeClasses #-}
-
 -- |
 -- Module      : Crypto.Hash.Internal.Skein512
 -- License     : BSD-style
@@ -9,6 +7,7 @@
 --
 -- A module containing Skein512 bindings
 --
+{-# LANGUAGE ForeignFunctionInterface #-}
 module Crypto.Hash.Internal.Skein512
     ( Ctx(..)
     -- * Internal values

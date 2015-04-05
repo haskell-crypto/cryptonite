@@ -1,5 +1,3 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
-
 -- |
 -- Module      : Crypto.Hash.SHA384
 -- License     : BSD-style

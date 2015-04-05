@@ -1,5 +1,3 @@
-{-# LANGUAGE ForeignFunctionInterface, CPP, MultiParamTypeClasses #-}
-
 -- |
 -- Module      : Crypto.Hash.Internal.Tiger
 -- License     : BSD-style
@@ -9,6 +7,7 @@
 --
 -- A module containing Tiger bindings
 --
+{-# LANGUAGE ForeignFunctionInterface #-}
 module Crypto.Hash.Internal.Tiger
     ( Ctx(..)
     -- * Internal values

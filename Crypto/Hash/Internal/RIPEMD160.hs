@@ -1,5 +1,3 @@
-{-# LANGUAGE ForeignFunctionInterface, CPP, MultiParamTypeClasses #-}
-
 -- |
 -- Module      : Crypto.Hash.Internal.RIPEMD160
 -- License     : BSD-style
@@ -9,6 +7,7 @@
 --
 -- A module containing RIPEMD160 bindings
 --
+{-# LANGUAGE ForeignFunctionInterface #-}
 module Crypto.Hash.Internal.RIPEMD160
     ( Ctx(..)
     -- * Internal values

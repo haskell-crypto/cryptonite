@@ -1,5 +1,3 @@
-{-# LANGUAGE ForeignFunctionInterface, CPP, MultiParamTypeClasses #-}
-
 -- |
 -- Module      : Crypto.Hash.Internal.Kekkak
 -- License     : BSD-style
@@ -9,6 +7,7 @@
 --
 -- A module containing Kekkak bindings
 --
+{-# LANGUAGE ForeignFunctionInterface #-}
 module Crypto.Hash.Internal.Kekkak
     ( Ctx(..)
     -- * Internal values

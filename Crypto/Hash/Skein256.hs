@@ -1,5 +1,3 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
-
 -- |
 -- Module      : Crypto.Hash.Skein256
 -- License     : BSD-style

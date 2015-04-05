@@ -1,5 +1,3 @@
-{-# LANGUAGE ForeignFunctionInterface, CPP, MultiParamTypeClasses #-}
-
 -- |
 -- Module      : Crypto.Hash.Internal.MD5
 -- License     : BSD-style
@@ -9,6 +7,7 @@
 --
 -- A module containing MD5 bindings
 --
+{-# LANGUAGE ForeignFunctionInterface #-}
 module Crypto.Hash.Internal.MD5
     ( Ctx(..)
     -- * Internal values

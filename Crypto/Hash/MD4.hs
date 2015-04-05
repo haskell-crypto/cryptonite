@@ -1,5 +1,3 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
-
 -- |
 -- Module      : Crypto.Hash.MD4
 -- License     : BSD-style
