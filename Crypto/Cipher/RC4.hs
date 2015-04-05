@@ -29,7 +29,6 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Internal as B
 
-----------------------------------------------------------------------
 import Crypto.Internal.Compat
 
 -- | The encryption state for RC4
