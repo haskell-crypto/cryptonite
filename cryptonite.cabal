@@ -30,6 +30,7 @@ Library
   Exposed-modules:   Crypto.Cipher.ChaCha
                      Crypto.Cipher.Salsa
                      Crypto.Cipher.RC4
+                     Crypto.Cipher.Types
                      Crypto.Data.AFIS
                      Crypto.MAC.Poly1305
                      Crypto.MAC.HMAC
@@ -80,6 +81,12 @@ Library
                      Crypto.Random.EntropyPool
                      Crypto.Random.Entropy.Unsafe
   Other-modules:     Crypto.Cipher.AES.Internal
+                     Crypto.Cipher.Types.AEAD
+                     Crypto.Cipher.Types.Base
+                     Crypto.Cipher.Types.Block
+                     Crypto.Cipher.Types.GF
+                     Crypto.Cipher.Types.Stream
+                     Crypto.Cipher.Types.Utils
                      Crypto.Hash.Utils
                      Crypto.Hash.Utils.Cpu
                      Crypto.Hash.Types
