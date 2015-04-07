@@ -32,6 +32,7 @@ Library
                      Crypto.Cipher.RC4
                      Crypto.Cipher.Types
                      Crypto.Data.AFIS
+                     Crypto.Error
                      Crypto.MAC.Poly1305
                      Crypto.MAC.HMAC
                      Crypto.Number.Basic
@@ -87,6 +88,7 @@ Library
                      Crypto.Cipher.Types.GF
                      Crypto.Cipher.Types.Stream
                      Crypto.Cipher.Types.Utils
+                     Crypto.Error.Types
                      Crypto.Hash.Utils
                      Crypto.Hash.Utils.Cpu
                      Crypto.Hash.Types
