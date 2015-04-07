@@ -26,8 +26,8 @@ module Crypto.Cipher.Types.Block
     , AEADState(..)
     , AEADModeImpl(..)
     -- * CFB 8 bits
-    , cfb8Encrypt
-    , cfb8Decrypt
+    --, cfb8Encrypt
+    --, cfb8Decrypt
     ) where
 
 import Data.ByteString (ByteString)
@@ -39,6 +39,9 @@ import Data.Bits (shiftR)
 import Crypto.Cipher.Types.Base
 import Crypto.Cipher.Types.GF
 import Crypto.Cipher.Types.Utils
+
+import Crypto.Internal.ByteArray
+
 import Foreign.Ptr
 import Foreign.Storable
 
@@ -56,33 +59,33 @@ class Cipher cipher => BlockCipher cipher where
     -- | Encrypt blocks
     --
     -- the input string need to be multiple of the block size
-    ecbEncrypt :: cipher -> ByteString -> ByteString
+    ecbEncrypt :: ByteArray ba => cipher -> ba -> ba
 
     -- | Decrypt blocks
     --
     -- the input string need to be multiple of the block size
-    ecbDecrypt :: cipher -> ByteString -> ByteString
+    ecbDecrypt :: ByteArray ba => cipher -> ba -> ba
 
     -- | encrypt using the CBC mode.
     --
     -- input need to be a multiple of the blocksize
-    cbcEncrypt :: cipher -> IV cipher -> ByteString -> ByteString
+    cbcEncrypt :: ByteArray ba => cipher -> IV cipher -> ba -> ba
     cbcEncrypt = cbcEncryptGeneric
     -- | decrypt using the CBC mode.
     --
     -- input need to be a multiple of the blocksize
-    cbcDecrypt :: cipher -> IV cipher -> ByteString -> ByteString
+    cbcDecrypt :: ByteArray ba => cipher -> IV cipher -> ba -> ba
     cbcDecrypt = cbcDecryptGeneric
 
     -- | encrypt using the CFB mode.
     --
     -- input need to be a multiple of the blocksize
-    cfbEncrypt :: cipher -> IV cipher -> ByteString -> ByteString
+    cfbEncrypt :: ByteArray ba => cipher -> IV cipher -> ba -> ba
     cfbEncrypt = cfbEncryptGeneric
     -- | decrypt using the CFB mode.
     --
     -- input need to be a multiple of the blocksize
-    cfbDecrypt :: cipher -> IV cipher -> ByteString -> ByteString
+    cfbDecrypt :: ByteArray ba => cipher -> IV cipher -> ba -> ba
     cfbDecrypt = cfbDecryptGeneric
 
     -- | combine using the CTR mode.
@@ -93,9 +96,17 @@ class Cipher cipher => BlockCipher cipher where
     -- encryption and decryption are the same operation.
     --
     -- input can be of any size
-    ctrCombine :: cipher -> IV cipher -> ByteString -> ByteString
+    ctrCombine :: ByteArray ba => cipher -> IV cipher -> ba -> ba
     ctrCombine = ctrCombineGeneric
 
+    -- | Initialize a new AEAD State
+    --
+    -- When Nothing is returns, it means the mode is not handled.
+    aeadInit :: Byteable iv => AEADMode -> cipher -> iv -> Maybe (AEAD cipher)
+    aeadInit _ _ _ = Nothing
+
+-- | class of block cipher with a 128 bits block size
+class BlockCipher cipher => BlockCipher128 cipher where
     -- | encrypt using the XTS mode.
     --
     -- input need to be a multiple of the blocksize, and the cipher
@@ -105,7 +116,7 @@ class Cipher cipher => BlockCipher cipher where
                -> DataUnitOffset   -- ^ Offset in the data unit in number of blocks
                -> ByteString       -- ^ Plaintext
                -> ByteString       -- ^ Ciphertext
-    xtsEncrypt = xtsEncryptGeneric
+    xtsEncrypt = undefined -- xtsEncryptGeneric
 
     -- | decrypt using the XTS mode.
     --
@@ -116,13 +127,7 @@ class Cipher cipher => BlockCipher cipher where
                -> DataUnitOffset   -- ^ Offset in the data unit in number of blocks
                -> ByteString       -- ^ Ciphertext
                -> ByteString       -- ^ Plaintext
-    xtsDecrypt = xtsDecryptGeneric
-
-    -- | Initialize a new AEAD State
-    --
-    -- When Nothing is returns, it means the mode is not handled.
-    aeadInit :: Byteable iv => AEADMode -> cipher -> iv -> Maybe (AEAD cipher)
-    aeadInit _ _ _ = Nothing
+    xtsDecrypt = undefined -- xtsDecryptGeneric
 
 -- | Authenticated Encryption with Associated Data algorithms
 data AEAD cipher = AEAD cipher (AEADState cipher)
@@ -156,6 +161,8 @@ nullIV = toIV undefined
 --
 -- Assume the IV is in Big Endian format.
 ivAdd :: BlockCipher c => IV c -> Int -> IV c
+ivAdd i _ = i
+{-
 ivAdd (IV b) i = IV $ snd $ B.mapAccumR addCarry i b
   where addCarry :: Int -> Word8 -> (Int, Word8)
         addCarry acc w
@@ -163,49 +170,54 @@ ivAdd (IV b) i = IV $ snd $ B.mapAccumR addCarry i b
             | otherwise = let (hi,lo) = acc `divMod` 256
                               nw      = lo + (fromIntegral w)
                            in (hi + (nw `shiftR` 8), fromIntegral nw)
+-}
 
-cbcEncryptGeneric :: BlockCipher cipher => cipher -> IV cipher -> ByteString -> ByteString
-cbcEncryptGeneric cipher (IV ivini) input = B.concat $ doEnc ivini $ chunk (blockSize cipher) input
+cbcEncryptGeneric :: (ByteArray ba, BlockCipher cipher) => cipher -> IV cipher -> ba -> ba
+cbcEncryptGeneric cipher ivini input = byteArrayConcat $ doEnc ivini $ chunk (blockSize cipher) input
   where doEnc _  []     = []
         doEnc iv (i:is) =
-            let o = ecbEncrypt cipher $ bxor iv i
-             in o : doEnc o is
+            let o = ecbEncrypt cipher $ byteArrayXor iv i
+             in o : doEnc (IV o) is
 
-cbcDecryptGeneric :: BlockCipher cipher => cipher -> IV cipher -> ByteString -> ByteString
-cbcDecryptGeneric cipher (IV ivini) input = B.concat $ doDec ivini $ chunk (blockSize cipher) input
-  where doDec _  []     = []
+cbcDecryptGeneric :: (ByteArray ba, BlockCipher cipher) => cipher -> IV cipher -> ba -> ba
+cbcDecryptGeneric cipher ivini input = byteArrayConcat $ doDec ivini $ chunk (blockSize cipher) input
+  where
+        doDec _  []     = []
         doDec iv (i:is) =
-            let o = bxor iv $ ecbDecrypt cipher i
-             in o : doDec i is
+            let o = byteArrayXor iv $ ecbDecrypt cipher i
+             in o : doDec (IV i) is
 
-cfbEncryptGeneric :: BlockCipher cipher => cipher -> IV cipher -> ByteString -> ByteString
-cfbEncryptGeneric cipher (IV ivini) input = B.concat $ doEnc ivini $ chunk (blockSize cipher) input
-  where doEnc _  []     = []
+cfbEncryptGeneric :: (ByteArray ba, BlockCipher cipher) => cipher -> IV cipher -> ba -> ba
+cfbEncryptGeneric cipher ivini input = byteArrayConcat $ doEnc ivini $ chunk (blockSize cipher) input
+  where
+        doEnc _  []     = []
         doEnc iv (i:is) =
-            let o = bxor i $ ecbEncrypt cipher iv
-             in o : doEnc o is
+            let o = byteArrayXor i $ ecbEncrypt cipher iv
+             in o : doEnc (IV o) is
 
-cfbDecryptGeneric :: BlockCipher cipher => cipher -> IV cipher -> ByteString -> ByteString
-cfbDecryptGeneric cipher (IV ivini) input = B.concat $ doDec ivini $ chunk (blockSize cipher) input
-  where doDec _  []     = []
+cfbDecryptGeneric :: (ByteArray ba, BlockCipher cipher) => cipher -> IV cipher -> ba -> ba
+cfbDecryptGeneric cipher ivini input = byteArrayConcat $ doDec ivini $ chunk (blockSize cipher) input
+  where
+        doDec _  []     = []
         doDec iv (i:is) =
-            let o = bxor i $ ecbEncrypt cipher iv
-             in o : doDec i is
+            let o = byteArrayXor i $ ecbEncrypt cipher iv
+             in o : doDec (IV i) is
 
-ctrCombineGeneric :: BlockCipher cipher => cipher -> IV cipher -> ByteString -> ByteString
-ctrCombineGeneric cipher ivini input = B.concat $ doCnt ivini $ chunk (blockSize cipher) input
+ctrCombineGeneric :: (ByteArray ba, BlockCipher cipher) => cipher -> IV cipher -> ba -> ba
+ctrCombineGeneric cipher ivini input = byteArrayConcat $ doCnt ivini $ chunk (blockSize cipher) input
   where doCnt _  [] = []
         doCnt iv (i:is) =
-            let ivEnc = ecbEncrypt cipher (toBytes iv)
-             in bxor i ivEnc : doCnt (ivAdd iv 1) is
+            let ivEnc = ecbEncrypt cipher iv
+             in byteArrayXor i ivEnc : doCnt (ivAdd iv 1) is
 
-xtsEncryptGeneric :: BlockCipher cipher => XTS cipher
+{-
+xtsEncryptGeneric :: BlockCipher128 cipher => XTS cipher
 xtsEncryptGeneric = xtsGeneric ecbEncrypt
 
-xtsDecryptGeneric :: BlockCipher cipher => XTS cipher
+xtsDecryptGeneric :: BlockCipher128 cipher => XTS cipher
 xtsDecryptGeneric = xtsGeneric ecbDecrypt
 
-xtsGeneric :: BlockCipher cipher
+xtsGeneric :: BlockCipher128 cipher
            => (cipher -> B.ByteString -> B.ByteString)
            -> (cipher, cipher)
            -> IV cipher
@@ -214,14 +226,16 @@ xtsGeneric :: BlockCipher cipher
            -> ByteString
 xtsGeneric f (cipher, tweakCipher) iv sPoint input
     | blockSize cipher /= 16 = error "XTS mode is only available with cipher that have a block size of 128 bits"
-    | otherwise = B.concat $ doXts iniTweak $ chunk (blockSize cipher) input
-  where encTweak = ecbEncrypt tweakCipher (toBytes iv)
+    | otherwise = byteArrayConcat $ doXts iniTweak $ chunk (blockSize cipher) input
+  where encTweak = ecbEncrypt tweakCipher iv
         iniTweak = iterate xtsGFMul encTweak !! fromIntegral sPoint
         doXts _     []     = []
         doXts tweak (i:is) =
             let o = bxor (f cipher $ bxor i tweak) tweak
              in o : doXts (xtsGFMul tweak) is
+-}
 
+{-
 -- | Encrypt using CFB mode in 8 bit output
 --
 -- Effectively turn a Block cipher in CFB mode into a Stream cipher
@@ -251,3 +265,4 @@ cfb8Decrypt ctx origIv msg = B.unsafeCreate (B.length msg) $ \dst -> loop dst or
                 r   = cfbDecrypt ctx iv m'
                 out = B.head r
                 ni  = IV (B.drop 1 i `B.snoc` B.head m')
+-}

@@ -7,10 +7,9 @@
 --
 -- symmetric cipher basic types
 --
+{-# LANGUAGE ExistentialQuantification #-}
 module Crypto.Cipher.Types.Base
-    ( KeyError(..)
-    , KeySizeSpecifier(..)
-    , Key(..)
+    ( KeySizeSpecifier(..)
     , IV(..)
     , Cipher(..)
     , AuthTag(..)
@@ -23,12 +22,8 @@ import Data.SecureMem
 import Data.Word
 import Data.ByteString (ByteString)
 
--- | Possible Error that can be reported when initializating a key
-data KeyError =
-      KeyErrorTooSmall
-    | KeyErrorTooBig
-    | KeyErrorInvalid String
-    deriving (Show,Eq)
+import Crypto.Internal.ByteArray
+import Crypto.Error
 
 -- | Different specifier for key size in bytes
 data KeySizeSpecifier =
@@ -40,19 +35,10 @@ data KeySizeSpecifier =
 -- | Offset inside an XTS data unit, measured in block size.
 type DataUnitOffset = Word32
 
--- | a Key parametrized by the cipher
-newtype Key c = Key SecureMem deriving (Eq)
-
-instance ToSecureMem (Key c) where
-    toSecureMem (Key sm) = sm
-instance Byteable (Key c) where
-    toBytes (Key sm) = toBytes sm
-
 -- | an IV parametrized by the cipher
-newtype IV c = IV ByteString deriving (Eq)
+data IV c = forall byteArray . ByteArray byteArray => IV byteArray
 
-instance Byteable (IV c) where
-    toBytes (IV sm) = sm
+instance ByteArray (IV c) where
 
 -- | Authentification Tag for AE cipher mode
 newtype AuthTag = AuthTag ByteString
@@ -75,7 +61,7 @@ data AEADMode =
 -- | Symmetric cipher class.
 class Cipher cipher where
     -- | Initialize a cipher context from a key
-    cipherInit    :: Key cipher -> cipher
+    cipherInit    :: ByteArray key => key -> CryptoFailable cipher
     -- | Cipher name
     cipherName    :: cipher -> String
     -- | return the size of the key required for this cipher.
