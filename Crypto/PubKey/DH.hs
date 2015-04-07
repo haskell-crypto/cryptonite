@@ -1,5 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
 -- |
 -- Module      : Crypto.PubKey.DH
 -- License     : BSD-style
@@ -8,6 +6,7 @@
 -- Portability : Good
 --
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Crypto.PubKey.DH
     ( Params(..)
     , PublicNumber(..)
