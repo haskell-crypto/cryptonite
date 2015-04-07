@@ -14,15 +14,18 @@ module Crypto.Internal.ByteArray
     ( ByteArray(..)
     , byteArrayAllocAndFreeze
     , empty
-    -- , split
+    , byteArraySplit
+    , byteArrayXor
+    , byteArrayConcat
     ) where
 
+import Data.Word
 import Data.SecureMem
 import Crypto.Internal.Memory
 import Crypto.Internal.Compat
+import Crypto.Internal.Bytes (bufXor, bufCopy)
 import Foreign.Ptr
 import Foreign.ForeignPtr
-
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B (length)
 import qualified Data.ByteString.Internal as B
@@ -60,9 +63,22 @@ byteArrayAllocAndFreeze sz f = unsafeDoIO (byteArrayAlloc sz f)
 empty :: ByteArray a => a
 empty = unsafeDoIO (byteArrayAlloc 0 $ \_ -> return ())
 
-{-
-split :: ByteArray bs => Int -> bs -> (bs, bs)
-split n bs
+-- | Create a xor of bytes between a and b.
+--
+-- the returns byte array is the size of the smallest input.
+byteArrayXor :: (ByteArray a, ByteArray b, ByteArray c) => a -> b -> c
+byteArrayXor a b =
+    byteArrayAllocAndFreeze n $ \pc ->
+    withByteArray a           $ \pa ->
+    withByteArray b           $ \pb ->
+        bufXor pc pa pb n
+  where
+        n  = min la lb
+        la = byteArrayLength a
+        lb = byteArrayLength b
+
+byteArraySplit :: ByteArray bs => Int -> bs -> (bs, bs)
+byteArraySplit n bs
     | n <= 0    = (empty, bs)
     | n >= len  = (bs, empty)
     | otherwise = unsafeDoIO $ do
@@ -71,4 +87,15 @@ split n bs
             b2 <- byteArrayAlloc (len - n) $ \r -> bufCopy r (p `plusPtr` n) (len - n)
             return (b1, b2)
   where len = byteArrayLength bs
--}
+
+byteArrayConcat :: ByteArray bs => [bs] -> bs
+byteArrayConcat []    = empty
+byteArrayConcat allBs = byteArrayAllocAndFreeze total (loop allBs)
+  where
+        total = sum $ map byteArrayLength allBs
+
+        loop []     _   = return ()
+        loop (b:bs) dst = do
+            let sz = byteArrayLength b
+            withByteArray b $ \p -> bufCopy dst p sz
+            loop bs (dst `plusPtr` sz)
