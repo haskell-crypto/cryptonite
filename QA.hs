@@ -14,7 +14,7 @@ import Control.Exception
 import System.Console.ANSI
 
 allowedExtensions =
-    [ ScopedTypeVariables, BangPatterns, ForeignFunctionInterface, OverloadedStrings]
+    [ ScopedTypeVariables, BangPatterns, ForeignFunctionInterface, OverloadedStrings, DeriveDataTypeable ]
 perModuleAllowedExtensions =
     [ ("Crypto/Hash/Utils.hs", [MagicHash])
     , ("Crypto/Internal/ByteArray.hs", [MagicHash, UnboxedTuples])
