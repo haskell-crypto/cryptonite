@@ -5,8 +5,6 @@
 -- Stability   : experimental
 -- Portability : Good
 --
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE ExistentialQuantification #-}
 module Crypto.Random.Entropy.Source where
 
 import Foreign.Ptr
