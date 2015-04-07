@@ -13,6 +13,18 @@ import Control.Exception
 
 import System.Console.ANSI
 
+allowedExtensions =
+    [ ScopedTypeVariables, BangPatterns, ForeignFunctionInterface, OverloadedStrings]
+perModuleAllowedExtensions =
+    [ ("Crypto/Hash/Utils.hs", [MagicHash])
+    , ("Crypto/Internal/ByteArray.hs", [MagicHash, UnboxedTuples])
+    , ("Crypto/Internal/Memory.hs", [MagicHash, UnboxedTuples])
+    ]
+
+disallowedModules =
+    [ (ModuleName "System.IO.Unsafe", ModuleName "Crypto.Internal.Compat")
+    ]
+
 main = do
     modules <- findAllModules
     mapM_ qa modules
@@ -25,7 +37,7 @@ main = do
                 Just (_, exts) -> qaExts file content exts
 
         qaExts file content exts = do
-            printInfo "extensions" (intercalate ", " $ map show exts)
+            printInfo "extensions" (intercalate ", " $ map show (getEnabledExts exts))
 
             let mode = defaultParseMode { parseFilename = file, extensions = exts }
 
@@ -35,20 +47,48 @@ main = do
                     let imports = getModulesImports mod
                     printInfo "modules" (intercalate ", "  (map (prettyPrint . importModule) imports))
 
-                    let useSystemIOUnsafe = elem (ModuleName "System.IO.Unsafe") (map importModule imports)
-                    when useSystemIOUnsafe $ printWarningImport "Crypto.Internal.Compat" "System.IO.Unsafe"
+                    -- check for allowed extensions
+                    forM_ (getEnabledExts exts) $ \ext -> do
+                        let allowed = elem ext allowedExtensions
+                            allowed' = allowed || maybe False (\z -> elem ext z) (lookup file perModuleAllowedExtensions)
+                        unless allowed' $ printWarningExtension ext
 
-        printHeader s =
-            setSGR [SetColor Foreground Vivid Green] >> putStrLn s >> setSGR []
-        printInfo k v =
-            setSGR [SetColor Foreground Vivid Blue] >> putStr k >> setSGR [] >> putStr ": " >> putStrLn v
-        printError s =
-            setSGR [SetColor Foreground Vivid Red] >> putStrLn s >> setSGR []
+                    -- check for disallowed modules
+                    forM_ (map importModule $ getModulesImports mod) $ \impMod ->
+                        case lookup impMod disallowedModules of
+                            Nothing                                   -> return ()
+                            Just newMod | file == moduleToFile impMod -> return ()
+                                        | otherwise                   -> printWarningImport impMod newMod
+                    
+        moduleToFile (ModuleName m) =
+            intercalate "/" (wordsWhen (== '.') m) ++ ".hs"
 
-        printWarningImport expected actual =
-            setSGR [SetColor Foreground Vivid Yellow] >> putStrLn ("warning: use " ++ show expected ++ " instead of " ++ actual) >> setSGR []
+        wordsWhen     :: (Char -> Bool) -> String -> [String]
+        wordsWhen p s = case dropWhile p s of
+                            "" -> []
+                            s' -> w : wordsWhen p s'' where (w, s'') = break p s'
 
-        getModulesImports (Module _ _ _ _ _ imports _) = imports
+------------------------------------------------------------------------
+
+printHeader s =
+    setSGR [SetColor Foreground Vivid Green] >> putStrLn s >> setSGR []
+printInfo k v =
+    setSGR [SetColor Foreground Vivid Blue] >> putStr k >> setSGR [] >> putStr ": " >> putStrLn v
+printError s =
+    setSGR [SetColor Foreground Vivid Red] >> putStrLn s >> setSGR []
+
+printWarningImport (ModuleName expected) (ModuleName actual) =
+    setSGR [SetColor Foreground Vivid Yellow] >> putStrLn ("warning: use module " ++ expected ++ " instead of " ++ actual) >> setSGR []
+
+printWarningExtension ext =
+    setSGR [SetColor Foreground Vivid Yellow] >> putStrLn ("warning: use extension " ++ show ext) >> setSGR []
+getModulesImports (Module _ _ _ _ _ imports _) = imports
+
+getEnabledExts = foldl doAcc []
+  where doAcc acc (EnableExtension e) = e : acc
+        doAcc acc _                   = acc
+
+------------------------------------------------------------------------
 
 findAllModules :: IO [FilePath]
 findAllModules = dirTraverse "Crypto" fileCallback dirCallback []
