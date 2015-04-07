@@ -2,6 +2,7 @@
 module Main where
 
 import Language.Haskell.Exts
+import Language.Haskell.Exts.Pretty
 import Data.List
 import System.Directory
 import System.FilePath
@@ -24,7 +25,7 @@ main = do
                 Just (_, exts) -> qaExts file content exts
 
         qaExts file content exts = do
-            putStrLn ("extensions : " ++ (intercalate ", " $ map show exts))
+            printInfo "extensions" (intercalate ", " $ map show exts)
 
             let mode = defaultParseMode { parseFilename = file, extensions = exts }
 
@@ -32,12 +33,20 @@ main = do
                 ParseFailed srcLoc s -> printError ("failed to parse module: " ++ show srcLoc ++ " : " ++ s)
                 ParseOk mod          -> do
                     let imports = getModulesImports mod
-                    putStrLn (show (map importModule imports))
+                    printInfo "modules" (intercalate ", "  (map (prettyPrint . importModule) imports))
+
+                    let useSystemIOUnsafe = elem (ModuleName "System.IO.Unsafe") (map importModule imports)
+                    when useSystemIOUnsafe $ printWarningImport "Crypto.Internal.Compat" "System.IO.Unsafe"
 
         printHeader s =
             setSGR [SetColor Foreground Vivid Green] >> putStrLn s >> setSGR []
+        printInfo k v =
+            setSGR [SetColor Foreground Vivid Blue] >> putStr k >> setSGR [] >> putStr ": " >> putStrLn v
         printError s =
             setSGR [SetColor Foreground Vivid Red] >> putStrLn s >> setSGR []
+
+        printWarningImport expected actual =
+            setSGR [SetColor Foreground Vivid Yellow] >> putStrLn ("warning: use " ++ show expected ++ " instead of " ++ actual) >> setSGR []
 
         getModulesImports (Module _ _ _ _ _ imports _) = imports
 
