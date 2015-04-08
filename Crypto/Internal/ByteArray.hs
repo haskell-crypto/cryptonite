@@ -18,14 +18,18 @@ module Crypto.Internal.ByteArray
     , byteArraySplit
     , byteArrayXor
     , byteArrayConcat
+    , byteArrayToBS
+    , byteArrayToW64BE
     ) where
 
+import Control.Applicative ((<$>))
 import Data.Word
 import Data.SecureMem
 import Crypto.Internal.Memory
 import Crypto.Internal.Compat
 import Crypto.Internal.Bytes (bufXor, bufCopy)
 import Foreign.Ptr
+import Foreign.Storable
 import Foreign.ForeignPtr
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B (length)
@@ -101,8 +105,17 @@ byteArrayConcat allBs = byteArrayAllocAndFreeze total (loop allBs)
             withByteArray b $ \p -> bufCopy dst p sz
             loop bs (dst `plusPtr` sz)
 
-byteArrayCopyAndFreeze :: ByteArray bs => bs -> (Ptr p -> IO ()) -> bs
+byteArrayCopyAndFreeze :: (ByteArray bs1, ByteArray bs2) => bs1 -> (Ptr p -> IO ()) -> bs2
 byteArrayCopyAndFreeze bs f =
     byteArrayAllocAndFreeze (byteArrayLength bs) $ \d -> do
         withByteArray bs $ \s -> bufCopy d s (byteArrayLength bs)
         f (castPtr d)
+
+byteArrayToBS :: ByteArray bs => bs -> ByteString
+byteArrayToBS bs = byteArrayCopyAndFreeze bs (\_ -> return ())
+
+byteArrayToW64BE :: ByteArray bs => bs -> Int -> Word64
+byteArrayToW64BE bs ofs = unsafeDoIO $ withByteArray bs $ \p -> fromBE64 <$> peek (p `plusPtr` ofs)
+
+-- move me elsewhere. not working properly for big endian machine, as it should be id
+fromBE64 = byteSwap64

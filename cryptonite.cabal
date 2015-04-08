@@ -27,9 +27,14 @@ Flag support_aesni
   Default:           True
 
 Library
-  Exposed-modules:   Crypto.Cipher.ChaCha
-                     Crypto.Cipher.Salsa
+  Exposed-modules:   Crypto.Cipher.AES
+                     Crypto.Cipher.Blowfish
+                     Crypto.Cipher.Camellia
+                     Crypto.Cipher.ChaCha
+                     Crypto.Cipher.DES
                      Crypto.Cipher.RC4
+                     Crypto.Cipher.Salsa
+                     Crypto.Cipher.TripleDES
                      Crypto.Cipher.Types
                      Crypto.Data.AFIS
                      Crypto.Error
@@ -82,6 +87,11 @@ Library
                      Crypto.Random.EntropyPool
                      Crypto.Random.Entropy.Unsafe
   Other-modules:     Crypto.Cipher.AES.Internal
+                     Crypto.Cipher.Blowfish.Primitive
+                     Crypto.Cipher.Camellia.Primitive
+                     Crypto.Cipher.Camellia.Primitive
+                     Crypto.Cipher.DES.Primitive
+                     Crypto.Cipher.DES.Serialization
                      Crypto.Cipher.Types.AEAD
                      Crypto.Cipher.Types.Base
                      Crypto.Cipher.Types.Block
@@ -122,6 +132,8 @@ Library
                    , securemem >= 0.1.7
                    , byteable
                    , ghc-prim
+                   -- temporary
+                   , vector
   ghc-options:       -Wall -fwarn-tabs -optc-O3
   default-language:  Haskell2010
   C-sources:         cbits/cryptonite_chacha.c

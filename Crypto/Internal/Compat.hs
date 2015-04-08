@@ -12,15 +12,12 @@
 module Crypto.Internal.Compat
     ( unsafeDoIO
     , popCount
+    , byteSwap64
     ) where
 
 import System.IO.Unsafe
-#if MIN_VERSION_base(4,5,0)
-import Data.Bits (popCount)
-#else
-import Data.Word (Word64)
-import Data.Bits (testBit, shiftR)
-#endif
+import Data.Word
+import Data.Bits
 
 -- | perform io for hashes that do allocation and ffi.
 -- unsafeDupablePerformIO is used when possible as the
@@ -39,4 +36,13 @@ popCount :: Word64 -> Int
 popCount n = loop 0 n
   where loop c 0 = c
         loop c i = loop (c + if testBit c 0 then 1 else 0) (i `shiftR` 1)
+#endif
+
+#if !(MIN_VERSION_base(4,7,0))
+byteSwap64 :: Word64 -> Word64
+byteSwap64 w =
+        (w `shiftR` 56)                  .|. (w `shiftL` 56)
+    .|. ((w `shiftR` 40) .&. 0xff00)     .|. ((w .&. 0xff00) `shiftL` 40)
+    .|. ((w `shiftR` 24) .&. 0xff0000)   .|. ((w .&. 0xff0000) `shiftL` 24)
+    .|. ((w `shiftR` 8)  .&. 0xff000000) .|. ((w .&. 0xff000000) `shiftL` 8)
 #endif
