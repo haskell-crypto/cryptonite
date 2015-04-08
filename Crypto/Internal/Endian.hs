@@ -14,7 +14,7 @@ module Crypto.Internal.Endian
 import Crypto.Internal.Compat (byteSwap64)
 import Data.Word (Word64)
 
-#ifndef ARCH_IS_LITTLE_ENDIAN
+#ifdef ARCH_IS_LITTLE_ENDIAN
 fromLE64 :: Word64 -> Word64
 fromLE64 = id
 
