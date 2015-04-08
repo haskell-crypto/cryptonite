@@ -1,21 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
-module Main where
+{-# OPTIONS_GHC -fno-warn-unused-binds #-}
+{-# OPTIONS_GHC -fno-warn-unused-matches #-}
+module KAT_Camellia (tests) where
 
-import Control.Applicative
-import Control.Monad
+import Imports ()
+import BlockCipher
 
-import Test.Framework (Test, defaultMain, testGroup)
-import Test.Framework.Providers.QuickCheck2 (testProperty)
-
-import Test.QuickCheck
-import Test.QuickCheck.Test
-
-import Data.Byteable
 import qualified Data.ByteString as B
 import Crypto.Cipher.Camellia
-import Crypto.Cipher.Types
-import Crypto.Cipher.Tests
 
 vectors_camellia128 =
 	[ KAT_ECB (B.replicate 16 0) (B.replicate 16 0) (B.pack [0x3d,0x02,0x80,0x25,0xb1,0x56,0x32,0x7c,0x17,0xf7,0x62,0xc1,0xf2,0xcb,0xca,0x71])
@@ -38,9 +31,4 @@ kats128 = defaultKATs { kat_ECB = vectors_camellia128 }
 kats192 = defaultKATs { kat_ECB = vectors_camellia192 }
 kats256 = defaultKATs { kat_ECB = vectors_camellia256 }
 
-main = defaultMain
-    [ testBlockCipher kats128 (undefined :: Camellia128)
-    -- FIXME enable when Camellia 192 and 256 has been implemented
-    --, testBlockCipher kats192 (undefined :: Camellia192)
-    --, testBlockCipher kats256 (undefined :: Camellia256)
-    ]
+tests = testBlockCipher kats128 (undefined :: Camellia128)
