@@ -42,11 +42,6 @@ vectors_ecb = -- key plaintext cipher
     , KAT_ECB "\xFE\xDC\xBA\x98\x76\x54\x32\x10" "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF" "\x6B\x5C\x5A\x9C\x5D\x9E\x0A\x5A"
     ]
 
-{-
+kats = defaultKATs { kat_ECB = vectors_ecb }
 
-main = defaultMain
-    [ testBlockCipher kats (undefined :: Blowfish64)
-    ]
--}
-
-tests = testGroup "Blowfish" []
+tests = testBlockCipher kats (undefined :: Blowfish64)
