@@ -1,22 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
-module Main where
+module KAT_DES (tests) where
 
-import Control.Applicative
-import Control.Monad
-
-import Test.Framework (Test, defaultMain, testGroup)
-import Test.Framework.Providers.QuickCheck2 (testProperty)
-
-import Test.QuickCheck
-import Test.QuickCheck.Test
-
-import Data.Byteable
-import qualified Data.ByteString as B
-import Data.ByteString.Char8 () -- orphan IsString for older bytestring versions
+import Imports
+import BlockCipher
 import qualified Crypto.Cipher.DES as DES
-import Crypto.Cipher.Types
-import Crypto.Cipher.Tests
 
 vectors_ecb = -- key plaintext ciphertext
     [ KAT_ECB "\x00\x00\x00\x00\x00\x00\x00\x00" "\x00\x00\x00\x00\x00\x00\x00\x00" "\x8C\xA6\x4D\xE9\xC1\xB1\x23\xA7"
@@ -57,6 +45,5 @@ vectors_ecb = -- key plaintext ciphertext
 
 kats = defaultKATs { kat_ECB = vectors_ecb }
 
-main = defaultMain
-    [ testBlockCipher kats (undefined :: DES.DES)
-    ]
+tests = localOption (QuickCheckTests 5)
+      $ testBlockCipher kats (undefined :: DES.DES)
