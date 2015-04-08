@@ -40,9 +40,14 @@ instance Functor CryptoFailable where
     fmap _ (CryptoFailed r) = CryptoFailed r
 
 instance Applicative CryptoFailable where
-    pure a = CryptoPassed a
+    pure a     = CryptoPassed a
+    (<*>) fm m = fm >>= \p -> m >>= \r2 -> return (p r2)
 instance Monad CryptoFailable where
     return a = CryptoPassed a
+    (>>=) m1 m2 = do
+        case m1 of
+            CryptoPassed a -> m2 a
+            CryptoFailed e -> CryptoFailed e
 
 throwCryptoError :: CryptoFailable a -> IO a
 throwCryptoError = undefined

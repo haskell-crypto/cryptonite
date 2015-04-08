@@ -34,11 +34,10 @@ module Crypto.Cipher.Types.Block
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
-import qualified Data.ByteString.Internal as B (unsafeCreate)
 import Data.Byteable
 import Data.Word
 import Crypto.Cipher.Types.Base
-import Crypto.Cipher.Types.GF
+--import Crypto.Cipher.Types.GF
 import Crypto.Cipher.Types.Utils
 
 import Crypto.Internal.ByteArray

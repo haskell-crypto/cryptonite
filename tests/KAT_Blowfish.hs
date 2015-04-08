@@ -2,7 +2,7 @@
 module KAT_Blowfish where
 
 import Crypto.Cipher.Blowfish
-import Imports
+import Imports ()
 import BlockCipher
 
 vectors_ecb = -- key plaintext cipher
