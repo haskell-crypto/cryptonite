@@ -187,15 +187,6 @@ ivAdd (IV b) i = IV $ copy b
             if ofs == 0
                 then return hi
                 else loop hi (ofs - 1) p
-{-
-ivAdd (IV b) i = IV $ snd $ B.mapAccumR addCarry i b
-  where addCarry :: Int -> Word8 -> (Int, Word8)
-        addCarry acc w
-            | acc == 0  = (0, w)
-            | otherwise = let (hi,lo) = acc `divMod` 256
-                              nw      = lo + (fromIntegral w)
-                           in (hi + (nw `shiftR` 8), fromIntegral nw)
--}
 
 cbcEncryptGeneric :: (ByteArray ba, BlockCipher cipher) => cipher -> IV cipher -> ba -> ba
 cbcEncryptGeneric cipher ivini input = byteArrayConcat $ doEnc ivini $ chunk (blockSize cipher) input
