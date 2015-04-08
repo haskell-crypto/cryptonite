@@ -6,18 +6,17 @@ module BlockCipher
     , KAT_CTR(..)
     , KAT_XTS(..)
     , KAT_AEAD(..)
-    , testECB
-    , testKatCBC
-    , testKatCFB
-    , testKatCTR
-    , testKatXTS
-    , testKatAEAD
+    , KATs(..)
+    , defaultKATs
+    , testBlockCipher
     , CipherInfo
     ) where
 
 import Imports
 import Data.Maybe
+import Crypto.Error
 import Crypto.Cipher.Types
+import Crypto.Internal.ByteArray
 import qualified Data.ByteString as B
 
 ------------------------------------------------------------------------
@@ -27,6 +26,9 @@ import qualified Data.ByteString as B
 type BlockSize = Int
 type KeySize = Int
 type CipherInfo a = (BlockSize, KeySize, ByteString -> a)
+
+instance Show (IV c) where
+    show _ = "IV"
 
 -- | ECB KAT
 data KAT_ECB = KAT_ECB
@@ -164,24 +166,24 @@ testKATs kats cipher = testGroup "KAT"
             [ testCase ("E" ++ i) (ecbEncrypt ctx (ecbPlaintext d) @?= ecbCiphertext d)
             , testCase ("D" ++ i) (ecbDecrypt ctx (ecbCiphertext d) @?= ecbPlaintext d)
             ]
-          where ctx = cipherInit (cipherMakeKey cipher $ ecbKey d)
+          where ctx = cipherInitNoErr (cipherMakeKey cipher $ ecbKey d)
         makeCBCTest i d =
             [ testCase ("E" ++ i) (cbcEncrypt ctx iv (cbcPlaintext d) @?= cbcCiphertext d)
             , testCase ("D" ++ i) (cbcDecrypt ctx iv (cbcCiphertext d) @?= cbcPlaintext d)
             ]
-          where ctx = cipherInit (cipherMakeKey cipher $ cbcKey d)
+          where ctx = cipherInitNoErr (cipherMakeKey cipher $ cbcKey d)
                 iv  = cipherMakeIV cipher $ cbcIV d
         makeCFBTest i d =
             [ testCase ("E" ++ i) (cfbEncrypt ctx iv (cfbPlaintext d) @?= cfbCiphertext d)
             , testCase ("D" ++ i) (cfbDecrypt ctx iv (cfbCiphertext d) @?= cfbPlaintext d)
             ]
-          where ctx = cipherInit (cipherMakeKey cipher $ cfbKey d)
+          where ctx = cipherInitNoErr (cipherMakeKey cipher $ cfbKey d)
                 iv  = cipherMakeIV cipher $ cfbIV d
         makeCTRTest i d =
             [ testCase ("E" ++ i) (ctrCombine ctx iv (ctrPlaintext d) @?= ctrCiphertext d)
             , testCase ("D" ++ i) (ctrCombine ctx iv (ctrCiphertext d) @?= ctrPlaintext d)
             ]
-          where ctx = cipherInit (cipherMakeKey cipher $ ctrKey d)
+          where ctx = cipherInitNoErr (cipherMakeKey cipher $ ctrKey d)
                 iv  = cipherMakeIV cipher $ ctrIV d
 {-
         makeXTSTest i d  =
@@ -208,6 +210,12 @@ testKATs kats cipher = testGroup "KAT"
                 dtag = aeadFinalize aeadDFinal (aeadTaglen d)
 -}
 
+        cipherInitNoErr :: BlockCipher c => Key c -> c
+        cipherInitNoErr (Key k) =
+            case cipherInit k of
+                CryptoPassed a -> a
+                CryptoFailed e -> error (show e)
+
 ------------------------------------------------------------------------
 -- Properties
 ------------------------------------------------------------------------
@@ -220,7 +228,8 @@ newtype Plaintext a = Plaintext { unPlaintext :: B.ByteString }
 newtype PlaintextBS a = PlaintextBS { unPlaintextBS :: B.ByteString }
     deriving (Show,Eq)
 
-type Key a = ByteString
+newtype Key a = Key ByteString
+    deriving (Show,Eq)
 
 -- | a ECB unit test
 data ECBUnit a = ECBUnit (Key a) (PlaintextBS a)
@@ -257,15 +266,15 @@ data StreamUnit a = StreamUnit (Key a) (Plaintext a)
 instance Show (ECBUnit a) where
     show (ECBUnit key b) = "ECB(key=" ++ show key ++ ",input=" ++ show b ++ ")"
 instance Show (CBCUnit a) where
-    show (CBCUnit key iv b) = "CBC(key=" ++ show key ++ ",iv=" ++ show (unPlaintext iv) ++ ",input=" ++ show b ++ ")"
+    show (CBCUnit key iv b) = "CBC(key=" ++ show key ++ ",iv=" ++ show iv ++ ",input=" ++ show b ++ ")"
 instance Show (CFBUnit a) where
-    show (CFBUnit key iv b) = "CFB(key=" ++ show key ++ ",iv=" ++ show (unPlaintext iv) ++ ",input=" ++ show b ++ ")"
+    show (CFBUnit key iv b) = "CFB(key=" ++ show key ++ ",iv=" ++ show iv ++ ",input=" ++ show b ++ ")"
 instance Show (CFB8Unit a) where
-    show (CFB8Unit key iv b) = "CFB8(key=" ++ show key ++ ",iv=" ++ show (unPlaintext iv) ++ ",input=" ++ show b ++ ")"
+    show (CFB8Unit key iv b) = "CFB8(key=" ++ show key ++ ",iv=" ++ show iv ++ ",input=" ++ show b ++ ")"
 instance Show (CTRUnit a) where
-    show (CTRUnit key iv b) = "CTR(key=" ++ show key ++ ",iv=" ++ show (unPlaintext iv) ++ ",input=" ++ show b ++ ")"
+    show (CTRUnit key iv b) = "CTR(key=" ++ show key ++ ",iv=" ++ show iv ++ ",input=" ++ show b ++ ")"
 instance Show (XTSUnit a) where
-    show (XTSUnit key1 key2 iv b) = "XTS(key1=" ++ show key1 ++ ",key2=" ++ show key2 ++ ",iv=" ++ show (unPlaintext iv) ++ ",input=" ++ show b ++ ")"
+    show (XTSUnit key1 key2 iv b) = "XTS(key1=" ++ show key1 ++ ",key2=" ++ show key2 ++ ",iv=" ++ show iv ++ ",input=" ++ show b ++ ")"
 instance Show (AEADUnit a) where
     show (AEADUnit key iv aad b) = "AEAD(key=" ++ show key ++ ",iv=" ++ show iv ++ ",aad=" ++ show (unPlaintext aad) ++ ",input=" ++ show b ++ ")"
 instance Show (StreamUnit a) where
@@ -280,7 +289,7 @@ generateKey = keyFromCipher undefined
                          KeySizeRange low high -> choose (low, high)
                          KeySizeFixed v -> return v
                          KeySizeEnum l  -> elements l
-            B.pack <$> replicateM sz arbitrary
+            Key . B.pack <$> replicateM sz arbitrary
 
 -- | Generate an arbitrary valid IV for a specific block cipher
 generateIv :: BlockCipher a => Gen (IV a)
@@ -343,29 +352,29 @@ testBlockCipherBasic cipher = [ testProperty "ECB" ecbProp ]
   where ecbProp = toTests cipher
         toTests :: BlockCipher a => a -> (ECBUnit a -> Bool)
         toTests _ = testProperty_ECB
-        testProperty_ECB (ECBUnit (cipherInit -> ctx) (unPlaintext -> plaintext)) =
+        testProperty_ECB (ECBUnit key (unPlaintextBS -> plaintext)) = withCtx key $ \ctx ->
             plaintext `assertEq` ecbDecrypt ctx (ecbEncrypt ctx plaintext)
 
 testBlockCipherModes :: BlockCipher a => a -> [TestTree]
 testBlockCipherModes cipher =
     [ testProperty "CBC" cbcProp
     , testProperty "CFB" cfbProp
-    , testProperty "CFB8" cfb8Prop
+    --, testProperty "CFB8" cfb8Prop
     , testProperty "CTR" ctrProp
     ]
-  where (cbcProp,cfbProp,cfb8Prop,ctrProp) = toTests cipher
+  where (cbcProp,cfbProp,ctrProp) = toTests cipher
         toTests :: BlockCipher a
                 => a
-                -> ((CBCUnit a -> Bool), (CFBUnit a -> Bool), (CFB8Unit a -> Bool), (CTRUnit a -> Bool))
+                -> ((CBCUnit a -> Bool), (CFBUnit a -> Bool), {-(CFB8Unit a -> Bool),-} (CTRUnit a -> Bool))
         toTests _ = (testProperty_CBC
                     ,testProperty_CFB
                     --,testProperty_CFB8
                     ,testProperty_CTR
                     )
-        testProperty_CBC (CBCUnit (cipherInit -> ctx) testIV (unPlaintext -> plaintext)) =
+        testProperty_CBC (CBCUnit key testIV (unPlaintextBS -> plaintext)) = withCtx key $ \ctx ->
             plaintext `assertEq` cbcDecrypt ctx testIV (cbcEncrypt ctx testIV plaintext)
 
-        testProperty_CFB (CFBUnit (cipherInit -> ctx) testIV (unPlaintext -> plaintext)) =
+        testProperty_CFB (CFBUnit key testIV (unPlaintextBS -> plaintext)) = withCtx key $ \ctx ->
             plaintext `assertEq` cfbDecrypt ctx testIV (cfbEncrypt ctx testIV plaintext)
 
 {-
@@ -373,7 +382,7 @@ testBlockCipherModes cipher =
             plaintext `assertEq` cfb8Decrypt ctx testIV (cfb8Encrypt ctx testIV plaintext)
 -}
 
-        testProperty_CTR (CTRUnit (cipherInit -> ctx) testIV (unPlaintext -> plaintext)) =
+        testProperty_CTR (CTRUnit key testIV (unPlaintext -> plaintext)) = withCtx key $ \ctx ->
             plaintext `assertEq` ctrCombine ctx testIV (ctrCombine ctx testIV plaintext)
 
 testBlockCipherAEAD :: BlockCipher a => a -> [TestTree]
@@ -387,7 +396,7 @@ testBlockCipherAEAD cipher =
   where aeadProp = toTests cipher
         toTests :: BlockCipher a => a -> (AEADMode -> AEADUnit a -> Bool)
         toTests _ = testProperty_AEAD
-        testProperty_AEAD mode (AEADUnit (cipherInit -> ctx) testIV (unPlaintext -> aad) (unPlaintext -> plaintext)) =
+        testProperty_AEAD mode (AEADUnit key testIV (unPlaintext -> aad) (unPlaintext -> plaintext)) = withCtx key $ \ctx ->
             case aeadInit mode ctx testIV of
                 Just iniAead ->
                     let aead           = aeadAppendHeader iniAead aad
@@ -395,8 +404,14 @@ testBlockCipherAEAD cipher =
                         (dText, aeadD) = aeadDecrypt aead eText
                         eTag           = aeadFinalize aeadE (blockSize ctx)
                         dTag           = aeadFinalize aeadD (blockSize ctx)
-                     in (plaintext `assertEq` dText) && (toBytes eTag `assertEq` toBytes dTag)
+                     in (plaintext `assertEq` dText) && (eTag `byteArrayEq` dTag)
                 Nothing -> True
+
+withCtx :: Cipher c => Key c -> (c -> a) -> a
+withCtx (Key key) f =
+    case cipherInit key of
+        CryptoFailed e   -> error ("init failed: " ++ show e)
+        CryptoPassed ctx -> f ctx
 
 {-
 testBlockCipherXTS :: BlockCipher a => a -> [TestTree]
@@ -409,14 +424,14 @@ testBlockCipherXTS cipher = [testProperty "XTS" xtsProp]
             | blockSize ctx1 == 16 = plaintext `assertEq` xtsDecrypt (ctx1, ctx2) testIV 0 (xtsEncrypt (ctx1, ctx2) testIV 0 plaintext)
             | otherwise            = True
 -}
-testBlockCipherXTS = []
 
 -- | Test a generic block cipher for properties
 -- related to block cipher modes.
 testModes :: BlockCipher a => a -> [TestTree]
 testModes cipher =
     [ testGroup "decrypt.encrypt==id"
-        (testBlockCipherBasic cipher ++ testBlockCipherModes cipher ++ testBlockCipherAEAD cipher ++ testBlockCipherXTS cipher)
+--        (testBlockCipherBasic cipher ++ testBlockCipherModes cipher ++ testBlockCipherAEAD cipher ++ testBlockCipherXTS cipher)
+        (testBlockCipherBasic cipher ++ testBlockCipherModes cipher ++ testBlockCipherAEAD cipher)
     ]
 
 -- | Return tests for a specific blockcipher and a list of KATs
@@ -431,7 +446,7 @@ assertEq b1 b2 | b1 /= b2  = error ("b1: " ++ show b1 ++ " b2: " ++ show b2)
                | otherwise = True
 
 cipherMakeKey :: Cipher cipher => cipher -> ByteString -> Key cipher
-cipherMakeKey c bs = bs
+cipherMakeKey _ bs = Key bs
 
 cipherMakeIV :: BlockCipher cipher => cipher -> ByteString -> IV cipher
 cipherMakeIV _ bs = fromJust $ makeIV bs
@@ -442,6 +457,3 @@ maybeGroup mkTest groupName l
     | otherwise = [testGroup groupName (concatMap (\(i, d) -> mkTest (show i) d) $ zip nbs l)]
   where nbs :: [Int]
         nbs = [0..]
-
-is :: [Int]
-is = [1..]
