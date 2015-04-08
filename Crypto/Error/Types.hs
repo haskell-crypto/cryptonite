@@ -49,6 +49,7 @@ instance Monad CryptoFailable where
             CryptoPassed a -> m2 a
             CryptoFailed e -> CryptoFailed e
 
+{-
 throwCryptoError :: CryptoFailable a -> IO a
 throwCryptoError = undefined
 
@@ -57,3 +58,4 @@ eitherCryptoError = undefined
 
 maybeCryptoError :: CryptoFailable a -> Maybe a
 maybeCryptoError = undefined
+-}
