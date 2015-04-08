@@ -14,6 +14,7 @@ module Crypto.Internal.ByteArray
     ( ByteArray(..)
     , byteArrayAllocAndFreeze
     , empty
+    , byteArrayCopyAndFreeze
     , byteArraySplit
     , byteArrayXor
     , byteArrayConcat
@@ -99,3 +100,9 @@ byteArrayConcat allBs = byteArrayAllocAndFreeze total (loop allBs)
             let sz = byteArrayLength b
             withByteArray b $ \p -> bufCopy dst p sz
             loop bs (dst `plusPtr` sz)
+
+byteArrayCopyAndFreeze :: ByteArray bs => bs -> (Ptr p -> IO ()) -> bs
+byteArrayCopyAndFreeze bs f =
+    byteArrayAllocAndFreeze (byteArrayLength bs) $ \d -> do
+        withByteArray bs $ \s -> bufCopy d s (byteArrayLength bs)
+        f (castPtr d)

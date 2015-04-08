@@ -15,7 +15,7 @@ module Crypto.Cipher.Types.Block
     -- * BlockCipher
       BlockCipher(..)
     -- * initialization vector (IV)
-    , IV
+    , IV(..)
     , makeIV
     , nullIV
     , ivAdd
@@ -44,6 +44,12 @@ import Crypto.Internal.ByteArray
 
 import Foreign.Ptr
 import Foreign.Storable
+
+-- | an IV parametrized by the cipher
+data IV c = forall byteArray . ByteArray byteArray => IV byteArray
+
+instance BlockCipher c => ByteArray (IV c) where
+
 
 type XTS cipher = (cipher, cipher)
                -> IV cipher        -- ^ Usually represent the Data Unit (e.g. disk sector)
@@ -161,7 +167,26 @@ nullIV = toIV undefined
 --
 -- Assume the IV is in Big Endian format.
 ivAdd :: BlockCipher c => IV c -> Int -> IV c
-ivAdd i _ = i
+ivAdd (IV b) i = IV $ copy b
+  where copy :: ByteArray bs => bs -> bs
+        copy bs = byteArrayCopyAndFreeze bs $ \p -> do
+            let until0 accu = do
+                  r <- loop accu (byteArrayLength bs - 1) p
+                  case r of
+                      0 -> return ()
+                      _ -> until0 r
+            until0 i
+
+        loop :: Int -> Int -> Ptr Word8 -> IO Int
+        loop 0   _   _ = return 0
+        loop acc ofs p = do
+            v <- peek (p `plusPtr` ofs) :: IO Word8
+            let accv    = acc + fromIntegral v
+                (hi,lo) = accv `divMod` 256
+            poke (p `plusPtr` ofs) (fromIntegral lo :: Word8)
+            if ofs == 0
+                then return hi
+                else loop hi (ofs - 1) p
 {-
 ivAdd (IV b) i = IV $ snd $ B.mapAccumR addCarry i b
   where addCarry :: Int -> Word8 -> (Int, Word8)

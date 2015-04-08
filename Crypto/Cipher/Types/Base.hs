@@ -10,7 +10,6 @@
 {-# LANGUAGE ExistentialQuantification #-}
 module Crypto.Cipher.Types.Base
     ( KeySizeSpecifier(..)
-    , IV(..)
     , Cipher(..)
     , AuthTag(..)
     , AEADMode(..)
@@ -34,11 +33,6 @@ data KeySizeSpecifier =
 
 -- | Offset inside an XTS data unit, measured in block size.
 type DataUnitOffset = Word32
-
--- | an IV parametrized by the cipher
-data IV c = forall byteArray . ByteArray byteArray => IV byteArray
-
-instance ByteArray (IV c) where
 
 -- | Authentification Tag for AE cipher mode
 newtype AuthTag = AuthTag ByteString
