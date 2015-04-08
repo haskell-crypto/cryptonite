@@ -17,6 +17,7 @@ extra-doc-files:     README.md
 extra-source-files:  cbits/*.h
                      cbits/aes/*.h
                      cbits/aes/x86ni_impl.c
+                     tests/*.hs
 
 source-repository head
   type: git
@@ -127,6 +128,7 @@ Library
                      Crypto.Internal.Compat
                      Crypto.Internal.Bytes
                      Crypto.Internal.Endian
+                     Crypto.Internal.Imports
                      Crypto.Internal.Memory
   Build-depends:     base >= 4.3 && < 5
                    , bytestring
