@@ -11,9 +11,9 @@ module Crypto.Cipher.Types.AEAD where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
-import Data.Byteable
 import Crypto.Cipher.Types.Base
 import Crypto.Cipher.Types.Block
+import Crypto.Internal.ByteArray
 
 -- | Append associated data into the AEAD state
 aeadAppendHeader :: BlockCipher a => AEAD a -> ByteString -> AEAD a
@@ -59,5 +59,5 @@ aeadSimpleDecrypt aeadIni header input authTag
     | otherwise      = Nothing
   where aead                = aeadAppendHeader aeadIni header
         (output, aeadFinal) = aeadDecrypt aead input
-        tag                 = aeadFinalize aeadFinal (byteableLength authTag)
+        tag                 = aeadFinalize aeadFinal (byteArrayLength authTag)
 
