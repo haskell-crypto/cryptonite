@@ -12,12 +12,10 @@ module Crypto.Cipher.TripleDES
     ) where
 
 import Data.Word
-import Data.Byteable
-import qualified Data.ByteString as B
-
 import Crypto.Error
 import Crypto.Internal.ByteArray
 import Crypto.Cipher.Types
+import Crypto.Cipher.DES.Serialization
 import Crypto.Cipher.DES.Primitive
 
 -- | 3DES with 3 different keys used all in the same direction
@@ -56,7 +54,6 @@ instance Cipher DES_EEE2 where
     cipherKeySize _ = KeySizeFixed 16
     cipherInit k    = init2DES DES_EEE2 k
 
-{-
 instance BlockCipher DES_EEE3 where
     blockSize _ = 8
     ecbEncrypt (DES_EEE3 k1 k2 k3) = unblockify . map (encrypt k3 . encrypt k2 . encrypt k1) . blockify
@@ -76,7 +73,6 @@ instance BlockCipher DES_EDE2 where
     blockSize _ = 8
     ecbEncrypt (DES_EDE2 k1 k2) = unblockify . map (encrypt k1 . decrypt k2 . encrypt k1) . blockify
     ecbDecrypt (DES_EDE2 k1 k2) = unblockify . map (decrypt k1 . encrypt k2 . decrypt k1) . blockify
--}
 
 init3DES :: ByteArray key => (Word64 -> Word64 -> Word64 -> a) -> key -> CryptoFailable a
 init3DES constr k

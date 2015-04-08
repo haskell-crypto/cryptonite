@@ -37,7 +37,6 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Internal as B (unsafeCreate)
 import Data.Byteable
 import Data.Word
-import Data.Bits (shiftR)
 import Crypto.Cipher.Types.Base
 import Crypto.Cipher.Types.GF
 import Crypto.Cipher.Types.Utils
@@ -222,7 +221,7 @@ cfbEncryptGeneric :: (ByteArray ba, BlockCipher cipher) => cipher -> IV cipher -
 cfbEncryptGeneric cipher ivini input = byteArrayConcat $ doEnc ivini $ chunk (blockSize cipher) input
   where
         doEnc _  []     = []
-        doEnc iv (i:is) =
+        doEnc (IV iv) (i:is) =
             let o = byteArrayXor i $ ecbEncrypt cipher iv
              in o : doEnc (IV o) is
 
@@ -230,15 +229,15 @@ cfbDecryptGeneric :: (ByteArray ba, BlockCipher cipher) => cipher -> IV cipher -
 cfbDecryptGeneric cipher ivini input = byteArrayConcat $ doDec ivini $ chunk (blockSize cipher) input
   where
         doDec _  []     = []
-        doDec iv (i:is) =
+        doDec (IV iv) (i:is) =
             let o = byteArrayXor i $ ecbEncrypt cipher iv
              in o : doDec (IV i) is
 
 ctrCombineGeneric :: (ByteArray ba, BlockCipher cipher) => cipher -> IV cipher -> ba -> ba
 ctrCombineGeneric cipher ivini input = byteArrayConcat $ doCnt ivini $ chunk (blockSize cipher) input
   where doCnt _  [] = []
-        doCnt iv (i:is) =
-            let ivEnc = ecbEncrypt cipher iv
+        doCnt iv@(IV ivd) (i:is) =
+            let ivEnc = ecbEncrypt cipher ivd
              in byteArrayXor i ivEnc : doCnt (ivAdd iv 1) is
 
 {-

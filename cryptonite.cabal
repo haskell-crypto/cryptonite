@@ -126,6 +126,7 @@ Library
                      Crypto.Internal.Compat
                      Crypto.Internal.Bytes
                      Crypto.Internal.ByteArray
+                     Crypto.Internal.Endian
                      Crypto.Internal.Memory
   Build-depends:     base >= 4.3 && < 5
                    , bytestring
@@ -160,6 +161,10 @@ Library
                    , cbits/cryptonite_whirlpool.c
                    , cbits/cryptonite_scrypt.c
   include-dirs:  cbits
+
+  -- FIXME armel or mispel is also little endian.
+  -- might be a good idea to also add a runtime autodetect mode.
+  -- ARCH_ENDIAN_UNKNOWN
   if (arch(i386) || arch(x86_64))
     CPP-options: -DARCH_IS_LITTLE_ENDIAN
 

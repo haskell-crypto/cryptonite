@@ -7,10 +7,8 @@
 --
 -- basic routine to convert between W64 and bytestring for DES.
 --
-{-# LANGUAGE CPP #-}
 module Crypto.Cipher.DES.Serialization
-    ( toW64
-    , toBS
+    ( toBS
     , blockify
     , unblockify
     ) where
@@ -18,17 +16,14 @@ module Crypto.Cipher.DES.Serialization
 import qualified Data.ByteString as B
 import Crypto.Cipher.DES.Primitive (Block(..))
 
-#ifdef ARCH_IS_LITTLE_ENDIAN
+import Crypto.Internal.ByteArray
+import Crypto.Internal.Endian
+
 import Data.Word (Word64)
-import Data.Byteable (withBytePtr)
-import qualified Data.ByteString.Internal as B (inlinePerformIO, unsafeCreate)
 import Foreign.Storable
 import Foreign.Ptr (castPtr, plusPtr, Ptr)
-import Data.Bits (shiftL, shiftR, (.|.), (.&.))
-#else
-import Data.Bits (shiftL, shiftR, (.|.))
-#endif
 
+{-
 #ifdef ARCH_IS_LITTLE_ENDIAN
 -- | convert a 8 byte bytestring big endian to a host one
 toW64 :: B.ByteString -> Block
@@ -70,9 +65,30 @@ toBS (Block b) = B.pack $ map (shr b) [56,48,40,32,24,16,8,0]
 unblockify :: [Block] -> B.ByteString
 unblockify = B.concat . map toBS
 #endif
+-}
 
 -- | create DES blocks from a strict bytestring
-blockify :: B.ByteString -> [Block]
+blockify :: ByteArrayAccess ba => ba -> [Block]
+blockify s
+    | len `mod` 8 /= 0 = error "invalid block"
+    | otherwise        = loop 0
+  where
+    len = byteArrayLength s
+    loop i
+        | i == len  = []
+        | otherwise = Block (byteArrayToW64BE s i) : loop (i+8)
+
+unblockify :: ByteArray ba => [Block] -> ba
+unblockify blocks = byteArrayAllocAndFreeze (nbBlocks * 8) $ \initPtr -> pokeTo (castPtr initPtr) blocks
+  where nbBlocks = length blocks
+        pokeTo :: Ptr Word64 -> [Block] -> IO ()
+        pokeTo _   []           = return ()
+        pokeTo ptr (Block x:xs) = poke ptr (toBE64 x) >> pokeTo (ptr `plusPtr` 8) xs
+
+toBS :: Block -> B.ByteString
+toBS (Block w) = byteArrayAllocAndFreeze 8 $ \ptr -> poke (castPtr ptr) (toBE64 w)
+{-
 blockify s | B.null s  = []
            | otherwise = let (s1,s2) = B.splitAt 8 s
                           in toW64 s1:blockify s2
+-}

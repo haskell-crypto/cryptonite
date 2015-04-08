@@ -29,6 +29,7 @@ import Data.Word
 import Data.SecureMem
 import Crypto.Internal.Memory
 import Crypto.Internal.Compat
+import Crypto.Internal.Endian
 import Crypto.Internal.Bytes (bufXor, bufCopy)
 import Foreign.Ptr
 import Foreign.Storable
@@ -124,9 +125,5 @@ byteArrayToBS bs = byteArrayCopyAndFreeze bs (\_ -> return ())
 byteArrayFromBS :: ByteArray bs => ByteString -> bs
 byteArrayFromBS bs = byteArrayCopyAndFreeze bs (\_ -> return ())
 
-byteArrayToW64BE :: ByteArray bs => bs -> Int -> Word64
+byteArrayToW64BE :: ByteArrayAccess bs => bs -> Int -> Word64
 byteArrayToW64BE bs ofs = unsafeDoIO $ withByteArray bs $ \p -> fromBE64 <$> peek (p `plusPtr` ofs)
-
--- move me elsewhere. not working properly for big endian machine, as it should be id
-fromBE64 :: Word64 -> Word64
-fromBE64 = byteSwap64

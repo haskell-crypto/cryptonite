@@ -13,6 +13,7 @@ import Data.Word
 import Crypto.Error
 import Crypto.Cipher.Types
 import Crypto.Cipher.DES.Primitive
+import Crypto.Cipher.DES.Serialization
 import Crypto.Internal.ByteArray
 
 -- | DES Context
@@ -24,12 +25,10 @@ instance Cipher DES where
     cipherKeySize _ = KeySizeFixed 8
     cipherInit k    = initDES k
 
-{-
 instance BlockCipher DES where
     blockSize _ = 8
     ecbEncrypt (DES key) = unblockify . map (encrypt key) . blockify
     ecbDecrypt (DES key) = unblockify . map (decrypt key) . blockify
--}
 
 initDES :: ByteArray key => key -> CryptoFailable DES
 initDES k
