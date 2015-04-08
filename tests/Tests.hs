@@ -1,14 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import Control.Applicative
 import Data.Byteable
-import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
-import Data.ByteString.Char8 ()
-import Test.Tasty
-import Test.Tasty.QuickCheck
-import Test.Tasty.HUnit
+
+import Imports
 
 import qualified Crypto.Cipher.ChaCha as ChaCha
 import qualified Crypto.Cipher.Salsa as Salsa
