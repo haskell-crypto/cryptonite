@@ -22,6 +22,7 @@ module Crypto.Internal.ByteArray
     , byteArrayToBS
     , byteArrayFromBS
     , byteArrayToW64BE
+    , byteArrayToW64LE
     ) where
 
 import Control.Applicative ((<$>))
@@ -127,3 +128,6 @@ byteArrayFromBS bs = byteArrayCopyAndFreeze bs (\_ -> return ())
 
 byteArrayToW64BE :: ByteArrayAccess bs => bs -> Int -> Word64
 byteArrayToW64BE bs ofs = unsafeDoIO $ withByteArray bs $ \p -> fromBE64 <$> peek (p `plusPtr` ofs)
+
+byteArrayToW64LE :: ByteArrayAccess bs => bs -> Int -> Word64
+byteArrayToW64LE bs ofs = unsafeDoIO $ withByteArray bs $ \p -> fromLE64 <$> peek (p `plusPtr` ofs)
