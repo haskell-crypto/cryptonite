@@ -23,6 +23,7 @@ perModuleAllowedExtensions =
 
 disallowedModules =
     [ (ModuleName "System.IO.Unsafe", ModuleName "Crypto.Internal.Compat")
+    , (ModuleName "Data.Byteable", ModuleName "Crypto.Internal.ByteArray")
     ]
 
 main = do
