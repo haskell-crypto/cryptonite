@@ -52,6 +52,8 @@ data IV c = forall byteArray . ByteArray byteArray => IV byteArray
 instance BlockCipher c => ByteArrayAccess (IV c) where
     withByteArray (IV z) f = withByteArray z f
     byteArrayLength (IV z) = byteArrayLength z
+instance Eq (IV c) where
+    (IV a) == (IV b) = byteArrayEq a b
 
 type XTS cipher = (cipher, cipher)
                -> IV cipher        -- ^ Usually represent the Data Unit (e.g. disk sector)
