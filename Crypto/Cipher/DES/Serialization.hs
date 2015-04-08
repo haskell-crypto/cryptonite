@@ -86,7 +86,7 @@ unblockify blocks = byteArrayAllocAndFreeze (nbBlocks * 8) $ \initPtr -> pokeTo 
         pokeTo ptr (Block x:xs) = poke ptr (toBE64 x) >> pokeTo (ptr `plusPtr` 8) xs
 
 toBS :: Block -> B.ByteString
-toBS (Block w) = byteArrayAllocAndFreeze 8 $ \ptr -> poke (castPtr ptr) (toBE64 w)
+toBS (Block w) = byteArrayAllocAndFreeze 8 $ \ptr -> poke ptr (toBE64 w)
 {-
 blockify s | B.null s  = []
            | otherwise = let (s1,s2) = B.splitAt 8 s
