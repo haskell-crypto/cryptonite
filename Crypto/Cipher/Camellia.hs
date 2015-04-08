@@ -13,7 +13,6 @@ module Crypto.Cipher.Camellia
 
 import Crypto.Cipher.Camellia.Primitive
 import Crypto.Cipher.Types
-import Data.Byteable
 
 -- | Camellia block cipher with 128 bit key
 newtype Camellia128 = Camellia128 Camellia
@@ -25,5 +24,5 @@ instance Cipher Camellia128 where
 
 instance BlockCipher Camellia128 where
     blockSize _ = 16
-    ecbEncrypt (Camellia128 key) ba = encrypt key (byteArrayToBS ba)
-    ecbDecrypt (Camellia128 key) ba = decrypt key (byteArrayToBS ba)
+    ecbEncrypt (Camellia128 key) = ecbEncryptLegacy encrypt key
+    ecbDecrypt (Camellia128 key) = ecbDecryptLegacy decrypt key

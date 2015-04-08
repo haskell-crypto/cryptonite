@@ -9,11 +9,11 @@ module Crypto.Cipher.DES
     ( DES
     ) where
 
-import Data.Byteable
 import Data.Word
+import Crypto.Error
 import Crypto.Cipher.Types
 import Crypto.Cipher.DES.Primitive
-import Crypto.Cipher.DES.Serialization
+import Crypto.Internal.ByteArray
 
 -- | DES Context
 data DES = DES Word64
@@ -31,9 +31,9 @@ instance BlockCipher DES where
     ecbDecrypt (DES key) = unblockify . map (decrypt key) . blockify
 -}
 
-initDES :: b -> DES
+initDES :: ByteArray key => key -> CryptoFailable DES
 initDES k
-    | len == 8  = DES key
-    | otherwise = error "DES: not a valid key length (valid=8)"
-  where len  = byteableLength k
-        (Block key) = toW64 $ toBytes k
+    | len == 8  = CryptoPassed $ DES key
+    | otherwise = CryptoFailed $ CryptoError_KeySizeInvalid
+  where len = byteArrayLength k
+        key = byteArrayToW64BE k 0

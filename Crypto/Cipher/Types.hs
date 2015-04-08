@@ -13,6 +13,8 @@ module Crypto.Cipher.Types
     -- * Cipher classes
       Cipher(..)
     , BlockCipher(..)
+    , ecbEncryptLegacy
+    , ecbDecryptLegacy
     , StreamCipher(..)
     , DataUnitOffset
     , KeySizeSpecifier(..)

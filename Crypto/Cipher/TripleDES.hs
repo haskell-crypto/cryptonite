@@ -19,7 +19,6 @@ import Crypto.Error
 import Crypto.Internal.ByteArray
 import Crypto.Cipher.Types
 import Crypto.Cipher.DES.Primitive
-import Crypto.Cipher.DES.Serialization
 
 -- | 3DES with 3 different keys used all in the same direction
 data DES_EEE3 = DES_EEE3 Word64 Word64 Word64

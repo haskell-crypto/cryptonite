@@ -19,6 +19,7 @@ module Crypto.Internal.ByteArray
     , byteArrayXor
     , byteArrayConcat
     , byteArrayToBS
+    , byteArrayFromBS
     , byteArrayToW64BE
     ) where
 
@@ -113,6 +114,9 @@ byteArrayCopyAndFreeze bs f =
 
 byteArrayToBS :: ByteArray bs => bs -> ByteString
 byteArrayToBS bs = byteArrayCopyAndFreeze bs (\_ -> return ())
+
+byteArrayFromBS :: ByteArray bs => ByteString -> bs
+byteArrayFromBS bs = byteArrayCopyAndFreeze bs (\_ -> return ())
 
 byteArrayToW64BE :: ByteArray bs => bs -> Int -> Word64
 byteArrayToW64BE bs ofs = unsafeDoIO $ withByteArray bs $ \p -> fromBE64 <$> peek (p `plusPtr` ofs)

@@ -1,8 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module KAT_Blowfish where
 
---import Crypto.Cipher.Blowfish
---import Data.ByteString.Char8 () -- orphan IsString for older bytestring versions
+import Crypto.Cipher.Blowfish
 import Imports
 import BlockCipher
 
@@ -44,7 +43,6 @@ vectors_ecb = -- key plaintext cipher
     ]
 
 {-
-kats = defaultKATs { kat_ECB = vectors_ecb }
 
 main = defaultMain
     [ testBlockCipher kats (undefined :: Blowfish64)

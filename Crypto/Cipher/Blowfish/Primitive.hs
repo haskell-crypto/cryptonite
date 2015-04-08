@@ -22,6 +22,9 @@ import Data.Char
 import Data.Word
 import qualified Data.ByteString as B
 
+import Crypto.Error
+import Crypto.Internal.ByteArray
+
 type Pbox = Vector Word32
 type Sbox = Vector Word32
 
@@ -42,16 +45,17 @@ cipher (p, bs) b
     | B.length b `mod` 8 /= 0 = error "invalid data length"
     | otherwise = B.concat $ doChunks 8 (fromW32Pair . coreCrypto p bs . toW32Pair) b
 
-initBlowfish :: B.ByteString -> Either String Context
-initBlowfish b
-    | B.length b > (448 `div` 8) = fail "key too large"
-    | B.length b == 0 = keyFromByteString (B.replicate (18*4) 0)
-    | otherwise = keyFromByteString . B.pack . take (18*4) . cycle . B.unpack $ b
+initBlowfish :: ByteArray key => key -> CryptoFailable Context
+initBlowfish key
+    | len > (448 `div` 8) = CryptoFailed $ CryptoError_KeySizeInvalid
+    | len == 0            = keyFromByteString (B.replicate (18*4) 0)
+    | otherwise           = keyFromByteString . B.pack . take (18*4) . cycle . B.unpack . byteArrayToBS $ key 
+  where len = byteArrayLength key
 
-keyFromByteString :: B.ByteString -> Either String Context
+keyFromByteString :: B.ByteString -> CryptoFailable Context
 keyFromByteString k
-    | B.length k /= (18 * 4) = fail "Incorrect expanded key length."
-    | otherwise = return . bfMakeKey . (\ws -> V.generate 18 (ws!!)) . w8tow32 . B.unpack $ k
+    | B.length k /= (18 * 4) = CryptoFailed CryptoError_KeySizeInvalid
+    | otherwise              = CryptoPassed . bfMakeKey . (\ws -> V.generate 18 (ws!!)) . w8tow32 . B.unpack $ k
   where
     w8tow32 :: [Word8] -> [Word32]
     w8tow32 [] = []

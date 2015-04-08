@@ -14,6 +14,8 @@ module Crypto.Cipher.Types.Block
     (
     -- * BlockCipher
       BlockCipher(..)
+    , ecbEncryptLegacy
+    , ecbDecryptLegacy
     -- * initialization vector (IV)
     , IV(..)
     , makeIV
@@ -110,6 +112,18 @@ class Cipher cipher => BlockCipher cipher where
     -- When Nothing is returns, it means the mode is not handled.
     aeadInit :: Byteable iv => AEADMode -> cipher -> iv -> Maybe (AEAD cipher)
     aeadInit _ _ _ = Nothing
+
+ecbEncryptLegacy :: ByteArray ba
+                 => (cipher -> ByteString -> ByteString)
+                 -> cipher -> ba -> ba
+ecbEncryptLegacy f cipher input =
+    byteArrayFromBS $ f cipher (byteArrayToBS input)
+
+ecbDecryptLegacy :: ByteArray ba
+                 => (cipher -> ByteString -> ByteString)
+                 -> cipher -> ba -> ba
+ecbDecryptLegacy f cipher input =
+    byteArrayFromBS $ f cipher (byteArrayToBS input)
 
 -- | class of block cipher with a 128 bits block size
 class BlockCipher cipher => BlockCipher128 cipher where

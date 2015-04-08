@@ -22,6 +22,7 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Unsafe as B
 
 import Crypto.Error
+import Crypto.Internal.ByteArray
 
 data Mode = Decrypt | Encrypt
 
@@ -166,12 +167,13 @@ setKeyInterim keyseed = (w64tow128 kL, w64tow128 kR, w64tow128 kA, w64tow128 kB)
 -- Return the initialized key or a error message if the given 
 -- keyseed was not 16-bytes in length.
 --
-initCamellia :: B.ByteString -- ^ The seed to use when creating the key
+initCamellia :: ByteArray key
+             => key -- ^ The key to create the camellia context
              -> CryptoFailable Camellia
-initCamellia keyseed 
-    | B.length keyseed /= 16 = CryptoFailed $ CryptoError_KeySizeInvalid
-    | otherwise              =
-        let (kL, _, kA, _) = setKeyInterim keyseed in
+initCamellia key
+    | byteArrayLength key /= 16 = CryptoFailed $ CryptoError_KeySizeInvalid
+    | otherwise                 =
+        let (kL, _, kA, _) = setKeyInterim (byteArrayToBS key) in
 
         let (kw1, kw2) = w128tow64 (kL `rotl128` 0) in
         let (k1, k2)   = w128tow64 (kA `rotl128` 0) in
