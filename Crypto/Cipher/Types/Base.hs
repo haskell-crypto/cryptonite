@@ -8,6 +8,7 @@
 -- symmetric cipher basic types
 --
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Crypto.Cipher.Types.Base
     ( KeySizeSpecifier(..)
     , Cipher(..)
@@ -16,8 +17,6 @@ module Crypto.Cipher.Types.Base
     , DataUnitOffset
     ) where
 
-import Data.Byteable
-import Data.SecureMem
 import Data.Word
 import Data.ByteString (ByteString)
 
@@ -35,13 +34,11 @@ data KeySizeSpecifier =
 type DataUnitOffset = Word32
 
 -- | Authentification Tag for AE cipher mode
-newtype AuthTag = AuthTag ByteString
-    deriving (Show)
+newtype AuthTag = AuthTag { unAuthTag :: ByteString }
+    deriving (Show, ByteArrayAccess)
 
 instance Eq AuthTag where
-    (AuthTag a) == (AuthTag b) = constEqBytes a b
-instance Byteable AuthTag where
-    toBytes (AuthTag bs) = bs
+    (AuthTag a) == (AuthTag b) = byteArrayConstEq a b
 
 -- | AEAD Mode
 data AEADMode =
