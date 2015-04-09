@@ -24,5 +24,5 @@ instance Cipher Camellia128 where
 
 instance BlockCipher Camellia128 where
     blockSize _ = 16
-    ecbEncrypt (Camellia128 key) = ecbEncryptLegacy encrypt key
-    ecbDecrypt (Camellia128 key) = ecbDecryptLegacy decrypt key
+    ecbEncrypt (Camellia128 key) = encrypt key
+    ecbDecrypt (Camellia128 key) = decrypt key

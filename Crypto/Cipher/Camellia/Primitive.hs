@@ -1,3 +1,4 @@
+
 -- |
 -- Module      : Crypto.Cipher.Camellia.Primitive
 -- License     : BSD-style
@@ -23,11 +24,9 @@ import qualified Data.ByteString.Unsafe as B
 
 import Crypto.Error
 import Crypto.Internal.ByteArray
+import Crypto.Internal.Words
 
 data Mode = Decrypt | Encrypt
-
--- should probably use crypto large word ?
-data Word128 = Word128 !Word64 !Word64 deriving (Show, Eq)
 
 w128tow64 :: Word128 -> (Word64, Word64)
 w128tow64 (Word128 w1 w2) = (w1, w2)
@@ -65,23 +64,6 @@ w64tow32 w = (fromIntegral (w `shiftR` 32), fromIntegral (w .&. 0xffffffff))
 
 w32tow64 :: (Word32, Word32) -> Word64
 w32tow64 (x1, x2) = ((fromIntegral x1) `shiftL` 32) .|. (fromIntegral x2)
-
-w128tow8 :: Word128 -> [Word8]
-w128tow8 (Word128 x1 x2) = [t1,t2,t3,t4,t5,t6,t7,t8,u1,u2,u3,u4,u5,u6,u7,u8]
-    where
-        (t1, t2, t3, t4, t5, t6, t7, t8) = w64tow8 x1
-        (u1, u2, u3, u4, u5, u6, u7, u8) = w64tow8 x2
-
-getWord64 :: B.ByteString -> Word64
-getWord64 s = sh 0 56 .|. sh 1 48 .|. sh 2 40 .|. sh 3 32 .|. sh 4 24 .|. sh 5 16 .|. sh 6 8 .|. sh 7 0
-    where
-        sh i l = (fromIntegral (s `B.index` i) `shiftL` l)
-
-getWord128 :: B.ByteString -> Word128
-getWord128 s = Word128 (getWord64 s) (getWord64 (B.drop 8 s))
-
-putWord128 :: Word128 -> B.ByteString
-putWord128 = B.pack . w128tow8
 
 sbox :: Vector Word8
 sbox = fromList
@@ -299,27 +281,16 @@ encryptBlock = doBlock Encrypt
 decryptBlock :: Camellia -> Word128 -> Word128
 decryptBlock = doBlock Decrypt
 
-encryptChunk :: Camellia -> B.ByteString -> B.ByteString
-encryptChunk key b = putWord128 $ encryptBlock key $ getWord128 b
-
-decryptChunk :: Camellia -> B.ByteString -> B.ByteString
-decryptChunk key b = putWord128 $ decryptBlock key $ getWord128 b
-
-doChunks :: (B.ByteString -> B.ByteString) -> B.ByteString -> [B.ByteString]
-doChunks f b =
-    let (x, rest) = B.splitAt 16 b in
-    if B.length rest >= 16
-        then f x : doChunks f rest
-        else [ f x ]
-
 -- | Encrypts the given ByteString using the given Key
-encrypt :: Camellia     -- ^ The key to use
-        -> B.ByteString -- ^ The data to encrypt
-        -> B.ByteString
-encrypt key b = B.concat $ doChunks (encryptChunk key) b
+encrypt :: ByteArray ba
+        => Camellia     -- ^ The key to use
+        -> ba           -- ^ The data to encrypt
+        -> ba
+encrypt key = byteArrayMapAsWord128 (encryptBlock key)
 
 -- | Decrypts the given ByteString using the given Key
-decrypt :: Camellia     -- ^ The key to use
-        -> B.ByteString -- ^ The data to decrypt
-        -> B.ByteString
-decrypt key b = B.concat $ doChunks (decryptChunk key) b
+decrypt :: ByteArray ba
+        => Camellia     -- ^ The key to use
+        -> ba           -- ^ The data to decrypt
+        -> ba
+decrypt key = byteArrayMapAsWord128 (decryptBlock key)

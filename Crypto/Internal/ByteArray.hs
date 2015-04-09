@@ -25,6 +25,7 @@ module Crypto.Internal.ByteArray
     , byteArrayFromBS
     , byteArrayToW64BE
     , byteArrayToW64LE
+    , byteArrayMapAsWord128
     ) where
 
 import Control.Applicative ((<$>), (<*>))
@@ -34,6 +35,7 @@ import Crypto.Internal.Memory
 import Crypto.Internal.Compat
 import Crypto.Internal.Endian
 import Crypto.Internal.Bytes (bufXor, bufCopy)
+import Crypto.Internal.Words
 import Foreign.Ptr
 import Foreign.Storable
 import Foreign.ForeignPtr
@@ -180,3 +182,19 @@ byteArrayToW64BE bs ofs = unsafeDoIO $ withByteArray bs $ \p -> fromBE64 <$> pee
 
 byteArrayToW64LE :: ByteArrayAccess bs => bs -> Int -> Word64
 byteArrayToW64LE bs ofs = unsafeDoIO $ withByteArray bs $ \p -> fromLE64 <$> peek (p `plusPtr` ofs)
+
+byteArrayMapAsWord128 :: ByteArray bs => (Word128 -> Word128) -> bs -> bs
+byteArrayMapAsWord128 f bs =
+    byteArrayAllocAndFreeze len $ \dst ->
+    withByteArray bs            $ \src ->
+        loop (len `div` 16) dst src
+  where
+        len        = byteArrayLength bs
+        loop 0 _ _ = return ()
+        loop i d s = do
+            w1 <- peek s
+            w2 <- peek (s `plusPtr` 8)
+            let (Word128 r1 r2) = f (Word128 (fromBE64 w1) (fromBE64 w2))
+            poke d               (toBE64 r1)
+            poke (d `plusPtr` 8) (toBE64 r2)
+            loop (i-1) (d `plusPtr` 16) (s `plusPtr` 16)
