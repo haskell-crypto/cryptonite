@@ -28,9 +28,6 @@ import Crypto.Internal.Words
 
 data Mode = Decrypt | Encrypt
 
-w128tow64 :: Word128 -> (Word64, Word64)
-w128tow64 (Word128 w1 w2) = (w1, w2)
-
 w64tow128 :: (Word64, Word64) -> Word128
 w64tow128 (x1, x2) = Word128 x1 x2
 
@@ -157,20 +154,20 @@ initCamellia key
     | otherwise                 =
         let (kL, _, kA, _) = setKeyInterim key in
 
-        let (kw1, kw2) = w128tow64 (kL `rotl128` 0) in
-        let (k1, k2)   = w128tow64 (kA `rotl128` 0) in
-        let (k3, k4)   = w128tow64 (kL `rotl128` 15) in
-        let (k5, k6)   = w128tow64 (kA `rotl128` 15) in
-        let (ke1, ke2) = w128tow64 (kA `rotl128` 30) in --ke1 = (KA <<<  30) >> 64; ke2 = (KA <<<  30) & MASK64;
-        let (k7, k8)   = w128tow64 (kL `rotl128` 45) in --k7  = (KL <<<  45) >> 64; k8  = (KL <<<  45) & MASK64;
-        let (k9, _)    = w128tow64 (kA `rotl128` 45) in --k9  = (KA <<<  45) >> 64;
-        let (_, k10)   = w128tow64 (kL `rotl128` 60) in
-        let (k11, k12) = w128tow64 (kA `rotl128` 60) in
-        let (ke3, ke4) = w128tow64 (kL `rotl128` 77) in
-        let (k13, k14) = w128tow64 (kL `rotl128` 94) in
-        let (k15, k16) = w128tow64 (kA `rotl128` 94) in
-        let (k17, k18) = w128tow64 (kL `rotl128` 111) in
-        let (kw3, kw4) = w128tow64 (kA `rotl128` 111) in
+        let (Word128 kw1 kw2) = (kL `rotl128` 0) in
+        let (Word128 k1 k2)   = (kA `rotl128` 0) in
+        let (Word128 k3 k4)   = (kL `rotl128` 15) in
+        let (Word128 k5 k6)   = (kA `rotl128` 15) in
+        let (Word128 ke1 ke2) = (kA `rotl128` 30) in --ke1 = (KA <<<  30) >> 64; ke2 = (KA <<<  30) & MASK64;
+        let (Word128 k7 k8)   = (kL `rotl128` 45) in --k7  = (KL <<<  45) >> 64; k8  = (KL <<<  45) & MASK64;
+        let (Word128 k9 _)    = (kA `rotl128` 45) in --k9  = (KA <<<  45) >> 64;
+        let (Word128 _ k10)   = (kL `rotl128` 60) in
+        let (Word128 k11 k12) = (kA `rotl128` 60) in
+        let (Word128 ke3 ke4) = (kL `rotl128` 77) in
+        let (Word128 k13 k14) = (kL `rotl128` 94) in
+        let (Word128 k15 k16) = (kA `rotl128` 94) in
+        let (Word128 k17 k18) = (kL `rotl128` 111) in
+        let (Word128 kw3 kw4) = (kA `rotl128` 111) in
 
         CryptoPassed $ Camellia
             { kw = fromList [ kw1, kw2, kw3, kw4 ]
@@ -251,9 +248,7 @@ doBlockRound mode key d1 d2 i =
     (r6, r5)
 
 doBlock :: Mode -> Camellia -> Word128 -> Word128
-doBlock mode key m =
-    let (d1, d2) = w128tow64 m in
-
+doBlock mode key (Word128 d1 d2) =
     let d1a = d1 `xor` (getKeyKw mode key 0) in {- Prewhitening -}
     let d2a = d2 `xor` (getKeyKw mode key 1) in
 
