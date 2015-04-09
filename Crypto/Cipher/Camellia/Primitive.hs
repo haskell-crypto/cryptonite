@@ -56,12 +56,6 @@ w8tow64 b = (sh t1 56 .|. sh t2 48 .|. sh t3 40 .|. sh t4 32 .|. sh t5 24 .|. sh
         t8     = B.unsafeIndex b 7
         sh i r = (fromIntegral i) `shiftL` r
 
-w64tow32 :: Word64 -> (Word32, Word32)
-w64tow32 w = (fromIntegral (w `shiftR` 32), fromIntegral (w .&. 0xffffffff))
-
-w32tow64 :: (Word32, Word32) -> Word64
-w32tow64 (x1, x2) = ((fromIntegral x1) `shiftL` 32) .|. (fromIntegral x2)
-
 sbox :: Vector Word8
 sbox = fromList
     [112,130, 44,236,179, 39,192,229,228,133, 87, 53,234, 12,174, 65
@@ -200,19 +194,19 @@ feistel fin sk =
 
 fl :: Word64 -> Word64 -> Word64
 fl fin sk =
-    let (x1, x2) = w64tow32 fin in
-    let (k1, k2) = w64tow32 sk in
+    let (x1, x2) = w64to32 fin in
+    let (k1, k2) = w64to32 sk in
     let y2 = x2 `xor` ((x1 .&. k1) `rotateL` 1) in
     let y1 = x1 `xor` (y2 .|. k2) in
-    w32tow64 (y1, y2)
+    w32to64 (y1, y2)
 
 flinv :: Word64 -> Word64 -> Word64
 flinv fin sk =
-    let (y1, y2) = w64tow32 fin in
-    let (k1, k2) = w64tow32 sk in
+    let (y1, y2) = w64to32 fin in
+    let (k1, k2) = w64to32 sk in
     let x1 = y1 `xor` (y2 .|. k2) in
     let x2 = y2 `xor` ((x1 .&. k1) `rotateL` 1) in
-    w32tow64 (x1, x2)
+    w32to64 (x1, x2)
 
 {- in decrypt mode 0->17 1->16 ... -}
 getKeyK :: Mode -> Camellia -> Int -> Word64
