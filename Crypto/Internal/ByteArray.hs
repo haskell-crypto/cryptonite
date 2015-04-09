@@ -25,6 +25,7 @@ module Crypto.Internal.ByteArray
     , byteArrayFromBS
     , byteArrayToW64BE
     , byteArrayToW64LE
+    , byteArrayMapAsWord64
     , byteArrayMapAsWord128
     ) where
 
@@ -198,3 +199,17 @@ byteArrayMapAsWord128 f bs =
             poke d               (toBE64 r1)
             poke (d `plusPtr` 8) (toBE64 r2)
             loop (i-1) (d `plusPtr` 16) (s `plusPtr` 16)
+
+byteArrayMapAsWord64 :: ByteArray bs => (Word64 -> Word64) -> bs -> bs
+byteArrayMapAsWord64 f bs =
+    byteArrayAllocAndFreeze len $ \dst ->
+    withByteArray bs            $ \src ->
+        loop (len `div` 8) dst src
+  where
+        len        = byteArrayLength bs
+        loop 0 _ _ = return ()
+        loop i d s = do
+            w <- peek s
+            let r = f (fromBE64 w)
+            poke d (toBE64 r)
+            loop (i-1) (d `plusPtr` 8) (s `plusPtr` 8)

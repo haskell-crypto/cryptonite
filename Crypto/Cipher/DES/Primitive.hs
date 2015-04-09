@@ -16,7 +16,7 @@ module Crypto.Cipher.DES.Primitive (encrypt, decrypt, Block(..)) where
 import Data.Word
 import Data.Bits
 
-newtype Block = Block Word64
+newtype Block = Block { unBlock :: Word64 }
 
 type Rotation = Int
 type Key     = Word64
