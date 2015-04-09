@@ -124,9 +124,9 @@ data Camellia = Camellia
     , ke :: Vector Word64
     }
 
-setKeyInterim :: B.ByteString -> (Word128, Word128, Word128, Word128)
+setKeyInterim :: ByteArray key => key -> (Word128, Word128, Word128, Word128)
 setKeyInterim keyseed = (w64tow128 kL, w64tow128 kR, w64tow128 kA, w64tow128 kB)
-  where kL = (w8tow64 $ B.take 8 keyseed, w8tow64 $ B.drop 8 keyseed)
+  where kL = (byteArrayToW64BE keyseed 0, byteArrayToW64BE keyseed 8)
         kR = (0, 0)
 
         kA = let d1 = (fst kL `xor` fst kR)
@@ -155,7 +155,7 @@ initCamellia :: ByteArray key
 initCamellia key
     | byteArrayLength key /= 16 = CryptoFailed $ CryptoError_KeySizeInvalid
     | otherwise                 =
-        let (kL, _, kA, _) = setKeyInterim (byteArrayToBS key) in
+        let (kL, _, kA, _) = setKeyInterim key in
 
         let (kw1, kw2) = w128tow64 (kL `rotl128` 0) in
         let (k1, k2)   = w128tow64 (kA `rotl128` 0) in
