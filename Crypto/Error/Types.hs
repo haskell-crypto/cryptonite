@@ -11,6 +11,8 @@
 module Crypto.Error.Types
     ( CryptoError(..)
     , CryptoFailable(..)
+    , throwCryptoErrorIO
+    , throwCryptoError
     ) where
 
 import qualified Control.Exception as E
@@ -49,10 +51,15 @@ instance Monad CryptoFailable where
             CryptoPassed a -> m2 a
             CryptoFailed e -> CryptoFailed e
 
-{-
-throwCryptoError :: CryptoFailable a -> IO a
-throwCryptoError = undefined
+throwCryptoErrorIO :: CryptoFailable a -> IO a
+throwCryptoErrorIO (CryptoFailed e) = E.throwIO e
+throwCryptoErrorIO (CryptoPassed r) = return r
 
+throwCryptoError :: CryptoFailable a -> a
+throwCryptoError (CryptoFailed e) = E.throw e
+throwCryptoError (CryptoPassed r) = r
+
+{-
 eitherCryptoError :: CryptoFailable a -> Either CryptoError a
 eitherCryptoError = undefined
 
