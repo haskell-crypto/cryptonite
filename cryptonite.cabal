@@ -89,8 +89,8 @@ Library
                      Crypto.Random.Entropy.Unsafe
                      Crypto.Internal.ByteArray
   Other-modules:     Crypto.Cipher.AES.Internal
+                     Crypto.Cipher.Blowfish.Box
                      Crypto.Cipher.Blowfish.Primitive
-                     Crypto.Cipher.Camellia.Primitive
                      Crypto.Cipher.Camellia.Primitive
                      Crypto.Cipher.DES.Primitive
                      Crypto.Cipher.DES.Serialization
