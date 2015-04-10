@@ -64,35 +64,38 @@ keyFromByteString k
     w8tow32 _ = error $ "internal error: Crypto.Cipher.Blowfish:keyFromByteString"
 
 coreCrypto :: Pbox -> Context -> Word64 -> Word64
-coreCrypto p bs input = (\x -> let (l,r) = w64to32 x in w32to64 (r `xor` p!17, l `xor` p!16))
-                  $ V.foldl' (doRound bs) input (V.take 16 p)
+coreCrypto p (BF _ s0 s1 s2 s3) input = doRound input 0
   where
-    doRound :: Context -> Word64 -> Word32 -> Word64
-    doRound (BF _ s0 s1 s2 s3) i pv =
-        let (l,r) = w64to32 i in
-        let newr = l `xor` pv
-            newl = r `xor` (f newr)
-        in w32to64 (newl, newr)
-          where
-            f   :: Word32 -> Word32
-            f t = let a = s0 ! (fromIntegral $ (t `shiftR` 24) .&. 0xff)
-                      b = s1 ! (fromIntegral $ (t `shiftR` 16) .&. 0xff)
-                      c = s2 ! (fromIntegral $ (t `shiftR` 8) .&. 0xff)
-                      d = s3 ! (fromIntegral $ t .&. 0xff)
-                  in ((a + b) `xor` c) + d
+    -- transform the input @i over 16 rounds
+    doRound :: Word64 -> Int -> Word64
+    doRound i roundIndex
+        | roundIndex == 16 =
+            let final = (fromIntegral (p ! 16) `shiftL` 32) .|. fromIntegral (p ! 17)
+             in rotateL (i `xor` final) 32
+        | otherwise     =
+            let newr = fromIntegral (i `shiftR` 32) `xor` (p ! roundIndex)
+                newi = ((i `shiftL` 32) `xor` (f newr)) .|. (fromIntegral newr)
+             in doRound newi (roundIndex+1)
+
+    f   :: Word32 -> Word64
+    f t = let a = s0 ! (fromIntegral $ (t `shiftR` 24) .&. 0xff)
+              b = s1 ! (fromIntegral $ (t `shiftR` 16) .&. 0xff)
+              c = s2 ! (fromIntegral $ (t `shiftR` 8) .&. 0xff)
+              d = s3 ! (fromIntegral $ t .&. 0xff)
+           in fromIntegral (((a + b) `xor` c) + d) `shiftL` 32
 
 bfMakeKey :: Vector Word32 -> Context
 bfMakeKey k = procKey 0 (BF (V.zipWith xor k iPbox) iSbox0 iSbox1 iSbox2 iSbox3) 0
 
 procKey :: Word64 -> Context -> Int -> Context
 procKey _     tpbf                    1042 = tpbf
-procKey input tpbf@(BF p s0 s1 s2 s3)    i = procKey ni (newbf i) (i+2)
+procKey input tpbf@(BF p s0 s1 s2 s3)    i = procKey ni newbf (i+2)
   where ni      = coreCrypto p tpbf input
         (nl,nr) = w64to32 ni
-        newbf x | x <   18 = (BF (p//[(x,nl),(x+1,nr)]) s0 s1 s2 s3)
-                | x <  274 = (BF p (s0//[(x-18,nl),(x-17,nr)]) s1 s2 s3)
-                | x <  530 = (BF p s0 (s1//[(x-274,nl),(x-273,nr)]) s2 s3)
-                | x <  786 = (BF p s0 s1 (s2//[(x-530,nl),(x-529,nr)]) s3)
-                | x < 1042 = (BF p s0 s1 s2 (s3//[(x-786,nl),(x-785,nr)]))
-                | otherwise = error "internal error: Crypto.Cipher.Blowfish:procKey "
 
+        newbf
+            | i <   18  = BF (p // [(i,nl),(i+1,nr)]) s0 s1 s2 s3
+            | i <  274  = BF p (s0 // [(i-18,nl),(i-17,nr)]) s1 s2 s3
+            | i <  530  = BF p s0 (s1 // [(i-274,nl),(i-273,nr)]) s2 s3
+            | i <  786  = BF p s0 s1 (s2 // [(i-530,nl),(i-529,nr)]) s3
+            | otherwise = BF p s0 s1 s2 (s3 // [(i-786,nl),(i-785,nr)])
