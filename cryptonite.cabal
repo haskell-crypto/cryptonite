@@ -131,6 +131,7 @@ Library
                      Crypto.Internal.Imports
                      Crypto.Internal.Memory
                      Crypto.Internal.Words
+                     Crypto.Internal.WordArray
   Build-depends:     base >= 4.3 && < 5
                    , bytestring
                    , securemem >= 0.1.7
