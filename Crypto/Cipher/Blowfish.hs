@@ -39,8 +39,8 @@ instance Cipher Blowfish where
 
 instance BlockCipher Blowfish where
     blockSize _ = 8
-    ecbEncrypt (Blowfish bf) = ecbEncryptLegacy encrypt bf
-    ecbDecrypt (Blowfish bf) = ecbDecryptLegacy decrypt bf
+    ecbEncrypt (Blowfish bf) = encrypt bf
+    ecbDecrypt (Blowfish bf) = decrypt bf
 
 #define INSTANCE_CIPHER(CSTR, NAME, KEYSIZE) \
 instance Cipher CSTR where \
