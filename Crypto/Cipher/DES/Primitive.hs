@@ -29,7 +29,7 @@ type Bits56 = [Bool]
 type Bits64 = [Bool]
 
 desXor :: [Bool] -> [Bool] -> [Bool]
-desXor a b = zipWith (\x y -> (not x && y) || (x && not y)) a b
+desXor a b = zipWith xor a b
 
 desRotate :: [Bool] -> Int -> [Bool]
 desRotate bits rot = drop rot' bits ++ take rot' bits
