@@ -17,7 +17,6 @@ module Crypto.Cipher.Camellia.Primitive
     ) where
 
 import Data.Word
-import Data.Vector.Unboxed
 import Data.Bits
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Unsafe as B
@@ -111,9 +110,9 @@ rotl128 v@(Word128 x1 x2) w
             (x2high, x2low) = splitBits (x2 `rotateL` w)
 
 data Camellia = Camellia
-    { k  :: Vector Word64
-    , kw :: Vector Word64
-    , ke :: Vector Word64
+    { k  :: Array64
+    , kw :: Array64
+    , ke :: Array64
     }
 
 setKeyInterim :: ByteArray key => key -> (Word128, Word128, Word128, Word128)
@@ -165,10 +164,9 @@ initCamellia key
         let (Word128 kw3 kw4) = (kA `rotl128` 111) in
 
         CryptoPassed $ Camellia
-            { kw = fromList [ kw1, kw2, kw3, kw4 ]
-            , ke = fromList [ ke1, ke2, ke3, ke4 ]
-            , k  = fromList [ k1, k2, k3, k4, k5, k6, k7, k8, k9,
-                      k10, k11, k12, k13, k14, k15, k16, k17, k18 ]
+            { kw = array64 4 [ kw1, kw2, kw3, kw4 ]
+            , ke = array64 4 [ ke1, ke2, ke3, ke4 ]
+            , k  = array64 18 [ k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16, k17, k18 ]
             }
 
 feistel :: Word64 -> Word64 -> Word64
@@ -211,18 +209,18 @@ flinv fin sk =
 
 {- in decrypt mode 0->17 1->16 ... -}
 getKeyK :: Mode -> Camellia -> Int -> Word64
-getKeyK Encrypt key i = k key ! i
-getKeyK Decrypt key i = k key ! (17 - i)
+getKeyK Encrypt key i = k key `arrayRead64` i
+getKeyK Decrypt key i = k key `arrayRead64` (17 - i)
 
 {- in decrypt mode 0->3 1->2 2->1 3->0 -}
 getKeyKe :: Mode -> Camellia -> Int -> Word64
-getKeyKe Encrypt key i = ke key ! i
-getKeyKe Decrypt key i = ke key ! (3 - i)
+getKeyKe Encrypt key i = ke key `arrayRead64` i
+getKeyKe Decrypt key i = ke key `arrayRead64` (3 - i)
 
 {- in decrypt mode 0->2 1->3 2->0 3->1 -}
 getKeyKw :: Mode -> Camellia -> Int -> Word64
-getKeyKw Encrypt key i = kw key ! i
-getKeyKw Decrypt key i = kw key ! ((i + 2) `mod` 4)
+getKeyKw Encrypt key i = (kw key) `arrayRead64` i
+getKeyKw Decrypt key i = (kw key) `arrayRead64` ((i + 2) `mod` 4)
 
 {- perform the following
     D2 = D2 ^ F(D1, k1);     // Round 1
