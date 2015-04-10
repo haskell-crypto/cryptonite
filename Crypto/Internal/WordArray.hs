@@ -47,7 +47,7 @@ array32 (I# n) l = unsafeDoIO $ IO $ \s ->
   where
         loop _ st mb [] = freezeArray mb st
         loop i st mb ((W32# x):xs)
-            | booleanPrim (i ==# 0#) = freezeArray mb st
+            | booleanPrim (i ==# n) = freezeArray mb st
             | otherwise =
                 let st' = writeWord32Array# mb i x st
                  in loop (i +# 1#) st' mb xs
@@ -63,7 +63,7 @@ array64 (I# n) l = unsafeDoIO $ IO $ \s ->
   where
         loop _ st mb [] = freezeArray mb st
         loop i st mb ((W64# x):xs)
-            | booleanPrim (i ==# 0#) = freezeArray mb st
+            | booleanPrim (i ==# n) = freezeArray mb st
             | otherwise =
                 let st' = writeWord64Array# mb i x st
                  in loop (i +# 1#) st' mb xs
