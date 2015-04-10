@@ -8,7 +8,7 @@
 --
 -- this only cover Camellia 128 bits for now, API will change once
 -- 192 and 256 mode are implemented too
-
+{-# LANGUAGE MagicHash #-}
 module Crypto.Cipher.Camellia.Primitive
     ( Camellia
     , initCamellia
@@ -25,6 +25,7 @@ import qualified Data.ByteString.Unsafe as B
 import Crypto.Error
 import Crypto.Internal.ByteArray
 import Crypto.Internal.Words
+import Crypto.Internal.WordArray
 
 data Mode = Decrypt | Encrypt
 
@@ -56,37 +57,37 @@ w8tow64 b = (sh t1 56 .|. sh t2 48 .|. sh t3 40 .|. sh t4 32 .|. sh t5 24 .|. sh
         t8     = B.unsafeIndex b 7
         sh i r = (fromIntegral i) `shiftL` r
 
-sbox :: Vector Word8
-sbox = fromList
-    [112,130, 44,236,179, 39,192,229,228,133, 87, 53,234, 12,174, 65
-    , 35,239,107,147, 69, 25,165, 33,237, 14, 79, 78, 29,101,146,189
-    ,134,184,175,143,124,235, 31,206, 62, 48,220, 95, 94,197, 11, 26
-    ,166,225, 57,202,213, 71, 93, 61,217,  1, 90,214, 81, 86,108, 77
-    ,139, 13,154,102,251,204,176, 45,116, 18, 43, 32,240,177,132,153
-    ,223, 76,203,194, 52,126,118,  5,109,183,169, 49,209, 23,  4,215
-    , 20, 88, 58, 97,222, 27, 17, 28, 50, 15,156, 22, 83, 24,242, 34
-    ,254, 68,207,178,195,181,122,145, 36,  8,232,168, 96,252,105, 80
-    ,170,208,160,125,161,137, 98,151, 84, 91, 30,149,224,255,100,210
-    , 16,196,  0, 72,163,247,117,219,138,  3,230,218,  9, 63,221,148
-    ,135, 92,131,  2,205, 74,144, 51,115,103,246,243,157,127,191,226
-    , 82,155,216, 38,200, 55,198, 59,129,150,111, 75, 19,190, 99, 46
-    ,233,121,167,140,159,110,188,142, 41,245,249,182, 47,253,180, 89
-    ,120,152,  6,106,231, 70,113,186,212, 37,171, 66,136,162,141,250
-    ,114,  7,185, 85,248,238,172, 10, 54, 73, 42,104, 60, 56,241,164
-    , 64, 40,211,123,187,201, 67,193, 21,227,173,244,119,199,128,158
-    ]
+sbox :: Int -> Word8
+sbox = arrayRead8 t
+  where t = array8
+            "\x70\x82\x2c\xec\xb3\x27\xc0\xe5\xe4\x85\x57\x35\xea\x0c\xae\x41\
+            \\x23\xef\x6b\x93\x45\x19\xa5\x21\xed\x0e\x4f\x4e\x1d\x65\x92\xbd\
+            \\x86\xb8\xaf\x8f\x7c\xeb\x1f\xce\x3e\x30\xdc\x5f\x5e\xc5\x0b\x1a\
+            \\xa6\xe1\x39\xca\xd5\x47\x5d\x3d\xd9\x01\x5a\xd6\x51\x56\x6c\x4d\
+            \\x8b\x0d\x9a\x66\xfb\xcc\xb0\x2d\x74\x12\x2b\x20\xf0\xb1\x84\x99\
+            \\xdf\x4c\xcb\xc2\x34\x7e\x76\x05\x6d\xb7\xa9\x31\xd1\x17\x04\xd7\
+            \\x14\x58\x3a\x61\xde\x1b\x11\x1c\x32\x0f\x9c\x16\x53\x18\xf2\x22\
+            \\xfe\x44\xcf\xb2\xc3\xb5\x7a\x91\x24\x08\xe8\xa8\x60\xfc\x69\x50\
+            \\xaa\xd0\xa0\x7d\xa1\x89\x62\x97\x54\x5b\x1e\x95\xe0\xff\x64\xd2\
+            \\x10\xc4\x00\x48\xa3\xf7\x75\xdb\x8a\x03\xe6\xda\x09\x3f\xdd\x94\
+            \\x87\x5c\x83\x02\xcd\x4a\x90\x33\x73\x67\xf6\xf3\x9d\x7f\xbf\xe2\
+            \\x52\x9b\xd8\x26\xc8\x37\xc6\x3b\x81\x96\x6f\x4b\x13\xbe\x63\x2e\
+            \\xe9\x79\xa7\x8c\x9f\x6e\xbc\x8e\x29\xf5\xf9\xb6\x2f\xfd\xb4\x59\
+            \\x78\x98\x06\x6a\xe7\x46\x71\xba\xd4\x25\xab\x42\x88\xa2\x8d\xfa\
+            \\x72\x07\xb9\x55\xf8\xee\xac\x0a\x36\x49\x2a\x68\x3c\x38\xf1\xa4\
+            \\x40\x28\xd3\x7b\xbb\xc9\x43\xc1\x15\xe3\xad\xf4\x77\xc7\x80\x9e"#
 
 sbox1 :: Word8 -> Word8
-sbox1 x = sbox ! (fromIntegral x)
+sbox1 x = sbox (fromIntegral x)
 
 sbox2 :: Word8 -> Word8
-sbox2 x = sbox1 x `rotateL` 1;
+sbox2 x = sbox1 x `rotateL` 1
 
 sbox3 :: Word8 -> Word8
-sbox3 x = sbox1 x `rotateL` 7;
+sbox3 x = sbox1 x `rotateL` 7
 
 sbox4 :: Word8 -> Word8
-sbox4 x = sbox1 (x `rotateL` 1);
+sbox4 x = sbox1 (x `rotateL` 1)
 
 sigma1, sigma2, sigma3, sigma4, sigma5, sigma6 :: Word64
 sigma1 = 0xA09E667F3BCC908B
