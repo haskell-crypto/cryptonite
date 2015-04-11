@@ -18,6 +18,7 @@ module Crypto.Cipher.Blowfish.Primitive
     , decrypt
     ) where
 
+import Control.Monad (forM_)
 import Data.Vector (Vector, (!), (//))
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as V (unsafeRead, unsafeWrite)
@@ -64,7 +65,7 @@ initBlowfish key
 keyFromByteString :: B.ByteString -> CryptoFailable Context
 keyFromByteString k
     | B.length k /= (18 * 4) = CryptoFailed CryptoError_KeySizeInvalid
-    | otherwise              = CryptoPassed . bfMakeKey . w8tow32 . B.unpack $ k
+    | otherwise              = CryptoPassed . makeKeySchedule . w8tow32 . B.unpack $ k
   where
     w8tow32 :: [Word8] -> [Word32]
     w8tow32 [] = []
@@ -95,13 +96,15 @@ coreCrypto (BF p s0 s1 s2 s3) input = doRound input 0
               d = s3 (fromIntegral $ t .&. 0xff)
            in fromIntegral (((a + b) `xor` c) + d) `shiftL` 32
 
-bfMakeKey :: [Word32] -> Context
-bfMakeKey k = procKey [mixedBox,iSbox0,iSbox1,iSbox2,iSbox3]
-  where mixedBox = V.fromList $ zipWith xor k (map (\i -> iPbox ! i) [0..17])
-
-procKey :: [Vector Word32] -> Context
-procKey initialContext =
-    let v = unsafeDoIO (V.unsafeThaw (V.concat initialContext) >>= prepare >>= V.unsafeFreeze)
+makeKeySchedule :: [Word32] -> Context
+makeKeySchedule key =
+    let v = unsafeDoIO $ do
+              mv <- V.thaw boxes
+              forM_ (zip key [0..17]) $ \(k, i) ->
+                  V.unsafeRead mv i >>= \pVal -> V.unsafeWrite mv i (k `xor` pVal)
+                  --mutableArrayWriteXor32 mv i k
+              prepare mv
+              V.unsafeFreeze mv
      in BF (V.slice 0 18 v !)
            (V.slice s0 256 v !)
            (V.slice s1 256 v !)
@@ -113,7 +116,7 @@ procKey initialContext =
         s2 = 530
         s3 = 786
 
-        prepare mctx = loop 0 0 >> return mctx
+        prepare mctx = loop 0 0
           where loop i input
                   | i == 1042   = return ()
                   | otherwise = do
