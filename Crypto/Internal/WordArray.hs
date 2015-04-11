@@ -28,6 +28,8 @@ module Crypto.Internal.WordArray
     , mutableArrayRead32
     , mutableArrayWrite32
     , mutableArrayWriteXor32
+    , mutableArray32FromAddrBE
+    , mutableArray32Freeze
     ) where
 
 import Data.Word
@@ -91,6 +93,23 @@ mutableArray32 (I# n) l = IO $ \s ->
             | otherwise =
                 let st' = writeWord32Array# mb i x st
                  in loop (i +# 1#) st' mb xs
+
+mutableArray32FromAddrBE :: Int -> Addr# -> IO MutableArray32
+mutableArray32FromAddrBE (I# n) a = IO $ \s ->
+    case newAlignedPinnedByteArray# (n *# 4#) 4# s of
+        (# s', mbarr #) -> loop 0# s' mbarr
+  where
+        loop i st mb
+            | booleanPrim (i ==# n) = (# st, MutableArray32 mb #)
+            | otherwise             =
+                let st' = writeWord32Array# mb i (be (indexWord32OffAddr# a i)) st
+                 in loop (i +# 1#) st' mb
+        be = byteSwap32#
+
+mutableArray32Freeze :: MutableArray32 -> IO Array32
+mutableArray32Freeze (MutableArray32 mb) = IO $ \st ->
+    case unsafeFreezeByteArray# mb st of
+        (# st', b #) -> (# st', Array32 b #)
 
 arrayRead8 :: Array8 -> Int -> Word8
 arrayRead8 (Array8 a) (I# o) = W8# (indexWord8OffAddr# a o)
