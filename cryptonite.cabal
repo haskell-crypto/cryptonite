@@ -126,6 +126,7 @@ Library
                      Crypto.PubKey.Internal
                      Crypto.PubKey.ElGamal
                      Crypto.Internal.Compat
+                     Crypto.Internal.CompatPrim
                      Crypto.Internal.Bytes
                      Crypto.Internal.Endian
                      Crypto.Internal.Imports

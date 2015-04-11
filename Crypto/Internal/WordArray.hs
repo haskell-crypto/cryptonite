@@ -35,6 +35,7 @@ module Crypto.Internal.WordArray
 import Data.Word
 import Data.Bits (xor)
 import Crypto.Internal.Compat
+import Crypto.Internal.CompatPrim
 import GHC.Prim
 import GHC.Types
 import GHC.Word
@@ -102,9 +103,8 @@ mutableArray32FromAddrBE (I# n) a = IO $ \s ->
         loop i st mb
             | booleanPrim (i ==# n) = (# st, MutableArray32 mb #)
             | otherwise             =
-                let st' = writeWord32Array# mb i (be (indexWord32OffAddr# a i)) st
+                let st' = writeWord32Array# mb i (be32Prim (indexWord32OffAddr# a i)) st
                  in loop (i +# 1#) st' mb
-        be = byteSwap32#
 
 mutableArray32Freeze :: MutableArray32 -> IO Array32
 mutableArray32Freeze (MutableArray32 mb) = IO $ \st ->
