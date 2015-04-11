@@ -19,9 +19,6 @@ module Crypto.Cipher.Blowfish.Primitive
     ) where
 
 import Control.Monad (forM_)
-import Data.Vector ((!))
-import qualified Data.Vector as V
-import qualified Data.Vector.Mutable as V (unsafeRead, unsafeWrite)
 import Data.Bits
 import Data.Word
 import qualified Data.ByteString as B
@@ -30,6 +27,7 @@ import Crypto.Error
 import Crypto.Internal.Compat
 import Crypto.Internal.ByteArray
 import Crypto.Internal.Words
+import Crypto.Internal.WordArray
 import Crypto.Cipher.Blowfish.Box
 
 -- | variable keyed blowfish state
@@ -96,17 +94,15 @@ coreCrypto (BF p s0 s1 s2 s3) input = doRound input 0
 makeKeySchedule :: [Word32] -> Context
 makeKeySchedule key =
     let v = unsafeDoIO $ do
-              mv <- V.thaw boxes
-              forM_ (zip key [0..17]) $ \(k, i) ->
-                  V.unsafeRead mv i >>= \pVal -> V.unsafeWrite mv i (k `xor` pVal)
-                  --mutableArrayWriteXor32 mv i k
+              mv <- createKeySchedule
+              forM_ (zip key [0..17]) $ \(k, i) -> mutableArrayWriteXor32 mv i k
               prepare mv
-              V.unsafeFreeze mv
-     in BF (V.slice 0 18 v !)
-           (V.slice s0 256 v !)
-           (V.slice s1 256 v !)
-           (V.slice s2 256 v !)
-           (V.slice s3 256 v !)
+              mutableArray32Freeze mv
+     in BF (\i -> arrayRead32 v i)
+           (\i -> arrayRead32 v (s0+i))
+           (\i -> arrayRead32 v (s1+i))
+           (\i -> arrayRead32 v (s2+i))
+           (\i -> arrayRead32 v (s3+i))
   where
         s0 = 18
         s1 = 274
@@ -119,20 +115,20 @@ makeKeySchedule key =
                   | otherwise = do
                       ninput <- coreCryptoMutable input
                       let (nl, nr) = w64to32 ninput
-                      V.unsafeWrite mctx i     nl
-                      V.unsafeWrite mctx (i+1) nr
+                      mutableArrayWrite32 mctx i     nl
+                      mutableArrayWrite32 mctx (i+1) nr
                       loop (i+2) ninput
 
                 coreCryptoMutable :: Word64 -> IO Word64
                 coreCryptoMutable input = doRound input 0
                   where doRound i roundIndex
                           | roundIndex == 16 = do
-                              pVal1 <- V.unsafeRead mctx 16
-                              pVal2 <- V.unsafeRead mctx 17
+                              pVal1 <- mutableArrayRead32 mctx 16
+                              pVal2 <- mutableArrayRead32 mctx 17
                               let final = (fromIntegral pVal1 `shiftL` 32) .|. fromIntegral pVal2
                               return $ rotateL (i `xor` final) 32
                           | otherwise     = do
-                              pVal <- V.unsafeRead mctx roundIndex
+                              pVal <- mutableArrayRead32 mctx roundIndex
                               let newr = fromIntegral (i `shiftR` 32) `xor` pVal
                               newr' <- f newr
                               let newi = ((i `shiftL` 32) `xor` newr') .|. (fromIntegral newr)
@@ -140,8 +136,8 @@ makeKeySchedule key =
 
 
                 f   :: Word32 -> IO Word64
-                f t = do a <- V.unsafeRead mctx (s0 + fromIntegral ((t `shiftR` 24) .&. 0xff))
-                         b <- V.unsafeRead mctx (s1 + fromIntegral ((t `shiftR` 16) .&. 0xff))
-                         c <- V.unsafeRead mctx (s2 + fromIntegral ((t `shiftR` 8) .&. 0xff))
-                         d <- V.unsafeRead mctx (s3 + fromIntegral (t .&. 0xff))
+                f t = do a <- mutableArrayRead32 mctx (s0 + fromIntegral ((t `shiftR` 24) .&. 0xff))
+                         b <- mutableArrayRead32 mctx (s1 + fromIntegral ((t `shiftR` 16) .&. 0xff))
+                         c <- mutableArrayRead32 mctx (s2 + fromIntegral ((t `shiftR` 8) .&. 0xff))
+                         d <- mutableArrayRead32 mctx (s3 + fromIntegral (t .&. 0xff))
                          return (fromIntegral (((a + b) `xor` c) + d) `shiftL` 32)

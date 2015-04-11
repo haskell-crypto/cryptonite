@@ -3,39 +3,17 @@
 -- License     : BSD-style
 -- Stability   : experimental
 -- Portability : Good
+{-# LANGUAGE MagicHash #-}
 module Crypto.Cipher.Blowfish.Box
-    ( Pbox
-    , boxes
+    ( createKeySchedule
     ) where
 
-import Data.Bits
-import Data.Char (ord)
-import Data.Word
-import Data.Vector (Vector, (!), (//))
-import qualified Data.Vector as V
-import qualified Data.ByteString as B
+import Crypto.Internal.WordArray (mutableArray32FromAddrBE, MutableArray32)
 
-type Pbox = Vector Word32
-
-mkBox :: [Char] -> Vector Word32
-mkBox = V.fromList . map decode32be . doChunks 4 id . B.pack . map (fromIntegral . ord)
-
-doChunks :: Int -> (B.ByteString -> B.ByteString) -> B.ByteString -> [B.ByteString]
-doChunks n f b =
-    let (x, rest) = B.splitAt n b in
-    if B.length rest >= n
-        then f x : doChunks n f rest
-        else [ f x ]
-
-decode32be :: B.ByteString -> Word32
-decode32be s = id $!
-    (fromIntegral (s `B.index` 0) `shiftL` 24) .|.
-    (fromIntegral (s `B.index` 1) `shiftL` 16) .|.
-    (fromIntegral (s `B.index` 2) `shiftL`  8) .|.
-    (fromIntegral (s `B.index` 3) )
-
-boxes :: Pbox
-boxes = mkBox "\
+-- | Create a key schedule mutable array of the pbox followed by
+-- all the sboxes.
+createKeySchedule :: IO MutableArray32
+createKeySchedule = mutableArray32FromAddrBE 1042 "\
     \\x24\x3f\x6a\x88\x85\xa3\x08\xd3\x13\x19\x8a\x2e\x03\x70\x73\x44\
     \\xa4\x09\x38\x22\x29\x9f\x31\xd0\x08\x2e\xfa\x98\xec\x4e\x6c\x89\
     \\x45\x28\x21\xe6\x38\xd0\x13\x77\xbe\x54\x66\xcf\x34\xe9\x0c\x6c\
@@ -297,4 +275,4 @@ boxes = mkBox "\
     \\x19\x48\xc2\x5c\x02\xfb\x8a\x8c\x01\xc3\x6a\xe4\xd6\xeb\xe1\xf9\
     \\x90\xd4\xf8\x69\xa6\x5c\xde\xa0\x3f\x09\x25\x2d\xc2\x08\xe6\x9f\
     \\xb7\x4e\x61\x32\xce\x77\xe2\x5b\x57\x8f\xdf\xe3\x3a\xc3\x72\xe6\
-    \"
+    \"#
