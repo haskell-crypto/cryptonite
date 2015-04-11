@@ -27,9 +27,11 @@ module Crypto.Internal.WordArray
     , arrayRead64
     , mutableArrayRead32
     , mutableArrayWrite32
+    , mutableArrayWriteXor32
     ) where
 
 import Data.Word
+import Data.Bits (xor)
 import Crypto.Internal.Compat
 import GHC.Prim
 import GHC.Types
@@ -109,3 +111,8 @@ mutableArrayRead32 (MutableArray32 m) (I# o) = IO $ \s -> case readWord32Array# 
 mutableArrayWrite32 :: MutableArray32 -> Int -> Word32 -> IO ()
 mutableArrayWrite32 (MutableArray32 m) (I# o) (W32# w) = IO $ \s -> let s' = writeWord32Array# m o w s in (# s', () #)
 {-# INLINE mutableArrayWrite32 #-}
+
+mutableArrayWriteXor32 :: MutableArray32 -> Int -> Word32 -> IO ()
+mutableArrayWriteXor32 m o w =
+    mutableArrayRead32 m o >>= \wOld -> mutableArrayWrite32 m o (wOld `xor` w)
+{-# INLINE mutableArrayWriteXor32 #-}
