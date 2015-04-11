@@ -19,7 +19,7 @@ module Crypto.Cipher.Blowfish.Primitive
     ) where
 
 import Control.Monad (forM_)
-import Data.Vector (Vector, (!), (//))
+import Data.Vector ((!))
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as V (unsafeRead, unsafeWrite)
 import Data.Bits
@@ -31,9 +31,6 @@ import Crypto.Internal.Compat
 import Crypto.Internal.ByteArray
 import Crypto.Internal.Words
 import Crypto.Cipher.Blowfish.Box
-
-import Debug.Trace
-import Text.Printf
 
 -- | variable keyed blowfish state
 data Context = BF (Int -> Word32) -- p
