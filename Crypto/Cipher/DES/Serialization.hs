@@ -17,9 +17,7 @@ import Crypto.Cipher.DES.Primitive (Block(..))
 import Crypto.Internal.ByteArray
 import Crypto.Internal.Endian
 
-import Data.Word (Word64)
 import Foreign.Storable
-import Foreign.Ptr (castPtr, plusPtr, Ptr)
 
 toBS :: Block -> B.ByteString
 toBS (Block w) = byteArrayAllocAndFreeze 8 $ \ptr -> poke ptr (toBE64 w)
