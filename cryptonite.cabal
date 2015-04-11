@@ -17,6 +17,7 @@ extra-doc-files:     README.md
 extra-source-files:  cbits/*.h
                      cbits/aes/*.h
                      cbits/aes/x86ni_impl.c
+                     tests/*.hs
 
 source-repository head
   type: git
@@ -27,10 +28,17 @@ Flag support_aesni
   Default:           True
 
 Library
-  Exposed-modules:   Crypto.Cipher.ChaCha
-                     Crypto.Cipher.Salsa
+  Exposed-modules:   Crypto.Cipher.AES
+                     Crypto.Cipher.Blowfish
+                     Crypto.Cipher.Camellia
+                     Crypto.Cipher.ChaCha
+                     Crypto.Cipher.DES
                      Crypto.Cipher.RC4
+                     Crypto.Cipher.Salsa
+                     Crypto.Cipher.TripleDES
+                     Crypto.Cipher.Types
                      Crypto.Data.AFIS
+                     Crypto.Error
                      Crypto.MAC.Poly1305
                      Crypto.MAC.HMAC
                      Crypto.Number.Basic
@@ -79,7 +87,20 @@ Library
                      Crypto.Random.Entropy
                      Crypto.Random.EntropyPool
                      Crypto.Random.Entropy.Unsafe
+                     Crypto.Internal.ByteArray
   Other-modules:     Crypto.Cipher.AES.Internal
+                     Crypto.Cipher.Blowfish.Box
+                     Crypto.Cipher.Blowfish.Primitive
+                     Crypto.Cipher.Camellia.Primitive
+                     Crypto.Cipher.DES.Primitive
+                     Crypto.Cipher.DES.Serialization
+                     Crypto.Cipher.Types.AEAD
+                     Crypto.Cipher.Types.Base
+                     Crypto.Cipher.Types.Block
+                     Crypto.Cipher.Types.GF
+                     Crypto.Cipher.Types.Stream
+                     Crypto.Cipher.Types.Utils
+                     Crypto.Error.Types
                      Crypto.Hash.Utils
                      Crypto.Hash.Utils.Cpu
                      Crypto.Hash.Types
@@ -105,9 +126,13 @@ Library
                      Crypto.PubKey.Internal
                      Crypto.PubKey.ElGamal
                      Crypto.Internal.Compat
+                     Crypto.Internal.CompatPrim
                      Crypto.Internal.Bytes
-                     Crypto.Internal.ByteArray
+                     Crypto.Internal.Endian
+                     Crypto.Internal.Imports
                      Crypto.Internal.Memory
+                     Crypto.Internal.Words
+                     Crypto.Internal.WordArray
   Build-depends:     base >= 4.3 && < 5
                    , bytestring
                    , securemem >= 0.1.7
@@ -139,6 +164,10 @@ Library
                    , cbits/cryptonite_whirlpool.c
                    , cbits/cryptonite_scrypt.c
   include-dirs:  cbits
+
+  -- FIXME armel or mispel is also little endian.
+  -- might be a good idea to also add a runtime autodetect mode.
+  -- ARCH_ENDIAN_UNKNOWN
   if (arch(i386) || arch(x86_64))
     CPP-options: -DARCH_IS_LITTLE_ENDIAN
 

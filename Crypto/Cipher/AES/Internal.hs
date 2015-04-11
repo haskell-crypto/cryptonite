@@ -21,7 +21,6 @@ import Foreign.C.String
 data AES
 data AESOCB
 data AESGCM
-
 ------------------------------------------------------------------------
 foreign import ccall "cryptonite_aes.h cryptonite_aes_initkey"
     c_aes_init :: Ptr AES -> CString -> CUInt -> IO ()

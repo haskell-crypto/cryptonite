@@ -5,7 +5,7 @@
         { "path": "cbits" },
         { "path": "tests", "file_exclude_patterns": ["*.html"] },
         { "path": "benchs" },
-        { "path": "gen" },
+        { "path": "gen" }
     ],
     "settings":
     {

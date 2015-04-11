@@ -1,14 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import Control.Applicative
 import Data.Byteable
-import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
-import Data.ByteString.Char8 ()
-import Test.Tasty
-import Test.Tasty.QuickCheck
-import Test.Tasty.HUnit
+
+import Imports
 
 import qualified Crypto.Cipher.ChaCha as ChaCha
 import qualified Crypto.Cipher.Salsa as Salsa
@@ -21,8 +17,11 @@ import qualified KAT_PBKDF2
 import qualified KAT_Curve25519
 import qualified KAT_PubKey
 import qualified KAT_Scrypt
-import qualified KAT_RC4
 import qualified KAT_Blowfish
+import qualified KAT_Camellia
+import qualified KAT_DES
+import qualified KAT_RC4
+import qualified KAT_TripleDES
 import qualified KAT_AFIS
 
 b8_128_k0_i0 = "\xe2\x8a\x5f\xa4\xa6\x7f\x8c\x5d\xef\xed\x3e\x6f\xb7\x30\x34\x86\xaa\x84\x27\xd3\x14\x19\xa7\x29\x57\x2d\x77\x79\x53\x49\x11\x20\xb6\x4a\xb8\xe7\x2b\x8d\xeb\x85\xcd\x6a\xea\x7c\xb6\x08\x9a\x10\x18\x24\xbe\xeb\x08\x81\x4a\x42\x8a\xab\x1f\xa2\xc8\x16\x08\x1b\x8a\x26\xaf\x44\x8a\x1b\xa9\x06\x36\x8f\xd8\xc8\x38\x31\xc1\x8c\xec\x8c\xed\x81\x1a\x02\x8e\x67\x5b\x8d\x2b\xe8\xfc\xe0\x81\x16\x5c\xea\xe9\xf1\xd1\xb7\xa9\x75\x49\x77\x49\x48\x05\x69\xce\xb8\x3d\xe6\xa0\xa5\x87\xd4\x98\x4f\x19\x92\x5f\x5d\x33\x8e\x43\x0d"
@@ -81,8 +80,11 @@ tests = testGroup "cryptonite"
     , KAT_PubKey.tests
     , KAT_PBKDF2.tests
     , KAT_Scrypt.tests
-    , KAT_RC4.tests
     , KAT_Blowfish.tests
+    , KAT_Camellia.tests
+    , KAT_DES.tests
+    , KAT_RC4.tests
+    , KAT_TripleDES.tests
     , KAT_AFIS.tests
     ]
   where chachaRunSimple expected rounds klen nonceLen =

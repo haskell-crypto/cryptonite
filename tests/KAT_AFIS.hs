@@ -2,19 +2,12 @@
 {-# LANGUAGE ExistentialQuantification #-}
 module KAT_AFIS (tests) where
 
-import Control.Applicative
-import Control.Monad
+import Imports
 
 import Crypto.Hash
 import Crypto.Random
 import qualified Crypto.Data.AFIS as AFIS
-
-import Data.ByteString.Char8 ()
 import qualified Data.ByteString as B
-
-import Test.Tasty
-import Test.Tasty.QuickCheck
-import Test.Tasty.HUnit
 
 mergeVec =
     [ (3
