@@ -69,7 +69,7 @@ static inline int crypto_random_rdrand64_step(uint64_t *buffer)
 int cryptonite_get_rand_bytes(uint8_t *buffer, size_t len)
 {
 	uint64_t tmp;
-	int aligned = (unsigned long) buffer % 8;
+	int aligned = (intptr_t) buffer % 8;
 	int orig_len = len;
 	int to_alignment = 8 - aligned;
 	uint8_t ok;
