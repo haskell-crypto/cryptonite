@@ -78,7 +78,7 @@ enum {
 	DECRYPT_OCB_128, DECRYPT_OCB_192, DECRYPT_OCB_256,
 };
 
-void *branch_table[] = {
+void *cryptonite_aes_branch_table[] = {
 	/* INIT */
 	[INIT_128]          = cryptonite_aes_generic_init,
 	[INIT_192]          = cryptonite_aes_generic_init,
@@ -142,48 +142,48 @@ typedef void (*block_f)(aes_block *output, aes_key *key, aes_block *input);
 
 #ifdef WITH_AESNI
 #define GET_INIT(strength) \
-	((init_f) (branch_table[INIT_128 + strength]))
+	((init_f) (cryptonite_aes_branch_table[INIT_128 + strength]))
 #define GET_ECB_ENCRYPT(strength) \
-	((ecb_f) (branch_table[ENCRYPT_ECB_128 + strength]))
+	((ecb_f) (cryptonite_aes_branch_table[ENCRYPT_ECB_128 + strength]))
 #define GET_ECB_DECRYPT(strength) \
-	((ecb_f) (branch_table[DECRYPT_ECB_128 + strength]))
+	((ecb_f) (cryptonite_aes_branch_table[DECRYPT_ECB_128 + strength]))
 #define GET_CBC_ENCRYPT(strength) \
-	((cbc_f) (branch_table[ENCRYPT_CBC_128 + strength]))
+	((cbc_f) (cryptonite_aes_branch_table[ENCRYPT_CBC_128 + strength]))
 #define GET_CBC_DECRYPT(strength) \
-	((cbc_f) (branch_table[DECRYPT_CBC_128 + strength]))
+	((cbc_f) (cryptonite_aes_branch_table[DECRYPT_CBC_128 + strength]))
 #define GET_CTR_ENCRYPT(strength) \
-	((ctr_f) (branch_table[ENCRYPT_CTR_128 + strength]))
+	((ctr_f) (cryptonite_aes_branch_table[ENCRYPT_CTR_128 + strength]))
 #define GET_XTS_ENCRYPT(strength) \
-	((xts_f) (branch_table[ENCRYPT_XTS_128 + strength]))
+	((xts_f) (cryptonite_aes_branch_table[ENCRYPT_XTS_128 + strength]))
 #define GET_XTS_DECRYPT(strength) \
-	((xts_f) (branch_table[DECRYPT_XTS_128 + strength]))
+	((xts_f) (cryptonite_aes_branch_table[DECRYPT_XTS_128 + strength]))
 #define GET_GCM_ENCRYPT(strength) \
-	((gcm_crypt_f) (branch_table[ENCRYPT_GCM_128 + strength]))
+	((gcm_crypt_f) (cryptonite_aes_branch_table[ENCRYPT_GCM_128 + strength]))
 #define GET_GCM_DECRYPT(strength) \
-	((gcm_crypt_f) (branch_table[DECRYPT_GCM_128 + strength]))
+	((gcm_crypt_f) (cryptonite_aes_branch_table[DECRYPT_GCM_128 + strength]))
 #define GET_OCB_ENCRYPT(strength) \
-	((ocb_crypt_f) (branch_table[ENCRYPT_OCB_128 + strength]))
+	((ocb_crypt_f) (cryptonite_aes_branch_table[ENCRYPT_OCB_128 + strength]))
 #define GET_OCB_DECRYPT(strength) \
-	((ocb_crypt_f) (branch_table[DECRYPT_OCB_128 + strength]))
+	((ocb_crypt_f) (cryptonite_aes_branch_table[DECRYPT_OCB_128 + strength]))
 #define cryptonite_aes_encrypt_block(o,k,i) \
-	(((block_f) (branch_table[ENCRYPT_BLOCK_128 + k->strength]))(o,k,i))
+	(((block_f) (cryptonite_aes_branch_table[ENCRYPT_BLOCK_128 + k->strength]))(o,k,i))
 #define cryptonite_aes_decrypt_block(o,k,i) \
-	(((block_f) (branch_table[DECRYPT_BLOCK_128 + k->strength]))(o,k,i))
+	(((block_f) (cryptonite_aes_branch_table[DECRYPT_BLOCK_128 + k->strength]))(o,k,i))
 #else
-#define GET_INIT(strenght) aes_generic_init
-#define GET_ECB_ENCRYPT(strength) aes_generic_encrypt_ecb
-#define GET_ECB_DECRYPT(strength) aes_generic_decrypt_ecb
-#define GET_CBC_ENCRYPT(strength) aes_generic_encrypt_cbc
-#define GET_CBC_DECRYPT(strength) aes_generic_decrypt_cbc
-#define GET_CTR_ENCRYPT(strength) aes_generic_encrypt_ctr
-#define GET_XTS_ENCRYPT(strength) aes_generic_encrypt_xts
-#define GET_XTS_DECRYPT(strength) aes_generic_decrypt_xts
-#define GET_GCM_ENCRYPT(strength) aes_generic_gcm_encrypt
-#define GET_GCM_DECRYPT(strength) aes_generic_gcm_decrypt
-#define GET_OCB_ENCRYPT(strength) aes_generic_ocb_encrypt
-#define GET_OCB_DECRYPT(strength) aes_generic_ocb_decrypt
-#define cryptonite_aes_encrypt_block(o,k,i) aes_generic_encrypt_block(o,k,i)
-#define cryptonite_aes_decrypt_block(o,k,i) aes_generic_decrypt_block(o,k,i)
+#define GET_INIT(strenght) cryptonite_aes_generic_init
+#define GET_ECB_ENCRYPT(strength) cryptonite_aes_generic_encrypt_ecb
+#define GET_ECB_DECRYPT(strength) cryptonite_aes_generic_decrypt_ecb
+#define GET_CBC_ENCRYPT(strength) cryptonite_aes_generic_encrypt_cbc
+#define GET_CBC_DECRYPT(strength) cryptonite_aes_generic_decrypt_cbc
+#define GET_CTR_ENCRYPT(strength) cryptonite_aes_generic_encrypt_ctr
+#define GET_XTS_ENCRYPT(strength) cryptonite_aes_generic_encrypt_xts
+#define GET_XTS_DECRYPT(strength) cryptonite_aes_generic_decrypt_xts
+#define GET_GCM_ENCRYPT(strength) cryptonite_aes_generic_gcm_encrypt
+#define GET_GCM_DECRYPT(strength) cryptonite_aes_generic_gcm_decrypt
+#define GET_OCB_ENCRYPT(strength) cryptonite_aes_generic_ocb_encrypt
+#define GET_OCB_DECRYPT(strength) cryptonite_aes_generic_ocb_decrypt
+#define cryptonite_aes_encrypt_block(o,k,i) cryptonite_aes_generic_encrypt_block(o,k,i)
+#define cryptonite_aes_decrypt_block(o,k,i) cryptonite_aes_generic_decrypt_block(o,k,i)
 #endif
 
 #if defined(ARCH_X86) && defined(WITH_AESNI)
@@ -191,36 +191,36 @@ static void initialize_table_ni(int aesni, int pclmul)
 {
 	if (!aesni)
 		return;
-	branch_table[INIT_128] = aes_ni_init;
-	branch_table[INIT_256] = aes_ni_init;
+	cryptonite_aes_branch_table[INIT_128] = aes_ni_init;
+	cryptonite_aes_branch_table[INIT_256] = aes_ni_init;
 
-	branch_table[ENCRYPT_BLOCK_128] = aes_ni_encrypt_block128;
-	branch_table[DECRYPT_BLOCK_128] = aes_ni_decrypt_block128;
-	branch_table[ENCRYPT_BLOCK_256] = aes_ni_encrypt_block256;
-	branch_table[DECRYPT_BLOCK_256] = aes_ni_decrypt_block256;
+	cryptonite_aes_branch_table[ENCRYPT_BLOCK_128] = aes_ni_encrypt_block128;
+	cryptonite_aes_branch_table[DECRYPT_BLOCK_128] = aes_ni_decrypt_block128;
+	cryptonite_aes_branch_table[ENCRYPT_BLOCK_256] = aes_ni_encrypt_block256;
+	cryptonite_aes_branch_table[DECRYPT_BLOCK_256] = aes_ni_decrypt_block256;
 	/* ECB */
-	branch_table[ENCRYPT_ECB_128] = aes_ni_encrypt_ecb128;
-	branch_table[DECRYPT_ECB_128] = aes_ni_decrypt_ecb128;
-	branch_table[ENCRYPT_ECB_256] = aes_ni_encrypt_ecb256;
-	branch_table[DECRYPT_ECB_256] = aes_ni_decrypt_ecb256;
+	cryptonite_aes_branch_table[ENCRYPT_ECB_128] = aes_ni_encrypt_ecb128;
+	cryptonite_aes_branch_table[DECRYPT_ECB_128] = aes_ni_decrypt_ecb128;
+	cryptonite_aes_branch_table[ENCRYPT_ECB_256] = aes_ni_encrypt_ecb256;
+	cryptonite_aes_branch_table[DECRYPT_ECB_256] = aes_ni_decrypt_ecb256;
 	/* CBC */
-	branch_table[ENCRYPT_CBC_128] = aes_ni_encrypt_cbc128;
-	branch_table[DECRYPT_CBC_128] = aes_ni_decrypt_cbc128;
-	branch_table[ENCRYPT_CBC_256] = aes_ni_encrypt_cbc256;
-	branch_table[DECRYPT_CBC_256] = aes_ni_decrypt_cbc256;
+	cryptonite_aes_branch_table[ENCRYPT_CBC_128] = aes_ni_encrypt_cbc128;
+	cryptonite_aes_branch_table[DECRYPT_CBC_128] = aes_ni_decrypt_cbc128;
+	cryptonite_aes_branch_table[ENCRYPT_CBC_256] = aes_ni_encrypt_cbc256;
+	cryptonite_aes_branch_table[DECRYPT_CBC_256] = aes_ni_decrypt_cbc256;
 	/* CTR */
-	branch_table[ENCRYPT_CTR_128] = aes_ni_encrypt_ctr128;
-	branch_table[ENCRYPT_CTR_256] = aes_ni_encrypt_ctr256;
+	cryptonite_aes_branch_table[ENCRYPT_CTR_128] = aes_ni_encrypt_ctr128;
+	cryptonite_aes_branch_table[ENCRYPT_CTR_256] = aes_ni_encrypt_ctr256;
 	/* XTS */
-	branch_table[ENCRYPT_XTS_128] = aes_ni_encrypt_xts128;
-	branch_table[ENCRYPT_XTS_256] = aes_ni_encrypt_xts256;
+	cryptonite_aes_branch_table[ENCRYPT_XTS_128] = aes_ni_encrypt_xts128;
+	cryptonite_aes_branch_table[ENCRYPT_XTS_256] = aes_ni_encrypt_xts256;
 	/* GCM */
-	branch_table[ENCRYPT_GCM_128] = aes_ni_gcm_encrypt128;
-	branch_table[ENCRYPT_GCM_256] = aes_ni_gcm_encrypt256;
+	cryptonite_aes_branch_table[ENCRYPT_GCM_128] = aes_ni_gcm_encrypt128;
+	cryptonite_aes_branch_table[ENCRYPT_GCM_256] = aes_ni_gcm_encrypt256;
 	/* OCB */
 	/*
-	branch_table[ENCRYPT_OCB_128] = aes_ni_ocb_encrypt128;
-	branch_table[ENCRYPT_OCB_256] = aes_ni_ocb_encrypt256;
+	cryptonite_aes_branch_table[ENCRYPT_OCB_128] = aes_ni_ocb_encrypt128;
+	cryptonite_aes_branch_table[ENCRYPT_OCB_256] = aes_ni_ocb_encrypt256;
 	*/
 }
 #endif
