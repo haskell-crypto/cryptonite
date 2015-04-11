@@ -17,12 +17,16 @@ module Crypto.Internal.WordArray
     ( Array8
     , Array32
     , Array64
+    , MutableArray32
     , array8
     , array32
+    , mutableArray32
     , array64
     , arrayRead8
     , arrayRead32
     , arrayRead64
+    , mutableArrayRead32
+    , mutableArrayWrite32
     ) where
 
 import Data.Word
@@ -36,6 +40,8 @@ data Array8 = Array8 Addr#
 data Array32 = Array32 ByteArray#
 
 data Array64 = Array64 ByteArray#
+
+data MutableArray32 = MutableArray32 (MutableByteArray# RealWorld)
 
 array8 :: Addr# -> Array8
 array8 = Array8
@@ -72,6 +78,18 @@ array64 (I# n) l = unsafeDoIO $ IO $ \s ->
                 (# st', b #) -> (# st', Array64 b #)
 {-# NOINLINE array64 #-}
 
+mutableArray32 :: Int -> [Word32] -> IO MutableArray32
+mutableArray32 (I# n) l = IO $ \s ->
+    case newAlignedPinnedByteArray# (n *# 4#) 4# s of
+        (# s', mbarr #) -> loop 0# s' mbarr l
+  where
+        loop _ st mb [] = (# st, MutableArray32 mb #)
+        loop i st mb ((W32# x):xs)
+            | booleanPrim (i ==# n) = (# st, MutableArray32 mb #)
+            | otherwise =
+                let st' = writeWord32Array# mb i x st
+                 in loop (i +# 1#) st' mb xs
+
 arrayRead8 :: Array8 -> Int -> Word8
 arrayRead8 (Array8 a) (I# o) = W8# (indexWord8OffAddr# a o)
 {-# INLINE arrayRead8 #-}
@@ -83,3 +101,11 @@ arrayRead32 (Array32 b) (I# o) = W32# (indexWord32Array# b o)
 arrayRead64 :: Array64 -> Int -> Word64
 arrayRead64 (Array64 b) (I# o) = W64# (indexWord64Array# b o)
 {-# INLINE arrayRead64 #-}
+
+mutableArrayRead32 :: MutableArray32 -> Int -> IO Word32
+mutableArrayRead32 (MutableArray32 m) (I# o) = IO $ \s -> case readWord32Array# m o s of (# s', e #) -> (# s', W32# e #)
+{-# INLINE mutableArrayRead32 #-}
+
+mutableArrayWrite32 :: MutableArray32 -> Int -> Word32 -> IO ()
+mutableArrayWrite32 (MutableArray32 m) (I# o) (W32# w) = IO $ \s -> let s' = writeWord32Array# m o w s in (# s', () #)
+{-# INLINE mutableArrayWrite32 #-}
