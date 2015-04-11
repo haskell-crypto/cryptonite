@@ -19,6 +19,7 @@ module Crypto.Internal.ByteArray
     , byteArraySplit
     , byteArrayXor
     , byteArrayEq
+    , byteArrayIndex
     , byteArrayConstEq
     , byteArrayConcat
     , byteArrayToBS
@@ -95,6 +96,9 @@ byteArrayXor a b =
         n  = min la lb
         la = byteArrayLength a
         lb = byteArrayLength b
+
+byteArrayIndex :: ByteArrayAccess a => a -> Int -> Word8
+byteArrayIndex b i = unsafeDoIO $ withByteArray b $ \p -> peek (p `plusPtr` i)
 
 byteArraySplit :: ByteArray bs => Int -> bs -> (bs, bs)
 byteArraySplit n bs
