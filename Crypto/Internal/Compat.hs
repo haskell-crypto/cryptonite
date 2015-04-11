@@ -9,20 +9,15 @@
 -- or other needed packages, so that modules don't need to use CPP
 --
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE MagicHash #-}
 module Crypto.Internal.Compat
     ( unsafeDoIO
     , popCount
     , byteSwap64
-    , booleanPrim
     ) where
 
 import System.IO.Unsafe
 import Data.Word
 import Data.Bits
-#if __GLASGOW_HASKELL__ >= 708
-import GHC.Prim
-#endif
 
 -- | perform io for hashes that do allocation and ffi.
 -- unsafeDupablePerformIO is used when possible as the
@@ -50,12 +45,4 @@ byteSwap64 w =
     .|. ((w `shiftR` 40) .&. 0xff00)     .|. ((w .&. 0xff00) `shiftL` 40)
     .|. ((w `shiftR` 24) .&. 0xff0000)   .|. ((w .&. 0xff0000) `shiftL` 24)
     .|. ((w `shiftR` 8)  .&. 0xff000000) .|. ((w .&. 0xff000000) `shiftL` 8)
-#endif
-
-#if __GLASGOW_HASKELL__ >= 708
-booleanPrim :: Int# -> Bool
-booleanPrim v = tagToEnum# v
-#else
-booleanPrim :: Bool -> Bool
-booleanPrim b = b
 #endif

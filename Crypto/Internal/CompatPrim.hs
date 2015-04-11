@@ -16,6 +16,7 @@
 module Crypto.Internal.CompatPrim
     ( be32Prim
     , byteswap32Prim
+    , booleanPrim
     ) where
 
 import GHC.Prim
@@ -37,4 +38,12 @@ byteswap32Prim w =
         c = and# (uncheckedShiftRL# w 8#) 0x0000ff00##
         d = and# (uncheckedShiftRL# w 24#) 0x000000ff##
      in or# a (or# b (or# c d))
+#endif
+
+#if __GLASGOW_HASKELL__ >= 708
+booleanPrim :: Int# -> Bool
+booleanPrim v = tagToEnum# v
+#else
+booleanPrim :: Bool -> Bool
+booleanPrim b = b
 #endif
