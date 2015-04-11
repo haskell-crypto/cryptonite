@@ -22,6 +22,28 @@ Coding Style
 The coding style of this project mostly follows:
 [haskell-style](https://github.com/tibbe/haskell-style-guide/blob/master/haskell-style.md)
 
+Support
+-------
+
+cryptonite supports the following platform:
+
+* Windows >= 8
+* OSX >= 10.8
+* Linux
+
+On the following architectures:
+
+* x86-64
+* i386
+
+On the following haskell versions:
+
+* GHC 7.0.x
+* GHC 7.4.x
+* GHC 7.6.x
+* GHC 7.8.x
+* GHC 7.10.x
+
 Links
 -----
 
