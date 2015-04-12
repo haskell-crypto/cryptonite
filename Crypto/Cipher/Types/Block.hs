@@ -37,7 +37,7 @@ import qualified Data.ByteString as B
 import Data.Byteable
 import Data.Word
 import Crypto.Cipher.Types.Base
---import Crypto.Cipher.Types.GF
+import Crypto.Cipher.Types.GF
 import Crypto.Cipher.Types.Utils
 
 import Crypto.Internal.ByteArray
@@ -54,11 +54,11 @@ instance BlockCipher c => ByteArrayAccess (IV c) where
 instance Eq (IV c) where
     (IV a) == (IV b) = byteArrayEq a b
 
-type XTS cipher = (cipher, cipher)
-               -> IV cipher        -- ^ Usually represent the Data Unit (e.g. disk sector)
-               -> DataUnitOffset   -- ^ Offset in the data unit in number of blocks
-               -> ByteString       -- ^ Data
-               -> ByteString       -- ^ Processed Data
+type XTS ba cipher = (cipher, cipher)
+                  -> IV cipher        -- ^ Usually represent the Data Unit (e.g. disk sector)
+                  -> DataUnitOffset   -- ^ Offset in the data unit in number of blocks
+                  -> ba               -- ^ Data
+                  -> ba               -- ^ Processed Data
 
 -- | Symmetric block cipher class
 class Cipher cipher => BlockCipher cipher where
@@ -132,23 +132,25 @@ class BlockCipher cipher => BlockCipher128 cipher where
     --
     -- input need to be a multiple of the blocksize, and the cipher
     -- need to process 128 bits block only
-    xtsEncrypt :: (cipher, cipher)
+    xtsEncrypt :: ByteArray ba
+               => (cipher, cipher)
                -> IV cipher        -- ^ Usually represent the Data Unit (e.g. disk sector)
                -> DataUnitOffset   -- ^ Offset in the data unit in number of blocks
-               -> ByteString       -- ^ Plaintext
-               -> ByteString       -- ^ Ciphertext
-    xtsEncrypt = undefined -- xtsEncryptGeneric
+               -> ba               -- ^ Plaintext
+               -> ba               -- ^ Ciphertext
+    xtsEncrypt = xtsEncryptGeneric
 
     -- | decrypt using the XTS mode.
     --
     -- input need to be a multiple of the blocksize, and the cipher
     -- need to process 128 bits block only
-    xtsDecrypt :: (cipher, cipher)
+    xtsDecrypt :: ByteArray ba
+               => (cipher, cipher)
                -> IV cipher        -- ^ Usually represent the Data Unit (e.g. disk sector)
                -> DataUnitOffset   -- ^ Offset in the data unit in number of blocks
-               -> ByteString       -- ^ Ciphertext
-               -> ByteString       -- ^ Plaintext
-    xtsDecrypt = undefined -- xtsDecryptGeneric
+               -> ba               -- ^ Ciphertext
+               -> ba               -- ^ Plaintext
+    xtsDecrypt = xtsDecryptGeneric
 
 -- | Authenticated Encryption with Associated Data algorithms
 data AEAD cipher = AEAD cipher (AEADState cipher)
@@ -241,30 +243,27 @@ ctrCombineGeneric cipher ivini input = byteArrayConcat $ doCnt ivini $ chunk (bl
             let ivEnc = ecbEncrypt cipher ivd
              in byteArrayXor i ivEnc : doCnt (ivAdd iv 1) is
 
-{-
-xtsEncryptGeneric :: BlockCipher128 cipher => XTS cipher
+xtsEncryptGeneric :: (ByteArray ba, BlockCipher128 cipher) => XTS ba cipher
 xtsEncryptGeneric = xtsGeneric ecbEncrypt
 
-xtsDecryptGeneric :: BlockCipher128 cipher => XTS cipher
+xtsDecryptGeneric :: (ByteArray ba, BlockCipher128 cipher) => XTS ba cipher
 xtsDecryptGeneric = xtsGeneric ecbDecrypt
 
-xtsGeneric :: BlockCipher128 cipher
-           => (cipher -> B.ByteString -> B.ByteString)
+xtsGeneric :: (ByteArray ba, BlockCipher128 cipher)
+           => (cipher -> ba -> ba)
            -> (cipher, cipher)
            -> IV cipher
            -> DataUnitOffset
-           -> ByteString
-           -> ByteString
-xtsGeneric f (cipher, tweakCipher) iv sPoint input
-    | blockSize cipher /= 16 = error "XTS mode is only available with cipher that have a block size of 128 bits"
-    | otherwise = byteArrayConcat $ doXts iniTweak $ chunk (blockSize cipher) input
+           -> ba
+           -> ba
+xtsGeneric f (cipher, tweakCipher) (IV iv) sPoint input =
+    byteArrayConcat $ doXts iniTweak $ chunk (blockSize cipher) input
   where encTweak = ecbEncrypt tweakCipher iv
         iniTweak = iterate xtsGFMul encTweak !! fromIntegral sPoint
         doXts _     []     = []
         doXts tweak (i:is) =
-            let o = bxor (f cipher $ bxor i tweak) tweak
+            let o = byteArrayXor (f cipher $ byteArrayXor i tweak) tweak
              in o : doXts (xtsGFMul tweak) is
--}
 
 {-
 -- | Encrypt using CFB mode in 8 bit output
