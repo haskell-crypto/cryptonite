@@ -13,6 +13,9 @@ module Crypto.Error.Types
     , CryptoFailable(..)
     , throwCryptoErrorIO
     , throwCryptoError
+    , onCryptoFailure
+    , eitherCryptoError
+    , maybeCryptoError
     ) where
 
 import qualified Control.Exception as E
@@ -32,7 +35,11 @@ instance E.Exception CryptoError
 -- | A simple Either like type to represent a computation that can fail
 --
 -- 2 possibles values are:
--- * 'CryptoPassed' : 
+--
+-- * 'CryptoPassed' : The computation succeeded, and contains the result of the computation
+--
+-- * 'CryptoFailed' : The computation failed, and contains the cryptographic error associated
+--
 data CryptoFailable a =
       CryptoPassed a
     | CryptoFailed CryptoError
@@ -51,18 +58,28 @@ instance Monad CryptoFailable where
             CryptoPassed a -> m2 a
             CryptoFailed e -> CryptoFailed e
 
+-- | Throw an CryptoError as exception on CryptoFailed result,
+-- otherwise return the computed value
 throwCryptoErrorIO :: CryptoFailable a -> IO a
 throwCryptoErrorIO (CryptoFailed e) = E.throwIO e
 throwCryptoErrorIO (CryptoPassed r) = return r
 
+-- | Same as 'throwCryptoErrorIO' but throw the error asynchronously.
 throwCryptoError :: CryptoFailable a -> a
 throwCryptoError (CryptoFailed e) = E.throw e
 throwCryptoError (CryptoPassed r) = r
 
-{-
-eitherCryptoError :: CryptoFailable a -> Either CryptoError a
-eitherCryptoError = undefined
+-- | Simple 'either' like combinator for CryptoFailable type
+onCryptoFailure :: (CryptoError -> r) -> (a -> r) -> CryptoFailable a -> r
+onCryptoFailure onError _         (CryptoFailed e) = onError e
+onCryptoFailure _       onSuccess (CryptoPassed r) = onSuccess r
 
+-- | Transform a CryptoFailable to an Either
+eitherCryptoError :: CryptoFailable a -> Either CryptoError a
+eitherCryptoError (CryptoFailed e) = Left e
+eitherCryptoError (CryptoPassed a) = Right a
+
+-- | Transform a CryptoFailable to a Maybe
 maybeCryptoError :: CryptoFailable a -> Maybe a
-maybeCryptoError = undefined
--}
+maybeCryptoError (CryptoFailed _) = Nothing
+maybeCryptoError (CryptoPassed r) = Just r
