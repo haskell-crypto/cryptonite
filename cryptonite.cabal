@@ -88,8 +88,7 @@ Library
                      Crypto.Random.EntropyPool
                      Crypto.Random.Entropy.Unsafe
                      Crypto.Internal.ByteArray
-  Other-modules:     Crypto.Cipher.AES.Internal
-                     Crypto.Cipher.AES.Primitive
+  Other-modules:     Crypto.Cipher.AES.Primitive
                      Crypto.Cipher.Blowfish.Box
                      Crypto.Cipher.Blowfish.Primitive
                      Crypto.Cipher.Camellia.Primitive

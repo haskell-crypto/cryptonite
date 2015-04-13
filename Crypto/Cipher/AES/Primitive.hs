@@ -15,12 +15,10 @@ module Crypto.Cipher.AES.Primitive
     (
     -- * block cipher data types
       AES
-    , AES128
-    , AES192
-    , AES256
 
     -- * Authenticated encryption block cipher types
     , AESGCM
+    , AESOCB
 
     -- * creation
     , initAES
@@ -59,41 +57,16 @@ import System.IO.Unsafe (unsafePerformIO)
 
 import Crypto.Error
 import Crypto.Cipher.Types
-import Crypto.Cipher.AES.Internal
 import Crypto.Internal.ByteArray
+import Crypto.Internal.Memory
 import Crypto.Cipher.Types.Block (IV(..))
 
 import Data.SecureMem
-
-
--- | AES with 128 bit key
-newtype AES128 = AES128 AES
-
--- | AES with 192 bit key
-newtype AES192 = AES192 AES
-
--- | AES with 256 bit key
-newtype AES256 = AES256 AES
 
 instance Cipher AES where
     cipherName    _ = "AES"
     cipherKeySize _ = KeySizeEnum [16,24,32]
     cipherInit k    = initAES k
-
-instance Cipher AES128 where
-    cipherName    _ = "AES128"
-    cipherKeySize _ = KeySizeFixed 16
-    cipherInit k    = AES128 `fmap` initAES k
-
-instance Cipher AES192 where
-    cipherName    _ = "AES192"
-    cipherKeySize _ = KeySizeFixed 24
-    cipherInit k    = AES192 `fmap` initAES k
-
-instance Cipher AES256 where
-    cipherName    _ = "AES256"
-    cipherKeySize _ = KeySizeFixed 32
-    cipherInit k    = AES256 `fmap` initAES k
 
 instance BlockCipher AES where
     blockSize _ = 16
@@ -111,54 +84,14 @@ instance BlockCipher128 AES where
     xtsEncrypt = encryptXTS
     xtsDecrypt = decryptXTS
 
-{-}
-instance AEADModeImpl AES AESGCM where
-    aeadStateAppendHeader _ = gcmAppendAAD
-    aeadStateEncrypt = gcmAppendEncrypt
-    aeadStateDecrypt = gcmAppendDecrypt
-    aeadStateFinalize = gcmFinish
+-- | AES Context (pre-processed key)
+newtype AES = AES SecureBytes
 
-instance AEADModeImpl AES AESOCB where
-    aeadStateAppendHeader = ocbAppendAAD
-    aeadStateEncrypt = ocbAppendEncrypt
-    aeadStateDecrypt = ocbAppendDecrypt
-    aeadStateFinalize = ocbFinish
-    -}
+-- | AESGCM State
+newtype AESGCM = AESGCM SecureBytes
 
-#define INSTANCE_BLOCKCIPHER(CSTR) \
-instance BlockCipher CSTR where \
-    { blockSize _ = 16 \
-    ; ecbEncrypt (CSTR aes) = ecbEncryptLegacy encryptECB aes \
-    ; ecbDecrypt (CSTR aes) = ecbDecryptLegacy decryptECB aes \
-    ; cbcEncrypt (CSTR aes) = encryptCBC aes \
-    ; cbcDecrypt (CSTR aes) = decryptCBC aes \
-    ; ctrCombine (CSTR aes) = encryptCTR aes \
-    ; aeadInit AEAD_GCM cipher@(CSTR aes) iv = Just $ AEAD cipher $ AEADState $ gcmInit aes iv \
-    ; aeadInit AEAD_OCB cipher@(CSTR aes) iv = Just $ AEAD cipher $ AEADState $ ocbInit aes iv \
-    ; aeadInit _        _                  _ = Nothing \
-    }; \
-instance BlockCipher128 CSTR where \
-    { xtsEncrypt (CSTR aes1, CSTR aes2) = encryptXTS (aes1,aes2) \
-    ; xtsDecrypt (CSTR aes1, CSTR aes2) = decryptXTS (aes1,aes2) \
-    }; \
-\
-instance AEADModeImpl CSTR AESGCM where \
-    { aeadStateAppendHeader (CSTR _) gcmState bs = gcmAppendAAD gcmState bs \
-    ; aeadStateEncrypt (CSTR aes) gcmState input = gcmAppendEncrypt aes gcmState input \
-    ; aeadStateDecrypt (CSTR aes) gcmState input = gcmAppendDecrypt aes gcmState input \
-    ; aeadStateFinalize (CSTR aes) gcmState len  = gcmFinish aes gcmState len \
-    }; \
-\
-{-instance AEADModeImpl CSTR AESOCB where \
-    { aeadStateAppendHeader (CSTR aes) ocbState bs = ocbAppendAAD aes ocbState bs \
-    ; aeadStateEncrypt (CSTR aes) ocbState input = ocbAppendEncrypt aes ocbState input \
-    ; aeadStateDecrypt (CSTR aes) ocbState input = ocbAppendDecrypt aes ocbState input \
-    ; aeadStateFinalize (CSTR aes) ocbState len  = ocbFinish aes ocbState len \
-    }-}
-
---INSTANCE_BLOCKCIPHER(AES128)
---INSTANCE_BLOCKCIPHER(AES192)
---INSTANCE_BLOCKCIPHER(AES256)
+-- | AESOCB State
+newtype AESOCB = AESOCB SecureBytes
 
 sizeGCM :: Int
 sizeGCM = 80
@@ -575,4 +508,65 @@ ocbFinish :: AES -> AESOCB -> Int -> AuthTag
 ocbFinish ctx ocb taglen = AuthTag $ B.take taglen computeTag
   where computeTag = unsafeCreate 16 $ \t ->
                         withOCBKeyAndCopySt ctx ocb (c_aes_ocb_finish (castPtr t)) >> return ()
+
+------------------------------------------------------------------------
+foreign import ccall "cryptonite_aes.h cryptonite_aes_initkey"
+    c_aes_init :: Ptr AES -> CString -> CUInt -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_encrypt_ecb"
+    c_aes_encrypt_ecb :: CString -> Ptr AES -> CString -> CUInt -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_decrypt_ecb"
+    c_aes_decrypt_ecb :: CString -> Ptr AES -> CString -> CUInt -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_encrypt_cbc"
+    c_aes_encrypt_cbc :: CString -> Ptr AES -> Ptr Word8 -> CString -> CUInt -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_decrypt_cbc"
+    c_aes_decrypt_cbc :: CString -> Ptr AES -> Ptr Word8 -> CString -> CUInt -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_encrypt_xts"
+    c_aes_encrypt_xts :: CString -> Ptr AES -> Ptr AES -> Ptr Word8 -> CUInt -> CString -> CUInt -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_decrypt_xts"
+    c_aes_decrypt_xts :: CString -> Ptr AES -> Ptr AES -> Ptr Word8 -> CUInt -> CString -> CUInt -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_gen_ctr"
+    c_aes_gen_ctr :: CString -> Ptr AES -> Ptr Word8 -> CUInt -> IO ()
+
+foreign import ccall unsafe "cryptonite_aes.h cryptonite_aes_gen_ctr_cont"
+    c_aes_gen_ctr_cont :: CString -> Ptr AES -> Ptr Word8 -> CUInt -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_encrypt_ctr"
+    c_aes_encrypt_ctr :: CString -> Ptr AES -> Ptr Word8 -> CString -> CUInt -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_gcm_init"
+    c_aes_gcm_init :: Ptr AESGCM -> Ptr AES -> Ptr Word8 -> CUInt -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_gcm_aad"
+    c_aes_gcm_aad :: Ptr AESGCM -> CString -> CUInt -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_gcm_encrypt"
+    c_aes_gcm_encrypt :: CString -> Ptr AESGCM -> Ptr AES -> CString -> CUInt -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_gcm_decrypt"
+    c_aes_gcm_decrypt :: CString -> Ptr AESGCM -> Ptr AES -> CString -> CUInt -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_gcm_finish"
+    c_aes_gcm_finish :: CString -> Ptr AESGCM -> Ptr AES -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_ocb_init"
+    c_aes_ocb_init :: Ptr AESOCB -> Ptr AES -> Ptr Word8 -> CUInt -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_ocb_aad"
+    c_aes_ocb_aad :: Ptr AESOCB -> Ptr AES -> CString -> CUInt -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_ocb_encrypt"
+    c_aes_ocb_encrypt :: CString -> Ptr AESOCB -> Ptr AES -> CString -> CUInt -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_ocb_decrypt"
+    c_aes_ocb_decrypt :: CString -> Ptr AESOCB -> Ptr AES -> CString -> CUInt -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_ocb_finish"
+    c_aes_ocb_finish :: CString -> Ptr AESOCB -> Ptr AES -> IO ()
 
