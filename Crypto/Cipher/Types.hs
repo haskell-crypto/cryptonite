@@ -13,6 +13,7 @@ module Crypto.Cipher.Types
     -- * Cipher classes
       Cipher(..)
     , BlockCipher(..)
+    , BlockCipher128(..)
     , ecbEncryptLegacy
     , ecbDecryptLegacy
     , StreamCipher(..)

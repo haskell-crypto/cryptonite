@@ -14,6 +14,7 @@ module Crypto.Cipher.Types.Block
     (
     -- * BlockCipher
       BlockCipher(..)
+    , BlockCipher128(..)
     , ecbEncryptLegacy
     , ecbDecryptLegacy
     -- * initialization vector (IV)
