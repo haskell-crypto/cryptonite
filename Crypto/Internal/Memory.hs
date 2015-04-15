@@ -16,6 +16,7 @@ module Crypto.Internal.Memory
     , bytesTemporary
     , bytesCopyTemporary
     , bytesAlloc
+    , bytesAllocRet
     , bytesLength
     , withBytes
     , SecureBytes
@@ -74,6 +75,12 @@ bytesAlloc sz f = do
     ba <- newBytes sz
     withPtr ba f
     return ba
+
+bytesAllocRet :: Int -> (Ptr p -> IO a) -> IO (a, Bytes)
+bytesAllocRet sz f = do
+    ba <- newBytes sz
+    r <- withPtr ba f
+    return (r, ba)
 
 bytesLength :: Bytes -> Int
 bytesLength = sizeofBytes
