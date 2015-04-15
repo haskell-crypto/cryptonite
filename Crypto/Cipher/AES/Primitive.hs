@@ -5,7 +5,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 -- |
--- Module      : Crypto.Cipher.AES
+-- Module      : Crypto.Cipher.AES.Primitive
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : stable
