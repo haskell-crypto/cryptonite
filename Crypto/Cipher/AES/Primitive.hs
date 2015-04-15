@@ -46,13 +46,10 @@ module Crypto.Cipher.AES.Primitive
 
 import Data.Word
 import Foreign.Ptr
-import Foreign.ForeignPtr
 import Foreign.C.Types
 import Foreign.C.String
 import Data.ByteString.Internal
-import Data.ByteString.Unsafe
 import qualified Data.ByteString as B
-import qualified Data.ByteString.Internal as B (ByteString(PS), mallocByteString, memcpy)
 import System.IO.Unsafe (unsafePerformIO)
 
 import Crypto.Error
@@ -105,14 +102,12 @@ keyToPtr (AES b) f = withByteArray b (f . castPtr)
 ivToPtr :: ByteArrayAccess iv => iv -> (Ptr Word8 -> IO a) -> IO a
 ivToPtr iv f = withByteArray iv (f . castPtr)
 
-{-
-ivCopyPtr :: IV AES -> (Ptr Word8 -> IO ()) -> IO (IV AES)
-ivCopyPtr (IV iv) f = do
-    newIV <- byteArrayAlloc 16 $ \newPtr -> do
-                withByteArray iv $ \ivPtr -> B.memcpy newPtr ivPtr 16
-    withByteArray newIV $ f
-    return $! IV newIV
--}
+
+ivCopyPtr :: IV AES -> (Ptr Word8 -> IO a) -> IO (a, IV AES)
+ivCopyPtr (IV iv) f = (\(x,y) -> (x, IV y)) `fmap` copyAndModify iv f
+  where
+    copyAndModify :: ByteArray ba => ba -> (Ptr Word8 -> IO a) -> IO (a, ba)
+    copyAndModify ba f' = byteArrayCopyRet ba f'
 
 withKeyAndIV :: ByteArrayAccess iv => AES -> iv -> (Ptr AES -> Ptr Word8 -> IO a) -> IO a
 withKeyAndIV ctx iv f = keyToPtr ctx $ \kptr -> ivToPtr iv $ \ivp -> f kptr ivp
@@ -194,27 +189,22 @@ genCTR ctx (IV iv) len
 --
 -- Similiar to 'genCTR' but also return the next IV for continuation
 {-# NOINLINE genCounter #-}
-genCounter :: AES
+genCounter :: ByteArray ba
+           => AES
            -> IV AES
            -> Int
-           -> (ByteString, IV AES)
+           -> (ba, IV AES)
 genCounter ctx iv len
-    | len <= 0  = (B.empty, iv)
-    | otherwise = unsafePerformIO $ do
-        undefined
-        {-
-        fptr  <- B.mallocByteString outputLength
-        newIv <- withForeignPtr fptr $ \o ->
-                    keyToPtr ctx $ \k ->
-                    ivCopyPtr iv $ \i -> do
-                        c_aes_gen_ctr_cont (castPtr o) k i (fromIntegral nbBlocks)
-        let !out = B.PS fptr 0 outputLength
-        return $! (out `seq` newIv `seq` (out, newIv))
+    | len <= 0  = (empty, iv)
+    | otherwise = unsafePerformIO $
+        keyToPtr ctx $ \k ->
+        ivCopyPtr iv $ \i ->
+        byteArrayAlloc outputLength $ \o -> do
+            c_aes_gen_ctr_cont (castPtr o) k i (fromIntegral nbBlocks)
   where
         (nbBlocks',r) = len `quotRem` 16
         nbBlocks = if r == 0 then nbBlocks' else nbBlocks' + 1
         outputLength = nbBlocks * 16
-        -}
 
 {- TODO: when genCTR has same AESIV requirements for IV, add the following rules:
  - RULES "snd . genCounter" forall ctx iv len .  snd (genCounter ctx iv len) = genCTR ctx iv len
