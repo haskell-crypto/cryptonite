@@ -13,3 +13,4 @@ module Crypto.Internal.Imports
 import Data.Word           as X
 import Control.Applicative as X
 import Control.Monad       as X (forM, forM_, void)
+import Control.Arrow       as X (first, second)
