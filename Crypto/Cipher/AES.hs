@@ -40,22 +40,6 @@ instance Cipher AES256 where
     cipherKeySize _ = KeySizeFixed 32
     cipherInit k    = AES256 `fmap` initAES k
 
-gcmMode :: AES -> AEADModeImpl AESGCM
-gcmMode aes = AEADModeImpl
-    { aeadImplAppendHeader = gcmAppendAAD
-    , aeadImplEncrypt      = gcmAppendEncrypt aes
-    , aeadImplDecrypt      = gcmAppendDecrypt aes
-    , aeadImplFinalize     = gcmFinish aes
-    }
-
-ocbMode :: AES -> AEADModeImpl AESOCB
-ocbMode aes = AEADModeImpl
-    { aeadImplAppendHeader = ocbAppendAAD aes
-    , aeadImplEncrypt      = ocbAppendEncrypt aes
-    , aeadImplDecrypt      = ocbAppendDecrypt aes
-    , aeadImplFinalize     = ocbFinish aes
-    }
-
 #define INSTANCE_BLOCKCIPHER(CSTR) \
 instance BlockCipher CSTR where \
     { blockSize _ = 16 \

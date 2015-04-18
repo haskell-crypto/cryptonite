@@ -44,6 +44,7 @@ module Crypto.Cipher.AES.Primitive
     , decryptOCB
 
     -- * incremental GCM
+    , gcmMode
     , gcmInit
     , gcmAppendAAD
     , gcmAppendEncrypt
@@ -51,6 +52,7 @@ module Crypto.Cipher.AES.Primitive
     , gcmFinish
 
     -- * incremental OCB
+    , ocbMode
     , ocbInit
     , ocbAppendAAD
     , ocbAppendEncrypt
@@ -86,14 +88,29 @@ instance BlockCipher AES where
     cbcEncrypt = encryptCBC
     cbcDecrypt = decryptCBC
     ctrCombine = encryptCTR
-    {-
-    aeadInit AEAD_GCM aes iv = Just $ AEAD aes $ AEADState $ gcmInit aes iv
-    aeadInit AEAD_OCB aes iv = Just $ AEAD aes $ AEADState $ ocbInit aes iv
-    aeadInit _        _    _ = Nothing
-    -}
+    aeadInit AEAD_GCM aes iv = CryptoPassed $ AEAD (gcmMode aes) (gcmInit aes iv)
+    aeadInit AEAD_OCB aes iv = CryptoPassed $ AEAD (ocbMode aes) (ocbInit aes iv)
+    aeadInit _        _   _  = CryptoFailed CryptoError_AEADModeNotSupported
 instance BlockCipher128 AES where 
     xtsEncrypt = encryptXTS
     xtsDecrypt = decryptXTS
+
+gcmMode :: AES -> AEADModeImpl AESGCM
+gcmMode aes = AEADModeImpl
+    { aeadImplAppendHeader = gcmAppendAAD
+    , aeadImplEncrypt      = gcmAppendEncrypt aes
+    , aeadImplDecrypt      = gcmAppendDecrypt aes
+    , aeadImplFinalize     = gcmFinish aes
+    }
+
+ocbMode :: AES -> AEADModeImpl AESOCB
+ocbMode aes = AEADModeImpl
+    { aeadImplAppendHeader = ocbAppendAAD aes
+    , aeadImplEncrypt      = ocbAppendEncrypt aes
+    , aeadImplDecrypt      = ocbAppendDecrypt aes
+    , aeadImplFinalize     = ocbFinish aes
+    }
+
 
 -- | AES Context (pre-processed key)
 newtype AES = AES SecureBytes
