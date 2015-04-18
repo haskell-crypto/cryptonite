@@ -148,6 +148,7 @@ Library
                    , cbits/aes/gf.c
                    , cbits/cryptonite_aes.c
                    , cbits/curve25519/curve25519-donna.c
+                   , cbits/ed25519/ed25519.c
                    , cbits/cryptonite_poly1305.c
                    , cbits/cryptonite_sha1.c
                    , cbits/cryptonite_sha256.c
@@ -163,7 +164,7 @@ Library
                    , cbits/cryptonite_tiger.c
                    , cbits/cryptonite_whirlpool.c
                    , cbits/cryptonite_scrypt.c
-  include-dirs:  cbits
+  include-dirs:  cbits cbits/ed25519
 
   -- FIXME armel or mispel is also little endian.
   -- might be a good idea to also add a runtime autodetect mode.
