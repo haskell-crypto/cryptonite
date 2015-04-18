@@ -11,7 +11,9 @@ module Crypto.Cipher.AES
     , AES256
     ) where
 
+import Crypto.Error
 import Crypto.Cipher.Types
+import Crypto.Cipher.Types.Block
 import Crypto.Cipher.AES.Primitive
 
 -- | AES with 128 bit key
@@ -38,52 +40,39 @@ instance Cipher AES256 where
     cipherKeySize _ = KeySizeFixed 32
     cipherInit k    = AES256 `fmap` initAES k
 
+gcmMode :: AES -> AEADModeImpl AESGCM
+gcmMode aes = AEADModeImpl
+    { aeadImplAppendHeader = gcmAppendAAD
+    , aeadImplEncrypt      = gcmAppendEncrypt aes
+    , aeadImplDecrypt      = gcmAppendDecrypt aes
+    , aeadImplFinalize     = gcmFinish aes
+    }
 
-{-}
-instance AEADModeImpl AES AESGCM where
-    aeadStateAppendHeader _ = gcmAppendAAD
-    aeadStateEncrypt = gcmAppendEncrypt
-    aeadStateDecrypt = gcmAppendDecrypt
-    aeadStateFinalize = gcmFinish
-
-instance AEADModeImpl AES AESOCB where
-    aeadStateAppendHeader = ocbAppendAAD
-    aeadStateEncrypt = ocbAppendEncrypt
-    aeadStateDecrypt = ocbAppendDecrypt
-    aeadStateFinalize = ocbFinish
-    -}
+ocbMode :: AES -> AEADModeImpl AESOCB
+ocbMode aes = AEADModeImpl
+    { aeadImplAppendHeader = ocbAppendAAD aes
+    , aeadImplEncrypt      = ocbAppendEncrypt aes
+    , aeadImplDecrypt      = ocbAppendDecrypt aes
+    , aeadImplFinalize     = ocbFinish aes
+    }
 
 #define INSTANCE_BLOCKCIPHER(CSTR) \
 instance BlockCipher CSTR where \
     { blockSize _ = 16 \
-    ; ecbEncrypt (CSTR aes) = ecbEncryptLegacy encryptECB aes \
-    ; ecbDecrypt (CSTR aes) = ecbDecryptLegacy decryptECB aes \
-    ; cbcEncrypt (CSTR aes) = encryptCBC aes \
-    ; cbcDecrypt (CSTR aes) = decryptCBC aes \
-    ; ctrCombine (CSTR aes) = encryptCTR aes \
-    ; aeadInit AEAD_GCM cipher@(CSTR aes) iv = Just $ AEAD cipher $ AEADState $ gcmInit aes iv \
-    ; aeadInit AEAD_OCB cipher@(CSTR aes) iv = Just $ AEAD cipher $ AEADState $ ocbInit aes iv \
-    ; aeadInit _        _                  _ = Nothing \
+    ; ecbEncrypt (CSTR aes) = encryptECB aes \
+    ; ecbDecrypt (CSTR aes) = decryptECB aes \
+    ; cbcEncrypt (CSTR aes) (IV iv) = encryptCBC aes (IV iv) \
+    ; cbcDecrypt (CSTR aes) (IV iv) = decryptCBC aes (IV iv) \
+    ; ctrCombine (CSTR aes) (IV iv) = encryptCTR aes (IV iv) \
+    ; aeadInit AEAD_GCM (CSTR aes) iv = CryptoPassed $ AEAD (gcmMode aes) (gcmInit aes iv) \
+    ; aeadInit AEAD_OCB (CSTR aes) iv = CryptoPassed $ AEAD (ocbMode aes) (ocbInit aes iv) \
+    ; aeadInit _        _          _  = CryptoFailed CryptoError_AEADModeNotSupported \
     }; \
 instance BlockCipher128 CSTR where \
-    { xtsEncrypt (CSTR aes1, CSTR aes2) = encryptXTS (aes1,aes2) \
-    ; xtsDecrypt (CSTR aes1, CSTR aes2) = decryptXTS (aes1,aes2) \
-    }; \
-\
-instance AEADModeImpl CSTR AESGCM where \
-    { aeadStateAppendHeader (CSTR _) gcmState bs = gcmAppendAAD gcmState bs \
-    ; aeadStateEncrypt (CSTR aes) gcmState input = gcmAppendEncrypt aes gcmState input \
-    ; aeadStateDecrypt (CSTR aes) gcmState input = gcmAppendDecrypt aes gcmState input \
-    ; aeadStateFinalize (CSTR aes) gcmState len  = gcmFinish aes gcmState len \
-    }; \
-\
-{-instance AEADModeImpl CSTR AESOCB where \
-    { aeadStateAppendHeader (CSTR aes) ocbState bs = ocbAppendAAD aes ocbState bs \
-    ; aeadStateEncrypt (CSTR aes) ocbState input = ocbAppendEncrypt aes ocbState input \
-    ; aeadStateDecrypt (CSTR aes) ocbState input = ocbAppendDecrypt aes ocbState input \
-    ; aeadStateFinalize (CSTR aes) ocbState len  = ocbFinish aes ocbState len \
-    }-}
+    { xtsEncrypt (CSTR aes1, CSTR aes2) (IV iv) = encryptXTS (aes1,aes2) (IV iv) \
+    ; xtsDecrypt (CSTR aes1, CSTR aes2) (IV iv) = decryptXTS (aes1,aes2) (IV iv) \
+    };
 
---INSTANCE_BLOCKCIPHER(AES128)
---INSTANCE_BLOCKCIPHER(AES192)
---INSTANCE_BLOCKCIPHER(AES256)
+INSTANCE_BLOCKCIPHER(AES128)
+INSTANCE_BLOCKCIPHER(AES192)
+INSTANCE_BLOCKCIPHER(AES256)
