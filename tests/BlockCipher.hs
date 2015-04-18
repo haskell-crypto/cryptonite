@@ -72,7 +72,8 @@ data KAT_XTS = KAT_XTS
 
 -- | AEAD KAT
 data KAT_AEAD = KAT_AEAD
-    { aeadKey        :: ByteString -- ^ Key
+    { aeadMode       :: AEADMode
+    , aeadKey        :: ByteString -- ^ Key
     , aeadIV         :: ByteString -- ^ IV for initialization
     , aeadHeader     :: ByteString -- ^ Authentificated Header
     , aeadPlaintext  :: ByteString -- ^ Plaintext
