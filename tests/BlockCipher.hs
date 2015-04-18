@@ -57,7 +57,7 @@ data KAT_CFB = KAT_CFB
 data KAT_CTR = KAT_CTR
     { ctrKey        :: ByteString -- ^ Key
     , ctrIV         :: ByteString -- ^ IV (usually represented as a 128 bits integer)
-    , ctrPlaintext  :: ByteString -- ^ Plaintext 
+    , ctrPlaintext  :: ByteString -- ^ Plaintext
     , ctrCiphertext :: ByteString -- ^ Ciphertext
     } deriving (Show,Eq)
 
@@ -398,14 +398,16 @@ testBlockCipherAEAD cipher =
         toTests _ = testProperty_AEAD
         testProperty_AEAD mode (AEADUnit key testIV (unPlaintext -> aad) (unPlaintext -> plaintext)) = withCtx key $ \ctx ->
             case aeadInit mode ctx testIV of
-                Just iniAead ->
+                CryptoPassed iniAead ->
                     let aead           = aeadAppendHeader iniAead aad
                         (eText, aeadE) = aeadEncrypt aead plaintext
                         (dText, aeadD) = aeadDecrypt aead eText
                         eTag           = aeadFinalize aeadE (blockSize ctx)
                         dTag           = aeadFinalize aeadD (blockSize ctx)
                      in (plaintext `assertEq` dText) && (eTag `byteArrayEq` dTag)
-                Nothing -> True
+                CryptoFailed err
+                    | err == CryptoError_AEADModeNotSupported -> True
+                    | otherwise                               -> error ("testProperty_AEAD: " ++ show err)
 
 withCtx :: Cipher c => Key c -> (c -> a) -> a
 withCtx (Key key) f =

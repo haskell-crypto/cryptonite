@@ -7,53 +7,58 @@
 --
 -- AEAD cipher basic types
 --
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE Rank2Types #-}
 module Crypto.Cipher.Types.AEAD where
 
-import Data.ByteString (ByteString)
-import qualified Data.ByteString as B
 import Crypto.Cipher.Types.Base
-import Crypto.Cipher.Types.Block
 import Crypto.Internal.ByteArray
+import Crypto.Internal.Imports
 
--- | Append associated data into the AEAD state
-aeadAppendHeader :: BlockCipher a => AEAD a -> ByteString -> AEAD a
-aeadAppendHeader (AEAD cipher (AEADState state)) bs =
-    AEAD cipher $ AEADState (aeadStateAppendHeader cipher state bs)
+data AEADModeImpl st = AEADModeImpl
+    { aeadImplAppendHeader :: forall ba . ByteArrayAccess ba => st -> ba -> st
+    , aeadImplEncrypt      :: forall ba . ByteArray ba => st -> ba -> (ba, st)
+    , aeadImplDecrypt      :: forall ba . ByteArray ba => st -> ba -> (ba, st)
+    , aeadImplFinalize     :: st -> Int -> AuthTag
+    }
 
--- | Encrypt input and append into the AEAD state
-aeadEncrypt :: BlockCipher a => AEAD a -> ByteString -> (ByteString, AEAD a)
-aeadEncrypt (AEAD cipher (AEADState state)) input = (output, AEAD cipher (AEADState nst))
-  where (output, nst) = aeadStateEncrypt cipher state input
+-- | Authenticated Encryption with Associated Data algorithms
+data AEAD cipher = forall st . AEAD
+    { aeadModeImpl :: AEADModeImpl st
+    , aeadState    :: st
+    }
 
--- | Decrypt input and append into the AEAD state
-aeadDecrypt :: BlockCipher a => AEAD a -> ByteString -> (ByteString, AEAD a)
-aeadDecrypt (AEAD cipher (AEADState state)) input = (output, AEAD cipher (AEADState nst))
-  where (output, nst) = aeadStateDecrypt cipher state input
+aeadAppendHeader :: ByteArrayAccess aad => AEAD cipher -> aad -> AEAD cipher
+aeadAppendHeader (AEAD impl st) aad = AEAD impl $ (aeadImplAppendHeader impl) st aad
 
--- | Finalize the AEAD state and create an authentification tag
-aeadFinalize :: BlockCipher a => AEAD a -> Int -> AuthTag
-aeadFinalize (AEAD cipher (AEADState state)) len =
-    aeadStateFinalize cipher state len
+aeadEncrypt :: ByteArray ba => AEAD cipher -> ba -> (ba, AEAD cipher)
+aeadEncrypt (AEAD impl st) ba = second (AEAD impl) $ (aeadImplEncrypt impl) st ba
+
+aeadDecrypt :: ByteArray ba => AEAD cipher -> ba -> (ba, AEAD cipher)
+aeadDecrypt (AEAD impl st) ba = second (AEAD impl) $ (aeadImplDecrypt impl) st ba
+
+aeadFinalize :: AEAD cipher -> Int -> AuthTag
+aeadFinalize (AEAD impl st) n = (aeadImplFinalize impl) st n
 
 -- | Simple AEAD encryption
-aeadSimpleEncrypt :: BlockCipher a
+aeadSimpleEncrypt :: (ByteArrayAccess aad, ByteArray ba)
                   => AEAD a        -- ^ A new AEAD Context
-                  -> B.ByteString  -- ^ Optional Authentified Header
-                  -> B.ByteString  -- ^ Optional Plaintext
+                  -> aad           -- ^ Optional Authentified Header
+                  -> ba            -- ^ Optional Plaintext
                   -> Int           -- ^ Tag length
-                  -> (AuthTag, B.ByteString) -- ^ Authentification tag and ciphertext
+                  -> (AuthTag, ba) -- ^ Authentification tag and ciphertext
 aeadSimpleEncrypt aeadIni header input taglen = (tag, output)
   where aead                = aeadAppendHeader aeadIni header
         (output, aeadFinal) = aeadEncrypt aead input
         tag                 = aeadFinalize aeadFinal taglen
 
 -- | Simple AEAD decryption
-aeadSimpleDecrypt :: BlockCipher a
+aeadSimpleDecrypt :: (ByteArrayAccess aad, ByteArray ba)
                   => AEAD a        -- ^ A new AEAD Context
-                  -> B.ByteString  -- ^ Optional Authentified Header
-                  -> B.ByteString  -- ^ Optional Plaintext
+                  -> aad           -- ^ Optional Authentified Header
+                  -> ba            -- ^ Optional Plaintext
                   -> AuthTag       -- ^ Tag length
-                  -> Maybe B.ByteString -- ^ Plaintext
+                  -> Maybe ba      -- ^ Plaintext
 aeadSimpleDecrypt aeadIni header input authTag
     | tag == authTag = Just output
     | otherwise      = Nothing

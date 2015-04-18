@@ -28,6 +28,7 @@ data CryptoError =
     -- symmetric cipher errors
       CryptoError_KeySizeInvalid
     | CryptoError_IvSizeInvalid
+    | CryptoError_AEADModeNotSupported
     deriving (Show,Eq,Enum,Data,Typeable)
 
 instance E.Exception CryptoError

@@ -24,8 +24,12 @@ module Crypto.Cipher.Types.Block
     , XTS
     -- * AEAD
     , AEAD(..)
-    , AEADState(..)
+    -- , AEADState(..)
     , AEADModeImpl(..)
+    , aeadAppendHeader
+    , aeadEncrypt
+    , aeadDecrypt
+    , aeadFinalize
     -- * CFB 8 bits
     --, cfb8Encrypt
     --, cfb8Decrypt
@@ -35,8 +39,10 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 import Data.Byteable
 import Data.Word
+import Crypto.Error
 import Crypto.Cipher.Types.Base
 import Crypto.Cipher.Types.GF
+import Crypto.Cipher.Types.AEAD
 import Crypto.Cipher.Types.Utils
 
 import Crypto.Internal.ByteArray
@@ -110,8 +116,8 @@ class Cipher cipher => BlockCipher cipher where
     -- | Initialize a new AEAD State
     --
     -- When Nothing is returns, it means the mode is not handled.
-    aeadInit :: Byteable iv => AEADMode -> cipher -> iv -> Maybe (AEAD cipher)
-    aeadInit _ _ _ = Nothing
+    aeadInit :: ByteArrayAccess iv => AEADMode -> cipher -> iv -> CryptoFailable (AEAD cipher)
+    aeadInit _ _ _ = CryptoFailed CryptoError_AEADModeNotSupported
 
 -- | class of block cipher with a 128 bits block size
 class BlockCipher cipher => BlockCipher128 cipher where
@@ -138,19 +144,6 @@ class BlockCipher cipher => BlockCipher128 cipher where
                -> ba               -- ^ Ciphertext
                -> ba               -- ^ Plaintext
     xtsDecrypt = xtsDecryptGeneric
-
--- | Authenticated Encryption with Associated Data algorithms
-data AEAD cipher = AEAD cipher (AEADState cipher)
-
--- | Wrapper for any AEADState
-data AEADState cipher = forall st . AEADModeImpl cipher st => AEADState st
-
--- | Class of AEAD Mode implementation
-class BlockCipher cipher => AEADModeImpl cipher state where
-    aeadStateAppendHeader :: cipher -> state -> ByteString -> state
-    aeadStateEncrypt      :: cipher -> state -> ByteString -> (ByteString, state)
-    aeadStateDecrypt      :: cipher -> state -> ByteString -> (ByteString, state)
-    aeadStateFinalize     :: cipher -> state -> Int -> AuthTag
 
 -- | Create an IV for a specified block cipher
 makeIV :: (Byteable b, BlockCipher c) => b -> Maybe (IV c)
