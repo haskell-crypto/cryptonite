@@ -42,6 +42,20 @@ module Crypto.Cipher.AES.Primitive
     , decryptXTS
     , decryptGCM
     , decryptOCB
+
+    -- * incremental GCM
+    , gcmInit
+    , gcmAppendAAD
+    , gcmAppendEncrypt
+    , gcmAppendDecrypt
+    , gcmFinish
+
+    -- * incremental OCB
+    , ocbInit
+    , ocbAppendAAD
+    , ocbAppendEncrypt
+    , ocbAppendDecrypt
+    , ocbFinish
     ) where
 
 import Data.Word
