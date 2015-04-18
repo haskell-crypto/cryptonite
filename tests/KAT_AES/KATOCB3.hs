@@ -44,9 +44,3 @@ vectors_aes128_enc =
       , 16
       , "\x77\x6c\x99\x24\xd6\x72\x3a\x1f\xc4\x52\x45\x32\xac\x3e\x5b\xeb")
     ]
-
-vectors_encrypt =
-    [ ("AES128 Enc", vectors_aes128_enc)
-    ]
-
-vectors_decrypt = []

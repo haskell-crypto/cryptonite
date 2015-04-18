@@ -146,15 +146,3 @@ vectors_aes256_dec =
 	  , B.pack [0x30,0xc9,0x1c,0xce,0xfe,0x89,0x30,0xcf,0xff,0x31,0xdb,0xcc,0xfc,0x11,0xc5,0x23]
 	  )
 	]
-
-vectors_encrypt =
-	[ ("AES 128 Enc", vectors_aes128_enc)
-	, ("AES 192 Enc", vectors_aes192_enc)
-	, ("AES 256 Enc", vectors_aes256_enc)
-	]
-
-vectors_decrypt =
-	[ ("AES 128 Dec", vectors_aes128_dec)
-	, ("AES 192 Dec", vectors_aes192_dec)
-	, ("AES 256 Dec", vectors_aes256_dec)
-    ]

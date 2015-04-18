@@ -57,13 +57,3 @@ vectors_aes256_enc =
     ]
 
 vectors_aes256_dec = []
-
-vectors_encrypt =
-	[ ("AES 128 Enc", vectors_aes128_enc)
-	, ("AES 256 Enc", vectors_aes256_enc)
-	]
-
-vectors_decrypt =
-	[ ("AES 128 Dec", vectors_aes128_dec)
-	, ("AES 256 Dec", vectors_aes256_dec)
-    ]
