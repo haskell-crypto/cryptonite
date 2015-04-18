@@ -13,12 +13,13 @@ module Crypto.Internal.Bytes
     , tempBufCreate
     , bufXor
     , bufCopy
+    , bufSet
     ) where
 
 import Control.Applicative      ((<$>), (<*>))
 import Foreign.Ptr              (Ptr, plusPtr)
 import Foreign.ForeignPtr       (withForeignPtr)
-import Foreign.Storable         (peek, poke)
+import Foreign.Storable         (peek, poke, pokeByteOff)
 import Foreign.Marshal.Alloc    (allocaBytesAligned)
 import Data.ByteString          (ByteString)
 import Data.Bits                (xor)
@@ -48,3 +49,10 @@ bufXor d s1 s2 n = do
 
 bufCopy :: Ptr Word8 -> Ptr Word8 -> Int -> IO ()
 bufCopy dst src n = memcpy dst src (fromIntegral n)
+
+-- | Set @n number of bytes to the same value @v
+bufSet :: Ptr Word8 -> Word8 -> Int -> IO ()
+bufSet start v n = loop 0
+  where loop i
+            | i == n    = return ()
+            | otherwise = pokeByteOff start i v >> loop (i+1)
