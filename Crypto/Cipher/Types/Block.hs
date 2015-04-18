@@ -10,6 +10,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE Rank2Types #-}
 module Crypto.Cipher.Types.Block
     (
     -- * BlockCipher
@@ -35,8 +36,6 @@ module Crypto.Cipher.Types.Block
     --, cfb8Decrypt
     ) where
 
-import Data.ByteString (ByteString)
-import qualified Data.ByteString as B
 import Data.Byteable
 import Data.Word
 import Crypto.Error
@@ -46,6 +45,7 @@ import Crypto.Cipher.Types.AEAD
 import Crypto.Cipher.Types.Utils
 
 import Crypto.Internal.ByteArray
+import Crypto.Internal.Memory
 
 import Foreign.Ptr
 import Foreign.Storable
@@ -158,7 +158,7 @@ makeIV b = toIV undefined
 nullIV :: BlockCipher c => IV c
 nullIV = toIV undefined
   where toIV :: BlockCipher c => c -> IV c
-        toIV cipher = IV $ B.replicate (blockSize cipher) 0
+        toIV cipher = IV (byteArrayZero (blockSize cipher) :: Bytes)
 
 -- | Increment an IV by a number.
 --
