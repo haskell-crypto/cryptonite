@@ -113,7 +113,7 @@ static void md4_do_chunk(struct md4_ctx *ctx, uint32_t *buf)
 	ctx->h[0] += a; ctx->h[1] += b; ctx->h[2] += c; ctx->h[3] += d;
 }
 
-void cryptonite_md4_update(struct md4_ctx *ctx, uint8_t *data, uint32_t len)
+void cryptonite_md4_update(struct md4_ctx *ctx, const uint8_t *data, uint32_t len)
 {
 	uint32_t index, to_fill;
 

@@ -249,7 +249,7 @@ static void ripemd160_do_chunk(struct ripemd160_ctx *ctx, uint32_t *buf)
 	ctx->h[0] = d2;
 }
 
-void cryptonite_ripemd160_update(struct ripemd160_ctx *ctx, uint8_t *data, uint32_t len)
+void cryptonite_ripemd160_update(struct ripemd160_ctx *ctx, const uint8_t *data, uint32_t len)
 {
 	uint32_t index, to_fill;
 

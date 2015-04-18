@@ -104,7 +104,7 @@ void cryptonite_sha3_init(struct sha3_ctx *ctx, uint32_t hashlen)
 	ctx->bufsz = 200 - 2 * ctx->hashlen;
 }
 
-void cryptonite_sha3_update(struct sha3_ctx *ctx, uint8_t *data, uint32_t len)
+void cryptonite_sha3_update(struct sha3_ctx *ctx, const uint8_t *data, uint32_t len)
 {
 	uint32_t to_fill;
 

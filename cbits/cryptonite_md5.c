@@ -126,7 +126,7 @@ static void md5_do_chunk(struct md5_ctx *ctx, uint32_t *buf)
 	ctx->h[0] += a; ctx->h[1] += b; ctx->h[2] += c; ctx->h[3] += d;
 }
 
-void cryptonite_md5_update(struct md5_ctx *ctx, uint8_t *data, uint32_t len)
+void cryptonite_md5_update(struct md5_ctx *ctx, const uint8_t *data, uint32_t len)
 {
 	uint32_t index, to_fill;
 

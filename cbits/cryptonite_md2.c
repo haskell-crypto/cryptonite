@@ -73,7 +73,7 @@ static uint8_t *padding_table[] = {
 	UBYTES("\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10")
 };
 
-static void md2_do_chunk(struct md2_ctx *ctx, uint8_t *buf)
+static void md2_do_chunk(struct md2_ctx *ctx, const uint8_t *buf)
 {
 	uint8_t i, j, t;
 	uint8_t x[48];
@@ -97,7 +97,7 @@ static void md2_do_chunk(struct md2_ctx *ctx, uint8_t *buf)
 		t = ctx->cksum[i] ^= S_table[buf[i] ^ t];
 }
 
-void cryptonite_md2_update(struct md2_ctx *ctx, uint8_t *data, uint32_t len)
+void cryptonite_md2_update(struct md2_ctx *ctx, const uint8_t *data, uint32_t len)
 {
 	uint32_t index, to_fill;
 

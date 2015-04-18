@@ -39,7 +39,7 @@ struct sha3_ctx
 #define SHA3_CTX_SIZE		sizeof(struct sha3_ctx)
 
 void cryptonite_sha3_init(struct sha3_ctx *ctx, uint32_t hashlen);
-void cryptonite_sha3_update(struct sha3_ctx *ctx, uint8_t *data, uint32_t len);
+void cryptonite_sha3_update(struct sha3_ctx *ctx, const uint8_t *data, uint32_t len);
 void cryptonite_sha3_finalize(struct sha3_ctx *ctx, uint8_t *out);
 
 #endif

@@ -37,7 +37,7 @@ struct ripemd160_ctx
 #define RIPEMD160_CTX_SIZE	sizeof(struct ripemd160_ctx)
 
 void cryptonite_ripemd160_init(struct ripemd160_ctx *ctx);
-void cryptonite_ripemd160_update(struct ripemd160_ctx *ctx, uint8_t *data, uint32_t len);
+void cryptonite_ripemd160_update(struct ripemd160_ctx *ctx, const uint8_t *data, uint32_t len);
 void cryptonite_ripemd160_finalize(struct ripemd160_ctx *ctx, uint8_t *out);
 
 #endif

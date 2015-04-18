@@ -37,7 +37,7 @@ struct sha1_ctx
 #define SHA1_CTX_SIZE 		(sizeof(struct sha1_ctx))
 
 void cryptonite_sha1_init(struct sha1_ctx *ctx);
-void cryptonite_sha1_update(struct sha1_ctx *ctx, uint8_t *data, uint32_t len);
+void cryptonite_sha1_update(struct sha1_ctx *ctx, const uint8_t *data, uint32_t len);
 void cryptonite_sha1_finalize(struct sha1_ctx *ctx, uint8_t *out);
 
 #endif

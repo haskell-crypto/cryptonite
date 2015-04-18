@@ -155,7 +155,7 @@ static inline void sha1_do_chunk(struct sha1_ctx *ctx, uint32_t *buf)
 	ctx->h[4] += e;
 }
 
-void cryptonite_sha1_update(struct sha1_ctx *ctx, uint8_t *data, uint32_t len)
+void cryptonite_sha1_update(struct sha1_ctx *ctx, const uint8_t *data, uint32_t len)
 {
 	uint32_t index, to_fill;
 

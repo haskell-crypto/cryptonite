@@ -110,12 +110,12 @@ static void sha256_do_chunk(struct sha256_ctx *ctx, uint32_t buf[])
 	ctx->h[4] += e; ctx->h[5] += f; ctx->h[6] += g; ctx->h[7] += h;
 }
 
-void cryptonite_sha224_update(struct sha224_ctx *ctx, uint8_t *data, uint32_t len)
+void cryptonite_sha224_update(struct sha224_ctx *ctx, const uint8_t *data, uint32_t len)
 {
 	return cryptonite_sha256_update(ctx, data, len);
 }
 
-void cryptonite_sha256_update(struct sha256_ctx *ctx, uint8_t *data, uint32_t len)
+void cryptonite_sha256_update(struct sha256_ctx *ctx, const uint8_t *data, uint32_t len)
 {
 	uint32_t index, to_fill;
 

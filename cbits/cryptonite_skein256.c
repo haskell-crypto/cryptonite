@@ -120,7 +120,7 @@ void cryptonite_skein256_init(struct skein256_ctx *ctx, uint32_t hashlen)
 	SET_TYPE(ctx, FLAG_FIRST | FLAG_TYPE(TYPE_MSG));
 }
 
-void cryptonite_skein256_update(struct skein256_ctx *ctx, uint8_t *data, uint32_t len)
+void cryptonite_skein256_update(struct skein256_ctx *ctx, const uint8_t *data, uint32_t len)
 {
 	uint32_t to_fill;
 

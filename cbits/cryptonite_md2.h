@@ -38,7 +38,7 @@ struct md2_ctx
 #define MD2_CTX_SIZE		sizeof(struct md2_ctx)
 
 void cryptonite_md2_init(struct md2_ctx *ctx);
-void cryptonite_md2_update(struct md2_ctx *ctx, uint8_t *data, uint32_t len);
+void cryptonite_md2_update(struct md2_ctx *ctx, const uint8_t *data, uint32_t len);
 void cryptonite_md2_finalize(struct md2_ctx *ctx, uint8_t *out);
 
 #endif

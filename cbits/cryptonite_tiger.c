@@ -363,7 +363,7 @@ static inline void tiger_do_chunk(struct tiger_ctx *ctx, uint64_t *buf)
 	ctx->h[2] += c;
 }
 
-void cryptonite_tiger_update(struct tiger_ctx *ctx, uint8_t *data, uint32_t len)
+void cryptonite_tiger_update(struct tiger_ctx *ctx, const uint8_t *data, uint32_t len)
 {
 	uint32_t index, to_fill;
 

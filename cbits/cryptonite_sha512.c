@@ -127,12 +127,12 @@ static void sha512_do_chunk(struct sha512_ctx *ctx, uint64_t *buf)
 	ctx->h[4] += e; ctx->h[5] += f; ctx->h[6] += g; ctx->h[7] += h;
 }
 
-void cryptonite_sha384_update(struct sha384_ctx *ctx, uint8_t *data, uint32_t len)
+void cryptonite_sha384_update(struct sha384_ctx *ctx, const uint8_t *data, uint32_t len)
 {
 	return cryptonite_sha512_update(ctx, data, len);
 }
 
-void cryptonite_sha512_update(struct sha512_ctx *ctx, uint8_t *data, uint32_t len)
+void cryptonite_sha512_update(struct sha512_ctx *ctx, const uint8_t *data, uint32_t len)
 {
 	unsigned int index, to_fill;
 

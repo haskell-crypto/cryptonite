@@ -39,7 +39,7 @@ struct skein512_ctx
 #define SKEIN512_CTX_SIZE		sizeof(struct skein512_ctx)
 
 void cryponite_skein512_init(struct skein512_ctx *ctx, uint32_t hashlen);
-void cryponite_skein512_update(struct skein512_ctx *ctx, uint8_t *data, uint32_t len);
+void cryponite_skein512_update(struct skein512_ctx *ctx, const uint8_t *data, uint32_t len);
 void cryponite_skein512_finalize(struct skein512_ctx *ctx, uint8_t *out);
 
 #endif
