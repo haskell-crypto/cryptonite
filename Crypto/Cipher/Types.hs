@@ -18,7 +18,6 @@ module Crypto.Cipher.Types
     , DataUnitOffset
     , KeySizeSpecifier(..)
     , AEAD(..)
-    , AEADState(..)
     , AEADMode(..)
     , AEADModeImpl(..)
     -- , cfb8Encrypt
