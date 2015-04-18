@@ -50,8 +50,8 @@ instance Cipher CSTR where \
     }; \
 instance BlockCipher CSTR where \
     { blockSize _ = 8 \
-    ; ecbEncrypt (CSTR bf) = ecbEncryptLegacy encrypt bf \
-    ; ecbDecrypt (CSTR bf) = ecbDecryptLegacy decrypt bf \
+    ; ecbEncrypt (CSTR bf) = encrypt bf \
+    ; ecbDecrypt (CSTR bf) = decrypt bf \
     };
 
 INSTANCE_CIPHER(Blowfish64, "blowfish64", 8)

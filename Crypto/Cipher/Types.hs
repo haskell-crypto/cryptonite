@@ -14,8 +14,6 @@ module Crypto.Cipher.Types
       Cipher(..)
     , BlockCipher(..)
     , BlockCipher128(..)
-    , ecbEncryptLegacy
-    , ecbDecryptLegacy
     , StreamCipher(..)
     , DataUnitOffset
     , KeySizeSpecifier(..)
