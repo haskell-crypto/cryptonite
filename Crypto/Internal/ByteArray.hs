@@ -16,6 +16,7 @@ module Crypto.Internal.ByteArray
     , byteArrayAlloc
     , byteArrayAllocAndFreeze
     , empty
+    , byteArrayZero
     , byteArrayCopy
     , byteArrayCopyRet
     , byteArrayCopyAndFreeze
@@ -39,7 +40,7 @@ import Data.SecureMem
 import Crypto.Internal.Memory
 import Crypto.Internal.Compat
 import Crypto.Internal.Endian
-import Crypto.Internal.Bytes (bufXor, bufCopy)
+import Crypto.Internal.Bytes (bufXor, bufCopy, bufSet)
 import Crypto.Internal.Words
 import Foreign.Ptr
 import Foreign.Storable
@@ -146,6 +147,9 @@ byteArrayCopyAndFreeze bs f =
     byteArrayAllocAndFreeze (byteArrayLength bs) $ \d -> do
         withByteArray bs $ \s -> bufCopy d s (byteArrayLength bs)
         f (castPtr d)
+
+byteArrayZero :: ByteArray ba => Int -> ba
+byteArrayZero n = byteArrayAllocAndFreeze n $ \ptr -> bufSet ptr 0 n
 
 byteArrayEq :: (ByteArrayAccess bs1, ByteArrayAccess bs2) => bs1 -> bs2 -> Bool
 byteArrayEq b1 b2
