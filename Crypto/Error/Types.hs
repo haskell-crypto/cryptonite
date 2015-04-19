@@ -29,6 +29,10 @@ data CryptoError =
       CryptoError_KeySizeInvalid
     | CryptoError_IvSizeInvalid
     | CryptoError_AEADModeNotSupported
+    -- public key cryptography error
+    | CryptoError_SecretKeySizeInvalid
+    | CryptoError_SecretKeyStructureInvalid
+    | CryptoError_PublicKeySizeInvalid
     deriving (Show,Eq,Enum,Data,Typeable)
 
 instance E.Exception CryptoError

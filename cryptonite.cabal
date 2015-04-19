@@ -129,7 +129,6 @@ Library
                      Crypto.Internal.CompatPrim
                      Crypto.Internal.Bytes
                      Crypto.Internal.Endian
-                     Crypto.Internal.Hex
                      Crypto.Internal.Imports
                      Crypto.Internal.Memory
                      Crypto.Internal.Words
