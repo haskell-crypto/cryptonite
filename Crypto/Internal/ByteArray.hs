@@ -130,19 +130,19 @@ byteArrayConcat allBs = byteArrayAllocAndFreeze total (loop allBs)
             withByteArray b $ \p -> bufCopy dst p sz
             loop bs (dst `plusPtr` sz)
 
-byteArrayCopy :: (ByteArray bs1, ByteArray bs2) => bs1 -> (Ptr p -> IO ()) -> IO bs2
+byteArrayCopy :: (ByteArrayAccess bs1, ByteArray bs2) => bs1 -> (Ptr p -> IO ()) -> IO bs2
 byteArrayCopy bs f =
     byteArrayAlloc (byteArrayLength bs) $ \d -> do
         withByteArray bs $ \s -> bufCopy d s (byteArrayLength bs)
         f (castPtr d)
 
-byteArrayCopyRet :: (ByteArray bs1, ByteArray bs2) => bs1 -> (Ptr p -> IO a) -> IO (a, bs2)
+byteArrayCopyRet :: (ByteArrayAccess bs1, ByteArray bs2) => bs1 -> (Ptr p -> IO a) -> IO (a, bs2)
 byteArrayCopyRet bs f =
     byteArrayAllocRet (byteArrayLength bs) $ \d -> do
         withByteArray bs $ \s -> bufCopy d s (byteArrayLength bs)
         f (castPtr d)
 
-byteArrayCopyAndFreeze :: (ByteArray bs1, ByteArray bs2) => bs1 -> (Ptr p -> IO ()) -> bs2
+byteArrayCopyAndFreeze :: (ByteArrayAccess bs1, ByteArray bs2) => bs1 -> (Ptr p -> IO ()) -> bs2
 byteArrayCopyAndFreeze bs f =
     byteArrayAllocAndFreeze (byteArrayLength bs) $ \d -> do
         withByteArray bs $ \s -> bufCopy d s (byteArrayLength bs)
