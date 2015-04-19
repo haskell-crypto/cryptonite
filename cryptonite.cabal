@@ -76,6 +76,7 @@ Library
                      Crypto.PubKey.ECC.DH
                      Crypto.PubKey.ECC.ECDSA
                      Crypto.PubKey.ECC.Types
+                     Crypto.PubKey.Ed25519
                      Crypto.PubKey.RSA
                      Crypto.PubKey.RSA.PKCS15
                      Crypto.PubKey.RSA.Prim
@@ -129,6 +130,7 @@ Library
                      Crypto.Internal.CompatPrim
                      Crypto.Internal.Bytes
                      Crypto.Internal.Endian
+                     Crypto.Internal.Hex
                      Crypto.Internal.Imports
                      Crypto.Internal.Memory
                      Crypto.Internal.Words
