@@ -5,7 +5,7 @@
 */
 
 
-#define ED25519_FN(fn)         crypotnite_##fn
+#define ED25519_FN(fn)         cryptonite_##fn
 
 #include "ed25519-donna.h"
 #include "ed25519.h"
