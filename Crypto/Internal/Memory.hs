@@ -18,19 +18,30 @@ module Crypto.Internal.Memory
     , bytesAlloc
     , bytesAllocRet
     , bytesLength
+    , bytesIndex
     , withBytes
     , SecureBytes
     ) where
 
 import GHC.Types
 import GHC.Prim
+import GHC.Word
 import GHC.Ptr
+import Data.Word (Word8)
 import Foreign.Marshal.Utils (copyBytes)
 import Data.SecureMem (SecureMem)
+import Crypto.Internal.CompatPrim
+import Crypto.Internal.Compat (unsafeDoIO)
+import Crypto.Internal.Hex (showHexadecimal)
 
 data Bytes = Bytes (MutableByteArray# RealWorld)
 
 type SecureBytes = SecureMem
+
+instance Show Bytes where
+    show = bytesShowHex
+instance Eq Bytes where
+    (==) = bytesEq
 
 ------------------------------------------------------------------------
 newBytes :: Int -> IO Bytes
@@ -87,3 +98,31 @@ bytesLength = sizeofBytes
 
 withBytes :: Bytes -> (Ptr p -> IO a) -> IO a
 withBytes = withPtr
+
+bytesEq :: Bytes -> Bytes -> Bool
+bytesEq b1@(Bytes m1) b2@(Bytes m2)
+    | l1 /= l2  = False
+    | otherwise = unsafeDoIO $ IO $ \s -> loop 0# s
+  where
+    !l1@(I# len) = bytesLength b1
+    !l2          = bytesLength b2
+
+    loop i s
+        | booleanPrim (i ==# len) = (# s, True #)
+        | otherwise               =
+            case readWord8Array# m1 i s of
+                (# s', e1 #) -> case readWord8Array# m2 i s' of
+                    (# s'', e2 #) ->
+                        if booleanPrim (eqWord# e1 e2)
+                            then loop (i +# 1#) s''
+                            else (# s', False #)
+
+bytesIndex :: Bytes -> Int -> Word8
+bytesIndex (Bytes m) (I# i) = unsafeDoIO $ IO $ \s ->
+    case readWord8Array# m i s of
+        (# s', e #) -> (# s', W8# e #)
+{-# NOINLINE bytesIndex #-}
+
+bytesShowHex :: Bytes -> String
+bytesShowHex b = unsafeDoIO $ withPtr b $ \p -> return $ showHexadecimal p (bytesLength b)
+{-# NOINLINE bytesShowHex #-}
