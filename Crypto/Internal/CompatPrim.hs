@@ -12,6 +12,7 @@
 -- to write compat code for primitives
 --
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash #-}
 module Crypto.Internal.CompatPrim
     ( be32Prim
@@ -33,10 +34,10 @@ byteswap32Prim :: Word# -> Word#
 byteswap32Prim w = byteSwap32# w
 #else
 byteswap32Prim w =
-    let a =       uncheckedShiftL# w 24#
-        b = and# (uncheckedShiftL# w 8#) 0x00ff0000##
-        c = and# (uncheckedShiftRL# w 8#) 0x0000ff00##
-        d = and# (uncheckedShiftRL# w 24#) 0x000000ff##
+    let !a =       uncheckedShiftL# w 24#
+        !b = and# (uncheckedShiftL# w 8#) 0x00ff0000##
+        !c = and# (uncheckedShiftRL# w 8#) 0x0000ff00##
+        !d = and# (uncheckedShiftRL# w 24#) 0x000000ff##
      in or# a (or# b (or# c d))
 #endif
 

@@ -76,7 +76,7 @@ array64 (I# n) l = unsafeDoIO $ IO $ \s ->
         loop i st mb ((W64# x):xs)
             | booleanPrim (i ==# n) = freezeArray mb st
             | otherwise =
-                let st' = writeWord64Array# mb i x st
+                let !st' = writeWord64Array# mb i x st
                  in loop (i +# 1#) st' mb xs
         freezeArray mb st =
             case unsafeFreezeByteArray# mb st of
@@ -92,7 +92,7 @@ mutableArray32 (I# n) l = IO $ \s ->
         loop i st mb ((W32# x):xs)
             | booleanPrim (i ==# n) = (# st, MutableArray32 mb #)
             | otherwise =
-                let st' = writeWord32Array# mb i x st
+                let !st' = writeWord32Array# mb i x st
                  in loop (i +# 1#) st' mb xs
 
 mutableArray32FromAddrBE :: Int -> Addr# -> IO MutableArray32
@@ -103,7 +103,7 @@ mutableArray32FromAddrBE (I# n) a = IO $ \s ->
         loop i st mb
             | booleanPrim (i ==# n) = (# st, MutableArray32 mb #)
             | otherwise             =
-                let st' = writeWord32Array# mb i (be32Prim (indexWord32OffAddr# a i)) st
+                let !st' = writeWord32Array# mb i (be32Prim (indexWord32OffAddr# a i)) st
                  in loop (i +# 1#) st' mb
 
 mutableArray32Freeze :: MutableArray32 -> IO Array32
