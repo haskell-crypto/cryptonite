@@ -21,9 +21,7 @@ import Crypto.Random.Types
 import Crypto.Random.ChaChaDRG
 import Crypto.Random.Entropy
 import Crypto.Internal.Memory
-
-import Control.Applicative
-import Data.Word (Word64)
+import Crypto.Internal.Imports
 
 drgNew :: IO ChaChaDRG
 drgNew = initialize <$> (getEntropy 40 :: IO SecureBytes)

@@ -11,8 +11,13 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
 module Crypto.Internal.ByteArray
-    ( ByteArray(..)
+    (
+      ByteArray(..)
     , ByteArrayAccess(..)
+    -- * Inhabitants
+    , Bytes
+    , SecureBytes
+    -- * methods
     , byteArrayAlloc
     , byteArrayAllocAndFreeze
     , empty

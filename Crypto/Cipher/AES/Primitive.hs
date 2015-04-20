@@ -1,8 +1,6 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 -- |
 -- Module      : Crypto.Cipher.AES.Primitive
@@ -66,15 +64,12 @@ import Foreign.C.Types
 import Foreign.C.String
 import Data.ByteString.Internal
 import qualified Data.ByteString as B
-import System.IO.Unsafe (unsafePerformIO)
 
 import Crypto.Error
 import Crypto.Cipher.Types
-import Crypto.Internal.ByteArray
-import Crypto.Internal.Memory
 import Crypto.Cipher.Types.Block (IV(..))
-
-import Data.SecureMem
+import Crypto.Internal.Compat
+import Crypto.Internal.ByteArray
 
 instance Cipher AES where
     cipherName    _ = "AES"
@@ -150,18 +145,18 @@ withKey2AndIV key1 key2 iv f =
 withGCMKeyAndCopySt :: AES -> AESGCM -> (Ptr AESGCM -> Ptr AES -> IO a) -> IO (a, AESGCM)
 withGCMKeyAndCopySt aes (AESGCM gcmSt) f =
     keyToPtr aes $ \aesPtr -> do
-        newSt <- secureMemCopy gcmSt
-        a     <- withSecureMemPtr newSt $ \gcmStPtr -> f (castPtr gcmStPtr) aesPtr
+        newSt <- byteArrayCopy gcmSt (\_ -> return ())
+        a     <- withByteArray newSt $ \gcmStPtr -> f (castPtr gcmStPtr) aesPtr
         return (a, AESGCM newSt)
 
 withNewGCMSt :: AESGCM -> (Ptr AESGCM -> IO ()) -> IO AESGCM
-withNewGCMSt (AESGCM gcmSt) f = withSecureMemCopy gcmSt (f . castPtr) >>= \sm2 -> return (AESGCM sm2)
+withNewGCMSt (AESGCM gcmSt) f = byteArrayCopy gcmSt (f . castPtr) >>= \sm2 -> return (AESGCM sm2)
 
 withOCBKeyAndCopySt :: AES -> AESOCB -> (Ptr AESOCB -> Ptr AES -> IO a) -> IO (a, AESOCB)
 withOCBKeyAndCopySt aes (AESOCB gcmSt) f =
     keyToPtr aes $ \aesPtr -> do
-        newSt <- secureMemCopy gcmSt
-        a     <- withSecureMemPtr newSt $ \gcmStPtr -> f (castPtr gcmStPtr) aesPtr
+        newSt <- byteArrayCopy gcmSt (\_ -> return ())
+        a     <- withByteArray newSt $ \gcmStPtr -> f (castPtr gcmStPtr) aesPtr
         return (a, AESOCB newSt)
 
 -- | Initialize a new context with a key
@@ -174,7 +169,7 @@ initAES k
     | len == 32 = CryptoPassed $ initWithRounds 14
     | otherwise = CryptoFailed CryptoError_KeySizeInvalid
   where len = byteArrayLength k
-        initWithRounds nbR = AES $ unsafeCreateSecureMem (16+2*2*16*nbR) aesInit
+        initWithRounds nbR = AES $ byteArrayAllocAndFreeze (16+2*2*16*nbR) aesInit
         aesInit ptr = withByteArray k $ \ikey ->
             c_aes_init (castPtr ptr) (castPtr ikey) (fromIntegral len)
 
@@ -227,7 +222,7 @@ genCounter :: ByteArray ba
            -> (ba, IV AES)
 genCounter ctx iv len
     | len <= 0  = (empty, iv)
-    | otherwise = unsafePerformIO $
+    | otherwise = unsafeDoIO $
         keyToPtr ctx $ \k ->
         ivCopyPtr iv $ \i ->
         byteArrayAlloc outputLength $ \o -> do
@@ -410,8 +405,8 @@ doGCM f ctx iv aad input = (output, tag)
 -- | initialize a gcm context
 {-# NOINLINE gcmInit #-}
 gcmInit :: ByteArrayAccess iv => AES -> iv -> AESGCM
-gcmInit ctx iv = unsafePerformIO $ do
-    sm <- createSecureMem sizeGCM $ \gcmStPtr ->
+gcmInit ctx iv = unsafeDoIO $ do
+    sm <- byteArrayAlloc sizeGCM $ \gcmStPtr ->
             withKeyAndIV ctx iv $ \k v ->
             c_aes_gcm_init (castPtr gcmStPtr) k v (fromIntegral $ byteArrayLength iv)
     return $ AESGCM sm
@@ -421,7 +416,7 @@ gcmInit ctx iv = unsafePerformIO $ do
 -- need to happen after initialization and before appending encryption/decryption data.
 {-# NOINLINE gcmAppendAAD #-}
 gcmAppendAAD :: ByteArrayAccess aad => AESGCM -> aad -> AESGCM
-gcmAppendAAD gcmSt input = unsafePerformIO doAppend
+gcmAppendAAD gcmSt input = unsafeDoIO doAppend
   where doAppend =
             withNewGCMSt gcmSt $ \gcmStPtr ->
             withByteArray input $ \i ->
@@ -433,7 +428,7 @@ gcmAppendAAD gcmSt input = unsafePerformIO doAppend
 -- need to happen after AAD appending, or after initialization if no AAD data.
 {-# NOINLINE gcmAppendEncrypt #-}
 gcmAppendEncrypt :: ByteArray ba => AES -> AESGCM -> ba -> (ba, AESGCM)
-gcmAppendEncrypt ctx gcm input = unsafePerformIO $ withGCMKeyAndCopySt ctx gcm doEnc
+gcmAppendEncrypt ctx gcm input = unsafeDoIO $ withGCMKeyAndCopySt ctx gcm doEnc
   where len = byteArrayLength input
         doEnc gcmStPtr aesPtr =
             byteArrayAlloc len $ \o ->
@@ -446,7 +441,7 @@ gcmAppendEncrypt ctx gcm input = unsafePerformIO $ withGCMKeyAndCopySt ctx gcm d
 -- need to happen after AAD appending, or after initialization if no AAD data.
 {-# NOINLINE gcmAppendDecrypt #-}
 gcmAppendDecrypt :: ByteArray ba => AES -> AESGCM -> ba -> (ba, AESGCM)
-gcmAppendDecrypt ctx gcm input = unsafePerformIO $ withGCMKeyAndCopySt ctx gcm doDec
+gcmAppendDecrypt ctx gcm input = unsafeDoIO $ withGCMKeyAndCopySt ctx gcm doDec
   where len = byteArrayLength input
         doDec gcmStPtr aesPtr =
             byteArrayAlloc len $ \o ->
@@ -481,8 +476,8 @@ doOCB f ctx iv aad input = (output, tag)
 -- | initialize an ocb context
 {-# NOINLINE ocbInit #-}
 ocbInit :: ByteArrayAccess iv => AES -> iv -> AESOCB
-ocbInit ctx iv = unsafePerformIO $ do
-    sm <- createSecureMem sizeOCB $ \ocbStPtr ->
+ocbInit ctx iv = unsafeDoIO $ do
+    sm <- byteArrayAlloc sizeOCB $ \ocbStPtr ->
             withKeyAndIV ctx iv $ \k v ->
             c_aes_ocb_init (castPtr ocbStPtr) k v (fromIntegral $ byteArrayLength iv)
     return $ AESOCB sm
@@ -492,7 +487,7 @@ ocbInit ctx iv = unsafePerformIO $ do
 -- need to happen after initialization and before appending encryption/decryption data.
 {-# NOINLINE ocbAppendAAD #-}
 ocbAppendAAD :: ByteArrayAccess aad => AES -> AESOCB -> aad -> AESOCB
-ocbAppendAAD ctx ocb input = unsafePerformIO (snd `fmap` withOCBKeyAndCopySt ctx ocb doAppend)
+ocbAppendAAD ctx ocb input = unsafeDoIO (snd `fmap` withOCBKeyAndCopySt ctx ocb doAppend)
   where doAppend ocbStPtr aesPtr =
             withByteArray input $ \i ->
             c_aes_ocb_aad ocbStPtr aesPtr i (fromIntegral $ byteArrayLength input)
@@ -503,7 +498,7 @@ ocbAppendAAD ctx ocb input = unsafePerformIO (snd `fmap` withOCBKeyAndCopySt ctx
 -- need to happen after AAD appending, or after initialization if no AAD data.
 {-# NOINLINE ocbAppendEncrypt #-}
 ocbAppendEncrypt :: ByteArray ba => AES -> AESOCB -> ba -> (ba, AESOCB)
-ocbAppendEncrypt ctx ocb input = unsafePerformIO $ withOCBKeyAndCopySt ctx ocb doEnc
+ocbAppendEncrypt ctx ocb input = unsafeDoIO $ withOCBKeyAndCopySt ctx ocb doEnc
   where len = byteArrayLength input
         doEnc ocbStPtr aesPtr =
             byteArrayAlloc len $ \o ->
@@ -516,7 +511,7 @@ ocbAppendEncrypt ctx ocb input = unsafePerformIO $ withOCBKeyAndCopySt ctx ocb d
 -- need to happen after AAD appending, or after initialization if no AAD data.
 {-# NOINLINE ocbAppendDecrypt #-}
 ocbAppendDecrypt :: ByteArray ba => AES -> AESOCB -> ba -> (ba, AESOCB)
-ocbAppendDecrypt ctx ocb input = unsafePerformIO $ withOCBKeyAndCopySt ctx ocb doDec
+ocbAppendDecrypt ctx ocb input = unsafeDoIO $ withOCBKeyAndCopySt ctx ocb doDec
   where len = byteArrayLength input
         doDec ocbStPtr aesPtr =
             byteArrayAlloc len $ \o ->
