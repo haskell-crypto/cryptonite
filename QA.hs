@@ -25,7 +25,16 @@ disallowedModules =
     [ (ModuleName "System.IO.Unsafe", ModuleName "Crypto.Internal.Compat")
     , (ModuleName "Data.Byteable", ModuleName "Crypto.Internal.ByteArray")
     , (ModuleName "Data.SecureMem", ModuleName "Crypto.Internal.ByteArray")
+    , (ModuleName "Control.Applicative", ModuleName "Crypto.Internal.Imports")
     ]
+
+perModuleAllowedModules =
+    [ ("Crypto/Internal/Imports.hs",
+            [ ModuleName "Control.Applicative"
+            ]
+      )
+    ]
+
 
 main = do
     modules <- findAllModules
@@ -38,8 +47,12 @@ main = do
                 Nothing        -> printError "failed to parsed extensions"
                 Just (_, exts) -> qaExts file content exts
 
-        qaExts file content exts = do
+        qaExts file contentRaw exts = do
             printInfo "extensions" (intercalate ", " $ map show (getEnabledExts exts))
+
+            let hasCPP = EnableExtension CPP `elem` exts
+
+            content <- if hasCPP then processCPP file contentRaw else return contentRaw
 
             let mode = defaultParseMode { parseFilename = file, extensions = exts }
 
@@ -60,7 +73,11 @@ main = do
                         case lookup impMod disallowedModules of
                             Nothing                                   -> return ()
                             Just newMod | file == moduleToFile impMod -> return ()
-                                        | otherwise                   -> printWarningImport impMod newMod
+                                        | otherwise                   -> do
+                                let allowed = case lookup file perModuleAllowedModules of
+                                                 Nothing          -> False
+                                                 Just allowedMods -> elem impMod allowedMods
+                                unless allowed $ printWarningImport impMod newMod
                     
         moduleToFile (ModuleName m) =
             intercalate "/" (wordsWhen (== '.') m) ++ ".hs"
@@ -69,6 +86,16 @@ main = do
         wordsWhen p s = case dropWhile p s of
                             "" -> []
                             s' -> w : wordsWhen p s'' where (w, s'') = break p s'
+
+processCPP file content = return $ simpleCPP
+  where
+    -- simple CPP just strip # starting line
+    simpleCPP = unlines $ filter (not . isHashStart) $ lines content
+      where
+            isHashStart s = case dropWhile (flip elem " \t\v") s of
+                                []    -> False
+                                '#':_ -> True
+                                _     -> False
 
 ------------------------------------------------------------------------
 
