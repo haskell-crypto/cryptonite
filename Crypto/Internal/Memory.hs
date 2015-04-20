@@ -27,7 +27,6 @@ import GHC.Types
 import GHC.Prim
 import GHC.Word
 import GHC.Ptr
-import Data.Word (Word8)
 import Foreign.Marshal.Utils (copyBytes)
 import Data.SecureMem (SecureMem)
 import Crypto.Internal.CompatPrim

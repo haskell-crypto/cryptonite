@@ -60,7 +60,7 @@ array32 (I# n) l = unsafeDoIO $ IO $ \s ->
         loop i st mb ((W32# x):xs)
             | booleanPrim (i ==# n) = freezeArray mb st
             | otherwise =
-                let st' = writeWord32Array# mb i x st
+                let !st' = writeWord32Array# mb i x st
                  in loop (i +# 1#) st' mb xs
         freezeArray mb st =
             case unsafeFreezeByteArray# mb st of
@@ -128,7 +128,7 @@ mutableArrayRead32 (MutableArray32 m) (I# o) = IO $ \s -> case readWord32Array# 
 {-# INLINE mutableArrayRead32 #-}
 
 mutableArrayWrite32 :: MutableArray32 -> Int -> Word32 -> IO ()
-mutableArrayWrite32 (MutableArray32 m) (I# o) (W32# w) = IO $ \s -> let s' = writeWord32Array# m o w s in (# s', () #)
+mutableArrayWrite32 (MutableArray32 m) (I# o) (W32# w) = IO $ \s -> let !s' = writeWord32Array# m o w s in (# s', () #)
 {-# INLINE mutableArrayWrite32 #-}
 
 mutableArrayWriteXor32 :: MutableArray32 -> Int -> Word32 -> IO ()

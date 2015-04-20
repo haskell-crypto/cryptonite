@@ -17,12 +17,10 @@ module Crypto.Cipher.Types
     , StreamCipher(..)
     , DataUnitOffset
     , KeySizeSpecifier(..)
-    , AEAD(..)
-    , AEADMode(..)
-    , AEADModeImpl(..)
     -- , cfb8Encrypt
     -- , cfb8Decrypt
     -- * AEAD functions
+    , AEADMode(..)
     , module Crypto.Cipher.Types.AEAD
     -- * Initial Vector type and constructor
     , IV

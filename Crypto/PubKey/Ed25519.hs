@@ -33,7 +33,6 @@ import           Crypto.Internal.Imports
 import           Crypto.Internal.Memory
 import           Crypto.Internal.ByteArray
 import           Crypto.Error
-import           Data.ByteString (ByteString)
 
 -- | An Ed25519 Secret key
 newtype SecretKey = SecretKey SecureBytes
