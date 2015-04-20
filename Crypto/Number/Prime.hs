@@ -26,7 +26,7 @@ module Crypto.Number.Prime
     , isCoprime
     ) where
 
-import Control.Applicative
+import Crypto.Internal.Imports
 
 import Crypto.Number.Generate
 import Crypto.Number.Basic (sqrti, gcde_binary)

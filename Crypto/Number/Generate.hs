@@ -12,12 +12,12 @@ module Crypto.Number.Generate
     , generateBits
     ) where
 
-import Control.Applicative
-import Crypto.Number.Basic
-import Crypto.Number.Serialize
-import Crypto.Random.Types
+import           Crypto.Internal.Imports
+import           Crypto.Number.Basic
+import           Crypto.Number.Serialize
+import           Crypto.Random.Types
 import qualified Data.ByteString as B
-import Data.Bits ((.|.), (.&.), shiftR)
+import           Data.Bits ((.|.), (.&.), shiftR)
 
 
 -- | generate a positive integer x, s.t. 0 <= x < m

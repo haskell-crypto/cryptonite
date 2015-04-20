@@ -16,14 +16,13 @@ module Crypto.Internal.Bytes
     , bufSet
     ) where
 
-import Control.Applicative      ((<$>), (<*>))
+import Crypto.Internal.Imports
 import Foreign.Ptr              (Ptr, plusPtr)
 import Foreign.ForeignPtr       (withForeignPtr)
 import Foreign.Storable         (peek, poke, pokeByteOff)
 import Foreign.Marshal.Alloc    (allocaBytesAligned)
 import Data.ByteString          (ByteString)
 import Data.Bits                (xor)
-import Data.Word                (Word8)
 import Data.ByteString.Internal (toForeignPtr)
 import Data.ByteString.Internal (memcpy)
 

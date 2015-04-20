@@ -13,20 +13,18 @@ module Crypto.Cipher.Salsa
     , State
     ) where
 
-import Control.Applicative
 import Data.SecureMem
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Internal as B
 import qualified Data.ByteString as B
 import Crypto.Internal.Compat
+import Crypto.Internal.Imports
 import Data.Byteable
-import Data.Word
 import Data.Bits (xor)
 import Foreign.Ptr
 import Foreign.ForeignPtr
 import Foreign.C.Types
 import Foreign.Storable
-import System.IO.Unsafe
 
 -- | Salsa context
 data State = State Int        -- number of rounds
@@ -72,7 +70,7 @@ combine prev@(State nbRounds prevSt prevOut) src
         -- without having to generate any extra bytes
         let (b1,b2) = B.splitAt outputLen prevOut
          in (B.pack $ B.zipWith xor b1 src, State nbRounds prevSt b2)
-    | otherwise = unsafePerformIO $ do
+    | otherwise = unsafeDoIO $ do
         -- adjusted len is the number of bytes lefts to generate after
         -- copying from the previous buffer.
         let adjustedLen = outputLen - prevBufLen

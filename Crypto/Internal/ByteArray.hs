@@ -34,14 +34,13 @@ module Crypto.Internal.ByteArray
     , byteArrayMapAsWord128
     ) where
 
-import Control.Applicative ((<$>), (<*>))
-import Data.Word
 import Data.SecureMem
 import Crypto.Internal.Memory
 import Crypto.Internal.Compat
 import Crypto.Internal.Endian
 import Crypto.Internal.Bytes (bufXor, bufCopy, bufSet)
 import Crypto.Internal.Words
+import Crypto.Internal.Imports hiding (empty)
 import Foreign.Ptr
 import Foreign.Storable
 import Foreign.ForeignPtr

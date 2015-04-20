@@ -22,7 +22,6 @@ module Crypto.PubKey.Curve25519
     , toPublic
     ) where
 
-import           Control.Applicative
 import           Data.Byteable
 import           Data.ByteString (ByteString)
 import           Data.ByteString.Char8 ()
@@ -32,6 +31,7 @@ import           Data.Word
 import           Foreign.Ptr
 
 import           Crypto.Internal.Compat
+import           Crypto.Internal.Imports
 
 -- | A Curve25519 Secret key
 newtype SecretKey = SecretKey SecureMem

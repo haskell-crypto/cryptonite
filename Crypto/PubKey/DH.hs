@@ -19,7 +19,7 @@ module Crypto.PubKey.DH
     , getShared
     ) where
 
-import Control.Applicative
+import Crypto.Internal.Imports
 import Crypto.Number.ModArithmetic (expSafe)
 import Crypto.Number.Prime (generateSafePrime)
 import Crypto.Number.Generate (generateMax)

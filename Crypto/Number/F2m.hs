@@ -22,9 +22,9 @@ module Crypto.Number.F2m
     , divF2m
     ) where
 
-import Control.Applicative ((<$>))
 import Data.Bits ((.&.),(.|.),xor,shift,testBit)
 import Crypto.Number.Basic
+import Crypto.Internal.Imports
 
 type BinaryPolynomial = Integer
 
