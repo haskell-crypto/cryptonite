@@ -7,6 +7,7 @@ import Data.List
 import System.Directory
 import System.FilePath
 import System.Posix.Files
+import System.Process
 import Control.Monad
 import Control.Applicative ((<$>))
 import Control.Exception
@@ -87,10 +88,16 @@ main = do
                             "" -> []
                             s' -> w : wordsWhen p s'' where (w, s'') = break p s'
 
-processCPP file content = return $ simpleCPP
+processCPP file content = do
+    contentProcessed <- readProcess "cpphs" [d minVersionBase] content
+    return $ simpleCPP contentProcessed
   where
+
+    d s = "-D" ++ s
+    minVersionBase = "MIN_VERSION_base(a,b,c)=(((a) >= 4) && ((b) >= 7))"
+
     -- simple CPP just strip # starting line
-    simpleCPP = unlines $ filter (not . isHashStart) $ lines content
+    simpleCPP = unlines . filter (not . isHashStart) . lines
       where
             isHashStart s = case dropWhile (flip elem " \t\v") s of
                                 []    -> False
