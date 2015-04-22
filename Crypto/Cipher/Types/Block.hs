@@ -45,7 +45,6 @@ import Crypto.Cipher.Types.AEAD
 import Crypto.Cipher.Types.Utils
 
 import Crypto.Internal.ByteArray
-import Crypto.Internal.Memory
 
 import Foreign.Ptr
 import Foreign.Storable
