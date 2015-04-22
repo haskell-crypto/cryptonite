@@ -12,9 +12,9 @@ module Crypto.Random.Types
     , withDRG
     ) where
 
-import Control.Applicative
 import Crypto.Random.Entropy
 import Crypto.Internal.ByteArray
+import Crypto.Internal.Imports
 
 class (Functor m, Monad m) => MonadRandom m where
     getRandomBytes :: ByteArray byteArray => Int -> m byteArray
