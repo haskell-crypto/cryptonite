@@ -22,44 +22,41 @@ module Crypto.PubKey.Curve25519
     , toPublic
     ) where
 
-import           Data.Byteable
-import           Data.ByteString (ByteString)
-import           Data.ByteString.Char8 ()
-import qualified Data.ByteString.Internal as B
-import           Data.SecureMem
 import           Data.Word
 import           Foreign.Ptr
 
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
+import           Crypto.Internal.ByteArray
+import           Data.ByteString (ByteString)
 
 -- | A Curve25519 Secret key
-newtype SecretKey = SecretKey SecureMem
-    deriving (Show,Eq,Byteable)
+newtype SecretKey = SecretKey SecureBytes
+    deriving (Show,Eq,ByteArrayAccess)
 
 -- | A Curve25519 public key
 newtype PublicKey = PublicKey ByteString
-    deriving (Show,Eq,Byteable)
+    deriving (Show,Eq,ByteArrayAccess)
 
 -- | A Curve25519 Diffie Hellman secret related to a
 -- public key and a secret key.
-newtype DhSecret = DhSecret SecureMem
-    deriving (Show,Eq,Byteable)
+newtype DhSecret = DhSecret SecureBytes
+    deriving (Show,Eq,ByteArrayAccess)
 
 -- | Try to build a public key from a bytearray
-publicKey :: Byteable bs => bs -> Either String PublicKey
+publicKey :: ByteArrayAccess bs => bs -> Either String PublicKey
 publicKey bs
-    | byteableLength bs == 32 = Right $ PublicKey $ toBytes bs
+    | byteArrayLength bs == 32 = Right $ PublicKey $ byteArrayCopyAndFreeze bs (\_ -> return ())
     | otherwise               = Left "invalid public key size"
 
 -- | Try to build a secret key from a bytearray
-secretKey :: Byteable bs => bs -> Either String SecretKey
+secretKey :: ByteArrayAccess bs => bs -> Either String SecretKey
 secretKey bs
-    | byteableLength bs == 32 = unsafeDoIO $ do
-        withBytePtr bs $ \inp -> do
+    | byteArrayLength bs == 32 = unsafeDoIO $ do
+        withByteArray bs $ \inp -> do
             valid <- isValidPtr inp
             if valid
-                then Right . SecretKey <$> createSecureMem 32 (\sec -> B.memcpy sec inp 32)
+                then Right . SecretKey <$> byteArrayCopy bs (\_ -> return ())
                 else return $ Left "invalid secret key"
     | otherwise = Left "secret key invalid size"
   where
@@ -82,29 +79,29 @@ secretKey bs
 {-# NOINLINE secretKey #-}
 
 -- | Create a DhSecret from a bytearray object
-dhSecret :: Byteable b => b -> Either String DhSecret
+dhSecret :: ByteArrayAccess b => b -> Either String DhSecret
 dhSecret bs
-    | byteableLength bs == 32 = Right $ DhSecret $ secureMemFromByteable bs
-    | otherwise               = Left "invalid dh secret size"
+    | byteArrayLength bs == 32 = Right $ DhSecret $ byteArrayCopyAndFreeze bs (\_ -> return ())
+    | otherwise                = Left "invalid dh secret size"
 
 basePoint :: PublicKey
 basePoint = PublicKey "\x09\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 
 -- | Compute the Diffie Hellman secret from a public key and a secret key
 dh :: PublicKey -> SecretKey -> DhSecret
-dh (PublicKey pub) (SecretKey sec) = DhSecret <$> unsafeDoIO $
-    createSecureMem 32   $ \result ->
-    withSecureMemPtr sec $ \psec   ->
-    withBytePtr pub      $ \ppub   ->
+dh (PublicKey pub) (SecretKey sec) = DhSecret <$>
+    byteArrayAllocAndFreeze 32 $ \result ->
+    withByteArray sec          $ \psec   ->
+    withByteArray pub          $ \ppub   ->
         ccryptonite_curve25519 result psec ppub
 {-# NOINLINE dh #-}
 
 -- | Create a public key from a secret key
 toPublic :: SecretKey -> PublicKey
 toPublic (SecretKey sec) = PublicKey <$>
-    B.unsafeCreate 32     $ \result ->
-    withSecureMemPtr sec  $ \psec   ->
-    withBytePtr basePoint $ \pbase   ->
+    byteArrayAllocAndFreeze 32 $ \result ->
+    withByteArray sec       $ \psec   ->
+    withByteArray basePoint $ \pbase   ->
         ccryptonite_curve25519 result psec pbase
 {-# NOINLINE toPublic #-}
 
