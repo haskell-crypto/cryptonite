@@ -27,6 +27,7 @@ disallowedModules =
     [ (ModuleName "System.IO.Unsafe", ModuleName "Crypto.Internal.Compat")
     , (ModuleName "Data.Byteable", ModuleName "Crypto.Internal.ByteArray")
     , (ModuleName "Data.SecureMem", ModuleName "Crypto.Internal.ByteArray")
+    , (ModuleName "Data.ByteString", ModuleName "Crypto.Internal.ByteArray")
     , (ModuleName "Control.Applicative", ModuleName "Crypto.Internal.Imports")
     ]
 
@@ -37,6 +38,10 @@ perModuleAllowedModules =
       )
     , ("Crypto/Internal/Memory.hs",
             [ ModuleName "Data.SecureMem"
+            ]
+      )
+    , ("Crypto/Internal/ByteArray.hs",
+            [ ModuleName "Data.ByteString"
             ]
       )
     ]
@@ -158,7 +163,7 @@ printReport st m =
 
 printWarningImport st (ModuleName expected) (ModuleName actual) = do
     incrWarnings st
-    setSGR [SetColor Foreground Vivid Yellow] >> putStrLn ("warning: use module " ++ expected ++ " instead of " ++ actual) >> setSGR []
+    setSGR [SetColor Foreground Vivid Yellow] >> putStrLn ("warning: using module " ++ expected ++ " , should use " ++ actual) >> setSGR []
 
 printWarningExtension st ext = do
     incrWarnings st
