@@ -23,6 +23,7 @@ module Crypto.Internal.ByteArray
     , empty
     , byteArrayZero
     , byteArrayCopy
+    , byteArrayConvert
     , byteArrayCopyRet
     , byteArrayCopyAndFreeze
     , byteArraySplit
@@ -243,3 +244,6 @@ byteArrayMapAsWord64 f bs =
             let r = f (fromBE64 w)
             poke d (toBE64 r)
             loop (i-1) (d `plusPtr` 8) (s `plusPtr` 8)
+
+byteArrayConvert :: (ByteArrayAccess bin, ByteArray bout) => bin -> bout
+byteArrayConvert = flip byteArrayCopyAndFreeze (\_ -> return ())
