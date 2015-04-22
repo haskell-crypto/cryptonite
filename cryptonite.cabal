@@ -77,6 +77,7 @@ Library
                      Crypto.PubKey.ECC.Prim
                      Crypto.PubKey.ECC.DH
                      Crypto.PubKey.ECC.ECDSA
+                     Crypto.PubKey.ECC.P256
                      Crypto.PubKey.ECC.Types
                      Crypto.PubKey.Ed25519
                      Crypto.PubKey.RSA
