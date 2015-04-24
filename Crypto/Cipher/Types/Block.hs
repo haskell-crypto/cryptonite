@@ -36,27 +36,28 @@ module Crypto.Cipher.Types.Block
     --, cfb8Decrypt
     ) where
 
-import Data.Byteable
-import Data.Word
-import Crypto.Error
-import Crypto.Cipher.Types.Base
-import Crypto.Cipher.Types.GF
-import Crypto.Cipher.Types.AEAD
-import Crypto.Cipher.Types.Utils
+import           Data.Byteable
+import           Data.Word
+import           Crypto.Error
+import           Crypto.Cipher.Types.Base
+import           Crypto.Cipher.Types.GF
+import           Crypto.Cipher.Types.AEAD
+import           Crypto.Cipher.Types.Utils
 
-import Crypto.Internal.ByteArray
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, withByteArray, Bytes)
+import qualified Crypto.Internal.ByteArray as B
 
-import Foreign.Ptr
-import Foreign.Storable
+import           Foreign.Ptr
+import           Foreign.Storable
 
 -- | an IV parametrized by the cipher
 data IV c = forall byteArray . ByteArray byteArray => IV byteArray
 
 instance BlockCipher c => ByteArrayAccess (IV c) where
     withByteArray (IV z) f = withByteArray z f
-    byteArrayLength (IV z) = byteArrayLength z
+    length (IV z) = B.length z
 instance Eq (IV c) where
-    (IV a) == (IV b) = byteArrayEq a b
+    (IV a) == (IV b) = B.eq a b
 
 type XTS ba cipher = (cipher, cipher)
                   -> IV cipher        -- ^ Usually represent the Data Unit (e.g. disk sector)
@@ -157,7 +158,7 @@ makeIV b = toIV undefined
 nullIV :: BlockCipher c => IV c
 nullIV = toIV undefined
   where toIV :: BlockCipher c => c -> IV c
-        toIV cipher = IV (byteArrayZero (blockSize cipher) :: Bytes)
+        toIV cipher = IV (B.zero (blockSize cipher) :: Bytes)
 
 -- | Increment an IV by a number.
 --
@@ -165,9 +166,9 @@ nullIV = toIV undefined
 ivAdd :: BlockCipher c => IV c -> Int -> IV c
 ivAdd (IV b) i = IV $ copy b
   where copy :: ByteArray bs => bs -> bs
-        copy bs = byteArrayCopyAndFreeze bs $ \p -> do
+        copy bs = B.copyAndFreeze bs $ \p -> do
             let until0 accu = do
-                  r <- loop accu (byteArrayLength bs - 1) p
+                  r <- loop accu (B.length bs - 1) p
                   case r of
                       0 -> return ()
                       _ -> until0 r
@@ -185,42 +186,42 @@ ivAdd (IV b) i = IV $ copy b
                 else loop hi (ofs - 1) p
 
 cbcEncryptGeneric :: (ByteArray ba, BlockCipher cipher) => cipher -> IV cipher -> ba -> ba
-cbcEncryptGeneric cipher ivini input = byteArrayConcat $ doEnc ivini $ chunk (blockSize cipher) input
+cbcEncryptGeneric cipher ivini input = B.concat $ doEnc ivini $ chunk (blockSize cipher) input
   where doEnc _  []     = []
         doEnc iv (i:is) =
-            let o = ecbEncrypt cipher $ byteArrayXor iv i
+            let o = ecbEncrypt cipher $ B.xor iv i
              in o : doEnc (IV o) is
 
 cbcDecryptGeneric :: (ByteArray ba, BlockCipher cipher) => cipher -> IV cipher -> ba -> ba
-cbcDecryptGeneric cipher ivini input = byteArrayConcat $ doDec ivini $ chunk (blockSize cipher) input
+cbcDecryptGeneric cipher ivini input = B.concat $ doDec ivini $ chunk (blockSize cipher) input
   where
         doDec _  []     = []
         doDec iv (i:is) =
-            let o = byteArrayXor iv $ ecbDecrypt cipher i
+            let o = B.xor iv $ ecbDecrypt cipher i
              in o : doDec (IV i) is
 
 cfbEncryptGeneric :: (ByteArray ba, BlockCipher cipher) => cipher -> IV cipher -> ba -> ba
-cfbEncryptGeneric cipher ivini input = byteArrayConcat $ doEnc ivini $ chunk (blockSize cipher) input
+cfbEncryptGeneric cipher ivini input = B.concat $ doEnc ivini $ chunk (blockSize cipher) input
   where
         doEnc _  []     = []
         doEnc (IV iv) (i:is) =
-            let o = byteArrayXor i $ ecbEncrypt cipher iv
+            let o = B.xor i $ ecbEncrypt cipher iv
              in o : doEnc (IV o) is
 
 cfbDecryptGeneric :: (ByteArray ba, BlockCipher cipher) => cipher -> IV cipher -> ba -> ba
-cfbDecryptGeneric cipher ivini input = byteArrayConcat $ doDec ivini $ chunk (blockSize cipher) input
+cfbDecryptGeneric cipher ivini input = B.concat $ doDec ivini $ chunk (blockSize cipher) input
   where
         doDec _  []     = []
         doDec (IV iv) (i:is) =
-            let o = byteArrayXor i $ ecbEncrypt cipher iv
+            let o = B.xor i $ ecbEncrypt cipher iv
              in o : doDec (IV i) is
 
 ctrCombineGeneric :: (ByteArray ba, BlockCipher cipher) => cipher -> IV cipher -> ba -> ba
-ctrCombineGeneric cipher ivini input = byteArrayConcat $ doCnt ivini $ chunk (blockSize cipher) input
+ctrCombineGeneric cipher ivini input = B.concat $ doCnt ivini $ chunk (blockSize cipher) input
   where doCnt _  [] = []
         doCnt iv@(IV ivd) (i:is) =
             let ivEnc = ecbEncrypt cipher ivd
-             in byteArrayXor i ivEnc : doCnt (ivAdd iv 1) is
+             in B.xor i ivEnc : doCnt (ivAdd iv 1) is
 
 xtsEncryptGeneric :: (ByteArray ba, BlockCipher128 cipher) => XTS ba cipher
 xtsEncryptGeneric = xtsGeneric ecbEncrypt
@@ -236,19 +237,19 @@ xtsGeneric :: (ByteArray ba, BlockCipher128 cipher)
            -> ba
            -> ba
 xtsGeneric f (cipher, tweakCipher) (IV iv) sPoint input =
-    byteArrayConcat $ doXts iniTweak $ chunk (blockSize cipher) input
+    B.concat $ doXts iniTweak $ chunk (blockSize cipher) input
   where encTweak = ecbEncrypt tweakCipher iv
         iniTweak = iterate xtsGFMul encTweak !! fromIntegral sPoint
         doXts _     []     = []
         doXts tweak (i:is) =
-            let o = byteArrayXor (f cipher $ byteArrayXor i tweak) tweak
+            let o = B.xor (f cipher $ B.xor i tweak) tweak
              in o : doXts (xtsGFMul tweak) is
 
 {-
 -- | Encrypt using CFB mode in 8 bit output
 --
 -- Effectively turn a Block cipher in CFB mode into a Stream cipher
-cfb8Encrypt :: BlockCipher a => a -> IV a -> B.ByteString -> B.ByteString
+cfb8Encrypt :: BlockCipher a => a -> IV a -> B.byteString -> B.byteString
 cfb8Encrypt ctx origIv msg = B.unsafeCreate (B.length msg) $ \dst -> loop dst origIv msg
   where loop d iv@(IV i) m
             | B.null m  = return ()
@@ -263,7 +264,7 @@ cfb8Encrypt ctx origIv msg = B.unsafeCreate (B.length msg) $ \dst -> loop dst or
 -- | Decrypt using CFB mode in 8 bit output
 --
 -- Effectively turn a Block cipher in CFB mode into a Stream cipher
-cfb8Decrypt :: BlockCipher a => a -> IV a -> B.ByteString -> B.ByteString
+cfb8Decrypt :: BlockCipher a => a -> IV a -> B.byteString -> B.byteString
 cfb8Decrypt ctx origIv msg = B.unsafeCreate (B.length msg) $ \dst -> loop dst origIv msg
   where loop d iv@(IV i) m
             | B.null m  = return ()

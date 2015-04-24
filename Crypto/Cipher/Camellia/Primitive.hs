@@ -16,15 +16,16 @@ module Crypto.Cipher.Camellia.Primitive
     , decrypt
     ) where
 
-import Data.Word
-import Data.Bits
-import qualified Data.ByteString as B
+import           Data.Word
+import           Data.Bits
+import qualified Data.ByteString as B hiding (length)
 import qualified Data.ByteString.Unsafe as B
 
-import Crypto.Error
-import Crypto.Internal.ByteArray
-import Crypto.Internal.Words
-import Crypto.Internal.WordArray
+import           Crypto.Error
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray)
+import qualified Crypto.Internal.ByteArray as B
+import           Crypto.Internal.Words
+import           Crypto.Internal.WordArray
 
 data Mode = Decrypt | Encrypt
 
@@ -115,9 +116,9 @@ data Camellia = Camellia
     , ke :: Array64
     }
 
-setKeyInterim :: ByteArray key => key -> (Word128, Word128, Word128, Word128)
+setKeyInterim :: ByteArrayAccess key => key -> (Word128, Word128, Word128, Word128)
 setKeyInterim keyseed = (w64tow128 kL, w64tow128 kR, w64tow128 kA, w64tow128 kB)
-  where kL = (byteArrayToW64BE keyseed 0, byteArrayToW64BE keyseed 8)
+  where kL = (B.toW64BE keyseed 0, B.toW64BE keyseed 8)
         kR = (0, 0)
 
         kA = let d1 = (fst kL `xor` fst kR)
@@ -144,8 +145,8 @@ initCamellia :: ByteArray key
              => key -- ^ The key to create the camellia context
              -> CryptoFailable Camellia
 initCamellia key
-    | byteArrayLength key /= 16 = CryptoFailed $ CryptoError_KeySizeInvalid
-    | otherwise                 =
+    | B.length key /= 16 = CryptoFailed $ CryptoError_KeySizeInvalid
+    | otherwise          =
         let (kL, _, kA, _) = setKeyInterim key in
 
         let (Word128 kw1 kw2) = (kL `rotl128` 0) in
@@ -274,11 +275,11 @@ encrypt :: ByteArray ba
         => Camellia     -- ^ The key to use
         -> ba           -- ^ The data to encrypt
         -> ba
-encrypt key = byteArrayMapAsWord128 (encryptBlock key)
+encrypt key = B.mapAsWord128 (encryptBlock key)
 
 -- | Decrypts the given ByteString using the given Key
 decrypt :: ByteArray ba
         => Camellia     -- ^ The key to use
         -> ba           -- ^ The data to decrypt
         -> ba
-decrypt key = byteArrayMapAsWord128 (decryptBlock key)
+decrypt key = B.mapAsWord128 (decryptBlock key)

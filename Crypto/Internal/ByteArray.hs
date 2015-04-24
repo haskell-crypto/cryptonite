@@ -10,6 +10,7 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 module Crypto.Internal.ByteArray
     (
       ByteArray(..)
@@ -18,26 +19,26 @@ module Crypto.Internal.ByteArray
     , Bytes
     , SecureBytes
     -- * methods
-    , byteArrayAlloc
-    , byteArrayAllocAndFreeze
+    , alloc
+    , allocAndFreeze
     , empty
-    , byteArrayZero
-    , byteArrayCopy
-    , byteArrayConvert
-    , byteArrayCopyRet
-    , byteArrayCopyAndFreeze
-    , byteArraySplit
-    , byteArrayXor
-    , byteArrayEq
-    , byteArrayIndex
-    , byteArrayConstEq
-    , byteArrayConcat
-    , byteArrayToBS
-    , byteArrayFromBS
-    , byteArrayToW64BE
-    , byteArrayToW64LE
-    , byteArrayMapAsWord64
-    , byteArrayMapAsWord128
+    , zero
+    , copy
+    , convert
+    , copyRet
+    , copyAndFreeze
+    , split
+    , xor
+    , eq
+    , index
+    , constEq
+    , concat
+    , toBS
+    , fromBS
+    , toW64BE
+    , toW64LE
+    , mapAsWord64
+    , mapAsWord128
     ) where
 
 import Data.SecureMem
@@ -54,118 +55,120 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString as B (length)
 import qualified Data.ByteString.Internal as B
 
+import Prelude (flip, return, div, (-), ($), (==), (/=), (<=), (>=), Int, Bool(..), IO, otherwise, sum, map, fmap, snd, (.), min)
+
 class ByteArrayAccess ba where
-    byteArrayLength :: ba -> Int
-    withByteArray   :: ba -> (Ptr p -> IO a) -> IO a
+    length        :: ba -> Int
+    withByteArray :: ba -> (Ptr p -> IO a) -> IO a
 
 class ByteArrayAccess ba => ByteArray ba where
-    byteArrayAllocRet  :: Int -> (Ptr p -> IO a) -> IO (a, ba)
+    allocRet  :: Int -> (Ptr p -> IO a) -> IO (a, ba)
 
-byteArrayAlloc :: ByteArray ba => Int -> (Ptr p -> IO ()) -> IO ba
-byteArrayAlloc n f = snd `fmap` byteArrayAllocRet n f
+alloc :: ByteArray ba => Int -> (Ptr p -> IO ()) -> IO ba
+alloc n f = snd `fmap` allocRet n f
 
 instance ByteArrayAccess Bytes where
-    byteArrayLength = bytesLength
-    withByteArray   = withBytes
+    length        = bytesLength
+    withByteArray = withBytes
 instance ByteArray Bytes where
-    byteArrayAllocRet = bytesAllocRet
+    allocRet = bytesAllocRet
 
 instance ByteArrayAccess ByteString where
-    byteArrayLength = B.length
+    length = B.length
     withByteArray b f = withForeignPtr fptr $ \ptr -> f (ptr `plusPtr` off)
       where (fptr, off, _) = B.toForeignPtr b
 instance ByteArray ByteString where
-    byteArrayAllocRet sz f = do
+    allocRet sz f = do
         fptr <- B.mallocByteString sz
         r    <- withForeignPtr fptr (f . castPtr)
         return (r, B.PS fptr 0 sz)
 
 instance ByteArrayAccess SecureMem where
-    byteArrayLength = secureMemGetSize
+    length = secureMemGetSize
     withByteArray b f = withSecureMemPtr b (f . castPtr)
 instance ByteArray SecureMem where
-    byteArrayAllocRet sz f = do
+    allocRet sz f = do
         out <- allocateSecureMem sz
         r   <- withSecureMemPtr out (f . castPtr)
         return (r, out)
 
-byteArrayAllocAndFreeze :: ByteArray a => Int -> (Ptr p -> IO ()) -> a
-byteArrayAllocAndFreeze sz f = unsafeDoIO (byteArrayAlloc sz f)
+allocAndFreeze :: ByteArray a => Int -> (Ptr p -> IO ()) -> a
+allocAndFreeze sz f = unsafeDoIO (alloc sz f)
 
 empty :: ByteArray a => a
-empty = unsafeDoIO (byteArrayAlloc 0 $ \_ -> return ())
+empty = unsafeDoIO (alloc 0 $ \_ -> return ())
 
 -- | Create a xor of bytes between a and b.
 --
 -- the returns byte array is the size of the smallest input.
-byteArrayXor :: (ByteArrayAccess a, ByteArrayAccess b, ByteArray c) => a -> b -> c
-byteArrayXor a b =
-    byteArrayAllocAndFreeze n $ \pc ->
-    withByteArray a           $ \pa ->
-    withByteArray b           $ \pb ->
+xor :: (ByteArrayAccess a, ByteArrayAccess b, ByteArray c) => a -> b -> c
+xor a b =
+    allocAndFreeze n $ \pc ->
+    withByteArray a  $ \pa ->
+    withByteArray b  $ \pb ->
         bufXor pc pa pb n
   where
         n  = min la lb
-        la = byteArrayLength a
-        lb = byteArrayLength b
+        la = length a
+        lb = length b
 
-byteArrayIndex :: ByteArrayAccess a => a -> Int -> Word8
-byteArrayIndex b i = unsafeDoIO $ withByteArray b $ \p -> peek (p `plusPtr` i)
+index :: ByteArrayAccess a => a -> Int -> Word8
+index b i = unsafeDoIO $ withByteArray b $ \p -> peek (p `plusPtr` i)
 
-byteArraySplit :: ByteArray bs => Int -> bs -> (bs, bs)
-byteArraySplit n bs
+split :: ByteArray bs => Int -> bs -> (bs, bs)
+split n bs
     | n <= 0    = (empty, bs)
     | n >= len  = (bs, empty)
     | otherwise = unsafeDoIO $ do
         withByteArray bs $ \p -> do
-            b1 <- byteArrayAlloc n $ \r -> bufCopy r p n
-            b2 <- byteArrayAlloc (len - n) $ \r -> bufCopy r (p `plusPtr` n) (len - n)
+            b1 <- alloc n $ \r -> bufCopy r p n
+            b2 <- alloc (len - n) $ \r -> bufCopy r (p `plusPtr` n) (len - n)
             return (b1, b2)
-  where len = byteArrayLength bs
+  where len = length bs
 
-byteArrayConcat :: ByteArray bs => [bs] -> bs
-byteArrayConcat []    = empty
-byteArrayConcat allBs = byteArrayAllocAndFreeze total (loop allBs)
+concat :: ByteArray bs => [bs] -> bs
+concat []    = empty
+concat allBs = allocAndFreeze total (loop allBs)
   where
-        total = sum $ map byteArrayLength allBs
+        total = sum $ map length allBs
 
         loop []     _   = return ()
         loop (b:bs) dst = do
-            let sz = byteArrayLength b
+            let sz = length b
             withByteArray b $ \p -> bufCopy dst p sz
             loop bs (dst `plusPtr` sz)
 
-byteArrayCopy :: (ByteArrayAccess bs1, ByteArray bs2) => bs1 -> (Ptr p -> IO ()) -> IO bs2
-byteArrayCopy bs f =
-    byteArrayAlloc (byteArrayLength bs) $ \d -> do
-        withByteArray bs $ \s -> bufCopy d s (byteArrayLength bs)
+copy :: (ByteArrayAccess bs1, ByteArray bs2) => bs1 -> (Ptr p -> IO ()) -> IO bs2
+copy bs f =
+    alloc (length bs) $ \d -> do
+        withByteArray bs $ \s -> bufCopy d s (length bs)
         f (castPtr d)
 
-byteArrayCopyRet :: (ByteArrayAccess bs1, ByteArray bs2) => bs1 -> (Ptr p -> IO a) -> IO (a, bs2)
-byteArrayCopyRet bs f =
-    byteArrayAllocRet (byteArrayLength bs) $ \d -> do
-        withByteArray bs $ \s -> bufCopy d s (byteArrayLength bs)
+copyRet :: (ByteArrayAccess bs1, ByteArray bs2) => bs1 -> (Ptr p -> IO a) -> IO (a, bs2)
+copyRet bs f =
+    allocRet (length bs) $ \d -> do
+        withByteArray bs $ \s -> bufCopy d s (length bs)
         f (castPtr d)
 
-byteArrayCopyAndFreeze :: (ByteArrayAccess bs1, ByteArray bs2) => bs1 -> (Ptr p -> IO ()) -> bs2
-byteArrayCopyAndFreeze bs f =
-    byteArrayAllocAndFreeze (byteArrayLength bs) $ \d -> do
-        withByteArray bs $ \s -> bufCopy d s (byteArrayLength bs)
+copyAndFreeze :: (ByteArrayAccess bs1, ByteArray bs2) => bs1 -> (Ptr p -> IO ()) -> bs2
+copyAndFreeze bs f =
+    allocAndFreeze (length bs) $ \d -> do
+        withByteArray bs $ \s -> bufCopy d s (length bs)
         f (castPtr d)
 
-byteArrayZero :: ByteArray ba => Int -> ba
-byteArrayZero n = byteArrayAllocAndFreeze n $ \ptr -> bufSet ptr 0 n
+zero :: ByteArray ba => Int -> ba
+zero n = allocAndFreeze n $ \ptr -> bufSet ptr 0 n
 
-byteArrayEq :: (ByteArrayAccess bs1, ByteArrayAccess bs2) => bs1 -> bs2 -> Bool
-byteArrayEq b1 b2
+eq :: (ByteArrayAccess bs1, ByteArrayAccess bs2) => bs1 -> bs2 -> Bool
+eq b1 b2
     | l1 /= l2  = False
     | otherwise = unsafeDoIO $
         withByteArray b1 $ \p1 ->
         withByteArray b2 $ \p2 ->
             loop l1 p1 p2
   where
-    l1 = byteArrayLength b1
-    l2 = byteArrayLength b2
+    l1 = length b1
+    l2 = length b2
     loop :: Int -> Ptr Word8 -> Ptr Word8 -> IO Bool
     loop 0 _  _  = return True
     loop i p1 p2 = do
@@ -180,16 +183,16 @@ byteArrayEq b1 b2
 -- compared to == , this function will go over all the bytes
 -- present before yielding a result even when knowing the
 -- overall result early in the processing.
-byteArrayConstEq :: (ByteArrayAccess bs1, ByteArrayAccess bs2) => bs1 -> bs2 -> Bool
-byteArrayConstEq b1 b2
+constEq :: (ByteArrayAccess bs1, ByteArrayAccess bs2) => bs1 -> bs2 -> Bool
+constEq b1 b2
     | l1 /= l2  = False
     | otherwise = unsafeDoIO $
         withByteArray b1 $ \p1 ->
         withByteArray b2 $ \p2 ->
             loop l1 True p1 p2
   where
-    l1 = byteArrayLength b1
-    l2 = byteArrayLength b2
+    l1 = length b1
+    l2 = length b2
     loop :: Int -> Bool -> Ptr Word8 -> Ptr Word8 -> IO Bool
     loop 0 !ret _  _  = return ret
     loop i !ret p1 p2 = do
@@ -203,25 +206,25 @@ byteArrayConstEq b1 b2
     False &&! True  = False
     False &&! False = False
 
-byteArrayToBS :: ByteArray bs => bs -> ByteString
-byteArrayToBS bs = byteArrayCopyAndFreeze bs (\_ -> return ())
+toBS :: ByteArray bs => bs -> ByteString
+toBS bs = copyAndFreeze bs (\_ -> return ())
 
-byteArrayFromBS :: ByteArray bs => ByteString -> bs
-byteArrayFromBS bs = byteArrayCopyAndFreeze bs (\_ -> return ())
+fromBS :: ByteArray bs => ByteString -> bs
+fromBS bs = copyAndFreeze bs (\_ -> return ())
 
-byteArrayToW64BE :: ByteArrayAccess bs => bs -> Int -> Word64
-byteArrayToW64BE bs ofs = unsafeDoIO $ withByteArray bs $ \p -> fromBE64 <$> peek (p `plusPtr` ofs)
+toW64BE :: ByteArrayAccess bs => bs -> Int -> Word64
+toW64BE bs ofs = unsafeDoIO $ withByteArray bs $ \p -> fromBE64 <$> peek (p `plusPtr` ofs)
 
-byteArrayToW64LE :: ByteArrayAccess bs => bs -> Int -> Word64
-byteArrayToW64LE bs ofs = unsafeDoIO $ withByteArray bs $ \p -> fromLE64 <$> peek (p `plusPtr` ofs)
+toW64LE :: ByteArrayAccess bs => bs -> Int -> Word64
+toW64LE bs ofs = unsafeDoIO $ withByteArray bs $ \p -> fromLE64 <$> peek (p `plusPtr` ofs)
 
-byteArrayMapAsWord128 :: ByteArray bs => (Word128 -> Word128) -> bs -> bs
-byteArrayMapAsWord128 f bs =
-    byteArrayAllocAndFreeze len $ \dst ->
-    withByteArray bs            $ \src ->
+mapAsWord128 :: ByteArray bs => (Word128 -> Word128) -> bs -> bs
+mapAsWord128 f bs =
+    allocAndFreeze len $ \dst ->
+    withByteArray bs   $ \src ->
         loop (len `div` 16) dst src
   where
-        len        = byteArrayLength bs
+        len        = length bs
         loop 0 _ _ = return ()
         loop i d s = do
             w1 <- peek s
@@ -231,13 +234,13 @@ byteArrayMapAsWord128 f bs =
             poke (d `plusPtr` 8) (toBE64 r2)
             loop (i-1) (d `plusPtr` 16) (s `plusPtr` 16)
 
-byteArrayMapAsWord64 :: ByteArray bs => (Word64 -> Word64) -> bs -> bs
-byteArrayMapAsWord64 f bs =
-    byteArrayAllocAndFreeze len $ \dst ->
+mapAsWord64 :: ByteArray bs => (Word64 -> Word64) -> bs -> bs
+mapAsWord64 f bs =
+    allocAndFreeze len $ \dst ->
     withByteArray bs            $ \src ->
         loop (len `div` 8) dst src
   where
-        len        = byteArrayLength bs
+        len        = length bs
         loop 0 _ _ = return ()
         loop i d s = do
             w <- peek s
@@ -245,5 +248,5 @@ byteArrayMapAsWord64 f bs =
             poke d (toBE64 r)
             loop (i-1) (d `plusPtr` 8) (s `plusPtr` 8)
 
-byteArrayConvert :: (ByteArrayAccess bin, ByteArray bout) => bin -> bout
-byteArrayConvert = flip byteArrayCopyAndFreeze (\_ -> return ())
+convert :: (ByteArrayAccess bin, ByteArray bout) => bin -> bout
+convert = flip copyAndFreeze (\_ -> return ())

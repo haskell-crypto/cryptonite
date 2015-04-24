@@ -11,9 +11,10 @@
 {-# LANGUAGE Rank2Types #-}
 module Crypto.Cipher.Types.AEAD where
 
-import Crypto.Cipher.Types.Base
-import Crypto.Internal.ByteArray
-import Crypto.Internal.Imports
+import           Crypto.Cipher.Types.Base
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray)
+import qualified Crypto.Internal.ByteArray as B
+import           Crypto.Internal.Imports
 
 data AEADModeImpl st = AEADModeImpl
     { aeadImplAppendHeader :: forall ba . ByteArrayAccess ba => st -> ba -> st
@@ -64,5 +65,5 @@ aeadSimpleDecrypt aeadIni header input authTag
     | otherwise      = Nothing
   where aead                = aeadAppendHeader aeadIni header
         (output, aeadFinal) = aeadDecrypt aead input
-        tag                 = aeadFinalize aeadFinal (byteArrayLength authTag)
+        tag                 = aeadFinalize aeadFinal (B.length authTag)
 

@@ -12,11 +12,11 @@ module BlockCipher
     , CipherInfo
     ) where
 
-import Imports
-import Data.Maybe
-import Crypto.Error
-import Crypto.Cipher.Types
-import Crypto.Internal.ByteArray
+import           Imports
+import           Data.Maybe
+import           Crypto.Error
+import           Crypto.Cipher.Types
+import           Crypto.Internal.ByteArray as B
 import qualified Data.ByteString as B
 
 ------------------------------------------------------------------------
@@ -405,7 +405,7 @@ testBlockCipherAEAD cipher =
                         (dText, aeadD) = aeadDecrypt aead eText
                         eTag           = aeadFinalize aeadE (blockSize ctx)
                         dTag           = aeadFinalize aeadD (blockSize ctx)
-                     in (plaintext `assertEq` dText) && (eTag `byteArrayEq` dTag)
+                     in (plaintext `assertEq` dText) && (eTag `B.eq` dTag)
                 CryptoFailed err
                     | err == CryptoError_AEADModeNotSupported -> True
                     | otherwise                               -> error ("testProperty_AEAD: " ++ show err)

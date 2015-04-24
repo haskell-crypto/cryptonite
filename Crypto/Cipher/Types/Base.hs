@@ -17,11 +17,12 @@ module Crypto.Cipher.Types.Base
     , DataUnitOffset
     ) where
 
-import Data.Word
-import Data.ByteString (ByteString)
+import           Data.Word
+import           Data.ByteString (ByteString)
 
-import Crypto.Internal.ByteArray
-import Crypto.Error
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, SecureBytes, withByteArray)
+import qualified Crypto.Internal.ByteArray as B
+import           Crypto.Error
 
 -- | Different specifier for key size in bytes
 data KeySizeSpecifier =
@@ -38,7 +39,7 @@ newtype AuthTag = AuthTag { unAuthTag :: ByteString }
     deriving (Show, ByteArrayAccess)
 
 instance Eq AuthTag where
-    (AuthTag a) == (AuthTag b) = byteArrayConstEq a b
+    (AuthTag a) == (AuthTag b) = B.constEq a b
 
 -- | AEAD Mode
 data AEADMode =

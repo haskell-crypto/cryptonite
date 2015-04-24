@@ -14,10 +14,10 @@ module Crypto.Cipher.DES.Serialization
 import qualified Data.ByteString as B
 import Crypto.Cipher.DES.Primitive (Block(..))
 
-import Crypto.Internal.ByteArray
+import qualified Crypto.Internal.ByteArray as B
 import Crypto.Internal.Endian
 
 import Foreign.Storable
 
 toBS :: Block -> B.ByteString
-toBS (Block w) = byteArrayAllocAndFreeze 8 $ \ptr -> poke ptr (toBE64 w)
+toBS (Block w) = B.allocAndFreeze 8 $ \ptr -> poke ptr (toBE64 w)

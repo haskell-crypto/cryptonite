@@ -27,7 +27,8 @@ import           Foreign.Ptr
 
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
-import           Crypto.Internal.ByteArray
+import           Crypto.Internal.ByteArray (ByteArrayAccess, SecureBytes, withByteArray)
+import qualified Crypto.Internal.ByteArray as B
 import           Data.ByteString (ByteString)
 
 -- | A Curve25519 Secret key
@@ -46,17 +47,17 @@ newtype DhSecret = DhSecret SecureBytes
 -- | Try to build a public key from a bytearray
 publicKey :: ByteArrayAccess bs => bs -> Either String PublicKey
 publicKey bs
-    | byteArrayLength bs == 32 = Right $ PublicKey $ byteArrayCopyAndFreeze bs (\_ -> return ())
+    | B.length bs == 32 = Right $ PublicKey $ B.copyAndFreeze bs (\_ -> return ())
     | otherwise               = Left "invalid public key size"
 
 -- | Try to build a secret key from a bytearray
 secretKey :: ByteArrayAccess bs => bs -> Either String SecretKey
 secretKey bs
-    | byteArrayLength bs == 32 = unsafeDoIO $ do
+    | B.length bs == 32 = unsafeDoIO $ do
         withByteArray bs $ \inp -> do
             valid <- isValidPtr inp
             if valid
-                then Right . SecretKey <$> byteArrayCopy bs (\_ -> return ())
+                then Right . SecretKey <$> B.copy bs (\_ -> return ())
                 else return $ Left "invalid secret key"
     | otherwise = Left "secret key invalid size"
   where
@@ -81,8 +82,8 @@ secretKey bs
 -- | Create a DhSecret from a bytearray object
 dhSecret :: ByteArrayAccess b => b -> Either String DhSecret
 dhSecret bs
-    | byteArrayLength bs == 32 = Right $ DhSecret $ byteArrayCopyAndFreeze bs (\_ -> return ())
-    | otherwise                = Left "invalid dh secret size"
+    | B.length bs == 32 = Right $ DhSecret $ B.copyAndFreeze bs (\_ -> return ())
+    | otherwise         = Left "invalid dh secret size"
 
 basePoint :: PublicKey
 basePoint = PublicKey "\x09\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -90,7 +91,7 @@ basePoint = PublicKey "\x09\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\
 -- | Compute the Diffie Hellman secret from a public key and a secret key
 dh :: PublicKey -> SecretKey -> DhSecret
 dh (PublicKey pub) (SecretKey sec) = DhSecret <$>
-    byteArrayAllocAndFreeze 32 $ \result ->
+    B.allocAndFreeze 32        $ \result ->
     withByteArray sec          $ \psec   ->
     withByteArray pub          $ \ppub   ->
         ccryptonite_curve25519 result psec ppub
@@ -99,7 +100,7 @@ dh (PublicKey pub) (SecretKey sec) = DhSecret <$>
 -- | Create a public key from a secret key
 toPublic :: SecretKey -> PublicKey
 toPublic (SecretKey sec) = PublicKey <$>
-    byteArrayAllocAndFreeze 32 $ \result ->
+    B.allocAndFreeze 32     $ \result ->
     withByteArray sec       $ \psec   ->
     withByteArray basePoint $ \pbase   ->
         ccryptonite_curve25519 result psec pbase

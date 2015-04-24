@@ -12,14 +12,15 @@ module Crypto.Random.EntropyPool
     , getEntropyFrom
     ) where
 
-import Control.Concurrent.MVar
-import Crypto.Random.Entropy.Unsafe
-import Crypto.Internal.ByteArray
-import Data.SecureMem
-import Data.Word (Word8)
-import Data.Maybe (catMaybes)
-import Foreign.Marshal.Utils (copyBytes)
-import Foreign.Ptr (plusPtr, Ptr)
+import           Control.Concurrent.MVar
+import           Crypto.Random.Entropy.Unsafe
+import           Crypto.Internal.ByteArray (ByteArray)
+import qualified Crypto.Internal.ByteArray as B
+import           Data.SecureMem
+import           Data.Word (Word8)
+import           Data.Maybe (catMaybes)
+import           Foreign.Marshal.Utils (copyBytes)
+import           Foreign.Ptr (plusPtr, Ptr)
 
 -- | Pool of Entropy. contains a self mutating pool of entropy,
 -- that is always guarantee to contains data.
@@ -67,4 +68,4 @@ getEntropyPtr (EntropyPool backends posM sm) n outPtr =
 
 -- | Grab a chunk of entropy from the entropy pool.
 getEntropyFrom :: ByteArray byteArray => EntropyPool -> Int -> IO byteArray
-getEntropyFrom pool n = byteArrayAlloc n (getEntropyPtr pool n)
+getEntropyFrom pool n = B.alloc n (getEntropyPtr pool n)

@@ -11,11 +11,12 @@ module Crypto.Cipher.TripleDES
     , DES_EDE2
     ) where
 
-import Data.Word
-import Crypto.Error
-import Crypto.Cipher.Types
-import Crypto.Cipher.DES.Primitive
-import Crypto.Internal.ByteArray
+import           Data.Word
+import           Crypto.Error
+import           Crypto.Cipher.Types
+import           Crypto.Cipher.DES.Primitive
+import           Crypto.Internal.ByteArray (ByteArrayAccess)
+import qualified Crypto.Internal.ByteArray as B
 
 -- | 3DES with 3 different keys used all in the same direction
 data DES_EEE3 = DES_EEE3 Word64 Word64 Word64
@@ -55,34 +56,34 @@ instance Cipher DES_EEE2 where
 
 instance BlockCipher DES_EEE3 where
     blockSize _ = 8
-    ecbEncrypt (DES_EEE3 k1 k2 k3) = byteArrayMapAsWord64 (unBlock . (encrypt k3 . encrypt k2 . encrypt k1) . Block)
-    ecbDecrypt (DES_EEE3 k1 k2 k3) = byteArrayMapAsWord64 (unBlock . (decrypt k1 . decrypt k2 . decrypt k3) . Block)
+    ecbEncrypt (DES_EEE3 k1 k2 k3) = B.mapAsWord64 (unBlock . (encrypt k3 . encrypt k2 . encrypt k1) . Block)
+    ecbDecrypt (DES_EEE3 k1 k2 k3) = B.mapAsWord64 (unBlock . (decrypt k1 . decrypt k2 . decrypt k3) . Block)
 
 instance BlockCipher DES_EDE3 where
     blockSize _ = 8
-    ecbEncrypt (DES_EDE3 k1 k2 k3) = byteArrayMapAsWord64 (unBlock . (encrypt k3 . decrypt k2 . encrypt k1) . Block)
-    ecbDecrypt (DES_EDE3 k1 k2 k3) = byteArrayMapAsWord64 (unBlock . (decrypt k1 . encrypt k2 . decrypt k3) . Block)
+    ecbEncrypt (DES_EDE3 k1 k2 k3) = B.mapAsWord64 (unBlock . (encrypt k3 . decrypt k2 . encrypt k1) . Block)
+    ecbDecrypt (DES_EDE3 k1 k2 k3) = B.mapAsWord64 (unBlock . (decrypt k1 . encrypt k2 . decrypt k3) . Block)
 
 instance BlockCipher DES_EEE2 where
     blockSize _ = 8
-    ecbEncrypt (DES_EEE2 k1 k2) = byteArrayMapAsWord64 (unBlock . (encrypt k1 . encrypt k2 . encrypt k1) . Block)
-    ecbDecrypt (DES_EEE2 k1 k2) = byteArrayMapAsWord64 (unBlock . (decrypt k1 . decrypt k2 . decrypt k1) . Block)
+    ecbEncrypt (DES_EEE2 k1 k2) = B.mapAsWord64 (unBlock . (encrypt k1 . encrypt k2 . encrypt k1) . Block)
+    ecbDecrypt (DES_EEE2 k1 k2) = B.mapAsWord64 (unBlock . (decrypt k1 . decrypt k2 . decrypt k1) . Block)
 
 instance BlockCipher DES_EDE2 where
     blockSize _ = 8
-    ecbEncrypt (DES_EDE2 k1 k2) = byteArrayMapAsWord64 (unBlock . (encrypt k1 . decrypt k2 . encrypt k1) . Block)
-    ecbDecrypt (DES_EDE2 k1 k2) = byteArrayMapAsWord64 (unBlock . (decrypt k1 . encrypt k2 . decrypt k1) . Block)
+    ecbEncrypt (DES_EDE2 k1 k2) = B.mapAsWord64 (unBlock . (encrypt k1 . decrypt k2 . encrypt k1) . Block)
+    ecbDecrypt (DES_EDE2 k1 k2) = B.mapAsWord64 (unBlock . (decrypt k1 . encrypt k2 . decrypt k1) . Block)
 
-init3DES :: ByteArray key => (Word64 -> Word64 -> Word64 -> a) -> key -> CryptoFailable a
+init3DES :: ByteArrayAccess key => (Word64 -> Word64 -> Word64 -> a) -> key -> CryptoFailable a
 init3DES constr k
     | len == 24 = CryptoPassed $ constr k1 k2 k3
     | otherwise = CryptoFailed CryptoError_KeySizeInvalid
-  where len = byteArrayLength k
-        (k1, k2, k3) = (byteArrayToW64BE k 0, byteArrayToW64BE k 8, byteArrayToW64BE k 16)
+  where len = B.length k
+        (k1, k2, k3) = (B.toW64BE k 0, B.toW64BE k 8, B.toW64BE k 16)
 
-init2DES :: ByteArray key => (Word64 -> Word64 -> a) -> key -> CryptoFailable a
+init2DES :: ByteArrayAccess key => (Word64 -> Word64 -> a) -> key -> CryptoFailable a
 init2DES constr k
     | len == 16 = CryptoPassed $ constr k1 k2
     | otherwise = CryptoFailed CryptoError_KeySizeInvalid
-  where len = byteArrayLength k
-        (k1, k2) = (byteArrayToW64BE k 0, byteArrayToW64BE k 8)
+  where len = B.length k
+        (k1, k2) = (B.toW64BE k 0, B.toW64BE k 8)

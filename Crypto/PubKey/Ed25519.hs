@@ -31,7 +31,8 @@ import           Foreign.C.Types
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
 import           Crypto.Internal.Memory
-import           Crypto.Internal.ByteArray
+import           Crypto.Internal.ByteArray (ByteArrayAccess, withByteArray)
+import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Error
 
 -- | An Ed25519 Secret key
@@ -49,19 +50,19 @@ newtype Signature = Signature Bytes
 -- | Try to build a public key from a bytearray
 publicKey :: ByteArrayAccess ba => ba -> CryptoFailable PublicKey
 publicKey bs
-    | byteArrayLength bs == publicKeySize =
-        CryptoPassed $ PublicKey $ byteArrayCopyAndFreeze bs (\_ -> return ())
+    | B.length bs == publicKeySize =
+        CryptoPassed $ PublicKey $ B.copyAndFreeze bs (\_ -> return ())
     | otherwise =
         CryptoFailed $ CryptoError_PublicKeySizeInvalid
 
 -- | Try to build a secret key from a bytearray
 secretKey :: ByteArrayAccess ba => ba -> CryptoFailable SecretKey
 secretKey bs
-    | byteArrayLength bs == secretKeySize = unsafeDoIO $ do
+    | B.length bs == secretKeySize = unsafeDoIO $ do
         withByteArray bs $ \inp -> do
             valid <- isValidPtr inp
             if valid
-                then CryptoPassed . SecretKey <$> byteArrayCopy bs (\_ -> return ())
+                then CryptoPassed . SecretKey <$> B.copy bs (\_ -> return ())
                 else return $ CryptoFailed CryptoError_SecretKeyStructureInvalid
     | otherwise = CryptoFailed CryptoError_SecretKeyStructureInvalid
   where
@@ -73,15 +74,15 @@ secretKey bs
 -- | Try to build a signature from a bytearray
 signature :: ByteArrayAccess ba => ba -> CryptoFailable Signature
 signature bs
-    | byteArrayLength bs == signatureSize =
-        CryptoPassed $ Signature $ byteArrayCopyAndFreeze bs (\_ -> return ())
+    | B.length bs == signatureSize =
+        CryptoPassed $ Signature $ B.copyAndFreeze bs (\_ -> return ())
     | otherwise =
         CryptoFailed CryptoError_SecretKeyStructureInvalid
 
 -- | Create a public key from a secret key
 toPublic :: SecretKey -> PublicKey
 toPublic (SecretKey sec) = PublicKey <$>
-    byteArrayAllocAndFreeze publicKeySize $ \result ->
+    B.allocAndFreeze publicKeySize $ \result ->
     withByteArray sec                     $ \psec   ->
         ccryptonite_ed25519_publickey psec result
 {-# NOINLINE toPublic #-}
@@ -89,13 +90,13 @@ toPublic (SecretKey sec) = PublicKey <$>
 -- | Sign a message using the key pair
 sign :: ByteArrayAccess ba => SecretKey -> PublicKey -> ba -> Signature
 sign secret public message =
-    Signature $ byteArrayAllocAndFreeze signatureSize $ \sig ->
+    Signature $ B.allocAndFreeze signatureSize $ \sig ->
         withByteArray secret  $ \sec ->
         withByteArray public  $ \pub ->
         withByteArray message $ \msg ->
              ccryptonite_ed25519_sign msg (fromIntegral msgLen) sec pub sig
   where
-    !msgLen = byteArrayLength message
+    !msgLen = B.length message
 
 -- | Verify a message
 verify :: ByteArrayAccess ba => PublicKey -> ba -> Signature -> Bool
@@ -106,7 +107,7 @@ verify public message signatureVal = unsafeDoIO $
       r <- ccryptonite_ed25519_sign_open msg (fromIntegral msgLen) pub sig
       return (r == 0)
   where
-    !msgLen = byteArrayLength message
+    !msgLen = B.length message
 
 publicKeySize :: Int
 publicKeySize = 32

@@ -18,16 +18,17 @@ module Crypto.Cipher.Blowfish.Primitive
     , decrypt
     ) where
 
-import Control.Monad (forM_, when)
-import Data.Bits
-import Data.Word
+import           Control.Monad (forM_, when)
+import           Data.Bits
+import           Data.Word
 
-import Crypto.Error
-import Crypto.Internal.Compat
-import Crypto.Internal.ByteArray
-import Crypto.Internal.Words
-import Crypto.Internal.WordArray
-import Crypto.Cipher.Blowfish.Box
+import           Crypto.Error
+import           Crypto.Internal.Compat
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray)
+import qualified Crypto.Internal.ByteArray as B
+import           Crypto.Internal.Words
+import           Crypto.Internal.WordArray
+import           Crypto.Cipher.Blowfish.Box
 
 -- | variable keyed blowfish state
 data Context = BF (Int -> Word32) -- p
@@ -45,15 +46,15 @@ decryptContext (BF p s0 s1 s2 s3) = BF (\i -> p (17-i)) s0 s1 s2 s3
 
 cipher :: ByteArray ba => Context -> ba -> ba
 cipher ctx b
-    | byteArrayLength b == 0         = empty
-    | byteArrayLength b `mod` 8 /= 0 = error "invalid data length"
-    | otherwise                      = byteArrayMapAsWord64 (coreCrypto ctx) b
+    | B.length b == 0         = B.empty
+    | B.length b `mod` 8 /= 0 = error "invalid data length"
+    | otherwise               = B.mapAsWord64 (coreCrypto ctx) b
 
-initBlowfish :: ByteArray key => key -> CryptoFailable Context
+initBlowfish :: ByteArrayAccess key => key -> CryptoFailable Context
 initBlowfish key
     | len > (448 `div` 8) = CryptoFailed $ CryptoError_KeySizeInvalid
     | otherwise           = CryptoPassed $ makeKeySchedule key
-  where len = byteArrayLength key
+  where len = B.length key
 
 coreCrypto :: Context -> Word64 -> Word64
 coreCrypto (BF p s0 s1 s2 s3) input = doRound input 0
@@ -76,16 +77,16 @@ coreCrypto (BF p s0 s1 s2 s3) input = doRound input 0
               d = s3 (fromIntegral $ t .&. 0xff)
            in fromIntegral (((a + b) `xor` c) + d) `shiftL` 32
 
-makeKeySchedule :: ByteArray key => key -> Context
+makeKeySchedule :: ByteArrayAccess key => key -> Context
 makeKeySchedule key =
     let v = unsafeDoIO $ do
-              let len = byteArrayLength key
+              let len = B.length key
               mv <- createKeySchedule
               when (len > 0) $ forM_ [0..17] $ \i -> do
-                    let a = byteArrayIndex key ((i * 4 + 0) `mod` len)
-                        b = byteArrayIndex key ((i * 4 + 1) `mod` len)
-                        c = byteArrayIndex key ((i * 4 + 2) `mod` len)
-                        d = byteArrayIndex key ((i * 4 + 3) `mod` len)
+                    let a = B.index key ((i * 4 + 0) `mod` len)
+                        b = B.index key ((i * 4 + 1) `mod` len)
+                        c = B.index key ((i * 4 + 2) `mod` len)
+                        d = B.index key ((i * 4 + 3) `mod` len)
                         k = (fromIntegral a `shiftL` 24) .|.
                             (fromIntegral b `shiftL` 16) .|.
                             (fromIntegral c `shiftL`  8) .|.

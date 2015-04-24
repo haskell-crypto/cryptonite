@@ -17,18 +17,18 @@ module Crypto.Cipher.ChaCha
     , StateSimple
     ) where
 
-import Data.ByteString (ByteString)
-import qualified Data.ByteString.Internal as B
-import qualified Data.ByteString as B
-import Crypto.Internal.ByteArray
-import Crypto.Internal.Compat
-import Crypto.Internal.Imports
-import Data.Byteable
-import Data.Bits (xor)
-import Foreign.Ptr
-import Foreign.ForeignPtr
-import Foreign.C.Types
-import Foreign.Storable
+import           Data.ByteString (ByteString)
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Internal as BS
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, SecureBytes, withByteArray)
+import qualified Crypto.Internal.ByteArray as B
+import           Crypto.Internal.Compat
+import           Crypto.Internal.Imports
+import           Data.Bits (xor)
+import           Foreign.Ptr
+import           Foreign.ForeignPtr
+import           Foreign.C.Types
+import           Foreign.Storable
 
 -- | ChaCha context
 data State = State Int         -- number of rounds
@@ -57,12 +57,12 @@ initialize nbRounds key nonce
     | not (nonceLen `elem` [8,12])    = error "ChaCha: nonce length should be 64 or 96 bits"
     | not (nbRounds `elem` [8,12,20]) = error "ChaCha: rounds should be 8, 12 or 20"
     | otherwise = unsafeDoIO $ do
-        stPtr <- byteArrayAlloc 64 $ \stPtr ->
+        stPtr <- B.alloc 64 $ \stPtr ->
             withByteArray nonce $ \noncePtr  ->
             withByteArray key $ \keyPtr ->
                 ccryptonite_chacha_init (castPtr stPtr) kLen keyPtr nonceLen noncePtr
         return $ State nbRounds stPtr B.empty
-  where kLen     = byteArrayLength key
+  where kLen     = B.length key
         nonceLen = B.length nonce
 
 -- | Initialize simple ChaCha State
@@ -72,12 +72,12 @@ initializeSimple :: ByteArray seed
 initializeSimple seed
     | sLen /= 40 = error "ChaCha Random: seed length should be 40 bytes"
     | otherwise = unsafeDoIO $ do
-        stPtr <- byteArrayAlloc 64 $ \stPtr ->
+        stPtr <- B.alloc 64 $ \stPtr ->
                     withByteArray seed $ \seedPtr ->
                         ccryptonite_chacha_init (castPtr stPtr) 32 seedPtr 8 (seedPtr `plusPtr` 32)
         return $ StateSimple stPtr
   where
-    sLen = byteArrayLength seed
+    sLen = B.length seed
 
 -- | Combine the chacha output and an arbitrary message with a xor,
 -- and return the combined output and the new state.
@@ -89,8 +89,8 @@ combine prev@(State nbRounds prevSt prevOut) src
     | outputLen <= prevBufLen =
         -- we have enough byte in the previous buffer to complete the query
         -- without having to generate any extra bytes
-        let (b1,b2) = B.splitAt outputLen prevOut
-         in (B.pack $ B.zipWith xor b1 src, State nbRounds prevSt b2)
+        let (b1,b2) = BS.splitAt outputLen prevOut
+         in (BS.pack $ BS.zipWith xor b1 src, State nbRounds prevSt b2)
     | otherwise = unsafeDoIO $ do
         -- adjusted len is the number of bytes lefts to generate after
         -- copying from the previous buffer.
@@ -98,15 +98,15 @@ combine prev@(State nbRounds prevSt prevOut) src
             (roundedAlready, newBytesToGenerate) = round64 adjustedLen
             nextBufLen  = newBytesToGenerate - adjustedLen
 
-        fptr <- B.mallocByteString (newBytesToGenerate + prevBufLen)
+        fptr <- BS.mallocByteString (newBytesToGenerate + prevBufLen)
         newSt <- withForeignPtr fptr $ \dstPtr ->
             withByteArray src $ \srcPtr -> do
                 -- copy the previous buffer by xor if any
-                withBytePtr prevOut $ \prevPtr ->
+                withByteArray prevOut $ \prevPtr ->
                     loopXor dstPtr srcPtr prevPtr prevBufLen
 
                 -- then create a new mutable copy of state
-                st <- byteArrayCopy prevSt (\_ -> return ())
+                st <- B.copy prevSt (\_ -> return ())
                 withByteArray st $ \stPtr ->
                     ccryptonite_chacha_combine nbRounds
                                                (dstPtr `plusPtr` prevBufLen)
@@ -115,8 +115,8 @@ combine prev@(State nbRounds prevSt prevOut) src
                                                (fromIntegral newBytesToGenerate)
                 return st
         -- return combined byte
-        return ( B.PS fptr 0 outputLen
-               , State nbRounds newSt (if roundedAlready then B.empty else B.PS fptr outputLen nextBufLen))
+        return ( BS.PS fptr 0 outputLen
+               , State nbRounds newSt (if roundedAlready then BS.empty else BS.PS fptr outputLen nextBufLen))
   where
         outputLen  = B.length src
         prevBufLen = B.length prevOut
@@ -133,7 +133,7 @@ combine prev@(State nbRounds prevSt prevOut) src
 generate :: State -- ^ the current ChaCha state
          -> Int   -- ^ the length of data to generate
          -> (ByteString, State)
-generate st len = combine st (B.replicate len 0)
+generate st len = combine st (BS.replicate len 0)
 
 -- | similar to 'generate' but assume certains values
 generateSimple :: ByteArray ba
@@ -141,8 +141,8 @@ generateSimple :: ByteArray ba
                -> Int
                -> (ba, StateSimple)
 generateSimple (StateSimple prevSt) nbBytes = unsafeDoIO $ do
-    newSt  <- byteArrayCopy prevSt (\_ -> return ())
-    output <- byteArrayAlloc nbBytes $ \dstPtr ->
+    newSt  <- B.copy prevSt (\_ -> return ())
+    output <- B.alloc nbBytes $ \dstPtr ->
         withByteArray newSt $ \stPtr ->
             ccryptonite_chacha_random 8 dstPtr (castPtr stPtr) (fromIntegral nbBytes)
     return (output, StateSimple newSt)

@@ -2,7 +2,7 @@
 module KAT_Curve25519 ( tests ) where
 
 import qualified Crypto.PubKey.Curve25519 as Curve25519
-import           Crypto.Internal.ByteArray
+import           Crypto.Internal.ByteArray as B
 import           Imports
 
 alicePrivate = either error id $ Curve25519.secretKey ("\x77\x07\x6d\x0a\x73\x18\xa5\x7d\x3c\x16\xc1\x72\x51\xb2\x66\x45\xdf\x4c\x2f\x87\xeb\xc0\x99\x2a\xb1\x77\xfb\xa5\x1d\xb9\x2c\x2a" :: ByteString)
@@ -13,8 +13,8 @@ aliceMultBob = "\x4a\x5d\x9d\x5b\xa4\xce\x2d\xe1\x72\x8e\x3b\xf4\x80\x35\x0f\x25
 
 katTests :: [TestTree]
 katTests =
-    [ testCase "0" (aliceMultBob @=? byteArrayConvert (Curve25519.dh alicePublic bobPrivate))
-    , testCase "1" (aliceMultBob @=? byteArrayConvert (Curve25519.dh bobPublic alicePrivate))
+    [ testCase "0" (aliceMultBob @=? B.convert (Curve25519.dh alicePublic bobPrivate))
+    , testCase "1" (aliceMultBob @=? B.convert (Curve25519.dh bobPublic alicePrivate))
     ]
 
 tests = testGroup "Curve25519"

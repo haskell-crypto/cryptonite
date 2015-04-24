@@ -9,11 +9,12 @@
 --
 module Crypto.Cipher.Types.Utils where
 
-import Crypto.Internal.ByteArray
+import           Crypto.Internal.ByteArray (ByteArray)
+import qualified Crypto.Internal.ByteArray as B
 
 chunk :: ByteArray b => Int -> b -> [b]
 chunk sz bs = split bs
-  where split b | byteArrayLength b <= sz = [b]
+  where split b | B.length b <= sz = [b]
                 | otherwise        =
-                        let (b1, b2) = byteArraySplit sz b
+                        let (b1, b2) = B.split sz b
                          in b1 : split b2

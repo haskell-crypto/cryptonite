@@ -13,12 +13,13 @@ module Crypto.Cipher.Types.GF
       xtsGFMul
     ) where
 
-import Control.Applicative
-import Crypto.Internal.ByteArray
-import Foreign.Storable
-import Foreign.Ptr
-import Data.Word
-import Data.Bits
+import           Control.Applicative
+import           Crypto.Internal.ByteArray (ByteArray, withByteArray)
+import qualified Crypto.Internal.ByteArray as B
+import           Foreign.Storable
+import           Foreign.Ptr
+import           Data.Word
+import           Data.Bits
 
 -- block size need to be 128 bits.
 --
@@ -26,8 +27,8 @@ import Data.Bits
 xtsGFMul :: ByteArray ba => ba -> ba
 xtsGFMul b
     | len == 16 =
-        byteArrayAllocAndFreeze len $ \dst ->
-        withByteArray b             $ \src -> do
+        B.allocAndFreeze len $ \dst ->
+        withByteArray b      $ \src -> do
             (hi,lo) <- gf <$> peek (castPtr src) <*> peek (castPtr src `plusPtr` 8)
             poke (castPtr dst) lo
             poke (castPtr dst `plusPtr` 8) hi
@@ -39,7 +40,7 @@ xtsGFMul b
             )
           where carryHi = srcHi `testBit` 63 
                 carryLo = srcLo `testBit` 63
-        len = byteArrayLength b
+        len = B.length b
 {-
 	const uint64_t gf_mask = cpu_to_le64(0x8000000000000000ULL);
 	uint64_t r = ((a->q[1] & gf_mask) ? cpu_to_le64(0x87) : 0);

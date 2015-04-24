@@ -58,18 +58,19 @@ module Crypto.Cipher.AES.Primitive
     , ocbFinish
     ) where
 
-import Data.Word
-import Foreign.Ptr
-import Foreign.C.Types
-import Foreign.C.String
-import Data.ByteString.Internal
-import qualified Data.ByteString as B
+import           Data.Word
+import           Foreign.Ptr
+import           Foreign.C.Types
+import           Foreign.C.String
+import qualified Data.ByteString.Internal as BS
+import qualified Data.ByteString as BS
 
-import Crypto.Error
-import Crypto.Cipher.Types
-import Crypto.Cipher.Types.Block (IV(..))
-import Crypto.Internal.Compat
-import Crypto.Internal.ByteArray
+import           Crypto.Error
+import           Crypto.Cipher.Types
+import           Crypto.Cipher.Types.Block (IV(..))
+import           Crypto.Internal.Compat
+import           Crypto.Internal.ByteArray (ByteArray, ByteArrayAccess, SecureBytes, withByteArray)
+import qualified Crypto.Internal.ByteArray as B
 
 instance Cipher AES where
     cipherName    _ = "AES"
@@ -133,7 +134,7 @@ ivCopyPtr :: IV AES -> (Ptr Word8 -> IO a) -> IO (a, IV AES)
 ivCopyPtr (IV iv) f = (\(x,y) -> (x, IV y)) `fmap` copyAndModify iv f
   where
     copyAndModify :: ByteArray ba => ba -> (Ptr Word8 -> IO a) -> IO (a, ba)
-    copyAndModify ba f' = byteArrayCopyRet ba f'
+    copyAndModify ba f' = B.copyRet ba f'
 
 withKeyAndIV :: ByteArrayAccess iv => AES -> iv -> (Ptr AES -> Ptr Word8 -> IO a) -> IO a
 withKeyAndIV ctx iv f = keyToPtr ctx $ \kptr -> ivToPtr iv $ \ivp -> f kptr ivp
@@ -145,17 +146,17 @@ withKey2AndIV key1 key2 iv f =
 withGCMKeyAndCopySt :: AES -> AESGCM -> (Ptr AESGCM -> Ptr AES -> IO a) -> IO (a, AESGCM)
 withGCMKeyAndCopySt aes (AESGCM gcmSt) f =
     keyToPtr aes $ \aesPtr -> do
-        newSt <- byteArrayCopy gcmSt (\_ -> return ())
+        newSt <- B.copy gcmSt (\_ -> return ())
         a     <- withByteArray newSt $ \gcmStPtr -> f (castPtr gcmStPtr) aesPtr
         return (a, AESGCM newSt)
 
 withNewGCMSt :: AESGCM -> (Ptr AESGCM -> IO ()) -> IO AESGCM
-withNewGCMSt (AESGCM gcmSt) f = byteArrayCopy gcmSt (f . castPtr) >>= \sm2 -> return (AESGCM sm2)
+withNewGCMSt (AESGCM gcmSt) f = B.copy gcmSt (f . castPtr) >>= \sm2 -> return (AESGCM sm2)
 
 withOCBKeyAndCopySt :: AES -> AESOCB -> (Ptr AESOCB -> Ptr AES -> IO a) -> IO (a, AESOCB)
 withOCBKeyAndCopySt aes (AESOCB gcmSt) f =
     keyToPtr aes $ \aesPtr -> do
-        newSt <- byteArrayCopy gcmSt (\_ -> return ())
+        newSt <- B.copy gcmSt (\_ -> return ())
         a     <- withByteArray newSt $ \gcmStPtr -> f (castPtr gcmStPtr) aesPtr
         return (a, AESOCB newSt)
 
@@ -168,8 +169,8 @@ initAES k
     | len == 24 = CryptoPassed $ initWithRounds 12
     | len == 32 = CryptoPassed $ initWithRounds 14
     | otherwise = CryptoFailed CryptoError_KeySizeInvalid
-  where len = byteArrayLength k
-        initWithRounds nbR = AES $ byteArrayAllocAndFreeze (16+2*2*16*nbR) aesInit
+  where len = B.length k
+        initWithRounds nbR = AES $ B.allocAndFreeze (16+2*2*16*nbR) aesInit
         aesInit ptr = withByteArray k $ \ikey ->
             c_aes_init (castPtr ptr) (castPtr ikey) (fromIntegral len)
 
@@ -200,8 +201,8 @@ genCTR :: ByteArray ba
        -> Int    -- ^ length of bytes required.
        -> ba
 genCTR ctx (IV iv) len
-    | len <= 0  = empty
-    | otherwise = byteArrayAllocAndFreeze (nbBlocks * 16) generate
+    | len <= 0  = B.empty
+    | otherwise = B.allocAndFreeze (nbBlocks * 16) generate
   where generate o = withKeyAndIV ctx iv $ \k i -> c_aes_gen_ctr (castPtr o) k i (fromIntegral nbBlocks)
         (nbBlocks',r) = len `quotRem` 16
         nbBlocks = if r == 0 then nbBlocks' else nbBlocks' + 1
@@ -221,11 +222,11 @@ genCounter :: ByteArray ba
            -> Int
            -> (ba, IV AES)
 genCounter ctx iv len
-    | len <= 0  = (empty, iv)
+    | len <= 0  = (B.empty, iv)
     | otherwise = unsafeDoIO $
         keyToPtr ctx $ \k ->
         ivCopyPtr iv $ \i ->
-        byteArrayAlloc outputLength $ \o -> do
+        B.alloc outputLength $ \o -> do
             c_aes_gen_ctr_cont (castPtr o) k i (fromIntegral nbBlocks)
   where
         (nbBlocks',r) = len `quotRem` 16
@@ -246,12 +247,12 @@ encryptCTR :: ByteArray ba
            -> ba         -- ^ plaintext input
            -> ba         -- ^ ciphertext output
 encryptCTR ctx iv input
-    | len <= 0                 = empty
-    | byteArrayLength iv /= 16 = error $ "AES error: IV length must be block size (16). Its length is: " ++ (show $ byteArrayLength iv)
-    | otherwise = byteArrayAllocAndFreeze len doEncrypt
+    | len <= 0          = B.empty
+    | B.length iv /= 16 = error $ "AES error: IV length must be block size (16). Its length is: " ++ (show $ B.length iv)
+    | otherwise = B.allocAndFreeze len doEncrypt
   where doEncrypt o = withKeyAndIV ctx iv $ \k v -> withByteArray input $ \i ->
                       c_aes_encrypt_ctr (castPtr o) k v i (fromIntegral len)
-        len = byteArrayLength input
+        len = B.length input
 
 -- | encrypt using Galois counter mode (GCM)
 -- return the encrypted bytestring and the tag associated
@@ -347,26 +348,26 @@ doECB :: ByteArray ba
       -> AES -> ba -> ba
 doECB f ctx input
     | r /= 0    = error $ "Encryption error: input length must be a multiple of block size (16). Its length is: " ++ (show len)
-    | otherwise = byteArrayAllocAndFreeze len $ \o ->
+    | otherwise = B.allocAndFreeze len $ \o ->
                   keyToPtr ctx $ \k ->
                   withByteArray input $ \i ->
                   f (castPtr o) k i (fromIntegral nbBlocks)
   where (nbBlocks, r) = len `quotRem` 16
-        len           = byteArrayLength input
+        len           = B.length input
 
 {-# INLINE doCBC #-}
 doCBC :: ByteArray ba
       => (Ptr b -> Ptr AES -> Ptr Word8 -> CString -> CUInt -> IO ())
       -> AES -> IV AES -> ba -> ba
 doCBC f ctx (IV iv) input
-    | len == 0  = empty
+    | len == 0  = B.empty
     | r /= 0    = error $ "Encryption error: input length must be a multiple of block size (16). Its length is: " ++ (show len)
-    | otherwise = byteArrayAllocAndFreeze len $ \o ->
+    | otherwise = B.allocAndFreeze len $ \o ->
                   withKeyAndIV ctx iv $ \k v ->
                   withByteArray input $ \i ->
                   f (castPtr o) k v i (fromIntegral nbBlocks)
   where (nbBlocks, r) = len `quotRem` 16
-        len           = byteArrayLength input
+        len           = B.length input
 
 {-# INLINE doXTS #-}
 doXTS :: ByteArray ba
@@ -377,12 +378,12 @@ doXTS :: ByteArray ba
       -> ba
       -> ba
 doXTS f (key1,key2) iv spoint input
-    | len == 0  = empty
+    | len == 0  = B.empty
     | r /= 0    = error $ "Encryption error: input length must be a multiple of block size (16) for now. Its length is: " ++ (show len)
-    | otherwise = byteArrayAllocAndFreeze len $ \o -> withKey2AndIV key1 key2 iv $ \k1 k2 v -> withByteArray input $ \i ->
+    | otherwise = B.allocAndFreeze len $ \o -> withKey2AndIV key1 key2 iv $ \k1 k2 v -> withByteArray input $ \i ->
             f (castPtr o) k1 k2 v (fromIntegral spoint) i (fromIntegral nbBlocks)
   where (nbBlocks, r) = len `quotRem` 16
-        len           = byteArrayLength input
+        len           = B.length input
 
 ------------------------------------------------------------------------
 -- GCM
@@ -406,9 +407,9 @@ doGCM f ctx iv aad input = (output, tag)
 {-# NOINLINE gcmInit #-}
 gcmInit :: ByteArrayAccess iv => AES -> iv -> AESGCM
 gcmInit ctx iv = unsafeDoIO $ do
-    sm <- byteArrayAlloc sizeGCM $ \gcmStPtr ->
+    sm <- B.alloc sizeGCM $ \gcmStPtr ->
             withKeyAndIV ctx iv $ \k v ->
-            c_aes_gcm_init (castPtr gcmStPtr) k v (fromIntegral $ byteArrayLength iv)
+            c_aes_gcm_init (castPtr gcmStPtr) k v (fromIntegral $ B.length iv)
     return $ AESGCM sm
 
 -- | append data which is going to just be authentified to the GCM context.
@@ -420,7 +421,7 @@ gcmAppendAAD gcmSt input = unsafeDoIO doAppend
   where doAppend =
             withNewGCMSt gcmSt $ \gcmStPtr ->
             withByteArray input $ \i ->
-            c_aes_gcm_aad gcmStPtr i (fromIntegral $ byteArrayLength input)
+            c_aes_gcm_aad gcmStPtr i (fromIntegral $ B.length input)
 
 -- | append data to encrypt and append to the GCM context
 --
@@ -429,9 +430,9 @@ gcmAppendAAD gcmSt input = unsafeDoIO doAppend
 {-# NOINLINE gcmAppendEncrypt #-}
 gcmAppendEncrypt :: ByteArray ba => AES -> AESGCM -> ba -> (ba, AESGCM)
 gcmAppendEncrypt ctx gcm input = unsafeDoIO $ withGCMKeyAndCopySt ctx gcm doEnc
-  where len = byteArrayLength input
+  where len = B.length input
         doEnc gcmStPtr aesPtr =
-            byteArrayAlloc len $ \o ->
+            B.alloc len $ \o ->
             withByteArray input $ \i ->
             c_aes_gcm_encrypt (castPtr o) gcmStPtr aesPtr i (fromIntegral len)
 
@@ -442,17 +443,17 @@ gcmAppendEncrypt ctx gcm input = unsafeDoIO $ withGCMKeyAndCopySt ctx gcm doEnc
 {-# NOINLINE gcmAppendDecrypt #-}
 gcmAppendDecrypt :: ByteArray ba => AES -> AESGCM -> ba -> (ba, AESGCM)
 gcmAppendDecrypt ctx gcm input = unsafeDoIO $ withGCMKeyAndCopySt ctx gcm doDec
-  where len = byteArrayLength input
+  where len = B.length input
         doDec gcmStPtr aesPtr =
-            byteArrayAlloc len $ \o ->
+            B.alloc len $ \o ->
             withByteArray input $ \i ->
             c_aes_gcm_decrypt (castPtr o) gcmStPtr aesPtr i (fromIntegral len)
 
 -- | Generate the Tag from GCM context
 {-# NOINLINE gcmFinish #-}
 gcmFinish :: AES -> AESGCM -> Int -> AuthTag
-gcmFinish ctx gcm taglen = AuthTag $ B.take taglen computeTag
-  where computeTag = unsafeCreate 16 $ \t ->
+gcmFinish ctx gcm taglen = AuthTag $ BS.take taglen computeTag
+  where computeTag = BS.unsafeCreate 16 $ \t ->
                         withGCMKeyAndCopySt ctx gcm (c_aes_gcm_finish (castPtr t)) >> return ()
 
 ------------------------------------------------------------------------
@@ -477,9 +478,9 @@ doOCB f ctx iv aad input = (output, tag)
 {-# NOINLINE ocbInit #-}
 ocbInit :: ByteArrayAccess iv => AES -> iv -> AESOCB
 ocbInit ctx iv = unsafeDoIO $ do
-    sm <- byteArrayAlloc sizeOCB $ \ocbStPtr ->
+    sm <- B.alloc sizeOCB $ \ocbStPtr ->
             withKeyAndIV ctx iv $ \k v ->
-            c_aes_ocb_init (castPtr ocbStPtr) k v (fromIntegral $ byteArrayLength iv)
+            c_aes_ocb_init (castPtr ocbStPtr) k v (fromIntegral $ B.length iv)
     return $ AESOCB sm
 
 -- | append data which is going to just be authentified to the OCB context.
@@ -490,7 +491,7 @@ ocbAppendAAD :: ByteArrayAccess aad => AES -> AESOCB -> aad -> AESOCB
 ocbAppendAAD ctx ocb input = unsafeDoIO (snd `fmap` withOCBKeyAndCopySt ctx ocb doAppend)
   where doAppend ocbStPtr aesPtr =
             withByteArray input $ \i ->
-            c_aes_ocb_aad ocbStPtr aesPtr i (fromIntegral $ byteArrayLength input)
+            c_aes_ocb_aad ocbStPtr aesPtr i (fromIntegral $ B.length input)
 
 -- | append data to encrypt and append to the OCB context
 --
@@ -499,9 +500,9 @@ ocbAppendAAD ctx ocb input = unsafeDoIO (snd `fmap` withOCBKeyAndCopySt ctx ocb 
 {-# NOINLINE ocbAppendEncrypt #-}
 ocbAppendEncrypt :: ByteArray ba => AES -> AESOCB -> ba -> (ba, AESOCB)
 ocbAppendEncrypt ctx ocb input = unsafeDoIO $ withOCBKeyAndCopySt ctx ocb doEnc
-  where len = byteArrayLength input
+  where len = B.length input
         doEnc ocbStPtr aesPtr =
-            byteArrayAlloc len $ \o ->
+            B.alloc len $ \o ->
             withByteArray input $ \i ->
             c_aes_ocb_encrypt (castPtr o) ocbStPtr aesPtr i (fromIntegral len)
 
@@ -512,17 +513,17 @@ ocbAppendEncrypt ctx ocb input = unsafeDoIO $ withOCBKeyAndCopySt ctx ocb doEnc
 {-# NOINLINE ocbAppendDecrypt #-}
 ocbAppendDecrypt :: ByteArray ba => AES -> AESOCB -> ba -> (ba, AESOCB)
 ocbAppendDecrypt ctx ocb input = unsafeDoIO $ withOCBKeyAndCopySt ctx ocb doDec
-  where len = byteArrayLength input
+  where len = B.length input
         doDec ocbStPtr aesPtr =
-            byteArrayAlloc len $ \o ->
+            B.alloc len $ \o ->
             withByteArray input $ \i ->
             c_aes_ocb_decrypt (castPtr o) ocbStPtr aesPtr i (fromIntegral len)
 
 -- | Generate the Tag from OCB context
 {-# NOINLINE ocbFinish #-}
 ocbFinish :: AES -> AESOCB -> Int -> AuthTag
-ocbFinish ctx ocb taglen = AuthTag $ B.take taglen computeTag
-  where computeTag = unsafeCreate 16 $ \t ->
+ocbFinish ctx ocb taglen = AuthTag $ BS.take taglen computeTag
+  where computeTag = BS.unsafeCreate 16 $ \t ->
                         withOCBKeyAndCopySt ctx ocb (c_aes_ocb_finish (castPtr t)) >> return ()
 
 ------------------------------------------------------------------------
