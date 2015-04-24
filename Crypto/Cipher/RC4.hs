@@ -1,4 +1,3 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
 -- |
 -- Module      : Crypto.Cipher.RC4
 -- License     : BSD-style
@@ -13,6 +12,8 @@
 --
 -- Reorganized and simplified to have an opaque context.
 --
+{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Crypto.Cipher.RC4
     ( initialize
     , combine
@@ -20,19 +21,16 @@ module Crypto.Cipher.RC4
     , State
     ) where
 
-import Data.Word
-import Data.Byteable
-import Data.SecureMem
-import Foreign.Ptr
-import Foreign.ForeignPtr
-import Data.ByteString (ByteString)
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Internal as B
+import           Data.Word
+import           Foreign.Ptr
+import           Crypto.Internal.ByteArray (SecureBytes, ByteArray, ByteArrayAccess)
+import qualified Crypto.Internal.ByteArray as B
 
 import Crypto.Internal.Compat
 
 -- | The encryption state for RC4
-newtype State = State SecureMem
+newtype State = State SecureBytes
+    deriving (ByteArrayAccess)
 
 -- | C Call for initializing the encryptor
 foreign import ccall unsafe "cryptonite_rc4.h cryptonite_rc4_init"
@@ -52,29 +50,29 @@ foreign import ccall unsafe "cryptonite_rc4.h cryptonite_rc4_combine"
 --
 -- seed the context with an initial key. the key size need to be
 -- adequate otherwise security takes a hit.
-initialize :: Byteable key
+initialize :: ByteArrayAccess key
            => key   -- ^ The key
            -> State -- ^ The RC4 context with the key mixed in
 initialize key = unsafeDoIO $ do
-    st <- createSecureMem 264 $ \stPtr ->
-        withBytePtr key $ \keyPtr -> c_rc4_init keyPtr (fromIntegral $ byteableLength key) (castPtr stPtr)
+    st <- B.alloc 264 $ \stPtr ->
+        B.withByteArray key $ \keyPtr -> c_rc4_init keyPtr (fromIntegral $ B.length key) (castPtr stPtr)
     return $ State st
 
 -- | generate the next len bytes of the rc4 stream without combining
 -- it to anything.
-generate :: State -> Int -> (State, ByteString)
-generate ctx len = combine ctx (B.replicate len 0)
+generate :: ByteArray ba => State -> Int -> (State, ba)
+generate ctx len = combine ctx (B.zero len)
 
 -- | RC4 xor combination of the rc4 stream with an input
-combine :: State               -- ^ rc4 context
-        -> ByteString          -- ^ input
-        -> (State, ByteString) -- ^ new rc4 context, and the output
-combine (State prevSt) clearText = unsafeDoIO $ do
-    outfptr <- B.mallocByteString len
-    st      <- secureMemCopy prevSt
-    withSecureMemPtr st $ \stPtr ->
-        withForeignPtr outfptr $ \outptr ->
-        withBytePtr clearText $ \clearPtr ->
-            c_rc4_combine (castPtr stPtr) clearPtr (fromIntegral len) outptr
-    return $! (State st, B.PS outfptr 0 len)
+combine :: ByteArray ba
+        => State               -- ^ rc4 context
+        -> ba                  -- ^ input
+        -> (State, ba)         -- ^ new rc4 context, and the output
+combine (State prevSt) clearText = unsafeDoIO $
+    B.allocRet len            $ \outptr ->
+    B.withByteArray clearText $ \clearPtr -> do
+        st <- B.copy prevSt $ \stPtr ->
+                c_rc4_combine (castPtr stPtr) clearPtr (fromIntegral len) outptr
+        return $! State st
+    --return $! (State st, B.PS outfptr 0 len)
   where len = B.length clearText

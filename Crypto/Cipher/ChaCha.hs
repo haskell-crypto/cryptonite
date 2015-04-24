@@ -90,7 +90,7 @@ combine prev@(State nbRounds prevSt prevOut) src
         -- we have enough byte in the previous buffer to complete the query
         -- without having to generate any extra bytes
         let (b1,b2) = BS.splitAt outputLen prevOut
-         in (BS.pack $ BS.zipWith xor b1 src, State nbRounds prevSt b2)
+         in (B.xor b1 src, State nbRounds prevSt b2)
     | otherwise = unsafeDoIO $ do
         -- adjusted len is the number of bytes lefts to generate after
         -- copying from the previous buffer.
@@ -106,14 +106,13 @@ combine prev@(State nbRounds prevSt prevOut) src
                     loopXor dstPtr srcPtr prevPtr prevBufLen
 
                 -- then create a new mutable copy of state
-                st <- B.copy prevSt (\_ -> return ())
-                withByteArray st $ \stPtr ->
+                B.copy prevSt $ \stPtr ->
                     ccryptonite_chacha_combine nbRounds
                                                (dstPtr `plusPtr` prevBufLen)
                                                (castPtr stPtr)
                                                (srcPtr `plusPtr` prevBufLen)
                                                (fromIntegral newBytesToGenerate)
-                return st
+
         -- return combined byte
         return ( BS.PS fptr 0 outputLen
                , State nbRounds newSt (if roundedAlready then BS.empty else BS.PS fptr outputLen nextBufLen))

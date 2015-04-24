@@ -14,9 +14,8 @@ module Crypto.Random.EntropyPool
 
 import           Control.Concurrent.MVar
 import           Crypto.Random.Entropy.Unsafe
-import           Crypto.Internal.ByteArray (ByteArray)
+import           Crypto.Internal.ByteArray (ByteArray, SecureBytes)
 import qualified Crypto.Internal.ByteArray as B
-import           Data.SecureMem
 import           Data.Word (Word8)
 import           Data.Maybe (catMaybes)
 import           Foreign.Marshal.Utils (copyBytes)
@@ -24,7 +23,7 @@ import           Foreign.Ptr (plusPtr, Ptr)
 
 -- | Pool of Entropy. contains a self mutating pool of entropy,
 -- that is always guarantee to contains data.
-data EntropyPool = EntropyPool [EntropyBackend] (MVar Int) SecureMem
+data EntropyPool = EntropyPool [EntropyBackend] (MVar Int) SecureBytes
 
 -- size of entropy pool by default
 defaultPoolSize :: Int
@@ -35,9 +34,8 @@ defaultPoolSize = 4096
 -- While you can create as many entropy pool as you want, the pool can be shared between multiples RNGs.
 createEntropyPoolWith :: Int -> [EntropyBackend] -> IO EntropyPool
 createEntropyPoolWith poolSize backends = do
-    sm <- allocateSecureMem poolSize
     m  <- newMVar 0
-    withSecureMemPtr sm $ replenish poolSize backends
+    sm <- B.alloc poolSize (replenish poolSize backends)
     return $ EntropyPool backends m sm
 
 -- | Create a new entropy pool with a default size.
@@ -51,10 +49,10 @@ createEntropyPool = do
 -- | Put a chunk of the entropy pool into a buffer
 getEntropyPtr :: EntropyPool -> Int -> Ptr Word8 -> IO ()
 getEntropyPtr (EntropyPool backends posM sm) n outPtr =
-    withSecureMemPtr sm $ \entropyPoolPtr ->
+    B.withByteArray sm $ \entropyPoolPtr ->
         modifyMVar_ posM $ \pos ->
             copyLoop outPtr entropyPoolPtr pos n
-  where poolSize = secureMemGetSize sm
+  where poolSize = B.length sm
         copyLoop d s pos left
             | left == 0 = return pos
             | otherwise = do

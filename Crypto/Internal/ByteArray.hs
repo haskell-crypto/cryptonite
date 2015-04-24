@@ -18,12 +18,14 @@ module Crypto.Internal.ByteArray
     -- * Inhabitants
     , Bytes
     , SecureBytes
+    , MemView(..)
     -- * methods
     , alloc
     , allocAndFreeze
     , empty
     , zero
     , copy
+    , take
     , convert
     , copyRet
     , copyAndFreeze
@@ -56,6 +58,12 @@ import qualified Data.ByteString as B (length)
 import qualified Data.ByteString.Internal as B
 
 import Prelude (flip, return, div, (-), ($), (==), (/=), (<=), (>=), Int, Bool(..), IO, otherwise, sum, map, fmap, snd, (.), min)
+
+data MemView = MemView !(Ptr Word8) !Int
+
+instance ByteArrayAccess MemView where
+    length (MemView _ l) = l
+    withByteArray (MemView p _) f = f (castPtr p)
 
 class ByteArrayAccess ba where
     length        :: ba -> Int
@@ -125,6 +133,13 @@ split n bs
             b2 <- alloc (len - n) $ \r -> bufCopy r (p `plusPtr` n) (len - n)
             return (b1, b2)
   where len = length bs
+
+take :: ByteArray bs => Int -> bs -> bs
+take n bs =
+    allocAndFreeze m $ \d -> withByteArray bs $ \s -> bufCopy d s m
+  where
+        m   = min len n
+        len = length bs
 
 concat :: ByteArray bs => [bs] -> bs
 concat []    = empty

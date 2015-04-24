@@ -36,7 +36,6 @@ module Crypto.Cipher.Types.Block
     --, cfb8Decrypt
     ) where
 
-import           Data.Byteable
 import           Data.Word
 import           Crypto.Error
 import           Crypto.Cipher.Types.Base
@@ -146,12 +145,12 @@ class BlockCipher cipher => BlockCipher128 cipher where
     xtsDecrypt = xtsDecryptGeneric
 
 -- | Create an IV for a specified block cipher
-makeIV :: (Byteable b, BlockCipher c) => b -> Maybe (IV c)
+makeIV :: (ByteArrayAccess b, BlockCipher c) => b -> Maybe (IV c)
 makeIV b = toIV undefined
   where toIV :: BlockCipher c => c -> Maybe (IV c)
         toIV cipher
-          | byteableLength b == sz = Just (IV $ toBytes b)
-          | otherwise              = Nothing
+          | B.length b == sz = Just $ IV (B.convert b :: Bytes)
+          | otherwise        = Nothing
           where sz = blockSize cipher
 
 -- | Create an IV that is effectively representing the number 0

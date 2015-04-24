@@ -20,7 +20,7 @@ module Crypto.Cipher.Types.Base
 import           Data.Word
 import           Data.ByteString (ByteString)
 
-import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, SecureBytes, withByteArray)
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray)
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Error
 
