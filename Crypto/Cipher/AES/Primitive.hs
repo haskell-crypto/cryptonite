@@ -62,8 +62,6 @@ import           Data.Word
 import           Foreign.Ptr
 import           Foreign.C.Types
 import           Foreign.C.String
-import qualified Data.ByteString.Internal as BS
-import qualified Data.ByteString as BS
 
 import           Crypto.Error
 import           Crypto.Cipher.Types
@@ -452,8 +450,8 @@ gcmAppendDecrypt ctx gcm input = unsafeDoIO $ withGCMKeyAndCopySt ctx gcm doDec
 -- | Generate the Tag from GCM context
 {-# NOINLINE gcmFinish #-}
 gcmFinish :: AES -> AESGCM -> Int -> AuthTag
-gcmFinish ctx gcm taglen = AuthTag $ BS.take taglen computeTag
-  where computeTag = BS.unsafeCreate 16 $ \t ->
+gcmFinish ctx gcm taglen = AuthTag $ B.take taglen computeTag
+  where computeTag = B.allocAndFreeze 16 $ \t ->
                         withGCMKeyAndCopySt ctx gcm (c_aes_gcm_finish (castPtr t)) >> return ()
 
 ------------------------------------------------------------------------
@@ -522,8 +520,8 @@ ocbAppendDecrypt ctx ocb input = unsafeDoIO $ withOCBKeyAndCopySt ctx ocb doDec
 -- | Generate the Tag from OCB context
 {-# NOINLINE ocbFinish #-}
 ocbFinish :: AES -> AESOCB -> Int -> AuthTag
-ocbFinish ctx ocb taglen = AuthTag $ BS.take taglen computeTag
-  where computeTag = BS.unsafeCreate 16 $ \t ->
+ocbFinish ctx ocb taglen = AuthTag $ B.take taglen computeTag
+  where computeTag = B.allocAndFreeze 16 $ \t ->
                         withOCBKeyAndCopySt ctx ocb (c_aes_ocb_finish (castPtr t)) >> return ()
 
 ------------------------------------------------------------------------
