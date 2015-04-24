@@ -25,12 +25,11 @@ module Crypto.Hash.Internal.SHA1
     , withCtxThrow
     ) where
 
-import Foreign.Ptr
-import Data.ByteString (ByteString)
-import Data.ByteString.Unsafe (unsafeUseAsCStringLen)
-import Data.ByteString.Internal (create)
-import Data.Word
-import Crypto.Internal.Memory
+import           Foreign.Ptr
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray)
+import qualified Crypto.Internal.ByteArray as B
+import           Data.Word
+import           Crypto.Internal.Memory
 
 newtype Ctx = Ctx Bytes
 
@@ -71,18 +70,18 @@ internalInit :: IO Ctx
 internalInit = Ctx `fmap` bytesAlloc 96 internalInitAt
 
 -- | Update a context in place
-internalUpdate :: Ptr Ctx -> ByteString -> IO ()
+internalUpdate :: ByteArrayAccess ba => Ptr Ctx -> ba -> IO ()
 internalUpdate ptr d =
-    unsafeUseAsCStringLen d (\(cs, len) -> c_sha1_update ptr (castPtr cs) (fromIntegral len))
+    B.withByteArray d $ \cs -> c_sha1_update ptr cs (fromIntegral $ B.length d)
 
 -- | Update a context in place using an unsafe foreign function call.
 --
 -- It is faster than `internalUpdate`, but will block the haskell runtime.
 -- This shouldn't be used if the input data is large.
-internalUpdateUnsafe :: Ptr Ctx -> ByteString -> IO ()
+internalUpdateUnsafe :: ByteArrayAccess ba => Ptr Ctx -> ba -> IO ()
 internalUpdateUnsafe ptr d =
-    unsafeUseAsCStringLen d (\(cs, len) -> c_sha1_update_unsafe ptr (castPtr cs) (fromIntegral len))
+    B.withByteArray d $ \cs -> c_sha1_update_unsafe ptr cs (fromIntegral $ B.length d)
 
 -- | Finalize a context in place
-internalFinalize :: Ptr Ctx -> IO ByteString
-internalFinalize ptr = create digestSize (c_sha1_finalize ptr)
+internalFinalize :: ByteArray output => Ptr Ctx -> IO output
+internalFinalize ptr = B.alloc digestSize (c_sha1_finalize ptr)

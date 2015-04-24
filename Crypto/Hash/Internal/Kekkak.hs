@@ -24,13 +24,12 @@ module Crypto.Hash.Internal.Kekkak
     , withCtxThrow
     ) where
 
-import Foreign.Ptr
-import Foreign.Storable (peek)
-import Data.ByteString (ByteString)
-import Data.ByteString.Unsafe (unsafeUseAsCStringLen)
-import Data.ByteString.Internal (create)
-import Data.Word
-import Crypto.Internal.Memory
+import           Foreign.Ptr
+import           Foreign.Storable (peek)
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray)
+import qualified Crypto.Internal.ByteArray as B
+import           Data.Word
+import           Crypto.Internal.Memory
 
 newtype Ctx = Ctx Bytes
 
@@ -73,19 +72,19 @@ internalInit :: Int -> IO Ctx
 internalInit hashlen = Ctx `fmap` bytesAlloc 360 (internalInitAt hashlen)
 
 -- | Update a context in place
-internalUpdate :: Ptr Ctx -> ByteString -> IO ()
+internalUpdate :: ByteArrayAccess ba => Ptr Ctx -> ba -> IO ()
 internalUpdate ptr d =
-    unsafeUseAsCStringLen d (\(cs, len) -> c_kekkak_update ptr (castPtr cs) (fromIntegral len))
+    B.withByteArray d $ \cs -> c_kekkak_update ptr cs (fromIntegral $ B.length d)
 
 -- | Update a context in place using an unsafe foreign function call.
 --
 -- It is faster than `internalUpdate`, but will block the haskell runtime.
 -- This shouldn't be used if the input data is large.
-internalUpdateUnsafe :: Ptr Ctx -> ByteString -> IO ()
+internalUpdateUnsafe :: ByteArrayAccess ba => Ptr Ctx -> ba -> IO ()
 internalUpdateUnsafe ptr d =
-    unsafeUseAsCStringLen d (\(cs, len) -> c_kekkak_update_unsafe ptr (castPtr cs) (fromIntegral len))
+    B.withByteArray d $ \cs -> c_kekkak_update_unsafe ptr cs (fromIntegral $ B.length d)
 
 -- | Finalize a context in place
-internalFinalize :: Ptr Ctx -> IO ByteString
+internalFinalize :: ByteArray output => Ptr Ctx -> IO output
 internalFinalize ptr =
-    peekHashlen ptr >>= \digestSize -> create digestSize (c_kekkak_finalize ptr)
+    peekHashlen ptr >>= \digestSize -> B.alloc digestSize (c_kekkak_finalize ptr)

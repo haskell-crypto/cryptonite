@@ -20,17 +20,15 @@ module Crypto.Hash.SHA512t
     , hashlazy -- :: ByteString -> ByteString
     ) where
 
-import Prelude hiding (init)
-import Data.List (foldl')
-import Data.ByteString (ByteString)
-import qualified Data.ByteString as B
+import           Prelude hiding (init, take)
+import           Data.List (foldl')
 import qualified Data.ByteString.Lazy as L
 
 import qualified Crypto.Hash.SHA512 as SHA512
-import Crypto.Internal.Compat
---import qualified Crypto.Hash.Internal.SHA512 as SHA512
+import           Crypto.Internal.Compat
+import           Crypto.Internal.ByteArray (ByteArray, ByteArrayAccess, take)
 import qualified Crypto.Hash.Internal.SHA512t as SHA512t
-import Crypto.Hash.Internal.SHA512 (withCtxNew)
+import           Crypto.Hash.Internal.SHA512 (withCtxNew)
 
 -- | SHA512 Context with variable size output
 data Ctx = Ctx !Int !SHA512.Ctx
@@ -40,17 +38,17 @@ init :: Int -> Ctx
 init t = Ctx t $ unsafeDoIO $ withCtxNew $ \ptr -> SHA512t.internalInitAt t ptr
 
 -- | update a context with a bytestring
-update :: Ctx -> ByteString -> Ctx
+update :: ByteArrayAccess ba => Ctx -> ba -> Ctx
 update (Ctx t ctx) d = Ctx t (SHA512.update ctx d)
 
 -- | finalize the context into a digest bytestring
-finalize :: Ctx -> ByteString
-finalize (Ctx sz ctx) = B.take (sz `div` 8) (SHA512.finalize ctx)
+finalize :: ByteArray digest => Ctx -> digest
+finalize (Ctx sz ctx) = take (sz `div` 8) (SHA512.finalize ctx)
 
 -- | hash a strict bytestring into a digest bytestring
-hash :: Int -> ByteString -> ByteString
+hash :: (ByteArrayAccess ba, ByteArray digest) => Int -> ba -> digest
 hash t = finalize . update (init t)
 
 -- | hash a lazy bytestring into a digest bytestring
-hashlazy :: Int -> L.ByteString -> ByteString
+hashlazy :: ByteArray digest => Int -> L.ByteString -> digest
 hashlazy t = finalize . foldl' update (init t) . L.toChunks
