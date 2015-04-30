@@ -27,6 +27,7 @@ module Crypto.Internal.ByteArray
     , copy
     , take
     , convert
+    , convertHex
     , copyRet
     , copyAndFreeze
     , split
@@ -48,6 +49,7 @@ import Crypto.Internal.Memory
 import Crypto.Internal.Compat
 import Crypto.Internal.Endian
 import Crypto.Internal.Bytes (bufXor, bufCopy, bufSet)
+import Crypto.Internal.Hex
 import Crypto.Internal.Words
 import Crypto.Internal.Imports hiding (empty)
 import Foreign.Ptr
@@ -57,7 +59,7 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString as B (length)
 import qualified Data.ByteString.Internal as B
 
-import Prelude (flip, return, div, (-), ($), (==), (/=), (<=), (>=), Int, Bool(..), IO, otherwise, sum, map, fmap, snd, (.), min)
+import Prelude (flip, return, div, (*), (-), ($), (==), (/=), (<=), (>=), Int, Bool(..), IO, otherwise, sum, map, fmap, snd, (.), min)
 
 data MemView = MemView !(Ptr Word8) !Int
 
@@ -265,3 +267,9 @@ mapAsWord64 f bs =
 
 convert :: (ByteArrayAccess bin, ByteArray bout) => bin -> bout
 convert = flip copyAndFreeze (\_ -> return ())
+
+convertHex :: (ByteArrayAccess bin, ByteArray bout) => bin -> bout
+convertHex b =
+    allocAndFreeze (length b * 2) $ \bout ->
+    withByteArray b               $ \bin  ->
+        toHexadecimal bout bin (length b)
