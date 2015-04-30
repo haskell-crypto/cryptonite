@@ -17,6 +17,7 @@ import           Crypto.Number.Basic
 import           Crypto.Number.Serialize
 import           Crypto.Random.Types
 import qualified Data.ByteString as B
+import           Crypto.Internal.ByteArray (Bytes)
 import           Data.Bits ((.|.), (.&.), shiftR)
 
 
@@ -36,7 +37,7 @@ generateMax m
         bitsLength    = log2 (m-1) + 1
         bitsPoppedOff = 8 - (bitsLength `mod` 8)
 
-        randomInt nbBytes = os2ip <$> getRandomBytes nbBytes
+        randomInt nbBytes = os2ipBytes <$> getRandomBytes nbBytes
 
 -- | generate a number between the inclusive bound [low,high].
 generateBetween :: MonadRandom m => Integer -> Integer -> m Integer
@@ -52,9 +53,12 @@ generateOfSize bits = unmarshall <$> getRandomBytes (bits `div` 8)
 
 -- | Generate a number with the specified number of bits
 generateBits :: MonadRandom m => Int -> m Integer
-generateBits nbBits = modF . os2ip <$> getRandomBytes nbBytes'
+generateBits nbBits = modF . os2ipBytes <$> getRandomBytes nbBytes'
   where (nbBytes, strayBits) = nbBits `divMod` 8
         nbBytes' | strayBits == 0 = nbBytes
                  | otherwise      = nbBytes + 1
         modF | strayBits == 0 = id
              | otherwise      = (.&.) (2^nbBits - 1)
+
+os2ipBytes :: Bytes -> Integer
+os2ipBytes = os2ip

@@ -5,72 +5,69 @@
 -- Stability   : experimental
 -- Portability : unknown
 --
--- module containing the pure functions to work with the
+-- module containing the binding functions to work with the
 -- Skein512 cryptographic hash.
 --
--- it is recommended to import this module qualified.
---
+{-# LANGUAGE ForeignFunctionInterface #-}
 module Crypto.Hash.Skein512
-    ( Ctx(..)
-
-    -- * Incremental hashing Functions
-    , init
-    , update
-    , updates
-    , finalize
-
-    -- * Single Pass hashing
-    , hash
-    , hashlazy
+    (  Skein512_224 (..), Skein512_256 (..), Skein512_384 (..), Skein512_512 (..)
     ) where
 
-import           Prelude hiding (init)
-import qualified Data.ByteString.Lazy as L
-import           Crypto.Internal.ByteArray (ByteArray, ByteArrayAccess)
-import           Crypto.Internal.Compat (unsafeDoIO)
-import           Crypto.Hash.Internal.Skein512
+import           Crypto.Hash.Types
+import           Foreign.Ptr (Ptr)
+import           Data.Word (Word8, Word32)
 
-{-# NOINLINE init #-}
--- | init a context where
-init :: Int -- ^ algorithm hash size in bits
-     -> Ctx
-init hashlen = unsafeDoIO (internalInit hashlen)
 
-{-# NOINLINE update #-}
--- | update a context with a bytestring returning the new updated context
-update :: ByteArrayAccess ba
-       => Ctx  -- ^ the context to update
-       -> ba   -- ^ the data to update with
-       -> Ctx  -- ^ the updated context
-update ctx d = unsafeDoIO $ withCtxCopy ctx $ \ptr -> internalUpdate ptr d
+data Skein512_224 = Skein512_224
+    deriving (Show)
 
-{-# NOINLINE updates #-}
--- | updates a context with multiples bytestring returning the new updated context
-updates :: ByteArrayAccess ba
-        => Ctx  -- ^ the context to update
-        -> [ba] -- ^ a list of data bytestring to update with
-        -> Ctx  -- ^ the updated context
-updates ctx d = unsafeDoIO $ withCtxCopy ctx $ \ptr -> mapM_ (internalUpdate ptr) d
+instance HashAlgorithm Skein512_224 where
+    hashBlockSize  _          = 64
+    hashDigestSize _          = 28
+    hashInternalContextSize _ = 160
+    hashInternalInit p        = c_skein512_init p 224
+    hashInternalUpdate        = c_skein512_update
+    hashInternalFinalize      = c_skein512_finalize
 
-{-# NOINLINE finalize #-}
--- | finalize the context into a digest bytestring
-finalize :: ByteArray digest => Ctx -> digest
-finalize ctx = unsafeDoIO $ withCtxThrow ctx internalFinalize
+data Skein512_256 = Skein512_256
+    deriving (Show)
 
-{-# NOINLINE hash #-}
--- | hash a strict bytestring into a digest bytestring
-hash :: (ByteArray digest, ByteArrayAccess ba)
-     => Int    -- ^ algorithm hash size in bits
-     -> ba     -- ^ the data to hash
-     -> digest -- ^ the digest output
-hash hashlen d = unsafeDoIO $ withCtxNewThrow $ \ptr -> do
-    internalInitAt hashlen ptr >> internalUpdate ptr d >> internalFinalize ptr
+instance HashAlgorithm Skein512_256 where
+    hashBlockSize  _          = 64
+    hashDigestSize _          = 32
+    hashInternalContextSize _ = 160
+    hashInternalInit p        = c_skein512_init p 256
+    hashInternalUpdate        = c_skein512_update
+    hashInternalFinalize      = c_skein512_finalize
 
-{-# NOINLINE hashlazy #-}
--- | hash a lazy bytestring into a digest bytestring
-hashlazy :: ByteArray digest
-         => Int          -- ^ algorithm hash size in bits
-         -> L.ByteString -- ^ the data to hash as a lazy bytestring
-         -> digest       -- ^ the digest output
-hashlazy hashlen l = unsafeDoIO $ withCtxNewThrow $ \ptr -> do
-    internalInitAt hashlen ptr >> mapM_ (internalUpdate ptr) (L.toChunks l) >> internalFinalize ptr
+data Skein512_384 = Skein512_384
+    deriving (Show)
+
+instance HashAlgorithm Skein512_384 where
+    hashBlockSize  _          = 64
+    hashDigestSize _          = 48
+    hashInternalContextSize _ = 160
+    hashInternalInit p        = c_skein512_init p 384
+    hashInternalUpdate        = c_skein512_update
+    hashInternalFinalize      = c_skein512_finalize
+
+data Skein512_512 = Skein512_512
+    deriving (Show)
+
+instance HashAlgorithm Skein512_512 where
+    hashBlockSize  _          = 64
+    hashDigestSize _          = 64
+    hashInternalContextSize _ = 160
+    hashInternalInit p        = c_skein512_init p 512
+    hashInternalUpdate        = c_skein512_update
+    hashInternalFinalize      = c_skein512_finalize
+
+
+foreign import ccall unsafe "cryptonite_skein512.h cryptonite_skein512_init"
+    c_skein512_init :: Ptr (Context a) -> Word32 -> IO ()
+
+foreign import ccall "cryptonite_skein512.h cryptonite_skein512_update"
+    c_skein512_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
+
+foreign import ccall unsafe "cryptonite_skein512.h cryptonite_skein512_finalize"
+    c_skein512_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()

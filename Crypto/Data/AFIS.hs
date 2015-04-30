@@ -18,22 +18,17 @@ module Crypto.Data.AFIS
     , merge
     ) where
 
-import Crypto.Hash
-import Crypto.Random.Types
-import Crypto.Internal.Memory (Bytes)
-import Crypto.Internal.Bytes (bufSet, bufCopy)
-import Crypto.Internal.Compat
-import Crypto.Internal.ByteArray (withByteArray)
-import Control.Monad (forM_, foldM)
-import Data.Byteable
-import Data.ByteString (ByteString)
-import Data.Word
-import Data.Bits
-import Foreign.Storable
-import Foreign.Ptr
-import Foreign.ForeignPtr (newForeignPtr_)
-import qualified Data.ByteString.Internal as B
+import           Crypto.Hash
+import           Crypto.Random.Types
+import           Crypto.Internal.Bytes (bufSet, bufCopy)
+import           Crypto.Internal.Compat
+import           Control.Monad (forM_, foldM)
+import           Data.Word
+import           Data.Bits
+import           Foreign.Storable
+import           Foreign.Ptr
 
+import           Crypto.Internal.ByteArray (ByteArray, Bytes, MemView(..))
 import qualified Crypto.Internal.ByteArray as B
 
 -- | Split data to diffused data, using a random generator and
@@ -54,14 +49,14 @@ import qualified Crypto.Internal.ByteArray as B
 -- where acc is :
 --   acc(n+1) = hash (n ++ rand(n)) ^ acc(n)
 --
-split :: (HashAlgorithm a, DRG rng)
-      => HashFunctionBS a  -- ^ Hash function to use as diffuser
-      -> rng               -- ^ Random generator to use
-      -> Int               -- ^ Number of times to diffuse the data.
-      -> ByteString        -- ^ original data to diffuse.
-      -> (ByteString, rng) -- ^ The diffused data
+split :: (ByteArray ba, HashAlgorithm hash, DRG rng)
+      => hash  -- ^ Hash algorithm to use as diffuser
+      -> rng   -- ^ Random generator to use
+      -> Int   -- ^ Number of times to diffuse the data.
+      -> ba    -- ^ original data to diffuse.
+      -> (ba, rng)         -- ^ The diffused data
 {-# NOINLINE split #-}
-split hashF rng expandTimes src
+split hashAlg rng expandTimes src
     | expandTimes <= 1 = error "invalid expandTimes value"
     | otherwise        = unsafeDoIO $ do
         (rng', bs) <- B.allocRet diffusedLen runOp
@@ -74,24 +69,24 @@ split hashF rng expandTimes src
             let randomBlockPtrs = map (plusPtr dstPtr . (*) blockSize) [0..(expandTimes-2)]
             rng' <- foldM fillRandomBlock rng randomBlockPtrs
             mapM_ (addRandomBlock lastBlock) randomBlockPtrs
-            withByteArray src $ \srcPtr -> xorMem srcPtr lastBlock blockSize
+            B.withByteArray src $ \srcPtr -> xorMem srcPtr lastBlock blockSize
             return rng'
         addRandomBlock lastBlock blockPtr = do
             xorMem blockPtr lastBlock blockSize
-            diffuse hashF lastBlock blockSize
+            diffuse hashAlg lastBlock blockSize
         fillRandomBlock g blockPtr = do
             let (rand :: Bytes, g') = randomBytesGenerate blockSize g
-            withByteArray rand $ \randPtr -> bufCopy blockPtr randPtr (fromIntegral blockSize)
+            B.withByteArray rand $ \randPtr -> bufCopy blockPtr randPtr (fromIntegral blockSize)
             return g'
 
 -- | Merge previously diffused data back to the original data.
-merge :: HashAlgorithm a
-      => HashFunctionBS a -- ^ Hash function used as diffuser
-      -> Int              -- ^ Number of times to un-diffuse the data
-      -> ByteString       -- ^ Diffused data
-      -> ByteString       -- ^ Original data
+merge :: (ByteArray ba, HashAlgorithm hash)
+      => hash  -- ^ Hash algorithm used as diffuser
+      -> Int   -- ^ Number of times to un-diffuse the data
+      -> ba    -- ^ Diffused data
+      -> ba    -- ^ Original data
 {-# NOINLINE merge #-}
-merge hashF expandTimes bs
+merge hashAlg expandTimes bs
     | r /= 0            = error "diffused data not a multiple of expandTimes"
     | originalSize <= 0 = error "diffused data null"
     | otherwise         = B.allocAndFreeze originalSize $ \dstPtr ->
@@ -99,7 +94,7 @@ merge hashF expandTimes bs
             bufSet dstPtr 0 originalSize
             forM_ [0..(expandTimes-2)] $ \i -> do
                 xorMem (srcPtr `plusPtr` (i * originalSize)) dstPtr originalSize
-                diffuse hashF dstPtr originalSize
+                diffuse hashAlg dstPtr originalSize
             xorMem (srcPtr `plusPtr` ((expandTimes-1) * originalSize)) dstPtr originalSize
             return ()
   where (originalSize,r) = len `quotRem` expandTimes
@@ -118,33 +113,35 @@ xorMem src dst sz
                              poke d (a `xor` b)
                              loop incr (s `plusPtr` incr) (d `plusPtr` incr) (n-incr)
 
-diffuse :: HashAlgorithm a
-        => HashFunctionBS a -- ^ Hash function to use as diffuser
-        -> Ptr Word8
-        -> Int
+diffuse :: HashAlgorithm hash
+        => hash      -- ^ Hash function to use as diffuser
+        -> Ptr Word8 -- ^ buffer to diffuse, modify in place
+        -> Int       -- ^ length of buffer to diffuse
         -> IO ()
-diffuse hashF src sz = loop src 0
+diffuse hashAlg src sz = loop src 0
   where (full,pad) = sz `quotRem` digestSize 
-        loop s i | i < full = do h <- hashBlock i `fmap` byteStringOfPtr s digestSize
-                                 B.withByteArray h $ \hPtr -> bufCopy s hPtr digestSize
-                                 loop (s `plusPtr` digestSize) (i+1)
-                 | pad /= 0 = do h <- hashBlock i `fmap` byteStringOfPtr s pad
-                                 B.withByteArray h $ \hPtr -> bufCopy s hPtr pad
-                                 return ()
-                 | otherwise = return ()
+        loop s i
+            | i < full = do h <- hashBlock i s digestSize
+                            B.withByteArray h $ \hPtr -> bufCopy s hPtr digestSize
+                            loop (s `plusPtr` digestSize) (i+1)
+            | pad /= 0 = do h <- hashBlock i s pad
+                            B.withByteArray h $ \hPtr -> bufCopy s hPtr pad
+                            return ()
+            | otherwise = return ()
 
-        digestSize = byteableLength $ hashF B.empty
+        digestSize = hashDigestSize hashAlg
 
-        byteStringOfPtr :: Ptr Word8 -> Int -> IO ByteString
-        byteStringOfPtr ptr digestSz = newForeignPtr_ ptr >>= \fptr -> return $ B.fromForeignPtr fptr 0 digestSz
+        -- Hash [ BE32(n), (p .. p+hashSz) ]
+        hashBlock n p hashSz = do
+            let ctx = hashInitWith hashAlg
+            return $! hashFinalize $ hashUpdate (hashUpdate ctx (be32 n)) (MemView p hashSz)
 
-        hashBlock n b =
-            toBytes $ hashF $ B.allocAndFreeze (B.length b+4) $ \ptr -> do
-                poke ptr               (f8 (n `shiftR` 24))
-                poke (ptr `plusPtr` 1) (f8 (n `shiftR` 16))
-                poke (ptr `plusPtr` 2) (f8 (n `shiftR` 8))
-                poke (ptr `plusPtr` 3) (f8 n)
-                --putWord32BE (fromIntegral n) >> putBytes src)
-                withByteArray b $ \srcPtr -> bufCopy (ptr `plusPtr` 4) srcPtr (B.length b)
-          where f8 :: Int -> Word8
+        be32 :: Int -> Bytes
+        be32 n = B.allocAndFreeze 4 $ \ptr -> do
+            poke ptr               (f8 (n `shiftR` 24))
+            poke (ptr `plusPtr` 1) (f8 (n `shiftR` 16))
+            poke (ptr `plusPtr` 2) (f8 (n `shiftR` 8))
+            poke (ptr `plusPtr` 3) (f8 n)
+          where
+                f8 :: Int -> Word8
                 f8 = fromIntegral

@@ -5,72 +5,69 @@
 -- Stability   : experimental
 -- Portability : unknown
 --
--- module containing the pure functions to work with the
+-- module containing the binding functions to work with the
 -- Kekkak cryptographic hash.
 --
--- it is recommended to import this module qualified.
---
+{-# LANGUAGE ForeignFunctionInterface #-}
 module Crypto.Hash.Kekkak
-    ( Ctx(..)
-
-    -- * Incremental hashing Functions
-    , init
-    , update
-    , updates
-    , finalize
-
-    -- * Single Pass hashing
-    , hash
-    , hashlazy
+    (  Kekkak_224 (..), Kekkak_256 (..), Kekkak_384 (..), Kekkak_512 (..)
     ) where
 
-import           Prelude hiding (init)
-import qualified Data.ByteString.Lazy as L
-import           Crypto.Internal.ByteArray (ByteArray, ByteArrayAccess)
-import           Crypto.Internal.Compat (unsafeDoIO)
-import           Crypto.Hash.Internal.Kekkak
+import           Crypto.Hash.Types
+import           Foreign.Ptr (Ptr)
+import           Data.Word (Word8, Word32)
 
-{-# NOINLINE init #-}
--- | init a context where
-init :: Int -- ^ algorithm hash size in bits
-     -> Ctx
-init hashlen = unsafeDoIO (internalInit hashlen)
 
-{-# NOINLINE update #-}
--- | update a context with a bytestring returning the new updated context
-update :: ByteArrayAccess ba
-       => Ctx  -- ^ the context to update
-       -> ba   -- ^ the data to update with
-       -> Ctx  -- ^ the updated context
-update ctx d = unsafeDoIO $ withCtxCopy ctx $ \ptr -> internalUpdate ptr d
+data Kekkak_224 = Kekkak_224
+    deriving (Show)
 
-{-# NOINLINE updates #-}
--- | updates a context with multiples bytestring returning the new updated context
-updates :: ByteArrayAccess ba
-        => Ctx  -- ^ the context to update
-        -> [ba] -- ^ a list of data bytestring to update with
-        -> Ctx  -- ^ the updated context
-updates ctx d = unsafeDoIO $ withCtxCopy ctx $ \ptr -> mapM_ (internalUpdate ptr) d
+instance HashAlgorithm Kekkak_224 where
+    hashBlockSize  _          = 144
+    hashDigestSize _          = 28
+    hashInternalContextSize _ = 360
+    hashInternalInit p        = c_kekkak_init p 224
+    hashInternalUpdate        = c_kekkak_update
+    hashInternalFinalize      = c_kekkak_finalize
 
-{-# NOINLINE finalize #-}
--- | finalize the context into a digest bytestring
-finalize :: ByteArray digest => Ctx -> digest
-finalize ctx = unsafeDoIO $ withCtxThrow ctx internalFinalize
+data Kekkak_256 = Kekkak_256
+    deriving (Show)
 
-{-# NOINLINE hash #-}
--- | hash a strict bytestring into a digest bytestring
-hash :: (ByteArray digest, ByteArrayAccess ba)
-     => Int    -- ^ algorithm hash size in bits
-     -> ba     -- ^ the data to hash
-     -> digest -- ^ the digest output
-hash hashlen d = unsafeDoIO $ withCtxNewThrow $ \ptr -> do
-    internalInitAt hashlen ptr >> internalUpdate ptr d >> internalFinalize ptr
+instance HashAlgorithm Kekkak_256 where
+    hashBlockSize  _          = 136
+    hashDigestSize _          = 32
+    hashInternalContextSize _ = 360
+    hashInternalInit p        = c_kekkak_init p 256
+    hashInternalUpdate        = c_kekkak_update
+    hashInternalFinalize      = c_kekkak_finalize
 
-{-# NOINLINE hashlazy #-}
--- | hash a lazy bytestring into a digest bytestring
-hashlazy :: ByteArray digest
-         => Int          -- ^ algorithm hash size in bits
-         -> L.ByteString -- ^ the data to hash as a lazy bytestring
-         -> digest       -- ^ the digest output
-hashlazy hashlen l = unsafeDoIO $ withCtxNewThrow $ \ptr -> do
-    internalInitAt hashlen ptr >> mapM_ (internalUpdate ptr) (L.toChunks l) >> internalFinalize ptr
+data Kekkak_384 = Kekkak_384
+    deriving (Show)
+
+instance HashAlgorithm Kekkak_384 where
+    hashBlockSize  _          = 104
+    hashDigestSize _          = 48
+    hashInternalContextSize _ = 360
+    hashInternalInit p        = c_kekkak_init p 384
+    hashInternalUpdate        = c_kekkak_update
+    hashInternalFinalize      = c_kekkak_finalize
+
+data Kekkak_512 = Kekkak_512
+    deriving (Show)
+
+instance HashAlgorithm Kekkak_512 where
+    hashBlockSize  _          = 72
+    hashDigestSize _          = 64
+    hashInternalContextSize _ = 360
+    hashInternalInit p        = c_kekkak_init p 512
+    hashInternalUpdate        = c_kekkak_update
+    hashInternalFinalize      = c_kekkak_finalize
+
+
+foreign import ccall unsafe "cryptonite_kekkak.h cryptonite_kekkak_init"
+    c_kekkak_init :: Ptr (Context a) -> Word32 -> IO ()
+
+foreign import ccall "cryptonite_kekkak.h cryptonite_kekkak_update"
+    c_kekkak_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
+
+foreign import ccall unsafe "cryptonite_kekkak.h cryptonite_kekkak_finalize"
+    c_kekkak_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()

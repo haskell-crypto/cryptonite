@@ -24,8 +24,8 @@ import Crypto.Number.ModArithmetic (inverse)
 import Crypto.Number.Serialize
 import Crypto.Number.Generate
 import Crypto.PubKey.ECC.Types
-import Crypto.PubKey.HashDescr
 import Crypto.PubKey.ECC.Prim
+import Crypto.Hash
 
 -- | Represent a ECDSA signature namely R and S.
 data Signature = Signature
@@ -60,13 +60,14 @@ toPrivateKey (KeyPair curve _ priv) = PrivateKey curve priv
 -- | Sign message using the private key and an explicit k number.
 --
 -- /WARNING:/ Vulnerable to timing attacks.
-signWith :: Integer         -- ^ k random number
-         -> PrivateKey      -- ^ private key
-         -> HashFunction    -- ^ hash function
-         -> ByteString      -- ^ message to sign
+signWith :: HashAlgorithm hash
+         => Integer    -- ^ k random number
+         -> PrivateKey -- ^ private key
+         -> hash       -- ^ hash function
+         -> ByteString -- ^ message to sign
          -> Maybe Signature
-signWith k (PrivateKey curve d) hash msg = do
-    let z = tHash hash msg n
+signWith k (PrivateKey curve d) hashAlg msg = do
+    let z = tHash hashAlg msg n
         CurveCommon _ _ g n _ = common_curve curve
     let point = pointMul curve k g
     r <- case point of
@@ -80,22 +81,25 @@ signWith k (PrivateKey curve d) hash msg = do
 -- | Sign message using the private key.
 --
 -- /WARNING:/ Vulnerable to timing attacks.
-sign :: MonadRandom m => PrivateKey -> HashFunction -> ByteString -> m Signature
-sign pk hash msg = do
+sign :: (HashAlgorithm hash, MonadRandom m)
+     => PrivateKey
+     -> hash
+     -> ByteString -> m Signature
+sign pk hashAlg msg = do
     k <- generateBetween 1 (n - 1)
-    case signWith k pk hash msg of
-         Nothing  -> sign pk hash msg
+    case signWith k pk hashAlg msg of
+         Nothing  -> sign pk hashAlg msg
          Just sig -> return sig
   where n = ecc_n . common_curve $ private_curve pk
 
 -- | Verify a bytestring using the public key.
-verify :: HashFunction -> PublicKey -> Signature -> ByteString -> Bool
-verify _ (PublicKey _ PointO) _ _ = False
-verify hash pk@(PublicKey curve q) (Signature r s) msg
+verify :: HashAlgorithm hash => hash -> PublicKey -> Signature -> ByteString -> Bool
+verify _       (PublicKey _ PointO) _ _ = False
+verify hashAlg pk@(PublicKey curve q) (Signature r s) msg
     | r < 1 || r >= n || s < 1 || s >= n = False
     | otherwise = maybe False (r ==) $ do
         w <- inverse s n
-        let z  = tHash hash msg n
+        let z  = tHash hashAlg msg n
             u1 = z * w `mod` n
             u2 = r * w `mod` n
             -- TODO: Use Shamir's trick
@@ -110,10 +114,10 @@ verify hash pk@(PublicKey curve q) (Signature r s) msg
         cc = common_curve $ public_curve pk
 
 -- | Truncate and hash.
-tHash ::  HashFunction -> ByteString -> Integer -> Integer
-tHash hash m n
+tHash :: HashAlgorithm hash => hash -> ByteString -> Integer -> Integer
+tHash hashAlg m n
     | d > 0 = shiftR e d
     | otherwise = e
-  where e = os2ip $ hash m
+  where e = os2ip $ hashWith hashAlg m
         d = log2 e - log2 n
         log2 = ceiling . logBase (2 :: Double) . fromIntegral

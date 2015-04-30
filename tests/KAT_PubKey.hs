@@ -9,7 +9,7 @@ import qualified Data.ByteString as B
 import Data.ByteString.Char8 ()
 
 import Crypto.PubKey.MaskGenFunction
-import qualified Crypto.Hash.SHA1 as SHA1
+import Crypto.Hash
 
 import KAT_PubKey.OAEP
 import KAT_PubKey.PSS
@@ -23,7 +23,7 @@ data VectorMgf = VectorMgf { seed :: ByteString
                            }
 
 doMGFTest (i, vmgf) = testCase (show i) (dbMask vmgf @=? actual)
-    where actual = mgf1 SHA1.hash (seed vmgf) (B.length $ dbMask vmgf)
+    where actual = mgf1 SHA1 (seed vmgf) (B.length $ dbMask vmgf)
 
 vectorsMGF =
     [ VectorMgf

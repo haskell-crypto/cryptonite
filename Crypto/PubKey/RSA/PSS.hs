@@ -19,67 +19,67 @@ module Crypto.PubKey.RSA.PSS
 import Crypto.Random.Types
 import Crypto.PubKey.RSA.Types
 import Data.ByteString (ByteString)
-import Data.Byteable
 import qualified Data.ByteString as B
 import Crypto.PubKey.RSA.Prim
 import Crypto.PubKey.RSA (generateBlinder)
-import Crypto.PubKey.HashDescr
 import Crypto.PubKey.MaskGenFunction
 import Crypto.Hash
 import Data.Bits (xor, shiftR, (.&.))
 import Data.Word
+import qualified Crypto.Internal.ByteArray as B (convert)
 
 -- | Parameters for PSS signature/verification.
-data PSSParams = PSSParams { pssHash         :: HashFunction     -- ^ Hash function to use
-                           , pssMaskGenAlg   :: MaskGenAlgorithm -- ^ Mask Gen algorithm to use
-                           , pssSaltLength   :: Int              -- ^ Length of salt. need to be <= to hLen.
-                           , pssTrailerField :: Word8            -- ^ Trailer field, usually 0xbc
-                           }
+data PSSParams hash = PSSParams
+    { pssHash         :: hash             -- ^ Hash function to use
+    , pssMaskGenAlg   :: MaskGenAlgorithm -- ^ Mask Gen algorithm to use
+    , pssSaltLength   :: Int              -- ^ Length of salt. need to be <= to hLen.
+    , pssTrailerField :: Word8            -- ^ Trailer field, usually 0xbc
+    }
 
 -- | Default Params with a specified hash function
-defaultPSSParams :: HashFunction -> PSSParams
-defaultPSSParams hashF =
-    PSSParams { pssHash         = hashF
-              , pssMaskGenAlg   = mgf1
-              , pssSaltLength   = B.length $ hashF B.empty
+defaultPSSParams :: HashAlgorithm hash => hash -> PSSParams hash
+defaultPSSParams hashAlg =
+    PSSParams { pssHash         = hashAlg
+              , pssMaskGenAlg   = mgf1 hashAlg
+              , pssSaltLength   = hashDigestSize hashAlg
               , pssTrailerField = 0xbc
               }
 
 -- | Default Params using SHA1 algorithm.
-defaultPSSParamsSHA1 :: PSSParams
-defaultPSSParamsSHA1 = defaultPSSParams (toBytes . (hash :: ByteString -> Digest SHA1))
+defaultPSSParamsSHA1 :: PSSParams SHA1
+defaultPSSParamsSHA1 = defaultPSSParams SHA1
 
 -- | Sign using the PSS parameters and the salt explicitely passed as parameters.
 --
 -- the function ignore SaltLength from the PSS Parameters
-signWithSalt :: ByteString    -- ^ Salt to use
+signWithSalt :: HashAlgorithm hash
+             => ByteString    -- ^ Salt to use
              -> Maybe Blinder -- ^ optional blinder to use
-             -> PSSParams     -- ^ PSS Parameters to use
+             -> PSSParams hash -- ^ PSS Parameters to use
              -> PrivateKey    -- ^ RSA Private Key
              -> ByteString    -- ^ Message to sign
              -> Either Error ByteString
 signWithSalt salt blinder params pk m
     | k < hashLen + saltLen + 2 = Left InvalidParameters
     | otherwise                 = Right $ dp blinder pk em
-    where mHash    = (pssHash params) m
+    where mHash    = B.convert $ hashWith (pssHash params) m
           k        = private_size pk
           dbLen    = k - hashLen - 1
           saltLen  = B.length salt
-          hashLen  = B.length (hashF B.empty)
-          hashF    = pssHash params
+          hashLen  = hashDigestSize (pssHash params)
           pubBits  = private_size pk * 8 -- to change if public_size is converted in bytes
 
           m'       = B.concat [B.replicate 8 0,mHash,salt]
-          h        = hashF m'
+          h        = B.convert $ hashWith (pssHash params) m'
           db       = B.concat [B.replicate (dbLen - saltLen - 1) 0,B.singleton 1,salt]
-          dbmask   = (pssMaskGenAlg params) hashF h dbLen
+          dbmask   = (pssMaskGenAlg params) h dbLen
           maskedDB = B.pack $ normalizeToKeySize pubBits $ B.zipWith xor db dbmask
           em       = B.concat [maskedDB, h, B.singleton (pssTrailerField params)]
 
 -- | Sign using the PSS Parameters
-sign :: MonadRandom m
+sign :: (HashAlgorithm hash, MonadRandom m)
      => Maybe Blinder   -- ^ optional blinder to use
-     -> PSSParams       -- ^ PSS Parameters to use
+     -> PSSParams hash  -- ^ PSS Parameters to use
      -> PrivateKey      -- ^ RSA Private Key
      -> ByteString      -- ^ Message to sign
      -> m (Either Error ByteString)
@@ -88,18 +88,19 @@ sign blinder params pk m = do
     return (signWithSalt salt blinder params pk m)
 
 -- | Sign using the PSS Parameters and an automatically generated blinder.
-signSafer :: MonadRandom m
-          => PSSParams  -- ^ PSS Parameters to use
-          -> PrivateKey -- ^ private key
-          -> ByteString -- ^ message to sign
+signSafer :: (HashAlgorithm hash, MonadRandom m)
+          => PSSParams hash -- ^ PSS Parameters to use
+          -> PrivateKey     -- ^ private key
+          -> ByteString     -- ^ message to sign
           -> m (Either Error ByteString)
 signSafer params pk m = do
     blinder <- generateBlinder (private_n pk)
     sign (Just blinder) params pk m
 
 -- | Verify a signature using the PSS Parameters
-verify :: PSSParams  -- ^ PSS Parameters to use to verify,
-                     --   this need to be identical to the parameters when signing
+verify :: HashAlgorithm hash
+       => PSSParams hash -- ^ PSS Parameters to use to verify,
+                         --   this need to be identical to the parameters when signing
        -> PublicKey  -- ^ RSA Public Key
        -> ByteString -- ^ Message to verify
        -> ByteString -- ^ Signature
@@ -109,23 +110,22 @@ verify params pk m s
     | B.last em /= pssTrailerField params = False
     | not (B.all (== 0) ps0)              = False
     | b1 /= B.singleton 1                 = False
-    | otherwise                           = h == h'
+    | otherwise                           = h == B.convert h'
         where -- parameters
-              hashF     = pssHash params
-              hashLen   = B.length (hashF B.empty)
+              hashLen   = hashDigestSize (pssHash params)
               dbLen     = public_size pk - hashLen - 1
               pubBits   = public_size pk * 8 -- to change if public_size is converted in bytes
               -- unmarshall fields
               em        = ep pk s
               maskedDB  = B.take (B.length em - hashLen - 1) em
               h         = B.take hashLen $ B.drop (B.length maskedDB) em
-              dbmask    = (pssMaskGenAlg params) hashF h dbLen
+              dbmask    = (pssMaskGenAlg params) h dbLen
               db        = B.pack $ normalizeToKeySize pubBits $ B.zipWith xor maskedDB dbmask
               (ps0,z)   = B.break (== 1) db
               (b1,salt) = B.splitAt 1 z
-              mHash     = hashF m
+              mHash     = B.convert $ hashWith (pssHash params) m
               m'        = B.concat [B.replicate 8 0,mHash,salt]
-              h'        = hashF m'
+              h'        = hashWith (pssHash params) m'
 
 normalizeToKeySize :: Int -> [Word8] -> [Word8]
 normalizeToKeySize _    []     = [] -- very unlikely

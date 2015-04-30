@@ -5,72 +5,47 @@
 -- Stability   : experimental
 -- Portability : unknown
 --
--- module containing the pure functions to work with the
+-- module containing the binding functions to work with the
 -- Skein256 cryptographic hash.
 --
--- it is recommended to import this module qualified.
---
+{-# LANGUAGE ForeignFunctionInterface #-}
 module Crypto.Hash.Skein256
-    ( Ctx(..)
-
-    -- * Incremental hashing Functions
-    , init
-    , update
-    , updates
-    , finalize
-
-    -- * Single Pass hashing
-    , hash
-    , hashlazy
+    (  Skein256_224 (..), Skein256_256 (..)
     ) where
 
-import           Prelude hiding (init)
-import qualified Data.ByteString.Lazy as L
-import           Crypto.Internal.ByteArray (ByteArray, ByteArrayAccess)
-import           Crypto.Internal.Compat (unsafeDoIO)
-import           Crypto.Hash.Internal.Skein256
+import           Crypto.Hash.Types
+import           Foreign.Ptr (Ptr)
+import           Data.Word (Word8, Word32)
 
-{-# NOINLINE init #-}
--- | init a context where
-init :: Int -- ^ algorithm hash size in bits
-     -> Ctx
-init hashlen = unsafeDoIO (internalInit hashlen)
 
-{-# NOINLINE update #-}
--- | update a context with a bytestring returning the new updated context
-update :: ByteArrayAccess ba
-       => Ctx  -- ^ the context to update
-       -> ba   -- ^ the data to update with
-       -> Ctx  -- ^ the updated context
-update ctx d = unsafeDoIO $ withCtxCopy ctx $ \ptr -> internalUpdate ptr d
+data Skein256_224 = Skein256_224
+    deriving (Show)
 
-{-# NOINLINE updates #-}
--- | updates a context with multiples bytestring returning the new updated context
-updates :: ByteArrayAccess ba
-        => Ctx  -- ^ the context to update
-        -> [ba] -- ^ a list of data bytestring to update with
-        -> Ctx  -- ^ the updated context
-updates ctx d = unsafeDoIO $ withCtxCopy ctx $ \ptr -> mapM_ (internalUpdate ptr) d
+instance HashAlgorithm Skein256_224 where
+    hashBlockSize  _          = 32
+    hashDigestSize _          = 28
+    hashInternalContextSize _ = 96
+    hashInternalInit p        = c_skein256_init p 224
+    hashInternalUpdate        = c_skein256_update
+    hashInternalFinalize      = c_skein256_finalize
 
-{-# NOINLINE finalize #-}
--- | finalize the context into a digest bytestring
-finalize :: ByteArray digest => Ctx -> digest
-finalize ctx = unsafeDoIO $ withCtxThrow ctx internalFinalize
+data Skein256_256 = Skein256_256
+    deriving (Show)
 
-{-# NOINLINE hash #-}
--- | hash a strict bytestring into a digest bytestring
-hash :: (ByteArray digest, ByteArrayAccess ba)
-     => Int    -- ^ algorithm hash size in bits
-     -> ba     -- ^ the data to hash
-     -> digest -- ^ the digest output
-hash hashlen d = unsafeDoIO $ withCtxNewThrow $ \ptr -> do
-    internalInitAt hashlen ptr >> internalUpdate ptr d >> internalFinalize ptr
+instance HashAlgorithm Skein256_256 where
+    hashBlockSize  _          = 32
+    hashDigestSize _          = 32
+    hashInternalContextSize _ = 96
+    hashInternalInit p        = c_skein256_init p 256
+    hashInternalUpdate        = c_skein256_update
+    hashInternalFinalize      = c_skein256_finalize
 
-{-# NOINLINE hashlazy #-}
--- | hash a lazy bytestring into a digest bytestring
-hashlazy :: ByteArray digest
-         => Int          -- ^ algorithm hash size in bits
-         -> L.ByteString -- ^ the data to hash as a lazy bytestring
-         -> digest       -- ^ the digest output
-hashlazy hashlen l = unsafeDoIO $ withCtxNewThrow $ \ptr -> do
-    internalInitAt hashlen ptr >> mapM_ (internalUpdate ptr) (L.toChunks l) >> internalFinalize ptr
+
+foreign import ccall unsafe "cryptonite_skein256.h cryptonite_skein256_init"
+    c_skein256_init :: Ptr (Context a) -> Word32 -> IO ()
+
+foreign import ccall "cryptonite_skein256.h cryptonite_skein256_update"
+    c_skein256_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
+
+foreign import ccall unsafe "cryptonite_skein256.h cryptonite_skein256_finalize"
+    c_skein256_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()

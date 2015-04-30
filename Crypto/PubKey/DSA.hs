@@ -33,7 +33,7 @@ import Data.ByteString (ByteString)
 import Crypto.Number.ModArithmetic (expFast, expSafe, inverse)
 import Crypto.Number.Serialize
 import Crypto.Number.Generate
-import Crypto.PubKey.HashDescr
+import Crypto.Hash
 
 -- | DSA Public Number, usually embedded in DSA Public Key
 type PublicNumber = Integer
@@ -91,42 +91,43 @@ calculatePublic :: Params -> PrivateNumber -> PublicNumber
 calculatePublic (Params p g _) x = expSafe g x p
 
 -- | sign message using the private key and an explicit k number.
-signWith :: Integer         -- ^ k random number
+signWith :: HashAlgorithm hash
+         => Integer         -- ^ k random number
          -> PrivateKey      -- ^ private key
-         -> HashFunction    -- ^ hash function
+         -> hash            -- ^ hash function
          -> ByteString      -- ^ message to sign
          -> Maybe Signature
-signWith k pk hash msg
+signWith k pk hashAlg msg
     | r == 0 || s == 0  = Nothing
     | otherwise         = Just $ Signature r s
     where -- parameters
           (Params p g q) = private_params pk
-          x         = private_x pk
+          x              = private_x pk
           -- compute r,s
           kInv      = fromJust $ inverse k q
-          hm        = os2ip $ hash msg
+          hm        = os2ip $ hashWith hashAlg msg
           r         = expSafe g k p `mod` q
           s         = (kInv * (hm + x * r)) `mod` q
 
 -- | sign message using the private key.
-sign :: MonadRandom m => PrivateKey -> HashFunction -> ByteString -> m Signature
-sign pk hash msg = do
+sign :: HashAlgorithm hash => MonadRandom m => PrivateKey -> hash -> ByteString -> m Signature
+sign pk hashAlg msg = do
     k <- generateMax q
-    case signWith k pk hash msg of
-        Nothing  -> sign pk hash msg
+    case signWith k pk hashAlg msg of
+        Nothing  -> sign pk hashAlg msg
         Just sig -> return sig
   where
     (Params _ _ q) = private_params pk
 
 -- | verify a bytestring using the public key.
-verify :: HashFunction -> PublicKey -> Signature -> ByteString -> Bool
-verify hash pk (Signature r s) m
+verify :: HashAlgorithm hash => hash -> PublicKey -> Signature -> ByteString -> Bool
+verify hashAlg pk (Signature r s) m
     -- Reject the signature if either 0 < r < q or 0 < s < q is not satisfied.
     | r <= 0 || r >= q || s <= 0 || s >= q = False
     | otherwise                            = v == r
     where (Params p g q) = public_params pk
           y       = public_y pk
-          hm      = os2ip $ hash m
+          hm      = os2ip $ hashWith hashAlg m
 
           w       = fromJust $ inverse s q
           u1      = (hm*w) `mod` q

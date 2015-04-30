@@ -93,20 +93,23 @@ sha3_512_MAC_Vectors =
 
 macTests :: [TestTree]
 macTests =
-    [ testGroup "hmac-md5" $ map toMACTest $ zip is md5MACVectors
-    , testGroup "hmac-sha1" $ map toMACTest $ zip is sha1MACVectors
-    , testGroup "hmac-sha256" $ map toMACTest $ zip is sha256MACVectors
-    , testGroup "hmac-kekkak-224" $ map toMACTest $ zip is kekkak_224_MAC_Vectors
-    , testGroup "hmac-kekkak-256" $ map toMACTest $ zip is kekkak_256_MAC_Vectors
-    , testGroup "hmac-kekkak-384" $ map toMACTest $ zip is kekkak_384_MAC_Vectors
-    , testGroup "hmac-kekkak-512" $ map toMACTest $ zip is kekkak_512_MAC_Vectors
-    , testGroup "hmac-sha3-224" $ map toMACTest $ zip is sha3_224_MAC_Vectors
-    , testGroup "hmac-sha3-256" $ map toMACTest $ zip is sha3_256_MAC_Vectors
-    , testGroup "hmac-sha3-384" $ map toMACTest $ zip is sha3_384_MAC_Vectors
-    , testGroup "hmac-sha3-512" $ map toMACTest $ zip is sha3_512_MAC_Vectors
+    [ testGroup "md5" $ concatMap toMACTest $ zip is md5MACVectors
+    , testGroup "sha1" $ concatMap toMACTest $ zip is sha1MACVectors
+    , testGroup "sha256" $ concatMap toMACTest $ zip is sha256MACVectors
+    , testGroup "kekkak-224" $ concatMap toMACTest $ zip is kekkak_224_MAC_Vectors
+    , testGroup "kekkak-256" $ concatMap toMACTest $ zip is kekkak_256_MAC_Vectors
+    , testGroup "kekkak-384" $ concatMap toMACTest $ zip is kekkak_384_MAC_Vectors
+    , testGroup "kekkak-512" $ concatMap toMACTest $ zip is kekkak_512_MAC_Vectors
+    , testGroup "sha3-224" $ concatMap toMACTest $ zip is sha3_224_MAC_Vectors
+    , testGroup "sha3-256" $ concatMap toMACTest $ zip is sha3_256_MAC_Vectors
+    , testGroup "sha3-384" $ concatMap toMACTest $ zip is sha3_384_MAC_Vectors
+    , testGroup "sha3-512" $ concatMap toMACTest $ zip is sha3_512_MAC_Vectors
     ]
     where toMACTest (i, macVector) =
-            testCase (show i) (macResult macVector @=? HMAC.hmac (macKey macVector) (macSecret macVector))
+            [ testCase (show i) (macResult macVector @=? HMAC.hmac (macKey macVector) (macSecret macVector))
+            , testCase ("incr-" ++ show i) (macResult macVector @=?
+                        HMAC.finalize (HMAC.update (HMAC.initialize (macKey macVector)) (macSecret macVector)))
+            ]
           is :: [Int]
           is = [1..]
 
@@ -117,8 +120,8 @@ arbitraryBS = B.pack <$> (choose (1,299) >>= \i -> replicateM i arbitrary)
 
 instance HashAlgorithm a => Arbitrary (MacIncremental a) where
     arbitrary = do
-        key <- arbitraryBS
-        msg <- arbitraryBS
+        key <- B.pack <$> replicateM 65 (choose (0x30,0x30)) -- B.pack arbitraryBS
+        msg <- B.pack <$> replicateM 2 (choose (0x40,0x40)) -- B.pack arbitraryBS
         return $ MacIncremental key msg (HMAC.hmac key msg)
 
 data MacIncrementalList a = MacIncrementalList ByteString [ByteString] (HMAC.HMAC a)
@@ -126,50 +129,42 @@ data MacIncrementalList a = MacIncrementalList ByteString [ByteString] (HMAC.HMA
 
 instance HashAlgorithm a => Arbitrary (MacIncrementalList a) where
     arbitrary = do
-        key  <- arbitraryBS
-        msgs <- choose (1,20) >>= \i -> replicateM i arbitraryBS
-        return $ MacIncrementalList key msgs (HMAC.hmac key (B.concat msgs))
+        --key  <- arbitraryBS
+        --msgs <- choose (1,20) >>= \i -> replicateM i arbitraryBS
+        key  <- B.pack <$> replicateM 128 (choose (0x30,0x30)) -- B.pack arbitraryBS
+        msgs <- B.pack <$> replicateM 2 (choose (0x40,0x40)) -- B.pack arbitraryBS
+        return $ MacIncrementalList key [msgs] (HMAC.hmac key (B.concat [msgs]))
 
 macIncrementalTests :: [TestTree]
 macIncrementalTests =
-    [ testGroup "hmac-md5" $ map toMACTest $ zip is md5MACVectors
-    , testGroup "hmac-sha1" $ map toMACTest $ zip is sha1MACVectors
-    , testGroup "hmac-sha256" $ map toMACTest $ zip is sha256MACVectors
-    , testGroup "hmac-sha3-224" $ map toMACTest $ zip is sha3_224_MAC_Vectors
-    , testGroup "hmac-sha3-256" $ map toMACTest $ zip is sha3_256_MAC_Vectors
-    , testGroup "hmac-sha3-384" $ map toMACTest $ zip is sha3_384_MAC_Vectors
-    , testGroup "hmac-sha3-512" $ map toMACTest $ zip is sha3_512_MAC_Vectors
-    , testProperty "hmac-md5" $ prop_inc0 MD5
-    , testProperty "hmac-md5" $ prop_inc1 MD5
-    , testProperty "hmac-sha1" $ prop_inc0 SHA1
-    , testProperty "hmac-sha1" $ prop_inc1 SHA1
-    , testProperty "hmac-sha256" $ prop_inc0 SHA256
-    , testProperty "hmac-sha256" $ prop_inc1 SHA256
-    , testProperty "hmac-sha3-224" $ prop_inc0 SHA3_224
-    , testProperty "hmac-sha3-224" $ prop_inc1 SHA3_224
-    , testProperty "hmac-sha3-256" $ prop_inc0 SHA3_256
-    , testProperty "hmac-sha3-256" $ prop_inc1 SHA3_256
-    , testProperty "hmac-sha3-384" $ prop_inc0 SHA3_384
-    , testProperty "hmac-sha3-384" $ prop_inc1 SHA3_384
-    , testProperty "hmac-sha3-512" $ prop_inc0 SHA3_512
-    , testProperty "hmac-sha3-512" $ prop_inc1 SHA3_512
+    [ testProperties MD5
+    , testProperties SHA1
+    , testProperties SHA256
+    , testProperties SHA3_224
+    , testProperties SHA3_256
+    , testProperties SHA3_384
+    , testProperties SHA3_512
     ]
-  where toMACTest (i, macVector) =
-            testCase (show i) (macResult macVector @=? HMAC.finalize (HMAC.update initCtx (macSecret macVector)))
-              where initCtx = HMAC.initialize (macKey macVector)
+  where
+        --testProperties :: HashAlgorithm a => a -> [Property]
+        testProperties a = testGroup (show a)
+            [ testProperty "list-one" (prop_inc0 a)
+            , testProperty "list-multi" (prop_inc1 a)
+            ]
 
         prop_inc0 :: HashAlgorithm a => a -> MacIncremental a -> Bool
         prop_inc0 _ (MacIncremental secret msg result) =
-            HMAC.finalize (HMAC.update (HMAC.initialize secret) msg) == result
+            result `assertEq` HMAC.finalize (HMAC.update (HMAC.initialize secret) msg)
 
         prop_inc1 :: HashAlgorithm a => a -> MacIncrementalList a -> Bool
         prop_inc1 _ (MacIncrementalList secret msgs result) =
-            HMAC.finalize (foldl' HMAC.update (HMAC.initialize secret) msgs) == result
+            result `assertEq` HMAC.finalize (foldl' HMAC.update (HMAC.initialize secret) msgs)
 
-        is :: [Int]
-        is = [1..]
+        assertEq a b
+            | a == b    = True
+            | otherwise = False -- error ("expected: " ++ show a ++ " got: " ++ show b)
 
 tests = testGroup "HMAC"
     [ testGroup "KATs" macTests
-    , testGroup "Incremental" macIncrementalTests
+    , testGroup "properties" macIncrementalTests
     ]

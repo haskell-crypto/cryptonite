@@ -5,74 +5,32 @@
 -- Stability   : experimental
 -- Portability : unknown
 --
--- module containing the pure functions to work with the
+-- module containing the binding functions to work with the
 -- RIPEMD160 cryptographic hash.
 --
--- it is recommended to import this module qualified.
---
-module Crypto.Hash.RIPEMD160
-    ( Ctx(..)
+{-# LANGUAGE ForeignFunctionInterface #-}
+module Crypto.Hash.RIPEMD160 ( RIPEMD160 (..) ) where
 
-    -- * Incremental hashing Functions
-    , init
-    , update
-    , updates
-    , finalize
+import           Crypto.Hash.Types
+import           Foreign.Ptr (Ptr)
+import           Data.Word (Word8, Word32)
 
-    -- * Single Pass hashing
-    , hash
-    , hashlazy
-    ) where
+data RIPEMD160 = RIPEMD160
+    deriving (Show)
 
-import           Prelude hiding (init)
-import qualified Data.ByteString.Lazy as L
-import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray)
-import           Crypto.Internal.Compat (unsafeDoIO)
-import           Crypto.Hash.Internal.RIPEMD160
+instance HashAlgorithm RIPEMD160 where
+    hashBlockSize  _          = 64
+    hashDigestSize _          = 20
+    hashInternalContextSize _ = 128
+    hashInternalInit          = c_ripemd160_init
+    hashInternalUpdate        = c_ripemd160_update
+    hashInternalFinalize      = c_ripemd160_finalize
 
-{-# RULES "hash" forall b. finalize (update init b) = hash b #-}
-{-# RULES "hash.list1" forall b. finalize (updates init [b]) = hash b #-}
-{-# RULES "hashmany" forall b. finalize (foldl update init b) = hashlazy (L.fromChunks b) #-}
-{-# RULES "hashlazy" forall b. finalize (foldl update init $ L.toChunks b) = hashlazy b #-}
+foreign import ccall unsafe "cryptonite_ripemd.h cryptonite_ripemd160_init"
+    c_ripemd160_init :: Ptr (Context a)-> IO ()
 
-{-# NOINLINE init #-}
--- | init a context
-init :: Ctx
-init = unsafeDoIO internalInit
+foreign import ccall "cryptonite_ripemd.h cryptonite_ripemd160_update"
+    c_ripemd160_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
 
-{-# NOINLINE update #-}
--- | update a context with a bytestring returning the new updated context
-update :: ByteArrayAccess ba
-       => Ctx  -- ^ the context to update
-       -> ba   -- ^ the data to update with
-       -> Ctx  -- ^ the updated context
-update ctx d = unsafeDoIO $ withCtxCopy ctx $ \ptr -> internalUpdate ptr d
-
-{-# NOINLINE updates #-}
--- | updates a context with multiples bytestring returning the new updated context
-updates :: ByteArrayAccess ba
-        => Ctx  -- ^ the context to update
-        -> [ba] -- ^ a list of data bytestring to update with
-        -> Ctx  -- ^ the updated context
-updates ctx d = unsafeDoIO $ withCtxCopy ctx $ \ptr -> mapM_ (internalUpdate ptr) d
-
-{-# NOINLINE finalize #-}
--- | finalize the context into a digest bytestring
-finalize :: ByteArray digest => Ctx -> digest
-finalize ctx = unsafeDoIO $ withCtxThrow ctx internalFinalize
-
-{-# NOINLINE hash #-}
--- | hash a strict bytestring into a digest bytestring
-hash :: (ByteArray digest, ByteArrayAccess ba)
-     => ba
-     -> digest
-hash d = unsafeDoIO $ withCtxNewThrow $ \ptr -> do
-    internalInitAt ptr >> internalUpdate ptr d >> internalFinalize ptr
-
-{-# NOINLINE hashlazy #-}
--- | hash a lazy bytestring into a digest bytestring
-hashlazy :: ByteArray digest
-         => L.ByteString
-         -> digest
-hashlazy l = unsafeDoIO $ withCtxNewThrow $ \ptr -> do
-    internalInitAt ptr >> mapM_ (internalUpdate ptr) (L.toChunks l) >> internalFinalize ptr
+foreign import ccall unsafe "cryptonite_ripemd.h cryptonite_ripemd160_finalize"
+    c_ripemd160_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()

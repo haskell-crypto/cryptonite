@@ -52,22 +52,8 @@ Library
                      Crypto.KDF.PBKDF2
                      Crypto.KDF.Scrypt
                      Crypto.Hash
-                     Crypto.Hash.SHA1
-                     Crypto.Hash.SHA224
-                     Crypto.Hash.SHA256
-                     Crypto.Hash.SHA384
-                     Crypto.Hash.SHA512
-                     Crypto.Hash.SHA512t
-                     Crypto.Hash.SHA3
-                     Crypto.Hash.Kekkak
-                     Crypto.Hash.MD2
-                     Crypto.Hash.MD4
-                     Crypto.Hash.MD5
-                     Crypto.Hash.RIPEMD160
-                     Crypto.Hash.Skein256
-                     Crypto.Hash.Skein512
-                     Crypto.Hash.Tiger
-                     Crypto.Hash.Whirlpool
+                     Crypto.Hash.IO
+                     Crypto.Hash.Algorithms
                      Crypto.PubKey.Curve25519
                      Crypto.PubKey.HashDescr
                      Crypto.PubKey.MaskGenFunction
@@ -108,6 +94,22 @@ Library
                      Crypto.Hash.Utils
                      Crypto.Hash.Utils.Cpu
                      Crypto.Hash.Types
+                     Crypto.Hash.SHA1
+                     Crypto.Hash.SHA224
+                     Crypto.Hash.SHA256
+                     Crypto.Hash.SHA384
+                     Crypto.Hash.SHA512
+                     Crypto.Hash.SHA512t
+                     Crypto.Hash.SHA3
+                     Crypto.Hash.Kekkak
+                     Crypto.Hash.MD2
+                     Crypto.Hash.MD4
+                     Crypto.Hash.MD5
+                     Crypto.Hash.RIPEMD160
+                     Crypto.Hash.Skein256
+                     Crypto.Hash.Skein512
+                     Crypto.Hash.Tiger
+                     Crypto.Hash.Whirlpool
                      Crypto.Random.Entropy.Source
                      Crypto.Random.Entropy.Backend
                      Crypto.Random.ChaChaDRG

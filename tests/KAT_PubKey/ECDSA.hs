@@ -6,7 +6,7 @@ import Crypto.Number.Serialize
 
 import qualified Crypto.PubKey.ECC.ECDSA as ECDSA
 import qualified Crypto.PubKey.ECC.Types as ECC
-import qualified Crypto.Hash.SHA1 as SHA1
+import Crypto.Hash (SHA1(..))
 
 import Imports
 
@@ -79,10 +79,10 @@ vectorToPublic vector = ECDSA.PublicKey (curve vector) (q vector)
 
 doSignatureTest (i, vector) = testCase (show i) (expected @=? actual)
   where expected = Just $ ECDSA.Signature (r vector) (s vector)
-        actual   = ECDSA.signWith (k vector) (vectorToPrivate vector) SHA1.hash (msg vector)
+        actual   = ECDSA.signWith (k vector) (vectorToPrivate vector) SHA1 (msg vector)
 
 doVerifyTest (i, vector) = testCase (show i) (True @=? actual)
-  where actual = ECDSA.verify SHA1.hash (vectorToPublic vector) (ECDSA.Signature (r vector) (s vector)) (msg vector)
+  where actual = ECDSA.verify SHA1 (vectorToPublic vector) (ECDSA.Signature (r vector) (s vector)) (msg vector)
 
 ecdsaTests = testGroup "ECDSA"
     [ testGroup "SHA1"

@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 -- |
 -- Module      : Crypto.Hash
 -- License     : BSD-style
@@ -20,81 +19,39 @@
 module Crypto.Hash
     (
     -- * Types
-      HashAlgorithm(..)
-    , HashFunctionBS
-    , HashFunctionLBS
+      HashAlgorithm
     , Context
     , Digest
     -- * Functions
-    , digestToByteString
     , digestToHexByteString
+    , digestFromByteString
+    -- * hash methods parametrized by algorithm
+    , hashInitWith
+    , hashWith
+    -- * hash methods
+    , hashInit
+    , hashUpdates
+    , hashUpdate
+    , hashFinalize
+    , hashBlockSize
+    , hashDigestSize
     , hash
     , hashlazy
-    , hashUpdate
-    , hashInitAlg
-    -- * hash algorithms
-    , MD2(..)
-    , MD4(..)
-    , MD5(..)
-    , SHA1(..)
-    , SHA224(..)
-    , SHA256(..)
-    , SHA384(..)
-    , SHA512(..)
-    , RIPEMD160(..)
-    , Tiger(..)
-    , Kekkak_224(..)
-    , Kekkak_256(..)
-    , Kekkak_384(..)
-    , Kekkak_512(..)
-    , SHA3_224(..)
-    , SHA3_256(..)
-    , SHA3_384(..)
-    , SHA3_512(..)
-    , Skein256_224(..)
-    , Skein256_256(..)
-    , Skein512_224(..)
-    , Skein512_256(..)
-    , Skein512_384(..)
-    , Skein512_512(..)
-    , Whirlpool(..)
+    , module Crypto.Hash.Algorithms
     ) where
 
-import Crypto.Hash.Types
-import Crypto.Hash.Utils
-import Data.ByteString (ByteString)
-import Data.Byteable
-import qualified Data.ByteString as B
+import           Control.Monad
+import           Crypto.Hash.Types
+import           Crypto.Hash.Utils
+import           Crypto.Hash.Algorithms
+import           Foreign.Ptr (Ptr)
+import           Data.ByteString (ByteString)
+import           Crypto.Internal.ByteArray (ByteArrayAccess)
+import qualified Crypto.Internal.ByteArray as B
 import qualified Data.ByteString.Lazy as L
 
-import qualified Crypto.Hash.MD2 as MD2
-import qualified Crypto.Hash.MD4 as MD4
-import qualified Crypto.Hash.MD5 as MD5
-import qualified Crypto.Hash.SHA1 as SHA1
-import qualified Crypto.Hash.SHA224 as SHA224
-import qualified Crypto.Hash.SHA256 as SHA256
-import qualified Crypto.Hash.SHA384 as SHA384
-import qualified Crypto.Hash.SHA512 as SHA512
-import qualified Crypto.Hash.SHA3 as SHA3
-import qualified Crypto.Hash.Kekkak as Kekkak
-import qualified Crypto.Hash.RIPEMD160 as RIPEMD160
-import qualified Crypto.Hash.Tiger as Tiger
-import qualified Crypto.Hash.Skein256 as Skein256
-import qualified Crypto.Hash.Skein512 as Skein512
-import qualified Crypto.Hash.Whirlpool as Whirlpool
-
--- | Alias to a single pass hash function that operate on a strict bytestring
-type HashFunctionBS a = ByteString -> Digest a
-
--- | Alias to a single pass hash function that operate on a lazy bytestring
-type HashFunctionLBS a = L.ByteString -> Digest a
-
--- | run hashUpdates on one single bytestring and return the updated context.
-hashUpdate :: HashAlgorithm a => Context a -> ByteString -> Context a
-hashUpdate ctx b = hashUpdates ctx [b]
-
 -- | Hash a strict bytestring into a digest.
-hash :: HashAlgorithm a => ByteString -> Digest a
+hash :: (ByteArrayAccess ba, HashAlgorithm a) => ba -> Digest a
 hash bs = hashFinalize $ hashUpdate hashInit bs
 
 -- | Hash a lazy bytestring into a digest.
@@ -103,84 +60,59 @@ hashlazy lbs = hashFinalize $ hashUpdates hashInit (L.toChunks lbs)
 
 -- | Return the hexadecimal (base16) bytestring of the digest
 digestToHexByteString :: Digest a -> ByteString
-digestToHexByteString = toHex . toBytes
+digestToHexByteString = toHex . B.convert
 
-#define DEFINE_INSTANCE(NAME, MODULENAME, BLOCKSIZE) \
-data NAME = NAME deriving Show; \
-instance HashAlgorithm NAME where \
-    { hashInit = Context c where { (MODULENAME.Ctx c) = MODULENAME.init } \
-    ; hashBlockSize ~(Context _) = BLOCKSIZE \
-    ; hashUpdates (Context c) bs = Context nc where { (MODULENAME.Ctx nc) = MODULENAME.updates (MODULENAME.Ctx c) bs } \
-    ; hashFinalize (Context c) = Digest $ MODULENAME.finalize (MODULENAME.Ctx c) \
-    ; digestFromByteString bs = if B.length bs == len then (Just $ Digest bs) else Nothing where { len = B.length (MODULENAME.finalize MODULENAME.init) } \
-    };
+-- | Initialize a new context for this hash algorithm
+hashInit :: HashAlgorithm a
+         => Context a
+hashInit = doInit undefined B.allocAndFreeze
+  where
+        doInit :: HashAlgorithm a => a -> (Int -> (Ptr (Context a) -> IO ()) -> B.Bytes) -> Context a
+        doInit alg alloc = Context $ alloc (hashInternalContextSize alg) hashInternalInit
+{-# NOINLINE hashInit #-}
 
-#define DEFINE_INSTANCE_LEN(NAME, MODULENAME, LEN, BLOCKSIZE) \
-data NAME = NAME deriving Show; \
-instance HashAlgorithm NAME where \
-    { hashInit = Context c where { (MODULENAME.Ctx c) = MODULENAME.init LEN } \
-    ; hashBlockSize ~(Context _) = BLOCKSIZE \
-    ; hashUpdates (Context c) bs = Context nc where { (MODULENAME.Ctx nc) = MODULENAME.updates (MODULENAME.Ctx c) bs } \
-    ; hashFinalize (Context c) = Digest $ MODULENAME.finalize (MODULENAME.Ctx c) \
-    ; digestFromByteString bs = if B.length bs == len then (Just $ Digest bs) else Nothing where { len = B.length (MODULENAME.finalize (MODULENAME.init LEN)) } \
-    };
+-- | run hashUpdates on one single bytestring and return the updated context.
+hashUpdate :: (ByteArrayAccess ba, HashAlgorithm a) => Context a -> ba -> Context a
+hashUpdate ctx b = hashUpdates ctx [b]
 
--- | MD2 cryptographic hash
-DEFINE_INSTANCE(MD2, MD2, 16)
--- | MD4 cryptographic hash
-DEFINE_INSTANCE(MD4, MD4, 64)
--- | MD5 cryptographic hash
-DEFINE_INSTANCE(MD5, MD5, 64)
--- | SHA1 cryptographic hash
-DEFINE_INSTANCE(SHA1, SHA1, 64)
--- | SHA224 cryptographic hash
-DEFINE_INSTANCE(SHA224, SHA224, 64)
--- | SHA256 cryptographic hash
-DEFINE_INSTANCE(SHA256, SHA256, 64)
--- | SHA384 cryptographic hash
-DEFINE_INSTANCE(SHA384, SHA384, 128)
--- | SHA512 cryptographic hash
-DEFINE_INSTANCE(SHA512, SHA512, 128)
+-- | Update the context with a list of strict bytestring,
+-- and return a new context with the updates.
+hashUpdates :: (HashAlgorithm a, ByteArrayAccess ba)
+            => Context a
+            -> [ba]
+            -> Context a
+hashUpdates c l = doUpdates (B.copyAndFreeze c)
+  where doUpdates :: HashAlgorithm a => ((Ptr (Context a) -> IO ()) -> B.Bytes) -> Context a
+        doUpdates copy = Context $ copy $ \ctx ->
+            mapM_ (\b -> B.withByteArray b $ \d -> hashInternalUpdate ctx d (fromIntegral $ B.length b)) l
+{-# NOINLINE hashUpdates #-}
 
--- | RIPEMD160 cryptographic hash
-DEFINE_INSTANCE(RIPEMD160, RIPEMD160, 64)
--- | Whirlpool cryptographic hash
-DEFINE_INSTANCE(Whirlpool, Whirlpool, 64)
--- | Tiger cryptographic hash
-DEFINE_INSTANCE(Tiger, Tiger, 64)
-
--- | Kekkak (224 bits version) cryptographic hash
-DEFINE_INSTANCE_LEN(Kekkak_224, Kekkak, 224, 144)
--- | Kekkak (256 bits version) cryptographic hash
-DEFINE_INSTANCE_LEN(Kekkak_256, Kekkak, 256, 136)
--- | Kekkak (384 bits version) cryptographic hash
-DEFINE_INSTANCE_LEN(Kekkak_384, Kekkak, 384, 104)
--- | Kekkak (512 bits version) cryptographic hash
-DEFINE_INSTANCE_LEN(Kekkak_512, Kekkak, 512, 72)
-
--- | SHA3 (224 bits version) cryptographic hash
-DEFINE_INSTANCE_LEN(SHA3_224, SHA3, 224, 144)
--- | SHA3 (256 bits version) cryptographic hash
-DEFINE_INSTANCE_LEN(SHA3_256, SHA3, 256, 136)
--- | SHA3 (384 bits version) cryptographic hash
-DEFINE_INSTANCE_LEN(SHA3_384, SHA3, 384, 104)
--- | SHA3 (512 bits version) cryptographic hash
-DEFINE_INSTANCE_LEN(SHA3_512, SHA3, 512, 72)
-
--- | Skein256 (224 bits version) cryptographic hash
-DEFINE_INSTANCE_LEN(Skein256_224, Skein256, 224, 32)
--- | Skein256 (256 bits version) cryptographic hash
-DEFINE_INSTANCE_LEN(Skein256_256, Skein256, 256, 32)
-
--- | Skein512 (224 bits version) cryptographic hash
-DEFINE_INSTANCE_LEN(Skein512_224, Skein512, 224, 64)
--- | Skein512 (256 bits version) cryptographic hash
-DEFINE_INSTANCE_LEN(Skein512_256, Skein512, 256, 64)
--- | Skein512 (384 bits version) cryptographic hash
-DEFINE_INSTANCE_LEN(Skein512_384, Skein512, 384, 64)
--- | Skein512 (512 bits version) cryptographic hash
-DEFINE_INSTANCE_LEN(Skein512_512, Skein512, 512, 64)
+-- | Finalize a context and return a digest.
+hashFinalize :: HashAlgorithm a
+             => Context a
+             -> Digest a
+hashFinalize c = doFinalize undefined (B.copy c) (B.allocAndFreeze)
+  where doFinalize :: HashAlgorithm alg
+                   => alg
+                   -> ((Ptr (Context alg) -> IO ()) -> IO B.Bytes)
+                   -> (Int -> (Ptr (Digest alg)  -> IO ()) -> B.Bytes)
+                   -> Digest alg
+        doFinalize alg copy allocDigest =
+            Digest $ allocDigest (hashDigestSize alg) $ \dig ->
+                (void $ copy $ \ctx -> hashInternalFinalize ctx dig)
+{-# NOINLINE hashFinalize #-}
 
 -- | Initialize a new context for a specified hash algorithm
-hashInitAlg :: HashAlgorithm alg => alg -> Context alg
-hashInitAlg _ = hashInit
+hashInitWith :: HashAlgorithm alg => alg -> Context alg
+hashInitWith _ = hashInit
+
+hashWith :: (ByteArrayAccess ba, HashAlgorithm alg) => alg -> ba -> Digest alg
+hashWith _ = hash
+
+digestFromByteString :: (HashAlgorithm a, ByteArrayAccess ba) => ba -> Maybe (Digest a)
+digestFromByteString = from undefined
+  where
+        from :: (HashAlgorithm a, ByteArrayAccess ba) => a -> ba -> Maybe (Digest a)
+        from alg bs
+            | B.length bs == (hashDigestSize alg) = (Just $ Digest $ B.convert bs)
+            | otherwise                           = Nothing

@@ -5,74 +5,32 @@
 -- Stability   : experimental
 -- Portability : unknown
 --
--- module containing the pure functions to work with the
+-- module containing the binding functions to work with the
 -- %%MODULENAME%% cryptographic hash.
 --
--- it is recommended to import this module qualified.
---
-module Crypto.Hash.%%MODULENAME%%
-    ( Ctx(..)
+{-# LANGUAGE ForeignFunctionInterface #-}
+module Crypto.Hash.%%MODULENAME%% ( %%MODULENAME%% (..) ) where
 
-    -- * Incremental hashing Functions
-    , init
-    , update
-    , updates
-    , finalize
+import           Crypto.Hash.Types
+import           Foreign.Ptr (Ptr)
+import           Data.Word (Word8, Word32)
 
-    -- * Single Pass hashing
-    , hash
-    , hashlazy
-    ) where
+data %%MODULENAME%% = %%MODULENAME%%
+    deriving (Show)
 
-import           Prelude hiding (init)
-import qualified Data.ByteString.Lazy as L
-import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray)
-import           Crypto.Internal.Compat (unsafeDoIO)
-import           Crypto.Hash.Internal.%%MODULENAME%%
+instance HashAlgorithm %%MODULENAME%% where
+    hashBlockSize  _          = %%BLOCKLEN%%
+    hashDigestSize _          = %%DIGESTSIZE%%
+    hashInternalContextSize _ = %%SIZECTX%%
+    hashInternalInit          = c_%%HASHNAME%%_init
+    hashInternalUpdate        = c_%%HASHNAME%%_update
+    hashInternalFinalize      = c_%%HASHNAME%%_finalize
 
-{-# RULES "hash" forall b. finalize (update init b) = hash b #-}
-{-# RULES "hash.list1" forall b. finalize (updates init [b]) = hash b #-}
-{-# RULES "hashmany" forall b. finalize (foldl update init b) = hashlazy (L.fromChunks b) #-}
-{-# RULES "hashlazy" forall b. finalize (foldl update init $ L.toChunks b) = hashlazy b #-}
+foreign import ccall unsafe "cryptonite_%%HEADER_FILE%% cryptonite_%%HASHNAME%%_init"
+    c_%%HASHNAME%%_init :: Ptr (Context a)-> IO ()
 
-{-# NOINLINE init #-}
--- | init a context
-init :: Ctx
-init = unsafeDoIO internalInit
+foreign import ccall "cryptonite_%%HEADER_FILE%% cryptonite_%%HASHNAME%%_update"
+    c_%%HASHNAME%%_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
 
-{-# NOINLINE update #-}
--- | update a context with a bytestring returning the new updated context
-update :: ByteArrayAccess ba
-       => Ctx  -- ^ the context to update
-       -> ba   -- ^ the data to update with
-       -> Ctx  -- ^ the updated context
-update ctx d = unsafeDoIO $ withCtxCopy ctx $ \ptr -> internalUpdate ptr d
-
-{-# NOINLINE updates #-}
--- | updates a context with multiples bytestring returning the new updated context
-updates :: ByteArrayAccess ba
-        => Ctx  -- ^ the context to update
-        -> [ba] -- ^ a list of data bytestring to update with
-        -> Ctx  -- ^ the updated context
-updates ctx d = unsafeDoIO $ withCtxCopy ctx $ \ptr -> mapM_ (internalUpdate ptr) d
-
-{-# NOINLINE finalize #-}
--- | finalize the context into a digest bytestring
-finalize :: ByteArray digest => Ctx -> digest
-finalize ctx = unsafeDoIO $ withCtxThrow ctx internalFinalize
-
-{-# NOINLINE hash #-}
--- | hash a strict bytestring into a digest bytestring
-hash :: (ByteArray digest, ByteArrayAccess ba)
-     => ba
-     -> digest
-hash d = unsafeDoIO $ withCtxNewThrow $ \ptr -> do
-    internalInitAt ptr >> internalUpdate ptr d >> internalFinalize ptr
-
-{-# NOINLINE hashlazy #-}
--- | hash a lazy bytestring into a digest bytestring
-hashlazy :: ByteArray digest
-         => L.ByteString
-         -> digest
-hashlazy l = unsafeDoIO $ withCtxNewThrow $ \ptr -> do
-    internalInitAt ptr >> mapM_ (internalUpdate ptr) (L.toChunks l) >> internalFinalize ptr
+foreign import ccall unsafe "cryptonite_%%HEADER_FILE%% cryptonite_%%HASHNAME%%_finalize"
+    c_%%HASHNAME%%_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()

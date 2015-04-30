@@ -8,16 +8,16 @@
 -- A module containing SHA512/t
 --
 module Crypto.Hash.SHA512t
-    ( Ctx(..)
+    (--  Ctx(..)
 
     -- * Incremental hashing Functions
-    , init     -- :: Ctx
+      init     -- :: Ctx
     , update   -- :: Ctx -> ByteString -> Ctx
     , finalize -- :: Ctx -> ByteString
 
     -- * Single Pass hashing
-    , hash     -- :: ByteString -> ByteString
-    , hashlazy -- :: ByteString -> ByteString
+    --, hash     -- :: ByteString -> ByteString
+    --, hashlazy -- :: ByteString -> ByteString
     ) where
 
 import           Prelude hiding (init, take)
@@ -27,9 +27,13 @@ import qualified Data.ByteString.Lazy as L
 import qualified Crypto.Hash.SHA512 as SHA512
 import           Crypto.Internal.Compat
 import           Crypto.Internal.ByteArray (ByteArray, ByteArrayAccess, take)
-import qualified Crypto.Hash.Internal.SHA512t as SHA512t
-import           Crypto.Hash.Internal.SHA512 (withCtxNew)
+--import qualified Crypto.Hash.Internal.SHA512t as SHA512t
+--import           Crypto.Hash.Internal.SHA512 (withCtxNew)
 
+init = undefined
+update = undefined
+finalize = undefined
+{-
 -- | SHA512 Context with variable size output
 data Ctx = Ctx !Int !SHA512.Ctx
 
@@ -52,3 +56,4 @@ hash t = finalize . update (init t)
 -- | hash a lazy bytestring into a digest bytestring
 hashlazy :: ByteArray digest => Int -> L.ByteString -> digest
 hashlazy t = finalize . foldl' update (init t) . L.toChunks
+-}

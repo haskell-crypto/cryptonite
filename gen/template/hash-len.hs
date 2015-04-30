@@ -5,72 +5,36 @@
 -- Stability   : experimental
 -- Portability : unknown
 --
--- module containing the pure functions to work with the
+-- module containing the binding functions to work with the
 -- %%MODULENAME%% cryptographic hash.
 --
--- it is recommended to import this module qualified.
---
+{-# LANGUAGE ForeignFunctionInterface #-}
 module Crypto.Hash.%%MODULENAME%%
-    ( Ctx(..)
-
-    -- * Incremental hashing Functions
-    , init
-    , update
-    , updates
-    , finalize
-
-    -- * Single Pass hashing
-    , hash
-    , hashlazy
+    ( %{CUSTOMIZABLE%}%%COMMA%% %%MODULENAME%%_%%CUSTOM_BITSIZE%% (..)%{CUSTOMIZABLE%}
     ) where
 
-import           Prelude hiding (init)
-import qualified Data.ByteString.Lazy as L
-import           Crypto.Internal.ByteArray (ByteArray, ByteArrayAccess)
-import           Crypto.Internal.Compat (unsafeDoIO)
-import           Crypto.Hash.Internal.%%MODULENAME%%
+import           Crypto.Hash.Types
+import           Foreign.Ptr (Ptr)
+import           Data.Word (Word8, Word32)
 
-{-# NOINLINE init #-}
--- | init a context where
-init :: Int -- ^ algorithm hash size in bits
-     -> Ctx
-init hashlen = unsafeDoIO (internalInit hashlen)
+%{CUSTOMIZABLE%}
+data %%MODULENAME%%_%%CUSTOM_BITSIZE%% = %%MODULENAME%%_%%CUSTOM_BITSIZE%%
+    deriving (Show)
 
-{-# NOINLINE update #-}
--- | update a context with a bytestring returning the new updated context
-update :: ByteArrayAccess ba
-       => Ctx  -- ^ the context to update
-       -> ba   -- ^ the data to update with
-       -> Ctx  -- ^ the updated context
-update ctx d = unsafeDoIO $ withCtxCopy ctx $ \ptr -> internalUpdate ptr d
+instance HashAlgorithm %%MODULENAME%%_%%CUSTOM_BITSIZE%% where
+    hashBlockSize  _          = %%CUSTOM_BLOCK_SIZE_BYTES%%
+    hashDigestSize _          = %%CUSTOM_DIGEST_SIZE_BYTES%%
+    hashInternalContextSize _ = %%CTX_SIZE_BYTES%%
+    hashInternalInit p        = c_%%HASHNAME%%_init p %%CUSTOM_BITSIZE%%
+    hashInternalUpdate        = c_%%HASHNAME%%_update
+    hashInternalFinalize      = c_%%HASHNAME%%_finalize
+%{CUSTOMIZABLE%}
 
-{-# NOINLINE updates #-}
--- | updates a context with multiples bytestring returning the new updated context
-updates :: ByteArrayAccess ba
-        => Ctx  -- ^ the context to update
-        -> [ba] -- ^ a list of data bytestring to update with
-        -> Ctx  -- ^ the updated context
-updates ctx d = unsafeDoIO $ withCtxCopy ctx $ \ptr -> mapM_ (internalUpdate ptr) d
+foreign import ccall unsafe "cryptonite_%%HEADER_FILE%% cryptonite_%%HASHNAME%%_init"
+    c_%%HASHNAME%%_init :: Ptr (Context a) -> Word32 -> IO ()
 
-{-# NOINLINE finalize #-}
--- | finalize the context into a digest bytestring
-finalize :: ByteArray digest => Ctx -> digest
-finalize ctx = unsafeDoIO $ withCtxThrow ctx internalFinalize
+foreign import ccall "cryptonite_%%HEADER_FILE%% cryptonite_%%HASHNAME%%_update"
+    c_%%HASHNAME%%_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
 
-{-# NOINLINE hash #-}
--- | hash a strict bytestring into a digest bytestring
-hash :: (ByteArray digest, ByteArrayAccess ba)
-     => Int    -- ^ algorithm hash size in bits
-     -> ba     -- ^ the data to hash
-     -> digest -- ^ the digest output
-hash hashlen d = unsafeDoIO $ withCtxNewThrow $ \ptr -> do
-    internalInitAt hashlen ptr >> internalUpdate ptr d >> internalFinalize ptr
-
-{-# NOINLINE hashlazy #-}
--- | hash a lazy bytestring into a digest bytestring
-hashlazy :: ByteArray digest
-         => Int          -- ^ algorithm hash size in bits
-         -> L.ByteString -- ^ the data to hash as a lazy bytestring
-         -> digest       -- ^ the digest output
-hashlazy hashlen l = unsafeDoIO $ withCtxNewThrow $ \ptr -> do
-    internalInitAt hashlen ptr >> mapM_ (internalUpdate ptr) (L.toChunks l) >> internalFinalize ptr
+foreign import ccall unsafe "cryptonite_%%HEADER_FILE%% cryptonite_%%HASHNAME%%_finalize"
+    c_%%HASHNAME%%_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()

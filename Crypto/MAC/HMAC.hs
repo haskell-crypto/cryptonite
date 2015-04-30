@@ -9,6 +9,7 @@
 -- <http://en.wikipedia.org/wiki/HMAC>
 --
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Crypto.MAC.HMAC
     ( hmac
     , HMAC(..)
@@ -21,74 +22,88 @@ module Crypto.MAC.HMAC
     ) where
 
 import Data.ByteString (ByteString)
-import qualified Data.ByteString as B
-import Data.Bits (xor)
-import Data.Byteable
-import Crypto.Hash hiding (Context)
+import           Crypto.Hash hiding (Context)
 import qualified Crypto.Hash as Hash (Context)
+import           Crypto.Hash.IO
+import           Crypto.Internal.ByteArray (SecureBytes, Bytes, ByteArray, ByteArrayAccess)
+import qualified Crypto.Internal.ByteArray as B
+import           Crypto.Internal.Bytes
+import           Crypto.Internal.Compat
+import           Crypto.Internal.Imports
 
 -- | Represent an HMAC that is a phantom type with the hash used to produce the mac.
 --
 -- The Eq instance is constant time.
 newtype HMAC a = HMAC { hmacGetDigest :: Digest a }
-
-instance Byteable (HMAC a) where
-    toBytes (HMAC b) = toBytes b
+    deriving (ByteArrayAccess)
 
 instance Eq (HMAC a) where
-    (HMAC b1) == (HMAC b2) = constEqBytes (toBytes b1) (toBytes b2)
+    (HMAC b1) == (HMAC b2) = B.constEq b1 b2
 
 -- | compute a MAC using the supplied hashing function
-hmac :: (Byteable key, HashAlgorithm a)
-     => key        -- ^ Secret key
-     -> ByteString -- ^ Message to MAC
+hmac :: (ByteArrayAccess key, ByteArray message, HashAlgorithm a)
+     => key     -- ^ Secret key
+     -> message -- ^ Message to MAC
      -> HMAC a
-hmac secret msg = doHMAC hashInit
-  where doHMAC :: HashAlgorithm a => Hash.Context a -> HMAC a
-        doHMAC !ctxInit = HMAC $ hashF $ B.append opad (toBytes $ hashF $ B.append ipad msg)
-          where opad = B.map (xor 0x5c) k'
-                ipad = B.map (xor 0x36) k'
-
-                k'  = B.append kt pad
-                kt  = if byteableLength secret > fromIntegral blockSize then toBytes (hashF (toBytes secret)) else toBytes secret
-                pad = B.replicate (fromIntegral blockSize - B.length kt) 0
-                hashF = hashFinalize . hashUpdate ctxInit
-                blockSize = hashBlockSize ctxInit
+hmac secret msg = finalize $ updates (initialize secret) [msg]
 
 -- | Represent an ongoing HMAC state, that can be appended with 'update'
 -- and finalize to an HMAC with 'hmacFinalize'
 data Context hashalg = Context !(Hash.Context hashalg) !(Hash.Context hashalg)
 
 -- | Initialize a new incremental HMAC context
-initialize :: (Byteable key, HashAlgorithm a)
+initialize :: (ByteArrayAccess key, HashAlgorithm a)
            => key       -- ^ Secret key
            -> Context a
-initialize secret = Context octx ictx
-    where ictx = hashUpdates ctxInit [ipad]
-          octx = hashUpdates ctxInit [opad]
-          ipad = B.map (xor 0x36) k'
-          opad = B.map (xor 0x5c) k'
-
-          k'  = B.append kt pad
-          kt  = if byteableLength secret > fromIntegral blockSize then toBytes (hashF (toBytes secret)) else toBytes secret
-          pad = B.replicate (fromIntegral blockSize - B.length kt) 0
-          hashF = hashFinalize . hashUpdate ctxInit
-          blockSize = hashBlockSize ctxInit
-          !ctxInit = hashInit
+initialize secret = unsafeDoIO (doHashAlg undefined)
+  where
+        doHashAlg :: HashAlgorithm a => a -> IO (Context a)
+        doHashAlg alg = do
+            !withKey <- case B.length secret `compare` blockSize of
+                            EQ -> return $ B.withByteArray secret
+                            LT -> do key <- B.alloc blockSize $ \k -> do
+                                        bufSet k 0 blockSize
+                                        B.withByteArray secret $ \s -> bufCopy k s (B.length secret)
+                                     return $ B.withByteArray (key :: SecureBytes)
+                            GT -> do
+                                -- hash the secret key
+                                ctx <- hashMutableInitWith alg
+                                hashMutableUpdate ctx secret
+                                digest <- hashMutableFinalize ctx
+                                hashMutableScrub ctx
+                                -- pad it if necessary
+                                if digestSize < blockSize
+                                    then do
+                                        key <- B.alloc blockSize $ \k -> do
+                                            bufSet k 0 blockSize
+                                            B.withByteArray digest $ \s -> bufCopy k s (B.length digest)
+                                        return $ B.withByteArray (key :: SecureBytes)
+                                    else
+                                       return $ B.withByteArray digest
+            (inner, outer) <- withKey $ \keyPtr ->
+                (,) <$> B.alloc blockSize (\p -> bufXorWith p 0x36 keyPtr blockSize)
+                    <*> B.alloc blockSize (\p -> bufXorWith p 0x5c keyPtr blockSize)
+            return $ Context (hashUpdates initCtx [outer :: ByteString])
+                             (hashUpdates initCtx [inner :: ByteString])
+          where 
+                blockSize  = hashBlockSize alg
+                digestSize = hashDigestSize alg
+                initCtx    = hashInitWith alg
+{-# NOINLINE initialize #-}
 
 -- | Incrementally update a HMAC context
-update :: HashAlgorithm a
+update :: (ByteArrayAccess message, HashAlgorithm a)
        => Context a  -- ^ Current HMAC context
-       -> ByteString -- ^ Message to append to the MAC
+       -> message    -- ^ Message to append to the MAC
        -> Context a  -- ^ Updated HMAC context
 update (Context octx ictx) msg =
     Context octx (hashUpdate ictx msg)
 
 -- | Increamentally update a HMAC context with multiple inputs
-updates :: HashAlgorithm a
-        => Context a    -- ^ Current HMAC context
-        -> [ByteString] -- ^ Messages to append to the MAC
-        -> Context a    -- ^ Updated HMAC context
+updates :: (ByteArrayAccess message, HashAlgorithm a)
+        => Context a -- ^ Current HMAC context
+        -> [message] -- ^ Messages to append to the MAC
+        -> Context a -- ^ Updated HMAC context
 updates (Context octx ictx) msgs =
     Context octx (hashUpdates ictx msgs)
 
@@ -97,4 +112,4 @@ finalize :: HashAlgorithm a
          => Context a
          -> HMAC a
 finalize (Context octx ictx) =
-    HMAC $ hashFinalize $ hashUpdates octx [toBytes $ hashFinalize ictx]
+    HMAC $ hashFinalize $ hashUpdates octx [hashFinalize ictx]

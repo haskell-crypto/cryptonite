@@ -23,7 +23,7 @@ module Crypto.Number.Serialize
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Internal as B
-import qualified Data.ByteString as B
+import qualified Data.ByteString as B hiding (length)
 import Foreign.Ptr
 
 #if MIN_VERSION_integer_gmp(0,5,1)
@@ -40,6 +40,8 @@ import Foreign.Storable
 import Data.Bits
 #endif
 
+import qualified Crypto.Internal.ByteArray as B
+
 #if !MIN_VERSION_integer_gmp(0,5,1)
 {-# INLINE divMod256 #-}
 divMod256 :: Integer -> (Integer, Integer)
@@ -47,27 +49,26 @@ divMod256 n = (n `shiftR` 8, n .&. 0xff)
 #endif
 
 -- | os2ip converts a byte string into a positive integer
-os2ip :: ByteString -> Integer
+os2ip :: B.ByteArrayAccess ba => ba -> Integer
 #if MIN_VERSION_integer_gmp(0,5,1)
-os2ip bs = unsafePerformIO $ withForeignPtr fptr $ \ptr ->
+os2ip bs = unsafePerformIO $ B.withByteArray fptr $ \ptr ->
     let !(Ptr ad) = (ptr `plusPtr` ofs)
 #if __GLASGOW_HASKELL__ >= 710
      in importIntegerFromAddr ad (int2Word# n) 1#
 #else
      in IO $ \s -> importIntegerFromAddr ad (int2Word# n) 1# s
 #endif
-  where !(fptr, ofs, !(I# n)) = B.toForeignPtr bs
 {-# NOINLINE os2ip #-}
 #else
-os2ip = B.foldl' (\a b -> (256 * a) .|. (fromIntegral b)) 0
+os2ip = B.foldl' (\a b -> (256 * a) .|. (fromIntegral b)) 0 . B.convert
 {-# INLINE os2ip #-}
 #endif
 
 -- | i2osp converts a positive integer into a byte string
-i2osp :: Integer -> ByteString
+i2osp :: B.ByteArray ba => Integer -> ba
 #if MIN_VERSION_integer_gmp(0,5,1)
-i2osp 0 = B.singleton 0
-i2osp m = B.unsafeCreate (I# (word2Int# sz)) fillPtr
+i2osp 0 = B.allocAndFreeze 1 $ \p -> poke p (0 :: Word8)
+i2osp m = B.allocAndFreeze (I# (word2Int# sz)) fillPtr
   where !sz = sizeInBaseInteger m 256#
 #if __GLASGOW_HASKELL__ >= 710
         fillPtr (Ptr srcAddr) = void $ exportIntegerToAddr m srcAddr 1#
@@ -79,7 +80,7 @@ i2osp m = B.unsafeCreate (I# (word2Int# sz)) fillPtr
 #else
 i2osp m
     | m < 0     = error "i2osp: cannot convert a negative integer to a bytestring"
-    | otherwise = B.reverse $ B.unfoldr fdivMod256 m
+    | otherwise = B.convert $ B.reverse $ B.unfoldr fdivMod256 m
     where fdivMod256 0 = Nothing
           fdivMod256 n = Just (fromIntegral a,b) where (b,a) = divMod256 n
 #endif
@@ -90,7 +91,7 @@ i2osp m
 -- otherwise the number is padded with 0 to fit the @len required.
 --
 -- FIXME: use unsafeCreate to fill the bytestring
-i2ospOf :: Int -> Integer -> Maybe ByteString
+i2ospOf :: B.ByteArray ba => Int -> Integer -> Maybe ba
 #if MIN_VERSION_integer_gmp(0,5,1)
 i2ospOf len m
     | sz <= len = Just $ i2ospOf_ len m
@@ -98,8 +99,8 @@ i2ospOf len m
   where !sz = I# (word2Int# (sizeInBaseInteger m 256#))
 #else
 i2ospOf len m
-    | lenbytes < len  = Just $ B.replicate (len - lenbytes) 0 `B.append` bytes
-    | lenbytes == len = Just bytes
+    | lenbytes < len  = Just $ B.convert $ B.replicate (len - lenbytes) 0 `B.append` bytes
+    | lenbytes == len = Just $ B.convert bytes
     | otherwise       = Nothing
   where lenbytes = B.length bytes
         bytes    = i2osp m
@@ -110,9 +111,9 @@ i2ospOf len m
 --
 -- for example if you just took a modulo of the number that represent
 -- the size (example the RSA modulo n).
-i2ospOf_ :: Int -> Integer -> ByteString
+i2ospOf_ :: B.ByteArray ba => Int -> Integer -> ba
 #if MIN_VERSION_integer_gmp(0,5,1)
-i2ospOf_ len m = unsafePerformIO $ B.create len fillPtr
+i2ospOf_ len m = B.allocAndFreeze len fillPtr
   where !sz = (sizeInBaseInteger m 256#)
         isz = I# (word2Int# sz)
         fillPtr ptr
@@ -137,7 +138,7 @@ i2ospOf_ len m = unsafePerformIO $ B.create len fillPtr
 #endif
 {-# NOINLINE i2ospOf_ #-}
 #else
-i2ospOf_ len m = B.unsafeCreate len fillPtr
+i2ospOf_ len m = B.convert $ B.unsafeCreate len fillPtr
     where fillPtr srcPtr = loop m (srcPtr `plusPtr` (len-1))
             where loop n ptr = do
                       let (nn,a) = divMod256 n

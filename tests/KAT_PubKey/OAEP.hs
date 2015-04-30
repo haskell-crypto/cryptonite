@@ -3,7 +3,7 @@ module KAT_PubKey.OAEP (oaepTests) where
 
 import Crypto.PubKey.RSA
 import qualified Crypto.PubKey.RSA.OAEP as OAEP
-import qualified Crypto.Hash.SHA1 as SHA1
+import Crypto.Hash
 
 import Imports
 
@@ -82,10 +82,10 @@ vectorsKey1 =
     ]
 
 doEncryptionTest key (i, vec) = testCase (show i) (Right (cipherText vec) @=? actual)
-    where actual = OAEP.encryptWithSeed (seed vec) (OAEP.defaultOAEPParams SHA1.hash) key (message vec) 
+    where actual = OAEP.encryptWithSeed (seed vec) (OAEP.defaultOAEPParams SHA1) key (message vec) 
 
 doDecryptionTest key (i, vec) = testCase (show i) (Right (message vec) @=? actual)
-    where actual = OAEP.decrypt Nothing (OAEP.defaultOAEPParams SHA1.hash) key (cipherText vec)
+    where actual = OAEP.decrypt Nothing (OAEP.defaultOAEPParams SHA1) key (cipherText vec)
 
 oaepTests = testGroup "RSA-OAEP"
     [ testGroup "internal"

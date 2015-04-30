@@ -2,7 +2,7 @@
 module KAT_PubKey.DSA (dsaTests) where
 
 import qualified Crypto.PubKey.DSA as DSA
-import qualified Crypto.Hash.SHA1 as SHA1
+import Crypto.Hash
 
 import Imports
 
@@ -129,10 +129,10 @@ vectorToPublic vector = DSA.PublicKey
 
 doSignatureTest (i, vector) = testCase (show i) (expected @=? actual)
     where expected = Just $ DSA.Signature (r vector) (s vector)
-          actual   = DSA.signWith (k vector) (vectorToPrivate vector) SHA1.hash (msg vector)
+          actual   = DSA.signWith (k vector) (vectorToPrivate vector) SHA1 (msg vector)
 
 doVerifyTest (i, vector) = testCase (show i) (True @=? actual)
-    where actual = DSA.verify SHA1.hash (vectorToPublic vector) (DSA.Signature (r vector) (s vector)) (msg vector)
+    where actual = DSA.verify SHA1 (vectorToPublic vector) (DSA.Signature (r vector) (s vector)) (msg vector)
 
 dsaTests = testGroup "DSA"
     [ testGroup "SHA1"

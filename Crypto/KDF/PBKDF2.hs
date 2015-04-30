@@ -20,7 +20,6 @@ import Data.Bits
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Internal as B (unsafeCreate, memset)
-import Data.Byteable
 import Foreign.Storable
 import Foreign.Ptr (Ptr, plusPtr)
 import Control.Applicative
@@ -28,6 +27,8 @@ import Control.Monad (forM_, void)
 
 import Crypto.Hash (HashAlgorithm)
 import qualified Crypto.MAC.HMAC as HMAC
+
+import qualified Crypto.Internal.ByteArray as B (convert, withByteArray)
 
 -- | The PRF used for PBKDF2
 type PRF = B.ByteString -- ^ the password parameters
@@ -40,7 +41,7 @@ prfHMAC :: HashAlgorithm a
         -> PRF -- ^ the PRF functiont o use
 prfHMAC alg k = hmacIncr alg (HMAC.initialize k)
   where hmacIncr :: HashAlgorithm a => a -> HMAC.Context a -> (ByteString -> ByteString)
-        hmacIncr _ !ctx = \b -> toBytes $ HMAC.finalize $ HMAC.update ctx b
+        hmacIncr _ !ctx = \b -> B.convert $ HMAC.finalize $ HMAC.update ctx b
 
 -- | Parameters for PBKDF2
 data Parameters = Parameters
@@ -72,7 +73,7 @@ generate prf params =
     -- a mutable version of xor, that allow to not reallocate
     -- the accumulate buffer.
     bsXor :: Ptr Word8 -> ByteString -> IO ()
-    bsXor d sBs = withBytePtr sBs $ \s ->
+    bsXor d sBs = B.withByteArray sBs $ \s ->
         forM_ [0..hLen-1] $ \i -> do
             v <- xor <$> peek (s `plusPtr` i) <*> peek (d `plusPtr` i)
             poke (d `plusPtr` i) (v :: Word8)
