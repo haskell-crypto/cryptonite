@@ -16,6 +16,15 @@ higher level protocols or higher level implementation.
 
 Documentation: [cryptonite on hackage](http://hackage.haskell.org/package/cryptonite)
 
+Versioning
+----------
+
+Development versions are an incremental number prefixed by 0.
+No specific meaning is associated with the versions, specially
+no API stability.
+
+Production versions : TBD
+
 Coding Style
 ------------
 
