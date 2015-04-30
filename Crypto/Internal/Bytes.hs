@@ -12,6 +12,7 @@ module Crypto.Internal.Bytes
     ( withByteStringPtr
     , tempBufCreate
     , bufXor
+    , bufXorWith
     , bufCopy
     , bufSet
     ) where
@@ -19,12 +20,12 @@ module Crypto.Internal.Bytes
 import Crypto.Internal.Imports
 import Foreign.Ptr              (Ptr, plusPtr)
 import Foreign.ForeignPtr       (withForeignPtr)
-import Foreign.Storable         (peek, poke, pokeByteOff)
+import Foreign.Storable         (peek, poke, pokeByteOff, peekByteOff)
 import Foreign.Marshal.Alloc    (allocaBytesAligned)
 import Data.ByteString          (ByteString)
 import Data.Bits                (xor)
 import Data.ByteString.Internal (toForeignPtr)
-import Data.ByteString.Internal (memcpy)
+import Data.ByteString.Internal (memcpy, memset)
 
 withByteStringPtr :: ByteString -> (Ptr Word8 -> IO a) -> IO a
 withByteStringPtr b f =
@@ -46,12 +47,26 @@ bufXor d s1 s2 n = do
     (xor <$> peek s1 <*> peek s2) >>= poke d
     bufXor (d `plusPtr` 1) (s1 `plusPtr` 1) (s2 `plusPtr` 1) (n-1)
 
+-- | xor bytes from source with a specific value to destination
+--
+-- d = replicate (sizeof s) v `xor` s
+bufXorWith :: Ptr Word8 -> Word8 -> Ptr Word8 -> Int -> IO ()
+bufXorWith d v s n = loop 0
+  where
+    loop i
+        | i == n    = return ()
+        | otherwise = do
+            (xor v <$> peekByteOff s i) >>= pokeByteOff d i
+            loop (i+1)
+
 bufCopy :: Ptr Word8 -> Ptr Word8 -> Int -> IO ()
 bufCopy dst src n = memcpy dst src (fromIntegral n)
 
 -- | Set @n number of bytes to the same value @v
 bufSet :: Ptr Word8 -> Word8 -> Int -> IO ()
-bufSet start v n = loop 0
+bufSet start v n = memset start v (fromIntegral n) >>= \_ -> return ()
+    {-loop 0
   where loop i
             | i == n    = return ()
             | otherwise = pokeByteOff start i v >> loop (i+1)
+-}
