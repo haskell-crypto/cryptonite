@@ -13,12 +13,14 @@
 {-# LANGUAGE BangPatterns #-}
 module Crypto.Internal.Hex
     ( showHexadecimal
+    , toHexadecimal
     ) where
 
 import Crypto.Internal.Compat
 import Data.Word
 import GHC.Prim
 import GHC.Types
+import GHC.Word
 import Foreign.Storable
 import Foreign.Ptr (Ptr)
 
@@ -28,14 +30,32 @@ showHexadecimal ptr len = loop 0
         loop i
             | i == len  = []
             | otherwise =
-                let b = fromIntegral (byteIndex i)
-                 in toEnum (r tableHi b) : toEnum (r tableLo b) : loop (i+1)
+                let !(W8# b)     = byteIndex i
+                    (# w1, w2 #) = convertByte b
+                 in wToChar w1 : wToChar w2 : loop (i+1)
+
+        wToChar :: Word# -> Char
+        wToChar w = toEnum (I# (word2Int# w))
 
         byteIndex :: Int -> Word8
         byteIndex i = unsafeDoIO (peekByteOff ptr i)
 
-        r :: Addr# -> Int -> Int
-        r table (I# index) = I# (word2Int# (indexWord8OffAddr# table index))
+toHexadecimal :: Ptr Word8 -> Ptr Word8 -> Int -> IO ()
+toHexadecimal bout bin n = loop 0
+  where loop i
+            | i == n  = return ()
+            | otherwise = do
+                (W8# w) <- peekByteOff bin i
+                let (# w1, w2 #) = convertByte w
+                pokeByteOff bout (i * 2)     (W8# w1)
+                pokeByteOff bout (i * 2 + 1) (W8# w2)
+                loop (i+1)
+
+convertByte :: Word# -> (# Word#, Word# #)
+convertByte b = (# r tableHi b, r tableLo b #)
+  where
+        r :: Addr# -> Word# -> Word#
+        r table index = indexWord8OffAddr# table (word2Int# index)
 
         !tableLo =
             "0123456789abcdef0123456789abcdef\
@@ -55,3 +75,4 @@ showHexadecimal ptr len = loop 0
             \aaaaaaaaaaaaaaaabbbbbbbbbbbbbbbb\
             \ccccccccccccccccdddddddddddddddd\
             \eeeeeeeeeeeeeeeeffffffffffffffff"#
+{-# INLINE convertByte #-}
