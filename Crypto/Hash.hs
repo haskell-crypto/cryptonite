@@ -23,7 +23,6 @@ module Crypto.Hash
     , Context
     , Digest
     -- * Functions
-    , digestToHexByteString
     , digestFromByteString
     -- * hash methods parametrized by algorithm
     , hashInitWith
@@ -57,10 +56,6 @@ hash bs = hashFinalize $ hashUpdate hashInit bs
 -- | Hash a lazy bytestring into a digest.
 hashlazy :: HashAlgorithm a => L.ByteString -> Digest a
 hashlazy lbs = hashFinalize $ hashUpdates hashInit (L.toChunks lbs)
-
--- | Return the hexadecimal (base16) bytestring of the digest
-digestToHexByteString :: Digest a -> ByteString
-digestToHexByteString = toHex . B.convert
 
 -- | Initialize a new context for this hash algorithm
 hashInit :: HashAlgorithm a
