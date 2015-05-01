@@ -1,4 +1,5 @@
 {-# LANGUAGE PackageImports #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
 import Criterion.Main
@@ -11,6 +12,9 @@ import "cryptonite" Crypto.Cipher.AES
 import "cryptonite" Crypto.Cipher.Blowfish
 import "cryptonite" Crypto.Cipher.Types
 
+import "cryptonite" Crypto.Hash (SHA512(..))
+import qualified "cryptonite" Crypto.KDF.PBKDF2 as PBKDF2
+
 import Crypto.Internal.ByteArray (ByteArray)
 
 import qualified Data.ByteString as B
@@ -18,6 +22,23 @@ import qualified Data.ByteString as B
 benchHash =
     [ 
     ]
+
+benchPBKDF2 =
+    [ bgroup "64"
+        [ bench "cryptonite-PBKDF2-100-64" $ nf (\iter -> PBKDF2.generate (PBKDF2.prfHMAC SHA512) (PBKDF2.Parameters mypass mysalt iter 64)) 100
+        , bench "cryptonite-PBKDF2-1000-64" $ nf (\iter -> PBKDF2.generate (PBKDF2.prfHMAC SHA512) (PBKDF2.Parameters mypass mysalt iter 64)) 1000
+        , bench "cryptonite-PBKDF2-10000-64" $ nf (\iter -> PBKDF2.generate (PBKDF2.prfHMAC SHA512) (PBKDF2.Parameters mypass mysalt iter 64)) 10000
+        ]
+    , bgroup "128"
+        [ bench "cryptonite-PBKDF2-100-128" $ nf (\iter -> PBKDF2.generate (PBKDF2.prfHMAC SHA512) (PBKDF2.Parameters mypass mysalt iter 128)) 100
+        , bench "cryptonite-PBKDF2-1000-128" $ nf (\iter -> PBKDF2.generate (PBKDF2.prfHMAC SHA512) (PBKDF2.Parameters mypass mysalt iter 128)) 1000
+        , bench "cryptonite-PBKDF2-10000-128" $ nf (\iter -> PBKDF2.generate (PBKDF2.prfHMAC SHA512) (PBKDF2.Parameters mypass mysalt iter 128)) 10000
+        ]
+    ]
+  where
+        mypass = "password"
+        mysalt = "salt"
+
 
 benchBlockCipher =
     [ bgroup "ECB" benchECB
@@ -60,4 +81,5 @@ benchBlockCipher =
 main = defaultMain
     [ bgroup "hash" benchHash
     , bgroup "block-cipher" benchBlockCipher
+    , bgroup "pbkdf2" benchPBKDF2
     ]
