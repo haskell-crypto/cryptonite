@@ -25,19 +25,21 @@ benchHash =
 
 benchPBKDF2 =
     [ bgroup "64"
-        [ bench "cryptonite-PBKDF2-100-64" $ nf (\iter -> PBKDF2.generate (PBKDF2.prfHMAC SHA512) (PBKDF2.Parameters mypass mysalt iter 64)) 100
-        , bench "cryptonite-PBKDF2-1000-64" $ nf (\iter -> PBKDF2.generate (PBKDF2.prfHMAC SHA512) (PBKDF2.Parameters mypass mysalt iter 64)) 1000
-        , bench "cryptonite-PBKDF2-10000-64" $ nf (\iter -> PBKDF2.generate (PBKDF2.prfHMAC SHA512) (PBKDF2.Parameters mypass mysalt iter 64)) 10000
+        [ bench "cryptonite-PBKDF2-100-64" $ nf (PBKDF2.generate (PBKDF2.prfHMAC SHA512) . params 64) 100
+        , bench "cryptonite-PBKDF2-1000-64" $ nf (PBKDF2.generate (PBKDF2.prfHMAC SHA512) . params 64) 1000
+        , bench "cryptonite-PBKDF2-10000-64" $ nf (PBKDF2.generate (PBKDF2.prfHMAC SHA512) . params 64) 10000
         ]
     , bgroup "128"
-        [ bench "cryptonite-PBKDF2-100-128" $ nf (\iter -> PBKDF2.generate (PBKDF2.prfHMAC SHA512) (PBKDF2.Parameters mypass mysalt iter 128)) 100
-        , bench "cryptonite-PBKDF2-1000-128" $ nf (\iter -> PBKDF2.generate (PBKDF2.prfHMAC SHA512) (PBKDF2.Parameters mypass mysalt iter 128)) 1000
-        , bench "cryptonite-PBKDF2-10000-128" $ nf (\iter -> PBKDF2.generate (PBKDF2.prfHMAC SHA512) (PBKDF2.Parameters mypass mysalt iter 128)) 10000
+        [ bench "cryptonite-PBKDF2-100-128" $ nf (PBKDF2.generate (PBKDF2.prfHMAC SHA512) . params 128) 100
+        , bench "cryptonite-PBKDF2-1000-128" $ nf (PBKDF2.generate (PBKDF2.prfHMAC SHA512) . params 128) 1000
+        , bench "cryptonite-PBKDF2-10000-128" $ nf (PBKDF2.generate (PBKDF2.prfHMAC SHA512) . params 128) 10000
         ]
     ]
   where
         mypass = "password"
         mysalt = "salt"
+
+        params n iter = PBKDF2.Parameters mypass mysalt iter n
 
 
 benchBlockCipher =
