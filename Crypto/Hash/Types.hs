@@ -15,8 +15,6 @@ module Crypto.Hash.Types
     )
     where
 
-import           Data.ByteString (ByteString)
-import           Crypto.Internal.Compat
 import           Crypto.Internal.ByteArray (ByteArrayAccess, Bytes)
 import qualified Crypto.Internal.ByteArray as B
 import           Data.Word
@@ -43,8 +41,10 @@ class HashAlgorithm a where
     hashInternalUpdate   :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
     hashInternalFinalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()
 
+{-
 hashContextGetAlgorithm :: HashAlgorithm a => Context a -> a
 hashContextGetAlgorithm = undefined
+-}
 
 -- | Represent a context for a given hash algorithm.
 newtype Context a = Context Bytes
