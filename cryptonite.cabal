@@ -28,6 +28,12 @@ source-repository head
 Flag support_aesni
   Description:       allow compilation with AESNI on system and architecture that supports it
   Default:           True
+  Manual:            True
+
+Flag support_pclmuldq
+  Description:       Allow compilation with pclmuldq on architecture that supports it
+  Default:           False
+  Manual:            True
 
 Library
   Exposed-modules:   Crypto.Cipher.AES
@@ -171,7 +177,9 @@ Library
     c-sources:      cbits/cryptonite_rdrand.c
 
   if flag(support_aesni) && (os(linux) || os(freebsd) || os(osx)) && (arch(i386) || arch(x86_64))
-    CC-options:     -mssse3 -maes -mpclmul -DWITH_AESNI
+    CC-options:     -mssse3 -maes -DWITH_AESNI
+    if flag(support_pclmuldq)
+       CC-options:  -msse4.1 -mpclmul -DWITH_PCLMUL
     C-sources:      cbits/aes/x86ni.c
 
   if os(windows)
