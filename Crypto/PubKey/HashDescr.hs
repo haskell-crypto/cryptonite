@@ -24,6 +24,7 @@ module Crypto.PubKey.HashDescr
     , hashDescrRIPEMD160
     ) where
 
+import           Data.ByteString.Char8 ()
 import           Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 import           Crypto.Hash
