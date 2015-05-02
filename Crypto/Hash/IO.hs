@@ -21,7 +21,6 @@ module Crypto.Hash.IO
 
 import           Crypto.Hash.Types
 import qualified Crypto.Internal.ByteArray as B
-import           Data.ByteString (ByteString)
 import           Foreign.Ptr
 
 newtype MutableContext a = MutableContext B.Bytes
