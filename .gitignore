@@ -6,5 +6,6 @@ gen/Gen
 gen/Crypto/*
 dist
 QA
-benchs/Benchs
+benchs/Bench
+benchs/Hash
 *.sublime-workspace
