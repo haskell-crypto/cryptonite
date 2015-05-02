@@ -23,6 +23,8 @@ perModuleAllowedExtensions =
     [ ("Crypto/Hash/Utils.hs", [MagicHash])
     , ("Crypto/Internal/ByteArray.hs", [MagicHash, UnboxedTuples])
     , ("Crypto/Internal/Memory.hs", [MagicHash, UnboxedTuples])
+    , ("Crypto/Internal/Compat.hs", [CPP])
+    , ("Crypto/Internal/CompatPrim.hs", [CPP,MagicHash])
     ]
 
 disallowedModules =
@@ -43,6 +45,10 @@ perModuleAllowedModules =
             ]
       )
     , ("Crypto/Internal/ByteArray.hs",
+            [ ModuleName "Data.ByteString"
+            ]
+      )
+    , ("Crypto/Internal/Bytes.hs",
             [ ModuleName "Data.ByteString"
             ]
       )
