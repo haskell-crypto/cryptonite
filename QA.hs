@@ -9,6 +9,8 @@ import System.Directory
 import System.FilePath
 import System.Posix.Files
 import System.Process
+import System.Environment
+import Control.Arrow
 import Control.Monad
 import Control.Applicative ((<$>), (<*>))
 import Control.Exception
@@ -46,37 +48,108 @@ perModuleAllowedModules =
       )
     ]
 
+data Issue =
+      Issue_FailedToParseExtension
+    | Issue_FailedToParseModule SrcLoc String
+    | Issue_Extension String
+    | Issue_Import ModuleName ModuleName
+    deriving (Eq)
+
+prettyIssue Issue_FailedToParseExtension = "failed to parse extension"
+prettyIssue (Issue_FailedToParseModule loc p) = "failed to parse module : " ++ show loc ++ " : " ++ p
+prettyIssue (Issue_Extension e) = "extension not authorized: " ++ e
+prettyIssue (Issue_Import (ModuleName old) (ModuleName new)) = "import : " ++ old ++ " should be : " ++ show new
+
+data IssueLevel =
+      IssueFatal
+    | IssueError
+    | IssueWarning
+    | IssueUnknown
+    deriving (Show,Eq)
+
+getIssueLevel :: Issue -> IssueLevel
+getIssueLevel Issue_FailedToParseExtension   = IssueFatal
+getIssueLevel (Issue_FailedToParseModule {}) = IssueFatal
+getIssueLevel _ = IssueUnknown
+
+data InfoVal =
+      InfoValList [String]
+    | InfoValString String
+    deriving (Show,Eq)
+
 data ModuleState = ModuleState
-    { mWarnings :: IORef Int
-    , mErrors   :: IORef Int
+    { mInfo   :: IORef [(String, InfoVal)]
+    , mIssues :: IORef [Issue]
     }
 
+data ModuleQA = ModuleQA FilePath [(String, InfoVal)] [Issue]
+    deriving (Eq)
+
+moduleGetIssues :: ModuleQA -> [Issue]
+moduleGetIssues (ModuleQA _ _ is) = is
+
 newState :: IO ModuleState
-newState = ModuleState <$> newIORef 0 <*> newIORef 0
+newState = ModuleState <$> newIORef [] <*> newIORef []
 
-incrWarnings :: ModuleState -> IO ()
-incrWarnings st = modifyIORef (mWarnings st) (+1)
+freezeState :: FilePath -> ModuleState -> IO ModuleQA
+freezeState file (ModuleState info issues) = ModuleQA file <$> readIORef info <*> readIORef issues
 
-incrErrors :: ModuleState -> IO ()
-incrErrors st = modifyIORef (mErrors st) (+1)
+data Options = Options
+    { optionWarningIsError :: Bool
+    }
+
+defaultOptions = Options
+    { optionWarningIsError = False
+    }
+
+parseArgs opts []     = opts
+parseArgs opts (x:xs) =
+    let nopts = case x of
+                "-Werror" -> opts { optionWarningIsError = True }
+                _         -> opts
+     in parseArgs nopts xs
 
 main = do
+    options <- parseArgs defaultOptions <$> getArgs
     modules <- findAllModules
-    mapM_ qa modules
-  where qa file = do
-            st <- newState
+    qas     <- mapM checkModule modules
+    mapM_ report qas
+    summary qas
 
-            printHeader ("[# " ++ file ++ " #]")
+  where
+        summary :: [ModuleQA] -> IO ()
+        summary l = do
+            let (failed, succeeded) = (length *** length) $ partition (null . moduleGetIssues) l
+            putStrLn ("failed: " ++ show failed ++ " succeeded: " ++ show succeeded)
+
+        report :: ModuleQA -> IO ()
+        report (ModuleQA f infos issues)
+            | null issues = do
+                setColor Cyan >> putStr f >> setSGR [] >> putStr padding
+                setColor Green >> putStrLn "SUCCESS" >> setSGR []
+            | otherwise   = do
+                setColor Cyan >> putStr f >> setSGR [] >> putStr padding
+                setColor Red >> putStrLn "FAILED" >> setSGR []
+                mapM_ reportIssue issues
+          where
+                padding = replicate padN ' '
+                padN    = 64 - length f
+
+                reportIssue issue = setColor Red >> putStr "  " >> putStrLn (prettyIssue issue) >> setSGR []
+
+        setColor c = setSGR [SetColor Foreground Vivid c]
+
+        checkModule file = do
+            st      <- newState
             content <- readFile file
-            let mexts = readExtensions content
-            case mexts of
-                Nothing        -> do
-                    printError st "failed to parsed extensions"
-                    printReport st file
+            case readExtensions content of
+                Nothing        -> recordIssue st Issue_FailedToParseExtension
                 Just (_, exts) -> qaExts st file content exts
+            freezeState file st
+
 
         qaExts st file contentRaw exts = do
-            printInfo "extensions" (intercalate ", " $ map show (getEnabledExts exts))
+            recordInfo st "extensions" (intercalate ", " $ map show (getEnabledExts exts))
 
             let hasCPP = EnableExtension CPP `elem` exts
 
@@ -86,17 +159,16 @@ main = do
 
             case parseModuleWithMode mode content of
                 ParseFailed srcLoc s -> do
-                    printError st ("failed to parse module: " ++ show srcLoc ++ " : " ++ s)
-                    printReport st file
+                    recordIssue st $ Issue_FailedToParseModule srcLoc s
                 ParseOk mod          -> do
                     let imports = getModulesImports mod
-                    printInfo "modules" (intercalate ", "  (map (prettyPrint . importModule) imports))
+                    recordInfo st "modules" $ InfoValList (map (prettyPrint . importModule) imports)
 
                     -- check for allowed extensions
                     forM_ (getEnabledExts exts) $ \ext -> do
                         let allowed = elem ext allowedExtensions
                             allowed' = allowed || maybe False (\z -> elem ext z) (lookup file perModuleAllowedExtensions)
-                        unless allowed' $ printWarningExtension st ext
+                        unless allowed' $ recordIssue st (Issue_Extension $ show ext)
 
                     -- check for disallowed modules
                     forM_ (map importModule $ getModulesImports mod) $ \impMod ->
@@ -107,12 +179,8 @@ main = do
                                 let allowed = case lookup file perModuleAllowedModules of
                                                  Nothing          -> False
                                                  Just allowedMods -> elem impMod allowedMods
-                                unless allowed $ printWarningImport st impMod newMod
-                    printReport st file
+                                unless allowed $ recordIssue st (Issue_Import impMod newMod)
 
-        report warnings errors =
-            putStrLn ""
-                    
         moduleToFile (ModuleName m) =
             intercalate "/" (wordsWhen (== '.') m) ++ ".hs"
 
@@ -139,35 +207,11 @@ processCPP file content = do
 
 ------------------------------------------------------------------------
 
-printHeader s =
-    setSGR [SetColor Foreground Vivid Cyan] >> putStrLn s >> setSGR []
-printInfo k v =
-    setSGR [SetColor Foreground Vivid Blue] >> putStr k >> setSGR [] >> putStr ": " >> putStrLn v
-printError st s = do
-    setSGR [SetColor Foreground Vivid Red] >> putStrLn s >> setSGR []
+recordIssue st s =
+    modifyIORef (mIssues st) ((:) s)
 
-printReport st m =
-    ((,) <$> readIORef (mWarnings st) <*> readIORef (mErrors st)) >>= uncurry doPrint
-  where doPrint :: Int -> Int -> IO ()
-        doPrint warnings errors
-            | warnings == 0 && errors == 0 = do
-                start
-                setSGR [SetColor Foreground Vivid Green] >> putStrLn "SUCCESS" >> setSGR []
-            | otherwise = do
-                let color = if errors == 0 then Yellow else Red
-                start
-                setSGR [SetColor Foreground Vivid color] >> putStrLn (show errors ++ " errors " ++ show warnings ++ " warnings") >> setSGR []
-        start = do
-            setSGR [SetColor Foreground Vivid Cyan] >> putStr "===> " >> setSGR []
-            putStr (m ++ " : ")
+recordInfo st n f = return ()
 
-printWarningImport st (ModuleName expected) (ModuleName actual) = do
-    incrWarnings st
-    setSGR [SetColor Foreground Vivid Yellow] >> putStrLn ("warning: using module " ++ expected ++ " , should use " ++ actual) >> setSGR []
-
-printWarningExtension st ext = do
-    incrWarnings st
-    setSGR [SetColor Foreground Vivid Yellow] >> putStrLn ("warning: use extension " ++ show ext) >> setSGR []
 getModulesImports (Module _ _ _ _ _ imports _) = imports
 
 getEnabledExts = foldl doAcc []
