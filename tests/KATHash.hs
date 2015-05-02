@@ -8,6 +8,7 @@ module KATHash
 import Crypto.Hash
 
 import qualified Data.ByteString as B
+import qualified Crypto.Internal.ByteArray as B (convertHex)
 import Imports
 
 v0,v1,v2 :: ByteString
@@ -141,8 +142,8 @@ expected = [
         "28e361fe8c56e617caa56c28c7c36e5c13be552b77081be82b642f08bb7ef085b9a81910fe98269386b9aacfd2349076c9506126e198f6f6ad44c12017ca77b1" ])
     ]
 
-runhash (HashAlg hashAlg) v = digestToHexByteString $ hashWith hashAlg $ v
-runhashinc (HashAlg hashAlg) v = digestToHexByteString $ hashinc $ v
+runhash (HashAlg hashAlg) v = B.convertHex $ hashWith hashAlg $ v
+runhashinc (HashAlg hashAlg) v = B.convertHex $ hashinc $ v
   where hashinc = hashFinalize . foldl hashUpdate (hashInitWith hashAlg)
 
 makeTestAlg (name, hashAlg, results) =
