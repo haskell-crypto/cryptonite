@@ -19,8 +19,7 @@
 module Crypto.Hash
     (
     -- * Types
-      HashAlgorithm
-    , Context
+      Context
     , Digest
     -- * Functions
     , digestFromByteString
@@ -36,15 +35,14 @@ module Crypto.Hash
     , hashDigestSize
     , hash
     , hashlazy
+    -- * Hash algorithms
     , module Crypto.Hash.Algorithms
     ) where
 
 import           Control.Monad
 import           Crypto.Hash.Types
-import           Crypto.Hash.Utils
 import           Crypto.Hash.Algorithms
 import           Foreign.Ptr (Ptr)
-import           Data.ByteString (ByteString)
 import           Crypto.Internal.ByteArray (ByteArrayAccess)
 import qualified Crypto.Internal.ByteArray as B
 import qualified Data.ByteString.Lazy as L
