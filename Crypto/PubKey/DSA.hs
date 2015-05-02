@@ -110,7 +110,7 @@ signWith k pk hashAlg msg
           s         = (kInv * (hm + x * r)) `mod` q
 
 -- | sign message using the private key.
-sign :: HashAlgorithm hash => MonadRandom m => PrivateKey -> hash -> ByteString -> m Signature
+sign :: (HashAlgorithm hash, MonadRandom m) => PrivateKey -> hash -> ByteString -> m Signature
 sign pk hashAlg msg = do
     k <- generateMax q
     case signWith k pk hashAlg msg of
