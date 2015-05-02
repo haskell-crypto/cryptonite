@@ -33,10 +33,10 @@ showHexadecimal withPtr = doChunks 0
             | len < 4   = doUnique ofs len
             | otherwise = do
                 let !(W8# a, W8# b, W8# c, W8# d) = unsafeDoIO $ withPtr (read4 ofs)
-                    (# w1, w2 #) = convertByte a
-                    (# w3, w4 #) = convertByte b
-                    (# w5, w6 #) = convertByte c
-                    (# w7, w8 #) = convertByte d
+                    !(# w1, w2 #) = convertByte a
+                    !(# w3, w4 #) = convertByte b
+                    !(# w5, w6 #) = convertByte c
+                    !(# w7, w8 #) = convertByte d
                  in wToChar w1 : wToChar w2 : wToChar w3 : wToChar w4
                   : wToChar w5 : wToChar w6 : wToChar w7 : wToChar w8
                   : doChunks (ofs + 4) (len - 4)
@@ -45,7 +45,7 @@ showHexadecimal withPtr = doChunks 0
             | len == 0  = []
             | otherwise =
                 let !(W8# b)     = unsafeDoIO $ withPtr (byteIndex ofs)
-                    (# w1, w2 #) = convertByte b
+                    !(# w1, w2 #) = convertByte b
                  in wToChar w1 : wToChar w2 : doUnique (ofs + 1) (len - 1)
 
         read4 :: Int -> Ptr Word8 -> IO (Word8, Word8, Word8, Word8)
