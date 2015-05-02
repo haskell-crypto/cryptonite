@@ -15,21 +15,17 @@ module Crypto.KDF.Scrypt
     , generate
     ) where
 
-import Data.Word
-import Data.Byteable
-import Data.ByteString (ByteString)
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Internal as B
-import Foreign.Marshal.Alloc
-import Foreign.Ptr (Ptr, plusPtr)
-import Foreign.ForeignPtr (withForeignPtr)
-import Control.Monad (forM_)
+import           Data.Word
+import           Data.ByteString (ByteString)
+import           Foreign.Marshal.Alloc
+import           Foreign.Ptr (Ptr, plusPtr)
+import           Control.Monad (forM_)
 
-import System.IO.Unsafe
-
-import Crypto.Hash (SHA256(..))
+import           Crypto.Hash (SHA256(..))
 import qualified Crypto.KDF.PBKDF2 as PBKDF2
-import Crypto.Internal.Compat (popCount)
+import           Crypto.Internal.Compat (popCount, unsafeDoIO)
+import qualified Crypto.Internal.ByteArray as B
+import           Crypto.Internal.Bytes (bufCopy)
 
 -- | Parameters for Scrypt
 data Parameters = Parameters
@@ -45,23 +41,23 @@ foreign import ccall "cryptonite_scrypt_smix"
     ccryptonite_scrypt_smix :: Ptr Word8 -> Word32 -> Word64 -> Ptr Word8 -> Ptr Word8 -> IO ()
 
 -- | Generate the scrypt key derivation data
-generate :: Parameters -> B.ByteString
+generate :: Parameters -> ByteString
 generate params
     | r params * p params >= 0x40000000 =
         error "Scrypt: invalid parameters: r and p constraint"
     | popCount (n params) /= 1 =
         error "Scrypt: invalid parameters: n not a power of 2"
-    | otherwise = unsafePerformIO $ do
+    | otherwise = unsafeDoIO $ do
         let b = PBKDF2.generate prf (PBKDF2.Parameters (password params) (salt params) 1 intLen)
-        fptr <- B.mallocByteString intLen
-        allocaBytesAligned (128*(fromIntegral $ n params)*(r params)) 8 $ \v ->
-            allocaBytesAligned (256*r params) 8 $ \xy ->
-            withForeignPtr fptr $ \bPtr -> do
-                withBytePtr b $ \bOrig -> B.memcpy bPtr bOrig (fromIntegral intLen)
+        newSalt <- B.alloc intLen $ \bPtr ->
+            allocaBytesAligned (128*(fromIntegral $ n params)*(r params)) 8 $ \v ->
+            allocaBytesAligned (256*r params) 8 $ \xy -> do
+                B.withByteArray b $ \bOrig -> bufCopy bPtr bOrig intLen
                 forM_ [0..(p params-1)] $ \i ->
                     ccryptonite_scrypt_smix (bPtr `plusPtr` (i * 128 * (r params)))
                                             (fromIntegral $ r params) (n params) v xy
 
-        return $ PBKDF2.generate prf (PBKDF2.Parameters (password params) (B.PS fptr 0 intLen) 1 (outputLength params))
+        return $ PBKDF2.generate prf (PBKDF2.Parameters (password params) newSalt 1 (outputLength params))
   where prf    = PBKDF2.prfHMAC SHA256
         intLen = p params * 128 * r params
+{-# NOINLINE generate #-}
