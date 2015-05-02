@@ -8,7 +8,7 @@
 -- Curve25519 support
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE MagicHash #-}
 module Crypto.PubKey.Curve25519
     ( SecretKey
     , PublicKey
@@ -24,19 +24,19 @@ module Crypto.PubKey.Curve25519
 
 import           Data.Word
 import           Foreign.Ptr
+import           GHC.Ptr
 
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
-import           Crypto.Internal.ByteArray (ByteArrayAccess, SecureBytes, withByteArray)
+import           Crypto.Internal.ByteArray (ByteArrayAccess, SecureBytes, Bytes, withByteArray)
 import qualified Crypto.Internal.ByteArray as B
-import           Data.ByteString (ByteString)
 
 -- | A Curve25519 Secret key
 newtype SecretKey = SecretKey SecureBytes
     deriving (Show,Eq,ByteArrayAccess)
 
 -- | A Curve25519 public key
-newtype PublicKey = PublicKey ByteString
+newtype PublicKey = PublicKey Bytes
     deriving (Show,Eq,ByteArrayAccess)
 
 -- | A Curve25519 Diffie Hellman secret related to a
@@ -85,9 +85,6 @@ dhSecret bs
     | B.length bs == 32 = Right $ DhSecret $ B.copyAndFreeze bs (\_ -> return ())
     | otherwise         = Left "invalid dh secret size"
 
-basePoint :: PublicKey
-basePoint = PublicKey "\x09\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-
 -- | Compute the Diffie Hellman secret from a public key and a secret key
 dh :: PublicKey -> SecretKey -> DhSecret
 dh (PublicKey pub) (SecretKey sec) = DhSecret <$>
@@ -102,8 +99,9 @@ toPublic :: SecretKey -> PublicKey
 toPublic (SecretKey sec) = PublicKey <$>
     B.allocAndFreeze 32     $ \result ->
     withByteArray sec       $ \psec   ->
-    withByteArray basePoint $ \pbase   ->
-        ccryptonite_curve25519 result psec pbase
+        ccryptonite_curve25519 result psec basePoint
+  where
+        basePoint = Ptr "\x09\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"#
 {-# NOINLINE toPublic #-}
 
 foreign import ccall "cryptonite_curve25519_donna"
