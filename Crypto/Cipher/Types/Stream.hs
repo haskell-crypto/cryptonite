@@ -12,9 +12,9 @@ module Crypto.Cipher.Types.Stream
     ) where
 
 import Crypto.Cipher.Types.Base
-import Data.ByteString (ByteString)
+import Crypto.Internal.ByteArray (ByteArray)
 
 -- | Symmetric stream cipher class
 class Cipher cipher => StreamCipher cipher where
     -- | Combine using the stream cipher
-    streamCombine :: cipher -> ByteString -> (ByteString, cipher)
+    streamCombine :: ByteArray ba => cipher -> ba -> (ba, cipher)
