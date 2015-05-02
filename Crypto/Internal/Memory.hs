@@ -123,5 +123,5 @@ bytesIndex (Bytes m) (I# i) = unsafeDoIO $ IO $ \s ->
 {-# NOINLINE bytesIndex #-}
 
 bytesShowHex :: Bytes -> String
-bytesShowHex b = unsafeDoIO $ withPtr b $ \p -> return $ showHexadecimal p (bytesLength b)
+bytesShowHex b = showHexadecimal (withPtr b) (bytesLength b)
 {-# NOINLINE bytesShowHex #-}
