@@ -141,11 +141,16 @@ foreign import ccall "cryptonite_p256_base_point_mul"
                                    -> IO ()
 foreign import ccall "cryptonite_p256_point_mul"
     ccryptonite_p256_point_mul :: Ptr P256Scalar
-                               -> Ptr P256Scalar -> Ptr P256Scalar
-                               -> Ptr P256Scalar -> Ptr P256Scalar
+                               -> Ptr P256X -> Ptr P256Y
+                               -> Ptr P256X -> Ptr P256Y
                                -> IO ()
+foreign import ccall "cryptonite_p256_point_mul_vartime"
+    ccryptonite_p256_point_mul_vartime :: Ptr P256Scalar -> Ptr P256Scalar
+                                       -> Ptr P256X -> Ptr P256Y
+                                       -> Ptr P256X -> Ptr P256Y
+                                       -> IO ()
 foreign import ccall "cryptonite_p256_is_valid_point"
-    ccryptonite_p256_is_valid_point :: Ptr P256Scalar -> Ptr P256Scalar -> IO CInt
+    ccryptonite_p256_is_valid_point :: Ptr P256X -> Ptr P256Y -> IO CInt
 
 foreign import ccall "cryptonite_p256_to_bin"
     ccryptonite_p256_to_bin :: Ptr P256Scalar -> Ptr Word8 -> IO ()
