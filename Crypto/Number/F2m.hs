@@ -1,7 +1,3 @@
-{-# LANGUAGE CPP #-}
-#ifndef MIN_VERSION_integer_gmp
-#define MIN_VERSION_integer_gmp(a,b,c) 0
-#endif
 -- |
 -- Module      : Crypto.Math.F2m
 -- License     : BSD-style
