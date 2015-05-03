@@ -26,6 +26,11 @@ perModuleAllowedExtensions =
     , ("Crypto/Internal/Compat.hs", [CPP])
     , ("Crypto/Internal/CompatPrim.hs", [CPP,MagicHash])
     , ("Crypto/Internal/Endian.hs", [CPP])
+    , ("Crypto/Random/Entropy/Backend.hs", [ExistentialQuantification,CPP])
+    , ("Crypto/Cipher/Blowfish/Box.hs", [MagicHash])
+    , ("Crypto/Cipher/Blowfish.hs", [CPP])
+    , ("Crypto/Cipher/AES.hs", [CPP])
+
     ]
 
 disallowedModules =
