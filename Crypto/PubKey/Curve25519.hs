@@ -57,7 +57,7 @@ secretKey bs
         withByteArray bs $ \inp -> do
             valid <- isValidPtr inp
             if valid
-                then Right . SecretKey <$> B.copy bs (\_ -> return ())
+                then (Right . SecretKey) <$> B.copy bs (\_ -> return ())
                 else return $ Left "invalid secret key"
     | otherwise = Left "secret key invalid size"
   where

@@ -58,16 +58,15 @@ publicKey bs
 -- | Try to build a secret key from a bytearray
 secretKey :: ByteArrayAccess ba => ba -> CryptoFailable SecretKey
 secretKey bs
-    | B.length bs == secretKeySize = unsafeDoIO $ do
-        withByteArray bs $ \inp -> do
+    | B.length bs == secretKeySize = unsafeDoIO $ withByteArray bs initialize
+    | otherwise                    = CryptoFailed CryptoError_SecretKeyStructureInvalid
+  where
+        initialize inp = do
             valid <- isValidPtr inp
             if valid
-                then CryptoPassed . SecretKey <$> B.copy bs (\_ -> return ())
+                then (CryptoPassed . SecretKey) <$> B.copy bs (\_ -> return ())
                 else return $ CryptoFailed CryptoError_SecretKeyStructureInvalid
-    | otherwise = CryptoFailed CryptoError_SecretKeyStructureInvalid
-  where
-        isValidPtr :: Ptr Word8 -> IO Bool
-        isValidPtr _ = do
+        isValidPtr _ =
             return True
 {-# NOINLINE secretKey #-}
 
@@ -83,7 +82,7 @@ signature bs
 toPublic :: SecretKey -> PublicKey
 toPublic (SecretKey sec) = PublicKey <$>
     B.allocAndFreeze publicKeySize $ \result ->
-    withByteArray sec                     $ \psec   ->
+    withByteArray sec              $ \psec   ->
         ccryptonite_ed25519_publickey psec result
 {-# NOINLINE toPublic #-}
 
