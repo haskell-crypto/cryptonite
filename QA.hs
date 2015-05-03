@@ -126,7 +126,7 @@ main = do
   where
         summary :: [ModuleQA] -> IO ()
         summary l = do
-            let (failed, succeeded) = (length *** length) $ partition (null . moduleGetIssues) l
+            let (succeeded, failed) = (length *** length) $ partition (null . moduleGetIssues) l
             putStrLn ("failed: " ++ show failed ++ " succeeded: " ++ show succeeded)
 
         report :: ModuleQA -> IO ()
