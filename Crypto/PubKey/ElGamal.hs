@@ -32,9 +32,9 @@ module Crypto.PubKey.ElGamal
     , verify
     ) where
 
-import Control.Applicative
 import Data.Maybe (fromJust)
 import Data.ByteString (ByteString)
+import Crypto.Internal.Imports
 import Crypto.Number.ModArithmetic (expSafe, expFast, inverse)
 import Crypto.Number.Generate (generateMax)
 import Crypto.Number.Serialize (os2ip)
