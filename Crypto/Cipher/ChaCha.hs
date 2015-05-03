@@ -24,11 +24,10 @@ import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, SecureBy
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
-import           Data.Bits (xor)
+import           Crypto.Internal.Bytes (bufXor)
 import           Foreign.Ptr
 import           Foreign.ForeignPtr
 import           Foreign.C.Types
-import           Foreign.Storable
 
 -- | ChaCha context
 data State = State Int         -- number of rounds
@@ -47,11 +46,11 @@ round64 len
 
 -- | Initialize a new ChaCha context with the number of rounds,
 -- the key and the nonce associated.
-initialize :: ByteArrayAccess key
-           => Int         -- ^ number of rounds (8,12,20)
-           -> key         -- ^ the key (128 or 256 bits)
-           -> ByteString  -- ^ the nonce (64 or 96 bits)
-           -> State       -- ^ the initial ChaCha state
+initialize :: (ByteArrayAccess key, ByteArrayAccess nonce)
+           => Int   -- ^ number of rounds (8,12,20)
+           -> key   -- ^ the key (128 or 256 bits)
+           -> nonce -- ^ the nonce (64 or 96 bits)
+           -> State -- ^ the initial ChaCha state
 initialize nbRounds key nonce
     | not (kLen `elem` [16,32])       = error "ChaCha: key length should be 128 or 256 bits"
     | not (nonceLen `elem` [8,12])    = error "ChaCha: nonce length should be 64 or 96 bits"
@@ -103,7 +102,7 @@ combine prev@(State nbRounds prevSt prevOut) src
             withByteArray src $ \srcPtr -> do
                 -- copy the previous buffer by xor if any
                 withByteArray prevOut $ \prevPtr ->
-                    loopXor dstPtr srcPtr prevPtr prevBufLen
+                    bufXor dstPtr srcPtr prevPtr prevBufLen
 
                 -- then create a new mutable copy of state
                 B.copy prevSt $ \stPtr ->
@@ -119,12 +118,6 @@ combine prev@(State nbRounds prevSt prevOut) src
   where
         outputLen  = B.length src
         prevBufLen = B.length prevOut
-
-        loopXor :: Ptr Word8 -> Ptr Word8 -> Ptr Word8 -> Int -> IO ()
-        loopXor _ _  _  0 = return ()
-        loopXor d s1 s2 n = do
-            (xor <$> peek s1 <*> peek s2) >>= poke d
-            loopXor (d `plusPtr` 1) (s1 `plusPtr` 1) (s2 `plusPtr` 1) (n-1)
 
 -- | Generate a number of bytes from the ChaCha output directly
 --

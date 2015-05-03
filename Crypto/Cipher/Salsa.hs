@@ -14,6 +14,7 @@ module Crypto.Cipher.Salsa
     ) where
 
 import Data.ByteString (ByteString)
+import           Crypto.Internal.Bytes (bufXor)
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, SecureBytes)
 import qualified Crypto.Internal.ByteArray as B
 import qualified Data.ByteString.Internal as BS
@@ -24,7 +25,6 @@ import Data.Bits (xor)
 import Foreign.Ptr
 import Foreign.ForeignPtr
 import Foreign.C.Types
-import Foreign.Storable
 
 -- | Salsa context
 data State = State Int         -- number of rounds
@@ -40,7 +40,7 @@ round64 len
 
 -- | Initialize a new Salsa context with the number of rounds,
 -- the key and the nonce associated.
-initialize :: (ByteArrayAccess key, ByteArray nonce)
+initialize :: (ByteArrayAccess key, ByteArrayAccess nonce)
            => Int    -- ^ number of rounds (8,12,20)
            -> key    -- ^ the key (128 or 256 bits)
            -> nonce  -- ^ the nonce (64 or 96 bits)
@@ -83,7 +83,7 @@ combine prev@(State nbRounds prevSt prevOut) src
             B.withByteArray src $ \srcPtr -> do
                 -- copy the previous buffer by xor if any
                 B.withByteArray prevOut $ \prevPtr ->
-                    loopXor dstPtr srcPtr prevPtr prevBufLen
+                    bufXor dstPtr srcPtr prevPtr prevBufLen
 
                 -- then create a new mutable copy of state
                 B.copy prevSt $ \stPtr ->
@@ -98,12 +98,6 @@ combine prev@(State nbRounds prevSt prevOut) src
   where
         outputLen  = B.length src
         prevBufLen = B.length prevOut
-
-        loopXor :: Ptr Word8 -> Ptr Word8 -> Ptr Word8 -> Int -> IO ()
-        loopXor _ _  _  0 = return ()
-        loopXor d s1 s2 n = do
-            (xor <$> peek s1 <*> peek s2) >>= poke d
-            loopXor (d `plusPtr` 1) (s1 `plusPtr` 1) (s2 `plusPtr` 1) (n-1)
 
 -- | Generate a number of bytes from the Salsa output directly
 --
