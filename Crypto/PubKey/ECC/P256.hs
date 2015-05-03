@@ -53,6 +53,13 @@ data P256X
 ------------------------------------------------------------------------
 -- Point methods
 ------------------------------------------------------------------------
+
+-- | Lift to curve a scalar
+--
+-- Using the curve generator as base point compute:
+--
+-- > scalar * G
+--
 toPoint :: Scalar -> Point
 toPoint s = withNewPoint $ \px py -> withScalar s $ \p ->
     ccryptonite_p256_basepoint_mul p px py
