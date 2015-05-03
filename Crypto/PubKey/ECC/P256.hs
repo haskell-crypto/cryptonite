@@ -116,6 +116,12 @@ withScalar (Scalar d) f = B.withByteArray d f
 ------------------------------------------------------------------------
 -- Foreign bindings
 ------------------------------------------------------------------------
+foreign import ccall "&cryptonite_SECP256r1_n"
+    ccryptonite_SECP256r1_n :: Ptr P256Scalar
+foreign import ccall "&cryptonite_SECP256r1_p"
+    ccryptonite_SECP256r1_p :: Ptr P256Scalar
+foreign import ccall "&cryptonite_SECP256r1_b"
+    ccryptonite_SECP256r1_b :: Ptr P256Scalar
 
 foreign import ccall "cryptonite_p256_init"
     ccryptonite_p256_init :: Ptr P256Scalar -> IO ()
