@@ -9,7 +9,6 @@
 --
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
-{-# LANGUAGE CPP #-}
 module Crypto.KDF.Scrypt
     ( Parameters(..)
     , generate
@@ -25,7 +24,6 @@ import           Crypto.Hash (SHA256(..))
 import qualified Crypto.KDF.PBKDF2 as PBKDF2
 import           Crypto.Internal.Compat (popCount, unsafeDoIO)
 import qualified Crypto.Internal.ByteArray as B
-import           Crypto.Internal.Bytes (bufCopy)
 
 -- | Parameters for Scrypt
 data Parameters = Parameters
