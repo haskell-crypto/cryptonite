@@ -64,6 +64,11 @@ toPoint :: Scalar -> Point
 toPoint s = withNewPoint $ \px py -> withScalar s $ \p ->
     ccryptonite_p256_basepoint_mul p px py
 
+pointMul :: Scalar -> Point -> Point
+pointMul scalar p = withNewPoint $ \dx dy ->
+    withScalar scalar $ \n -> withPoint p $ \px py ->
+        ccryptonite_p256_point_mul n dx dy px py
+
 ------------------------------------------------------------------------
 -- Scalar methods
 ------------------------------------------------------------------------
