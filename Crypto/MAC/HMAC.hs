@@ -21,11 +21,10 @@ module Crypto.MAC.HMAC
     , finalize
     ) where
 
-import Data.ByteString (ByteString)
 import           Crypto.Hash hiding (Context)
 import qualified Crypto.Hash as Hash (Context)
 import           Crypto.Hash.IO
-import           Crypto.Internal.ByteArray (SecureBytes, Bytes, ByteArray, ByteArrayAccess)
+import           Crypto.Internal.ByteArray (SecureBytes, ByteArray, ByteArrayAccess)
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Internal.Bytes
 import           Crypto.Internal.Compat
@@ -83,8 +82,8 @@ initialize secret = unsafeDoIO (doHashAlg undefined)
             (inner, outer) <- withKey $ \keyPtr ->
                 (,) <$> B.alloc blockSize (\p -> bufXorWith p 0x36 keyPtr blockSize)
                     <*> B.alloc blockSize (\p -> bufXorWith p 0x5c keyPtr blockSize)
-            return $ Context (hashUpdates initCtx [outer :: ByteString])
-                             (hashUpdates initCtx [inner :: ByteString])
+            return $ Context (hashUpdates initCtx [outer :: SecureBytes])
+                             (hashUpdates initCtx [inner :: SecureBytes])
           where 
                 blockSize  = hashBlockSize alg
                 digestSize = hashDigestSize alg
