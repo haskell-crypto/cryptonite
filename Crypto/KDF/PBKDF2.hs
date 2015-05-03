@@ -19,16 +19,15 @@ import Data.Word
 import Data.Bits
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
-import qualified Data.ByteString.Internal as B (unsafeCreate, memset)
-import Foreign.Storable
-import Foreign.Ptr (Ptr, plusPtr)
-import Control.Applicative
-import Control.Monad (forM_, void)
+import Foreign.Marshal.Alloc
+import Foreign.Ptr (plusPtr)
 
 import Crypto.Hash (HashAlgorithm)
 import qualified Crypto.MAC.HMAC as HMAC
 
-import qualified Crypto.Internal.ByteArray as B (convert, withByteArray)
+import           Crypto.Internal.ByteArray (ByteArray)
+import qualified Crypto.Internal.ByteArray as B (allocAndFreeze, convert, withByteArray)
+import           Crypto.Internal.Bytes
 
 -- | The PRF used for PBKDF2
 type PRF = B.ByteString -- ^ the password parameters
@@ -52,36 +51,44 @@ data Parameters = Parameters
     }
 
 -- | generate the pbkdf2 key derivation function from the output
-generate :: PRF -> Parameters -> B.ByteString
+generate :: ByteArray ba => PRF -> Parameters -> ba
 generate prf params =
-    B.take (outputLength params) $ B.concat $ map f [1..l]
+    B.allocAndFreeze (outputLength params) $ \p -> do
+        bufSet p 0 (outputLength params)
+        loop 1 (outputLength params) p
   where
     !runPRF = prf (password params)
     !hLen   = B.length $ runPRF B.empty
-    
+
+    -- run the following f function on each complete chunk.
+    -- when having an incomplete chunk, we call partial.
+    -- partial need to be the last call.
+    --
     -- f(pass,salt,c,i) = U1 xor U2 xor .. xor Uc
     -- U1 = PRF(pass,salt || BE32(i))
     -- Uc = PRF(pass,Uc-1)
-    f iterNb   = B.unsafeCreate hLen $ \dst -> do
+    loop iterNb len p
+        | len == 0   = return ()
+        | len < hLen = partial iterNb len p
+        | otherwise  = do
+            let applyMany 0 _     = return ()
+                applyMany i uprev = do
+                    let uData = runPRF uprev
+                    B.withByteArray uData $ \u -> bufXor p p u hLen
+                    applyMany (i-1) uData
+            applyMany (iterCounts params) (salt params `B.append` toBS iterNb)
+            loop (iterNb+1) (len - hLen) (p `plusPtr` hLen)
+
+    partial iterNb len p = allocaBytesAligned hLen 8 $ \tmp -> do
         let applyMany 0 _     = return ()
-            applyMany i uprev =
-                let u = runPRF uprev
-                 in bsXor dst u >> applyMany (i-1) u
-        void $ B.memset dst 0 (fromIntegral hLen)
+            applyMany i uprev = do
+                let uData = runPRF uprev
+                B.withByteArray uData $ \u -> bufXor tmp tmp u hLen
+                applyMany (i-1) uData
+        bufSet tmp 0 hLen
         applyMany (iterCounts params) (salt params `B.append` toBS iterNb)
+        bufCopy p tmp len
 
-    -- a mutable version of xor, that allow to not reallocate
-    -- the accumulate buffer.
-    bsXor :: Ptr Word8 -> ByteString -> IO ()
-    bsXor d sBs = B.withByteArray sBs $ \s ->
-        forM_ [0..hLen-1] $ \i -> do
-            v <- xor <$> peek (s `plusPtr` i) <*> peek (d `plusPtr` i)
-            poke (d `plusPtr` i) (v :: Word8)
-
-    -- count the number of blocks necessary
-    l = let (q,rema) = (outputLength params) `divMod` hLen
-         in fromIntegral (q + if rema > 0 then 1 else 0)
-    
     -- big endian encoding of Word32
     toBS :: Word32 -> ByteString
     toBS w = B.pack [a,b,c,d]
@@ -89,3 +96,4 @@ generate prf params =
             b = fromIntegral ((w `shiftR` 16) .&. 0xff)
             c = fromIntegral ((w `shiftR` 8) .&. 0xff)
             d = fromIntegral (w .&. 0xff)
+{-# NOINLINE generate #-}

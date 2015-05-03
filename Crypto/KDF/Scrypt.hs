@@ -48,11 +48,10 @@ generate params
     | popCount (n params) /= 1 =
         error "Scrypt: invalid parameters: n not a power of 2"
     | otherwise = unsafeDoIO $ do
-        let b = PBKDF2.generate prf (PBKDF2.Parameters (password params) (salt params) 1 intLen)
-        newSalt <- B.alloc intLen $ \bPtr ->
+        let b = PBKDF2.generate prf (PBKDF2.Parameters (password params) (salt params) 1 intLen) :: B.Bytes
+        newSalt <- B.copy b $ \bPtr ->
             allocaBytesAligned (128*(fromIntegral $ n params)*(r params)) 8 $ \v ->
             allocaBytesAligned (256*r params) 8 $ \xy -> do
-                B.withByteArray b $ \bOrig -> bufCopy bPtr bOrig intLen
                 forM_ [0..(p params-1)] $ \i ->
                     ccryptonite_scrypt_smix (bPtr `plusPtr` (i * 128 * (r params)))
                                             (fromIntegral $ r params) (n params) v xy
