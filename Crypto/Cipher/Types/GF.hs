@@ -13,12 +13,11 @@ module Crypto.Cipher.Types.GF
       xtsGFMul
     ) where
 
-import           Control.Applicative
+import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArray, withByteArray)
 import qualified Crypto.Internal.ByteArray as B
 import           Foreign.Storable
 import           Foreign.Ptr
-import           Data.Word
 import           Data.Bits
 
 -- block size need to be 128 bits.

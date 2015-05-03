@@ -25,6 +25,7 @@ perModuleAllowedExtensions =
     , ("Crypto/Internal/Memory.hs", [MagicHash, UnboxedTuples])
     , ("Crypto/Internal/Compat.hs", [CPP])
     , ("Crypto/Internal/CompatPrim.hs", [CPP,MagicHash])
+    , ("Crypto/Internal/Endian.hs", [CPP])
     ]
 
 disallowedModules =
