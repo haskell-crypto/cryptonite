@@ -78,13 +78,15 @@ scalarZero = withNewScalarFreeze $ \d -> ccryptonite_p256_init d
 
 scalarAdd :: Scalar -> Scalar -> Scalar
 scalarAdd a b =
-    withNewScalarFreeze $ \d -> withScalar a $ \pa -> withScalar b $ \pb ->
+    withNewScalarFreeze $ \d -> withScalar a $ \pa -> withScalar b $ \pb -> do
         void $ ccryptonite_p256_add pa pb d
+        ccryptonite_p256_mod ccryptonite_SECP256r1_n d d
 
 scalarSub :: Scalar -> Scalar -> Scalar
 scalarSub a b =
-    withNewScalarFreeze $ \d -> withScalar a $ \pa -> withScalar b $ \pb ->
+    withNewScalarFreeze $ \d -> withScalar a $ \pa -> withScalar b $ \pb -> do
         void $ ccryptonite_p256_sub pa pb d
+        ccryptonite_p256_mod ccryptonite_SECP256r1_n d d
 
 scalarCmp :: Scalar -> Scalar -> Ordering
 scalarCmp a b = unsafeDoIO $
