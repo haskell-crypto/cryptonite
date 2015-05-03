@@ -1181,7 +1181,7 @@ static void to_montgomery(felem out, const cryptonite_p256_int* in) {
   int i;
 
   cryptonite_p256_init(&in_shifted);
-  cryptonite_p256_modmul(&SECP256r1_p, in, 0, &kR, &in_shifted);
+  cryptonite_p256_modmul(&cryptonite_SECP256r1_p, in, 0, &kR, &in_shifted);
 
   for (i = 0; i < NLIMBS; i++) {
     if ((i & 1) == 0) {
@@ -1214,7 +1214,7 @@ static void from_montgomery(cryptonite_p256_int* out, const felem in) {
     top |= cryptonite_p256_add_d(&tmp, in[i], &result);
   }
 
-  cryptonite_p256_modmul(&SECP256r1_p, &kRInv, top, &result, out);
+  cryptonite_p256_modmul(&cryptonite_SECP256r1_p, &kRInv, top, &result, out);
 
   cryptonite_p256_clear(&result);
   cryptonite_p256_clear(&tmp);

@@ -51,9 +51,9 @@ typedef struct {
   cryptonite_p256_digit a[P256_NDIGITS];
 } cryptonite_p256_int;
 
-extern const cryptonite_p256_int SECP256r1_n;  // Curve order
-extern const cryptonite_p256_int SECP256r1_p;  // Curve prime
-extern const cryptonite_p256_int SECP256r1_b;  // Curve param
+extern const cryptonite_p256_int cryptonite_SECP256r1_n;  // Curve order
+extern const cryptonite_p256_int cryptonite_SECP256r1_p;  // Curve prime
+extern const cryptonite_p256_int cryptonite_SECP256r1_b;  // Curve param
 
 // Initialize a cryptonite_p256_int to zero.
 void cryptonite_p256_init(cryptonite_p256_int* a);

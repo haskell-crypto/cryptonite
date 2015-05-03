@@ -39,13 +39,13 @@
 
 #include "p256/p256.h"
 
-const cryptonite_p256_int SECP256r1_n =  // curve order
+const cryptonite_p256_int cryptonite_SECP256r1_n =  // curve order
   {{0xfc632551, 0xf3b9cac2, 0xa7179e84, 0xbce6faad, -1, -1, 0, -1}};
 
-const cryptonite_p256_int SECP256r1_p =  // curve field size
+const cryptonite_p256_int cryptonite_SECP256r1_p =  // curve field size
   {{-1, -1, -1, 0, 0, 0, 1, -1 }};
 
-const cryptonite_p256_int SECP256r1_b =  // curve b
+const cryptonite_p256_int cryptonite_SECP256r1_b =  // curve b
   {{0x27d2604b, 0x3bce3c3e, 0xcc53b0f6, 0x651d06b0,
     0x769886bc, 0xb3ebbd55, 0xaa3a93e7, 0x5ac635d8}};
 
@@ -340,20 +340,20 @@ void cryptonite_p256_mod(const cryptonite_p256_int* MOD,
 int cryptonite_p256_is_valid_point(const cryptonite_p256_int* x, const cryptonite_p256_int* y) {
   cryptonite_p256_int y2, x3;
 
-  if (cryptonite_p256_cmp(&SECP256r1_p, x) <= 0 ||
-      cryptonite_p256_cmp(&SECP256r1_p, y) <= 0 ||
+  if (cryptonite_p256_cmp(&cryptonite_SECP256r1_p, x) <= 0 ||
+      cryptonite_p256_cmp(&cryptonite_SECP256r1_p, y) <= 0 ||
       cryptonite_p256_is_zero(x) ||
       cryptonite_p256_is_zero(y)) return 0;
 
-  cryptonite_p256_modmul(&SECP256r1_p, y, 0, y, &y2);  // y^2
+  cryptonite_p256_modmul(&cryptonite_SECP256r1_p, y, 0, y, &y2);  // y^2
 
-  cryptonite_p256_modmul(&SECP256r1_p, x, 0, x, &x3);  // x^2
-  cryptonite_p256_modmul(&SECP256r1_p, x, 0, &x3, &x3);  // x^3
-  if (cryptonite_p256_sub(&x3, x, &x3)) cryptonite_p256_add(&x3, &SECP256r1_p, &x3);  // x^3 - x
-  if (cryptonite_p256_sub(&x3, x, &x3)) cryptonite_p256_add(&x3, &SECP256r1_p, &x3);  // x^3 - 2x
-  if (cryptonite_p256_sub(&x3, x, &x3)) cryptonite_p256_add(&x3, &SECP256r1_p, &x3);  // x^3 - 3x
-  if (cryptonite_p256_add(&x3, &SECP256r1_b, &x3))  // x^3 - 3x + b
-    cryptonite_p256_sub(&x3, &SECP256r1_p, &x3);
+  cryptonite_p256_modmul(&cryptonite_SECP256r1_p, x, 0, x, &x3);  // x^2
+  cryptonite_p256_modmul(&cryptonite_SECP256r1_p, x, 0, &x3, &x3);  // x^3
+  if (cryptonite_p256_sub(&x3, x, &x3)) cryptonite_p256_add(&x3, &cryptonite_SECP256r1_p, &x3);  // x^3 - x
+  if (cryptonite_p256_sub(&x3, x, &x3)) cryptonite_p256_add(&x3, &cryptonite_SECP256r1_p, &x3);  // x^3 - 2x
+  if (cryptonite_p256_sub(&x3, x, &x3)) cryptonite_p256_add(&x3, &cryptonite_SECP256r1_p, &x3);  // x^3 - 3x
+  if (cryptonite_p256_add(&x3, &cryptonite_SECP256r1_b, &x3))  // x^3 - 3x + b
+    cryptonite_p256_sub(&x3, &cryptonite_SECP256r1_p, &x3);
 
   return cryptonite_p256_cmp(&y2, &x3) == 0;
 }
