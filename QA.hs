@@ -33,6 +33,9 @@ perModuleAllowedExtensions =
     , ("Crypto/Cipher/Blowfish.hs", [CPP])
     , ("Crypto/Cipher/AES.hs", [CPP])
     , ("Crypto/PubKey/Curve25519.hs", [MagicHash])
+    , ("Crypto/Cipher/Types/Block.hs", [Rank2Types, MultiParamTypeClasses])
+    , ("Crypto/Cipher/Types/AEAD.hs", [Rank2Types])
+
     ]
 
 disallowedModules =
