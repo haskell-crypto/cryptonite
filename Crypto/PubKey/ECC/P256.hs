@@ -38,9 +38,6 @@ newtype Scalar = Scalar SecureBytes
 data Point = Point !Bytes !Bytes
     deriving (Show,Eq)
 
-publicKeySize :: Int
-publicKeySize = 32
-
 scalarSize :: Int
 scalarSize = 32
 
@@ -64,6 +61,12 @@ data P256X
 toPoint :: Scalar -> Point
 toPoint s = withNewPoint $ \px py -> withScalar s $ \p ->
     ccryptonite_p256_basepoint_mul p px py
+
+-- | Add a point to another point
+pointAdd :: Point -> Point -> Point
+pointAdd a b = withNewPoint $ \dx dy ->
+    withPoint a $ \ax ay -> withPoint b $ \bx by ->
+        ccryptonite_p256e_point_add ax ay bx by dx dy
 
 -- | Multiply a point by a scalar
 pointMul :: Scalar -> Point -> Point
@@ -194,6 +197,12 @@ foreign import ccall "cryptonite_p256_base_point_mul"
     ccryptonite_p256_basepoint_mul :: Ptr P256Scalar
                                    -> Ptr P256X -> Ptr P256Y
                                    -> IO ()
+
+foreign import ccall "cryptonite_p256e_point_add"
+    ccryptonite_p256e_point_add :: Ptr P256X -> Ptr P256Y
+                                -> Ptr P256X -> Ptr P256Y
+                                -> Ptr P256X -> Ptr P256Y
+                                -> IO ()
 foreign import ccall "cryptonite_p256_point_mul"
     ccryptonite_p256_point_mul :: Ptr P256Scalar
                                -> Ptr P256X -> Ptr P256Y
