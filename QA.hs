@@ -169,7 +169,7 @@ main = do
 
             content <- if hasCPP then processCPP file contentRaw else return contentRaw
 
-            let mode = defaultParseMode { parseFilename = file, extensions = exts }
+            let mode = defaultParseMode { parseFilename = file, extensions = exts, fixities = Nothing }
 
             case parseModuleWithMode mode content of
                 ParseFailed srcLoc s -> do
