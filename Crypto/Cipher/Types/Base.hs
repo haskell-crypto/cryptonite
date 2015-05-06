@@ -18,9 +18,7 @@ module Crypto.Cipher.Types.Base
     ) where
 
 import           Data.Word
-import           Data.ByteString (ByteString)
-
-import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray)
+import           Crypto.Internal.ByteArray (Bytes, ByteArrayAccess, ByteArray)
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Error
 
@@ -35,7 +33,7 @@ data KeySizeSpecifier =
 type DataUnitOffset = Word32
 
 -- | Authentification Tag for AE cipher mode
-newtype AuthTag = AuthTag { unAuthTag :: ByteString }
+newtype AuthTag = AuthTag { unAuthTag :: Bytes }
     deriving (Show, ByteArrayAccess)
 
 instance Eq AuthTag where
