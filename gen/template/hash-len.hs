@@ -30,11 +30,11 @@ instance HashAlgorithm %%MODULENAME%%_%%CUSTOM_BITSIZE%% where
     hashInternalFinalize      = c_%%HASHNAME%%_finalize
 %{CUSTOMIZABLE%}
 
-foreign import ccall unsafe "cryptonite_%%HEADER_FILE%% cryptonite_%%HASHNAME%%_init"
+foreign import ccall unsafe "cryptonite_%%HASHNAME%%_init"
     c_%%HASHNAME%%_init :: Ptr (Context a) -> Word32 -> IO ()
 
-foreign import ccall "cryptonite_%%HEADER_FILE%% cryptonite_%%HASHNAME%%_update"
+foreign import ccall "cryptonite_%%HASHNAME%%_update"
     c_%%HASHNAME%%_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
 
-foreign import ccall unsafe "cryptonite_%%HEADER_FILE%% cryptonite_%%HASHNAME%%_finalize"
+foreign import ccall unsafe "cryptonite_%%HASHNAME%%_finalize"
     c_%%HASHNAME%%_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()
