@@ -89,7 +89,6 @@ Library
                      Crypto.Cipher.Blowfish.Primitive
                      Crypto.Cipher.Camellia.Primitive
                      Crypto.Cipher.DES.Primitive
-                     Crypto.Cipher.DES.Serialization
                      Crypto.Cipher.Types.AEAD
                      Crypto.Cipher.Types.Base
                      Crypto.Cipher.Types.Block
