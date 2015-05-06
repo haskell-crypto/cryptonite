@@ -14,19 +14,35 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash #-}
+{-# LANGUAGE UnboxedTuples #-}
 module Crypto.Internal.CompatPrim
     ( be32Prim
+    , le32Prim
     , byteswap32Prim
     , booleanPrim
+    , convert4To32
     ) where
 
 import GHC.Prim
 
-#ifdef ARCH_IS_LITTLE_ENDIAN
+-- | byteswap Word# to or from Big Endian
+--
+-- on a big endian machine, this function is a nop.
 be32Prim :: Word# -> Word#
+#ifdef ARCH_IS_LITTLE_ENDIAN
 be32Prim = byteswap32Prim
 #else
 be32Prim w = w
+#endif
+
+-- | byteswap Word# to or from Little Endian
+--
+-- on a little endian machine, this function is a nop.
+le32Prim :: Word# -> Word#
+#ifdef ARCH_IS_LITTLE_ENDIAN
+le32Prim w = w
+#else
+le32Prim = byteswap32Prim
 #endif
 
 byteswap32Prim :: Word# -> Word#
@@ -39,6 +55,22 @@ byteswap32Prim w =
         !c = and# (uncheckedShiftRL# w 8#) 0x0000ff00##
         !d = and# (uncheckedShiftRL# w 24#) 0x000000ff##
      in or# a (or# b (or# c d))
+#endif
+
+-- | combine 4 word8 [a,b,c,d] to a word32 representing [a,b,c,d]
+convert4To32 :: (# Word#, Word#, Word#, Word# #) -> Word#
+convert4To32 (# a, b, c, d #) = or# (or# c1 c2) (or# c3 c4)
+  where
+#ifdef ARCH_IS_LITTLE_ENDIAN
+        !c1 = uncheckedShiftL# a 24#
+        !c2 = uncheckedShiftL# b 16#
+        !c3 = uncheckedShiftL# c 8#
+        !c4 = d
+#else
+        !c1 = uncheckedShiftL# d 24#
+        !c2 = uncheckedShiftL# c 16#
+        !c3 = uncheckedShiftL# b 8#
+        !c4 = a
 #endif
 
 #if __GLASGOW_HASKELL__ >= 708

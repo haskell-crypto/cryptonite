@@ -15,16 +15,18 @@
 module Crypto.Internal.Hex
     ( showHexadecimal
     , toHexadecimal
+    , toHexadecimal4
     ) where
 
 import Crypto.Internal.Compat
+import Crypto.Internal.CompatPrim
 import Data.Word
 import GHC.Prim
 import GHC.Types
 import GHC.Word
 import Control.Monad
 import Foreign.Storable
-import Foreign.Ptr (Ptr)
+import Foreign.Ptr (Ptr, plusPtr)
 
 showHexadecimal :: (forall a . (Ptr Word8 -> IO a) -> IO a) -> Int -> String
 showHexadecimal withPtr = doChunks 0
@@ -69,6 +71,26 @@ toHexadecimal bout bin n = loop 0
                 pokeByteOff bout (i * 2)     (W8# w1)
                 pokeByteOff bout (i * 2 + 1) (W8# w2)
                 loop (i+1)
+
+-- | convert to hexadecimal going 2 by 2
+--
+-- experimental. untested
+toHexadecimal4 :: Ptr Word32 -> Ptr Word8 -> Int -> IO ()
+toHexadecimal4 bout bin n = loop 0
+  where loop i
+            | i == n = return ()
+            | otherwise = do
+                (W8# w1) <- peekByteOff bin i
+                (W8# w2) <- peekByteOff bin (i+1)
+                let r = W32# (convertByte4 w1 w2)
+                poke (bout `plusPtr` (i * 2)) r
+                loop (i+2)
+
+convertByte4 :: Word# -> Word# -> Word#
+convertByte4 a b = convert4To32 (# b2, b1, a2, a1 #)
+  where
+        !(# a1, a2 #) = convertByte a
+        !(# b1, b2 #) = convertByte b
 
 convertByte :: Word# -> (# Word#, Word# #)
 convertByte b = (# r tableHi b, r tableLo b #)
