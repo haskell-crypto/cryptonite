@@ -18,6 +18,8 @@ module Crypto.Hash.Algorithms
     , SHA256(..)
     , SHA384(..)
     , SHA512(..)
+    , SHA512t_224(..)
+    , SHA512t_256(..)
     , RIPEMD160(..)
     , Tiger(..)
     , Kekkak_224(..)
@@ -46,6 +48,7 @@ import           Crypto.Hash.SHA224
 import           Crypto.Hash.SHA256
 import           Crypto.Hash.SHA384
 import           Crypto.Hash.SHA512
+import           Crypto.Hash.SHA512t
 import           Crypto.Hash.SHA3
 import           Crypto.Hash.Kekkak
 import           Crypto.Hash.RIPEMD160

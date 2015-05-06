@@ -5,55 +5,47 @@
 -- Stability   : experimental
 -- Portability : unknown
 --
--- A module containing SHA512/t
+-- module containing the binding functions to work with the
+-- SHA512t cryptographic hash.
 --
+{-# LANGUAGE ForeignFunctionInterface #-}
 module Crypto.Hash.SHA512t
-    (--  Ctx(..)
-
-    -- * Incremental hashing Functions
-      init     -- :: Ctx
-    , update   -- :: Ctx -> ByteString -> Ctx
-    , finalize -- :: Ctx -> ByteString
-
-    -- * Single Pass hashing
-    --, hash     -- :: ByteString -> ByteString
-    --, hashlazy -- :: ByteString -> ByteString
+    (  SHA512t_224 (..), SHA512t_256 (..)
     ) where
 
-import           Prelude hiding (init, take)
-import           Data.List (foldl')
-import qualified Data.ByteString.Lazy as L
+import           Crypto.Hash.Types
+import           Foreign.Ptr (Ptr)
+import           Data.Word (Word8, Word32)
 
-import qualified Crypto.Hash.SHA512 as SHA512
-import           Crypto.Internal.Compat
-import           Crypto.Internal.ByteArray (ByteArray, ByteArrayAccess, take)
---import qualified Crypto.Hash.Internal.SHA512t as SHA512t
---import           Crypto.Hash.Internal.SHA512 (withCtxNew)
 
-init = undefined
-update = undefined
-finalize = undefined
-{-
--- | SHA512 Context with variable size output
-data Ctx = Ctx !Int !SHA512.Ctx
+data SHA512t_224 = SHA512t_224
+    deriving (Show)
 
--- | init a context
-init :: Int -> Ctx
-init t = Ctx t $ unsafeDoIO $ withCtxNew $ \ptr -> SHA512t.internalInitAt t ptr
+instance HashAlgorithm SHA512t_224 where
+    hashBlockSize  _          = 128
+    hashDigestSize _          = 28
+    hashInternalContextSize _ = 264
+    hashInternalInit p        = c_sha512t_init p 224
+    hashInternalUpdate        = c_sha512t_update
+    hashInternalFinalize      = c_sha512t_finalize
 
--- | update a context with a bytestring
-update :: ByteArrayAccess ba => Ctx -> ba -> Ctx
-update (Ctx t ctx) d = Ctx t (SHA512.update ctx d)
+data SHA512t_256 = SHA512t_256
+    deriving (Show)
 
--- | finalize the context into a digest bytestring
-finalize :: ByteArray digest => Ctx -> digest
-finalize (Ctx sz ctx) = take (sz `div` 8) (SHA512.finalize ctx)
+instance HashAlgorithm SHA512t_256 where
+    hashBlockSize  _          = 128
+    hashDigestSize _          = 32
+    hashInternalContextSize _ = 264
+    hashInternalInit p        = c_sha512t_init p 256
+    hashInternalUpdate        = c_sha512t_update
+    hashInternalFinalize      = c_sha512t_finalize
 
--- | hash a strict bytestring into a digest bytestring
-hash :: (ByteArrayAccess ba, ByteArray digest) => Int -> ba -> digest
-hash t = finalize . update (init t)
 
--- | hash a lazy bytestring into a digest bytestring
-hashlazy :: ByteArray digest => Int -> L.ByteString -> digest
-hashlazy t = finalize . foldl' update (init t) . L.toChunks
--}
+foreign import ccall unsafe "cryptonite_sha512t_init"
+    c_sha512t_init :: Ptr (Context a) -> Word32 -> IO ()
+
+foreign import ccall "cryptonite_sha512t_update"
+    c_sha512t_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
+
+foreign import ccall unsafe "cryptonite_sha512t_finalize"
+    c_sha512t_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()

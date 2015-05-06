@@ -29,6 +29,7 @@ hashModules =
     , GenHashModule "SHA256"    "sha256.h"    "sha256"    192 32 64  []
     , GenHashModule "SHA384"    "sha512.h"    "sha384"    256 48 128 []
     , GenHashModule "SHA512"    "sha512.h"    "sha512"    256 64 128 []
+    , GenHashModule "SHA512t"   "sha512.h"    "sha512t"   264 64 128 [(224,128),(256,128)]
     , GenHashModule "Kekkak"    "kekkak.h"    "kekkak"    360 64 64  [(224,144),(256,136),(384,104),(512,72)]
     , GenHashModule "SHA3"      "sha3.h"      "sha3"      360 64 64  [(224,144),(256,136),(384,104),(512,72)]
     , GenHashModule "RIPEMD160" "ripemd.h"    "ripemd160" 128 20 64  []
