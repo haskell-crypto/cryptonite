@@ -11,7 +11,7 @@ import qualified Crypto.Cipher.Salsa as Salsa
 import qualified Crypto.MAC.Poly1305 as Poly1305
 import qualified Crypto.Internal.ByteArray as B (convert)
 
-import qualified KATHash
+import qualified Hash
 import qualified KAT_HMAC
 import qualified KAT_PBKDF2
 import qualified KAT_Curve25519
@@ -79,7 +79,7 @@ tests = testGroup "cryptonite"
                 msg = B.pack $ take totalLen $ concat (replicate 10 [1..255])
              in Poly1305.auth key msg == Poly1305.finalize (foldr (flip Poly1305.update) (Poly1305.initialize key) (chunks chunkLen msg))
         ]
-    , KATHash.tests
+    , Hash.tests
     , KAT_HMAC.tests
     , KAT_Curve25519.tests
     , KAT_Ed25519.tests

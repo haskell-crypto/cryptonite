@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE ExistentialQuantification #-}
-module KATHash
+module Hash
     ( tests
     ) where
 
