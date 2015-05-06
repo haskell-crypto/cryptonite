@@ -35,7 +35,8 @@ perModuleAllowedExtensions =
     , ("Crypto/PubKey/Curve25519.hs", [MagicHash])
     , ("Crypto/Cipher/Types/Block.hs", [Rank2Types, MultiParamTypeClasses])
     , ("Crypto/Cipher/Types/AEAD.hs", [Rank2Types])
-
+    , ("Crypto/Cipher/Camellia/Primitive.hs", [MagicHash])
+    , ("Crypto/Cipher/DES/Primitive.hs", [FlexibleInstances])
     ]
 
 disallowedModules =
