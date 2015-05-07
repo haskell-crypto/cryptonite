@@ -87,7 +87,7 @@ toHexadecimal4 bout bin n = loop 0
                 loop (i+2)
 
 convertByte4 :: Word# -> Word# -> Word#
-convertByte4 a b = convert4To32 (# b2, b1, a2, a1 #)
+convertByte4 a b = convert4To32 b2 b1 a2 a1
   where
         !(# a1, a2 #) = convertByte a
         !(# b1, b2 #) = convertByte b

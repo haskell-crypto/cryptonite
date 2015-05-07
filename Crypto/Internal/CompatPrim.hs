@@ -58,8 +58,9 @@ byteswap32Prim w =
 #endif
 
 -- | combine 4 word8 [a,b,c,d] to a word32 representing [a,b,c,d]
-convert4To32 :: (# Word#, Word#, Word#, Word# #) -> Word#
-convert4To32 (# a, b, c, d #) = or# (or# c1 c2) (or# c3 c4)
+convert4To32 :: Word# -> Word# -> Word# -> Word#
+             -> Word#
+convert4To32 a b c d = or# (or# c1 c2) (or# c3 c4)
   where
 #ifdef ARCH_IS_LITTLE_ENDIAN
         !c1 = uncheckedShiftL# a 24#
