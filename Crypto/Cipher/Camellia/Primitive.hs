@@ -26,6 +26,7 @@ import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray)
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Internal.Words
 import           Crypto.Internal.WordArray
+import           Data.Memory.Endian
 
 data Mode = Decrypt | Encrypt
 
@@ -118,7 +119,7 @@ data Camellia = Camellia
 
 setKeyInterim :: ByteArrayAccess key => key -> (Word128, Word128, Word128, Word128)
 setKeyInterim keyseed = (w64tow128 kL, w64tow128 kR, w64tow128 kA, w64tow128 kB)
-  where kL = (B.toW64BE keyseed 0, B.toW64BE keyseed 8)
+  where kL = (fromBE $ B.toW64BE keyseed 0, fromBE $ B.toW64BE keyseed 8)
         kR = (0, 0)
 
         kA = let d1 = (fst kL `xor` fst kR)

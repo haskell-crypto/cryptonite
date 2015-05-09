@@ -17,6 +17,7 @@ import           Crypto.Cipher.Types
 import           Crypto.Cipher.DES.Primitive
 import           Crypto.Internal.ByteArray (ByteArrayAccess)
 import qualified Crypto.Internal.ByteArray as B
+import           Data.Memory.Endian
 
 -- | 3DES with 3 different keys used all in the same direction
 data DES_EEE3 = DES_EEE3 Word64 Word64 Word64
@@ -79,11 +80,11 @@ init3DES constr k
     | len == 24 = CryptoPassed $ constr k1 k2 k3
     | otherwise = CryptoFailed CryptoError_KeySizeInvalid
   where len = B.length k
-        (k1, k2, k3) = (B.toW64BE k 0, B.toW64BE k 8, B.toW64BE k 16)
+        (k1, k2, k3) = (fromBE $ B.toW64BE k 0, fromBE $ B.toW64BE k 8, fromBE $ B.toW64BE k 16)
 
 init2DES :: ByteArrayAccess key => (Word64 -> Word64 -> a) -> key -> CryptoFailable a
 init2DES constr k
     | len == 16 = CryptoPassed $ constr k1 k2
     | otherwise = CryptoFailed CryptoError_KeySizeInvalid
   where len = B.length k
-        (k1, k2) = (B.toW64BE k 0, B.toW64BE k 8)
+        (k1, k2) = (fromBE $ B.toW64BE k 0, fromBE $ B.toW64BE k 8)

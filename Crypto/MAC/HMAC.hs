@@ -24,9 +24,9 @@ module Crypto.MAC.HMAC
 import           Crypto.Hash hiding (Context)
 import qualified Crypto.Hash as Hash (Context)
 import           Crypto.Hash.IO
-import           Crypto.Internal.ByteArray (SecureBytes, ByteArray, ByteArrayAccess)
+import           Crypto.Internal.ByteArray (ScrubbedBytes, ByteArray, ByteArrayAccess)
 import qualified Crypto.Internal.ByteArray as B
-import           Crypto.Internal.Bytes
+import           Data.Memory.PtrMethods
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
 
@@ -61,9 +61,9 @@ initialize secret = unsafeDoIO (doHashAlg undefined)
             !withKey <- case B.length secret `compare` blockSize of
                             EQ -> return $ B.withByteArray secret
                             LT -> do key <- B.alloc blockSize $ \k -> do
-                                        bufSet k 0 blockSize
-                                        B.withByteArray secret $ \s -> bufCopy k s (B.length secret)
-                                     return $ B.withByteArray (key :: SecureBytes)
+                                        memSet k 0 blockSize
+                                        B.withByteArray secret $ \s -> memCopy k s (B.length secret)
+                                     return $ B.withByteArray (key :: ScrubbedBytes)
                             GT -> do
                                 -- hash the secret key
                                 ctx <- hashMutableInitWith alg
@@ -74,16 +74,16 @@ initialize secret = unsafeDoIO (doHashAlg undefined)
                                 if digestSize < blockSize
                                     then do
                                         key <- B.alloc blockSize $ \k -> do
-                                            bufSet k 0 blockSize
-                                            B.withByteArray digest $ \s -> bufCopy k s (B.length digest)
-                                        return $ B.withByteArray (key :: SecureBytes)
+                                            memSet k 0 blockSize
+                                            B.withByteArray digest $ \s -> memCopy k s (B.length digest)
+                                        return $ B.withByteArray (key :: ScrubbedBytes)
                                     else
                                        return $ B.withByteArray digest
             (inner, outer) <- withKey $ \keyPtr ->
-                (,) <$> B.alloc blockSize (\p -> bufXorWith p 0x36 keyPtr blockSize)
-                    <*> B.alloc blockSize (\p -> bufXorWith p 0x5c keyPtr blockSize)
-            return $ Context (hashUpdates initCtx [outer :: SecureBytes])
-                             (hashUpdates initCtx [inner :: SecureBytes])
+                (,) <$> B.alloc blockSize (\p -> memXorWith p 0x36 keyPtr blockSize)
+                    <*> B.alloc blockSize (\p -> memXorWith p 0x5c keyPtr blockSize)
+            return $ Context (hashUpdates initCtx [outer :: ScrubbedBytes])
+                             (hashUpdates initCtx [inner :: ScrubbedBytes])
           where 
                 blockSize  = hashBlockSize alg
                 digestSize = hashDigestSize alg

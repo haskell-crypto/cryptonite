@@ -28,11 +28,11 @@ import           GHC.Ptr
 
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
-import           Crypto.Internal.ByteArray (ByteArrayAccess, SecureBytes, Bytes, withByteArray)
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ScrubbedBytes, Bytes, withByteArray)
 import qualified Crypto.Internal.ByteArray as B
 
 -- | A Curve25519 Secret key
-newtype SecretKey = SecretKey SecureBytes
+newtype SecretKey = SecretKey ScrubbedBytes
     deriving (Show,Eq,ByteArrayAccess)
 
 -- | A Curve25519 public key
@@ -41,7 +41,7 @@ newtype PublicKey = PublicKey Bytes
 
 -- | A Curve25519 Diffie Hellman secret related to a
 -- public key and a secret key.
-newtype DhSecret = DhSecret SecureBytes
+newtype DhSecret = DhSecret ScrubbedBytes
     deriving (Show,Eq,ByteArrayAccess)
 
 -- | Try to build a public key from a bytearray

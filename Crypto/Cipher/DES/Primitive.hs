@@ -15,6 +15,7 @@ module Crypto.Cipher.DES.Primitive (encrypt, decrypt, Block(..)) where
 
 import Data.Word
 import Data.Bits
+import Data.Memory.Endian
 
 newtype Block = Block { unBlock :: Word64 }
 

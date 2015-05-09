@@ -27,7 +27,7 @@ import qualified Crypto.MAC.HMAC as HMAC
 
 import           Crypto.Internal.ByteArray (ByteArray)
 import qualified Crypto.Internal.ByteArray as B (allocAndFreeze, convert, withByteArray)
-import           Crypto.Internal.Bytes
+import           Data.Memory.PtrMethods
 
 -- | The PRF used for PBKDF2
 type PRF = B.ByteString -- ^ the password parameters
@@ -54,7 +54,7 @@ data Parameters = Parameters
 generate :: ByteArray ba => PRF -> Parameters -> ba
 generate prf params =
     B.allocAndFreeze (outputLength params) $ \p -> do
-        bufSet p 0 (outputLength params)
+        memSet p 0 (outputLength params)
         loop 1 (outputLength params) p
   where
     !runPRF = prf (password params)
@@ -74,7 +74,7 @@ generate prf params =
             let applyMany 0 _     = return ()
                 applyMany i uprev = do
                     let uData = runPRF uprev
-                    B.withByteArray uData $ \u -> bufXor p p u hLen
+                    B.withByteArray uData $ \u -> memXor p p u hLen
                     applyMany (i-1) uData
             applyMany (iterCounts params) (salt params `B.append` toBS iterNb)
             loop (iterNb+1) (len - hLen) (p `plusPtr` hLen)
@@ -83,11 +83,11 @@ generate prf params =
         let applyMany 0 _     = return ()
             applyMany i uprev = do
                 let uData = runPRF uprev
-                B.withByteArray uData $ \u -> bufXor tmp tmp u hLen
+                B.withByteArray uData $ \u -> memXor tmp tmp u hLen
                 applyMany (i-1) uData
-        bufSet tmp 0 hLen
+        memSet tmp 0 hLen
         applyMany (iterCounts params) (salt params `B.append` toBS iterNb)
-        bufCopy p tmp len
+        memCopy p tmp len
 
     -- big endian encoding of Word32
     toBS :: Word32 -> ByteString

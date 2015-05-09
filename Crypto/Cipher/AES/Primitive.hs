@@ -67,7 +67,7 @@ import           Crypto.Error
 import           Crypto.Cipher.Types
 import           Crypto.Cipher.Types.Block (IV(..))
 import           Crypto.Internal.Compat
-import           Crypto.Internal.ByteArray (ByteArray, ByteArrayAccess, SecureBytes, withByteArray)
+import           Crypto.Internal.ByteArray (ByteArray, ByteArrayAccess, ScrubbedBytes, withByteArray)
 import qualified Crypto.Internal.ByteArray as B
 
 instance Cipher AES where
@@ -107,13 +107,13 @@ ocbMode aes = AEADModeImpl
 
 
 -- | AES Context (pre-processed key)
-newtype AES = AES SecureBytes
+newtype AES = AES ScrubbedBytes
 
 -- | AESGCM State
-newtype AESGCM = AESGCM SecureBytes
+newtype AESGCM = AESGCM ScrubbedBytes
 
 -- | AESOCB State
-newtype AESOCB = AESOCB SecureBytes
+newtype AESOCB = AESOCB ScrubbedBytes
 
 sizeGCM :: Int
 sizeGCM = 80

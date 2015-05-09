@@ -26,11 +26,11 @@ module Crypto.MAC.Poly1305
 import           Foreign.Ptr
 import           Foreign.C.Types
 import           Data.Word
-import           Crypto.Internal.ByteArray (ByteArrayAccess, SecureBytes, Bytes)
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ScrubbedBytes, Bytes)
 import qualified Crypto.Internal.ByteArray as B
 
 -- | Poly1305 Context
-newtype Ctx = Ctx SecureBytes
+newtype Ctx = Ctx ScrubbedBytes
     deriving (ByteArrayAccess)
 
 -- | Poly1305 Auth
@@ -79,7 +79,7 @@ updates (Ctx prevCtx) d = Ctx $ B.copyAndFreeze prevCtx (loop d)
 -- | finalize the context into a digest bytestring
 finalize :: Ctx -> Auth
 finalize (Ctx prevCtx) = Auth $ B.allocAndFreeze 16 $ \dst -> do
-    _ <- B.copy prevCtx (\ctxPtr -> c_poly1305_finalize dst (castPtr ctxPtr)) :: IO SecureBytes
+    _ <- B.copy prevCtx (\ctxPtr -> c_poly1305_finalize dst (castPtr ctxPtr)) :: IO ScrubbedBytes
     return ()
 {-# NOINLINE finalize #-}
 
@@ -88,7 +88,7 @@ auth :: (ByteArrayAccess key, ByteArrayAccess ba) => key -> ba -> Auth
 auth key d
     | B.length key /= 32 = error "Poly1305: key length expected 32 bytes"
     | otherwise          = Auth $ B.allocAndFreeze 16 $ \dst -> do
-        _ <- B.alloc 84 (onCtx dst) :: IO SecureBytes
+        _ <- B.alloc 84 (onCtx dst) :: IO ScrubbedBytes
         return ()
   where
         onCtx dst ctxPtr =

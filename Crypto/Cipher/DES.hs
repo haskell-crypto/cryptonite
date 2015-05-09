@@ -15,6 +15,7 @@ import           Crypto.Cipher.Types
 import           Crypto.Cipher.DES.Primitive
 import           Crypto.Internal.ByteArray (ByteArrayAccess)
 import qualified Crypto.Internal.ByteArray as B
+import           Data.Memory.Endian
 
 -- | DES Context
 data DES = DES Word64
@@ -35,4 +36,4 @@ initDES k
     | len == 8  = CryptoPassed $ DES key
     | otherwise = CryptoFailed $ CryptoError_KeySizeInvalid
   where len = B.length k
-        key = B.toW64BE k 0
+        key = fromBE $ B.toW64BE k 0

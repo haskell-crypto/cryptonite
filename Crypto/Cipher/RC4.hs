@@ -23,13 +23,13 @@ module Crypto.Cipher.RC4
 
 import           Data.Word
 import           Foreign.Ptr
-import           Crypto.Internal.ByteArray (SecureBytes, ByteArray, ByteArrayAccess)
+import           Crypto.Internal.ByteArray (ScrubbedBytes, ByteArray, ByteArrayAccess)
 import qualified Crypto.Internal.ByteArray as B
 
 import Crypto.Internal.Compat
 
 -- | The encryption state for RC4
-newtype State = State SecureBytes
+newtype State = State ScrubbedBytes
     deriving (ByteArrayAccess)
 
 -- | C Call for initializing the encryptor

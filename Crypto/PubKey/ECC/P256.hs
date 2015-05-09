@@ -25,13 +25,13 @@ import           Foreign.C.Types
 
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
-import           Crypto.Internal.Memory
+--import           Crypto.Internal.Memory
 import           Crypto.Internal.ByteArray
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Error
 
 -- | A P256 scalar
-newtype Scalar = Scalar SecureBytes
+newtype Scalar = Scalar ScrubbedBytes
     deriving (Eq,ByteArrayAccess)
 
 -- | A P256 point

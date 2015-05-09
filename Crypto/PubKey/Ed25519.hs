@@ -30,13 +30,12 @@ import           Foreign.C.Types
 
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
-import           Crypto.Internal.Memory
-import           Crypto.Internal.ByteArray (ByteArrayAccess, withByteArray)
+import           Crypto.Internal.ByteArray (ByteArrayAccess, withByteArray, ScrubbedBytes, Bytes)
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Error
 
 -- | An Ed25519 Secret key
-newtype SecretKey = SecretKey SecureBytes
+newtype SecretKey = SecretKey ScrubbedBytes
     deriving (Eq,ByteArrayAccess)
 
 -- | An Ed25519 public key

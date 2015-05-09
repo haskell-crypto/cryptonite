@@ -9,7 +9,7 @@ import Imports
 import qualified Crypto.Cipher.ChaCha as ChaCha
 import qualified Crypto.Cipher.Salsa as Salsa
 import qualified Crypto.MAC.Poly1305 as Poly1305
-import qualified Crypto.Internal.ByteArray as B (convert)
+import qualified Data.Memory.ByteArray as B (convert)
 
 import qualified Hash
 import qualified KAT_HMAC

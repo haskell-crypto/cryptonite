@@ -88,7 +88,6 @@ Library
                      Crypto.Random.Entropy
                      Crypto.Random.EntropyPool
                      Crypto.Random.Entropy.Unsafe
-                     Crypto.Internal.ByteArray
   Other-modules:     Crypto.Cipher.AES.Primitive
                      Crypto.Cipher.Blowfish.Box
                      Crypto.Cipher.Blowfish.Primitive
@@ -125,13 +124,11 @@ Library
                      Crypto.Random.ChaChaDRG
                      Crypto.PubKey.Internal
                      Crypto.PubKey.ElGamal
+                     Crypto.Internal.ByteArray
                      Crypto.Internal.Compat
                      Crypto.Internal.CompatPrim
-                     Crypto.Internal.Bytes
-                     Crypto.Internal.Endian
                      Crypto.Internal.Hex
                      Crypto.Internal.Imports
-                     Crypto.Internal.Memory
                      Crypto.Internal.Words
                      Crypto.Internal.WordArray
   Build-depends:     base >= 4.3 && < 5

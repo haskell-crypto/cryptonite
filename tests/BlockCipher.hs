@@ -16,7 +16,7 @@ import           Imports
 import           Data.Maybe
 import           Crypto.Error
 import           Crypto.Cipher.Types
-import           Crypto.Internal.ByteArray as B
+import           Data.Memory.ByteArray as B
 import qualified Data.ByteString as B
 
 ------------------------------------------------------------------------

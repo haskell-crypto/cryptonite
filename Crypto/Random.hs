@@ -20,11 +20,11 @@ module Crypto.Random
 import Crypto.Random.Types
 import Crypto.Random.ChaChaDRG
 import Crypto.Random.Entropy
-import Crypto.Internal.Memory
+import Data.Memory.ByteArray (ScrubbedBytes)
 import Crypto.Internal.Imports
 
 drgNew :: IO ChaChaDRG
-drgNew = initialize <$> (getEntropy 40 :: IO SecureBytes)
+drgNew = initialize <$> (getEntropy 40 :: IO ScrubbedBytes)
 
 drgNewTest :: (Word64, Word64, Word64, Word64, Word64) -> ChaChaDRG
 drgNewTest = initializeWords

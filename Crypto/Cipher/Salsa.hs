@@ -14,8 +14,8 @@ module Crypto.Cipher.Salsa
     ) where
 
 import Data.ByteString (ByteString)
-import           Crypto.Internal.Bytes (bufXor)
-import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, SecureBytes)
+import           Data.Memory.PtrMethods (memXor)
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, ScrubbedBytes)
 import qualified Crypto.Internal.ByteArray as B
 import qualified Data.ByteString.Internal as BS
 import qualified Data.ByteString as BS
@@ -27,9 +27,9 @@ import Foreign.ForeignPtr
 import Foreign.C.Types
 
 -- | Salsa context
-data State = State Int         -- number of rounds
-                   SecureBytes -- Salsa's state
-                   ByteString  -- previous generated chunk
+data State = State Int           -- number of rounds
+                   ScrubbedBytes -- Salsa's state
+                   ByteString    -- previous generated chunk
 
 round64 :: Int -> (Bool, Int)
 round64 len
@@ -83,7 +83,7 @@ combine prev@(State nbRounds prevSt prevOut) src
             B.withByteArray src $ \srcPtr -> do
                 -- copy the previous buffer by xor if any
                 B.withByteArray prevOut $ \prevPtr ->
-                    bufXor dstPtr srcPtr prevPtr prevBufLen
+                    memXor dstPtr srcPtr prevPtr prevBufLen
 
                 -- then create a new mutable copy of state
                 B.copy prevSt $ \stPtr ->

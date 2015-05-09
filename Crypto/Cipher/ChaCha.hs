@@ -20,22 +20,22 @@ module Crypto.Cipher.ChaCha
 import           Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Internal as BS
-import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, SecureBytes, withByteArray)
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, ScrubbedBytes, withByteArray)
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
-import           Crypto.Internal.Bytes (bufXor)
+import           Data.Memory.PtrMethods (memXor)
 import           Foreign.Ptr
 import           Foreign.ForeignPtr
 import           Foreign.C.Types
 
 -- | ChaCha context
-data State = State Int         -- number of rounds
-                   SecureBytes -- ChaCha's state
-                   ByteString  -- previous generated chunk
+data State = State Int           -- number of rounds
+                   ScrubbedBytes -- ChaCha's state
+                   ByteString    -- previous generated chunk
 
 -- | ChaCha context for DRG purpose (see Crypto.Random.ChaChaDRG)
-newtype StateSimple = StateSimple SecureBytes -- just ChaCha's state
+newtype StateSimple = StateSimple ScrubbedBytes -- just ChaCha's state
 
 round64 :: Int -> (Bool, Int)
 round64 len
@@ -102,7 +102,7 @@ combine prev@(State nbRounds prevSt prevOut) src
             withByteArray src $ \srcPtr -> do
                 -- copy the previous buffer by xor if any
                 withByteArray prevOut $ \prevPtr ->
-                    bufXor dstPtr srcPtr prevPtr prevBufLen
+                    memXor dstPtr srcPtr prevPtr prevBufLen
 
                 -- then create a new mutable copy of state
                 B.copy prevSt $ \stPtr ->

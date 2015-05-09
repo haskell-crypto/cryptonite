@@ -14,7 +14,7 @@ module Crypto.Random.EntropyPool
 
 import           Control.Concurrent.MVar
 import           Crypto.Random.Entropy.Unsafe
-import           Crypto.Internal.ByteArray (ByteArray, SecureBytes)
+import           Crypto.Internal.ByteArray (ByteArray, ScrubbedBytes)
 import qualified Crypto.Internal.ByteArray as B
 import           Data.Word (Word8)
 import           Data.Maybe (catMaybes)
@@ -23,7 +23,7 @@ import           Foreign.Ptr (plusPtr, Ptr)
 
 -- | Pool of Entropy. contains a self mutating pool of entropy,
 -- that is always guarantee to contains data.
-data EntropyPool = EntropyPool [EntropyBackend] (MVar Int) SecureBytes
+data EntropyPool = EntropyPool [EntropyBackend] (MVar Int) ScrubbedBytes
 
 -- size of entropy pool by default
 defaultPoolSize :: Int

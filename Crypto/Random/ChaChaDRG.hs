@@ -12,7 +12,7 @@ module Crypto.Random.ChaChaDRG
     ) where
 
 import           Crypto.Random.Types
-import           Crypto.Internal.ByteArray (ByteArray, SecureBytes)
+import           Crypto.Internal.ByteArray (ByteArray, ScrubbedBytes)
 import qualified Crypto.Internal.ByteArray as B
 import           Data.Word
 import           Foreign.Storable (pokeElemOff)
@@ -35,7 +35,7 @@ initialize seed = ChaChaDRG $ C.initializeSimple seed
 -- | Initialize a new ChaCha context from 5-tuple of words64.
 -- This interface is useful when creating a RNG out of tests generators (e.g. QuickCheck).
 initializeWords :: (Word64, Word64, Word64, Word64, Word64) -> ChaChaDRG
-initializeWords (a,b,c,d,e) = initialize (B.allocAndFreeze 40 fill :: SecureBytes)
+initializeWords (a,b,c,d,e) = initialize (B.allocAndFreeze 40 fill :: ScrubbedBytes)
   where fill s = mapM_ (uncurry (pokeElemOff s)) [(0,a), (1,b), (2,c), (3,d), (4,e)]
 
 generate :: ByteArray output => Int -> ChaChaDRG -> (output, ChaChaDRG)

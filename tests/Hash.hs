@@ -8,7 +8,7 @@ module Hash
 import Crypto.Hash
 
 import qualified Data.ByteString as B
-import qualified Crypto.Internal.ByteArray as B (convertHex)
+import qualified Data.Memory.ByteArray as B (convertHex)
 import Imports
 
 v0,v1,v2 :: ByteString

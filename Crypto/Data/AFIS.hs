@@ -20,7 +20,6 @@ module Crypto.Data.AFIS
 
 import           Crypto.Hash
 import           Crypto.Random.Types
-import           Crypto.Internal.Bytes (bufSet, bufCopy)
 import           Crypto.Internal.Compat
 import           Control.Monad (forM_, foldM)
 import           Data.Word
@@ -30,6 +29,8 @@ import           Foreign.Ptr
 
 import           Crypto.Internal.ByteArray (ByteArray, Bytes, MemView(..))
 import qualified Crypto.Internal.ByteArray as B
+
+import           Data.Memory.PtrMethods (memSet, memCopy)
 
 -- | Split data to diffused data, using a random generator and
 -- an hash algorithm.
@@ -65,7 +66,7 @@ split hashAlg rng expandTimes src
         blockSize   = B.length src
         runOp dstPtr = do
             let lastBlock = dstPtr `plusPtr` (blockSize * (expandTimes-1))
-            bufSet lastBlock 0 blockSize
+            memSet lastBlock 0 blockSize
             let randomBlockPtrs = map (plusPtr dstPtr . (*) blockSize) [0..(expandTimes-2)]
             rng' <- foldM fillRandomBlock rng randomBlockPtrs
             mapM_ (addRandomBlock lastBlock) randomBlockPtrs
@@ -76,7 +77,7 @@ split hashAlg rng expandTimes src
             diffuse hashAlg lastBlock blockSize
         fillRandomBlock g blockPtr = do
             let (rand :: Bytes, g') = randomBytesGenerate blockSize g
-            B.withByteArray rand $ \randPtr -> bufCopy blockPtr randPtr (fromIntegral blockSize)
+            B.withByteArray rand $ \randPtr -> memCopy blockPtr randPtr (fromIntegral blockSize)
             return g'
 
 -- | Merge previously diffused data back to the original data.
@@ -91,7 +92,7 @@ merge hashAlg expandTimes bs
     | originalSize <= 0 = error "diffused data null"
     | otherwise         = B.allocAndFreeze originalSize $ \dstPtr ->
         B.withByteArray bs $ \srcPtr -> do
-            bufSet dstPtr 0 originalSize
+            memSet dstPtr 0 originalSize
             forM_ [0..(expandTimes-2)] $ \i -> do
                 xorMem (srcPtr `plusPtr` (i * originalSize)) dstPtr originalSize
                 diffuse hashAlg dstPtr originalSize
@@ -122,10 +123,10 @@ diffuse hashAlg src sz = loop src 0
   where (full,pad) = sz `quotRem` digestSize 
         loop s i
             | i < full = do h <- hashBlock i s digestSize
-                            B.withByteArray h $ \hPtr -> bufCopy s hPtr digestSize
+                            B.withByteArray h $ \hPtr -> memCopy s hPtr digestSize
                             loop (s `plusPtr` digestSize) (i+1)
             | pad /= 0 = do h <- hashBlock i s pad
-                            B.withByteArray h $ \hPtr -> bufCopy s hPtr pad
+                            B.withByteArray h $ \hPtr -> memCopy s hPtr pad
                             return ()
             | otherwise = return ()
 
