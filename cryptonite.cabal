@@ -35,6 +35,11 @@ Flag support_pclmuldq
   Default:           False
   Manual:            True
 
+Flag builtin_memory
+  Description:       Build with a local snapshot of the memory package
+  Default:           True
+  Manual:            True
+
 Library
   Exposed-modules:   Crypto.Cipher.AES
                      Crypto.Cipher.Blowfish
@@ -163,6 +168,24 @@ Library
                    , cbits/cryptonite_whirlpool.c
                    , cbits/cryptonite_scrypt.c
   include-dirs:  cbits cbits/ed25519
+
+  if flag(builtin_memory)
+    Exposed-modules:   Data.Memory.ByteArray
+                       Data.Memory.Endian
+                       Data.Memory.PtrMethods
+                       Data.Memory.ExtendedWords
+                       Data.Memory.Encoding.Base16
+    Other-modules:     Data.Memory.Internal.Compat
+                       Data.Memory.Internal.CompatPrim
+                       Data.Memory.Internal.Imports
+                       Data.Memory.ByteArray.Types
+                       Data.Memory.ByteArray.Bytes
+                       Data.Memory.ByteArray.ScrubbedBytes
+                       Data.Memory.ByteArray.Methods
+                       Data.Memory.ByteArray.MemView
+    CPP-options:       -DWITH_BYTESTRING_SUPPORT
+  else
+    build-depends:     memory
 
   -- FIXME armel or mispel is also little endian.
   -- might be a good idea to also add a runtime autodetect mode.
