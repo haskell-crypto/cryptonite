@@ -7,12 +7,10 @@ import qualified Data.ByteString.Char8 as B ()
 import Imports
 
 import qualified Crypto.Cipher.ChaCha as ChaCha
-import qualified Crypto.Cipher.Salsa as Salsa
-import qualified Crypto.MAC.Poly1305 as Poly1305
-import qualified Data.Memory.ByteArray as B (convert)
 
 import qualified Hash
 import qualified Poly1305
+import qualified Salsa
 import qualified KAT_HMAC
 import qualified KAT_PBKDF2
 import qualified KAT_Curve25519
@@ -26,7 +24,6 @@ import qualified KAT_Camellia
 import qualified KAT_DES
 import qualified KAT_RC4
 import qualified KAT_TripleDES
-import qualified KATSalsa
 -- misc --------------------------------
 import qualified KAT_AFIS
 
@@ -56,10 +53,7 @@ tests = testGroup "cryptonite"
         , testCase "12-256-K0-I0" (chachaRunSimple b12_256_k0_i0 12 32 8)
         , testCase "20-256-K0-I0" (chachaRunSimple b20_256_k0_i0 20 32 8)
         ]
-    , testGroup "Salsa"
-        [ testGroup "KAT" $
-              map (\(i,f) -> testCase (show (i :: Int)) f) $ zip [1..] $ map (\(r, k,i,e) -> salsaRunSimple e r k i) KATSalsa.vectors
-        ]
+    , Salsa.tests
     , Hash.tests
     , Poly1305.tests
     , KAT_HMAC.tests
@@ -79,22 +73,5 @@ tests = testGroup "cryptonite"
   where chachaRunSimple expected rounds klen nonceLen =
             let chacha = ChaCha.initialize rounds (B.replicate klen 0) (B.replicate nonceLen 0)
              in expected @=? fst (ChaCha.generate chacha (B.length expected))
-        salsaRunSimple expected rounds key nonce =
-            let salsa = Salsa.initialize rounds key nonce
-             in map snd expected @=? salsaLoop 0 salsa expected
-
-        salsaLoop _       _     [] = []
-        salsaLoop current salsa (r@(ofs,expectBs):rs)
-            | current < ofs  =
-                let (_, salsaNext) = Salsa.generate salsa (ofs - current) :: (ByteString, Salsa.State)
-                 in salsaLoop ofs salsaNext (r:rs)
-            | current == ofs =
-                let (e, salsaNext) = Salsa.generate salsa (B.length expectBs)
-                 in e : salsaLoop (current + B.length expectBs) salsaNext rs
-            | otherwise = error "internal error in salsaLoop"
-
-        chunks i bs
-            | B.length bs < i = [bs]
-            | otherwise       = let (b1,b2) = B.splitAt i bs in b1 : chunks i b2
 
 main = defaultMain tests

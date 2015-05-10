@@ -1,8 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
-module KATSalsa (vectors) where
+module Salsa (tests) where
 
 import qualified Data.ByteString as B
-import Data.ByteString.Char8 ()
+import qualified Crypto.Cipher.Salsa as Salsa
+
+import           Imports
 
 key :: B.ByteString
 key = "\xEA\xEB\xEC\xED\xEE\xEF\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\xFA\xFB\xFC\xFD\xFE\xFF\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
@@ -24,3 +26,22 @@ vectors =
         , (131008, "\xA1\x3F\xFA\x12\x08\xF8\xBF\x50\x90\x08\x86\xFA\xAB\x40\xFD\x10\xE8\xCA\xA3\x06\xE6\x3D\xF3\x95\x36\xA1\x56\x4F\xB7\x60\xB2\x42\xA9\xD6\xA4\x62\x8C\xDC\x87\x87\x62\x83\x4E\x27\xA5\x41\xDA\x2A\x5E\x3B\x34\x45\x98\x9C\x76\xF6\x11\xE0\xFE\xC6\xD9\x1A\xCA\xCC")
         ])
     ]
+
+tests = testGroup "Salsa"
+    [ testGroup "KAT" $
+        map (\(i,f) -> testCase (show (i :: Int)) f) $ zip [1..] $ map (\(r, k,i,e) -> salsaRunSimple e r k i) vectors
+    ]
+  where
+        salsaRunSimple expected rounds key nonce =
+            let salsa = Salsa.initialize rounds key nonce
+             in map snd expected @=? salsaLoop 0 salsa expected
+
+        salsaLoop _       _     [] = []
+        salsaLoop current salsa (r@(ofs,expectBs):rs)
+            | current < ofs  =
+                let (_, salsaNext) = Salsa.generate salsa (ofs - current) :: (ByteString, Salsa.State)
+                 in salsaLoop ofs salsaNext (r:rs)
+            | current == ofs =
+                let (e, salsaNext) = Salsa.generate salsa (B.length expectBs)
+                 in e : salsaLoop (current + B.length expectBs) salsaNext rs
+            | otherwise = error "internal error in salsaLoop"
