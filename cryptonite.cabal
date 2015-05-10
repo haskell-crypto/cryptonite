@@ -166,24 +166,6 @@ Library
                    , cbits/cryptonite_scrypt.c
   include-dirs:  cbits cbits/ed25519
 
-  if flag(builtin_memory)
-    Exposed-modules:   Data.Memory.ByteArray
-                       Data.Memory.Endian
-                       Data.Memory.PtrMethods
-                       Data.Memory.ExtendedWords
-                       Data.Memory.Encoding.Base16
-    Other-modules:     Data.Memory.Internal.Compat
-                       Data.Memory.Internal.CompatPrim
-                       Data.Memory.Internal.Imports
-                       Data.Memory.ByteArray.Types
-                       Data.Memory.ByteArray.Bytes
-                       Data.Memory.ByteArray.ScrubbedBytes
-                       Data.Memory.ByteArray.Methods
-                       Data.Memory.ByteArray.MemView
-    CPP-options:       -DWITH_BYTESTRING_SUPPORT
-  else
-    build-depends:     memory
-
   -- FIXME armel or mispel is also little endian.
   -- might be a good idea to also add a runtime autodetect mode.
   -- ARCH_ENDIAN_UNKNOWN
@@ -209,6 +191,24 @@ Library
   else
     Other-modules:  Crypto.Random.Entropy.Unix
 
+  if flag(builtin_memory)
+    Exposed-modules:   Data.Memory.ByteArray
+                       Data.Memory.Endian
+                       Data.Memory.PtrMethods
+                       Data.Memory.ExtendedWords
+                       Data.Memory.Encoding.Base16
+    Other-modules:     Data.Memory.Internal.Compat
+                       Data.Memory.Internal.CompatPrim
+                       Data.Memory.Internal.Imports
+                       Data.Memory.ByteArray.Types
+                       Data.Memory.ByteArray.Bytes
+                       Data.Memory.ByteArray.ScrubbedBytes
+                       Data.Memory.ByteArray.Methods
+                       Data.Memory.ByteArray.MemView
+    CPP-options:       -DWITH_BYTESTRING_SUPPORT
+  else
+    build-depends:     memory
+
 Test-Suite test-cryptonite
   type:              exitcode-stdio-1.0
   hs-source-dirs:    tests
@@ -221,5 +221,7 @@ Test-Suite test-cryptonite
                    , tasty-hunit
                    , tasty-kat
                    , cryptonite
+  if !flag(builtin_memory)
+    Build-Depends:   memory
   ghc-options:       -Wall -fno-warn-orphans -fno-warn-missing-signatures -rtsopts
   default-language:  Haskell2010
