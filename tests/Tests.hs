@@ -12,6 +12,7 @@ import qualified Crypto.MAC.Poly1305 as Poly1305
 import qualified Data.Memory.ByteArray as B (convert)
 
 import qualified Hash
+import qualified Poly1305
 import qualified KAT_HMAC
 import qualified KAT_PBKDF2
 import qualified KAT_Curve25519
@@ -46,15 +47,6 @@ b12_256_k0_i0 =
 b20_256_k0_i0 =
     "\x76\xb8\xe0\xad\xa0\xf1\x3d\x90\x40\x5d\x6a\xe5\x53\x86\xbd\x28\xbd\xd2\x19\xb8\xa0\x8d\xed\x1a\xa8\x36\xef\xcc\x8b\x77\x0d\xc7\xda\x41\x59\x7c\x51\x57\x48\x8d\x77\x24\xe0\x3f\xb8\xd8\x4a\x37\x6a\x43\xb8\xf4\x15\x18\xa1\x1c\xc3\x87\xb6\x69\xb2\xee\x65\x86\x9f\x07\xe7\xbe\x55\x51\x38\x7a\x98\xba\x97\x7c\x73\x2d\x08\x0d\xcb\x0f\x29\xa0\x48\xe3\x65\x69\x12\xc6\x53\x3e\x32\xee\x7a\xed\x29\xb7\x21\x76\x9c\xe6\x4e\x43\xd5\x71\x33\xb0\x74\xd8\x39\xd5\x31\xed\x1f\x28\x51\x0a\xfb\x45\xac\xe1\x0a\x1f\x4b\x79\x4d\x6f"
 
-instance Show Poly1305.Auth where
-    show _ = "Auth"
-
-data Chunking = Chunking Int Int
-    deriving (Show,Eq)
-
-instance Arbitrary Chunking where
-    arbitrary = Chunking <$> choose (1,34) <*> choose (1,2048)
-
 tests = testGroup "cryptonite"
     [ testGroup "ChaCha"
         [ testCase "8-128-K0-I0"  (chachaRunSimple b8_128_k0_i0 8 16 8)
@@ -68,18 +60,8 @@ tests = testGroup "cryptonite"
         [ testGroup "KAT" $
               map (\(i,f) -> testCase (show (i :: Int)) f) $ zip [1..] $ map (\(r, k,i,e) -> salsaRunSimple e r k i) KATSalsa.vectors
         ]
-    , testGroup "Poly1305"
-        [ testCase "V0" $
-            let key = "\x85\xd6\xbe\x78\x57\x55\x6d\x33\x7f\x44\x52\xfe\x42\xd5\x06\xa8\x01\x03\x80\x8a\xfb\x0d\xb2\xfd\x4a\xbf\xf6\xaf\x41\x49\xf5\x1b" :: ByteString
-                msg = "Cryptographic Forum Research Group" :: ByteString
-                tag = "\xa8\x06\x1d\xc1\x30\x51\x36\xc6\xc2\x2b\x8b\xaf\x0c\x01\x27\xa9" :: ByteString
-             in tag @=? B.convert (Poly1305.auth key msg)
-        , testProperty "Chunking" $ \(Chunking chunkLen totalLen) ->
-            let key = B.replicate 32 0
-                msg = B.pack $ take totalLen $ concat (replicate 10 [1..255])
-             in Poly1305.auth key msg == Poly1305.finalize (foldr (flip Poly1305.update) (Poly1305.initialize key) (chunks chunkLen msg))
-        ]
     , Hash.tests
+    , Poly1305.tests
     , KAT_HMAC.tests
     , KAT_Curve25519.tests
     , KAT_Ed25519.tests
