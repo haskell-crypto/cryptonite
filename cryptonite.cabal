@@ -100,6 +100,7 @@ Library
                      Crypto.Cipher.Types.Stream
                      Crypto.Cipher.Types.Utils
                      Crypto.Error.Types
+                     Crypto.Number.Compat
                      Crypto.Hash.Utils
                      Crypto.Hash.Utils.Cpu
                      Crypto.Hash.Types
