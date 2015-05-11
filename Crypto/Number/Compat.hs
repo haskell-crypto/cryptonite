@@ -11,6 +11,7 @@
 {-# LANGUAGE UnboxedTuples #-}
 module Crypto.Number.Compat
     ( GmpSupported(..)
+    , onGmpUnsupported
     , gmpGcde
     , gmpLog2
     , gmpPowModSecInteger
@@ -38,6 +39,10 @@ import GHC.Ptr (Ptr(..))
 data GmpSupported a = GmpSupported a
                     | GmpUnsupported
                     deriving (Show,Eq)
+
+onGmpUnsupported :: GmpSupported a -> a -> a
+onGmpUnsupported (GmpSupported a) _ = a
+onGmpUnsupported GmpUnsupported   f = f
 
 gmpGcde :: Integer -> Integer -> GmpSupported (Integer, Integer, Integer)
 #if MIN_VERSION_integer_gmp(0,5,1)
