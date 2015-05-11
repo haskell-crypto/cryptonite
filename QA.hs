@@ -18,13 +18,13 @@ import Control.Exception
 import System.Console.ANSI
 
 allowedExtensions =
-    [ ScopedTypeVariables, BangPatterns, ForeignFunctionInterface, OverloadedStrings, DeriveDataTypeable, ViewPatterns, GeneralizedNewtypeDeriving, ExistentialQuantification ]
+    [ ScopedTypeVariables, BangPatterns, ForeignFunctionInterface, OverloadedStrings, DeriveDataTypeable, ViewPatterns, GeneralizedNewtypeDeriving, ExistentialQuantification, EmptyDataDecls ]
 perModuleAllowedExtensions =
     [ ("Crypto/Hash/Utils.hs", [MagicHash])
     , ("Crypto/Internal/ByteArray.hs", [MagicHash, UnboxedTuples])
     , ("Crypto/Internal/Memory.hs", [MagicHash, UnboxedTuples])
     , ("Crypto/Internal/Compat.hs", [CPP])
-    , ("Crypto/Internal/CompatPrim.hs", [CPP,MagicHash])
+    , ("Crypto/Internal/CompatPrim.hs", [CPP,MagicHash,UnboxedTuples])
     , ("Crypto/Internal/Endian.hs", [CPP])
     , ("Crypto/Internal/WordArray.hs", [UnboxedTuples,MagicHash])
     , ("Crypto/Internal/Hex.hs", [Rank2Types, UnboxedTuples, MagicHash])
