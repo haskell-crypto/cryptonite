@@ -101,8 +101,6 @@ Library
                      Crypto.Cipher.Types.Utils
                      Crypto.Error.Types
                      Crypto.Number.Compat
-                     Crypto.Hash.Utils
-                     Crypto.Hash.Utils.Cpu
                      Crypto.Hash.Types
                      Crypto.Hash.SHA1
                      Crypto.Hash.SHA224
