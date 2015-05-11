@@ -15,14 +15,14 @@ module Crypto.KDF.PBKDF2
     , generate
     ) where
 
-import Data.Word
-import Data.Bits
-import Data.ByteString (ByteString)
+import           Data.Word
+import           Data.Bits
+import           Data.ByteString (ByteString)
 import qualified Data.ByteString as B
-import Foreign.Marshal.Alloc
-import Foreign.Ptr (plusPtr)
+import           Foreign.Marshal.Alloc
+import           Foreign.Ptr (plusPtr)
 
-import Crypto.Hash (HashAlgorithm)
+import           Crypto.Hash (HashAlgorithm)
 import qualified Crypto.MAC.HMAC as HMAC
 
 import           Crypto.Internal.ByteArray (ByteArray)
