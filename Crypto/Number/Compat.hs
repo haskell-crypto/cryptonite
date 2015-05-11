@@ -28,7 +28,7 @@ module Crypto.Number.Compat
 #define MIN_VERSION_integer_gmp(a,b,c) 0
 #endif
 
-#if __GLASGOW_HASKELL__ >= 710 || MIN_VERSION_integer_gmp(0,5,1)
+#if MIN_VERSION_integer_gmp(0,5,1)
 import GHC.Integer.GMP.Internals
 import GHC.Base
 import GHC.Integer.Logarithms (integerLog2#)
@@ -55,7 +55,7 @@ gmpGcde _ _ = GmpUnsupported
 #endif
 
 gmpLog2 :: Integer -> GmpSupported Int
-#ifdef VERSION_integer_gmp
+#if MIN_VERSION_integer_gmp(0,5,1)
 gmpLog2 0 = GmpSupported 0
 gmpLog2 x = GmpSupported (I# (integerLog2# x))
 #else
@@ -113,7 +113,7 @@ gmpSizeInBytes _ = GmpUnsupported
 #endif
 
 gmpExportInteger :: Integer -> Ptr Word8 -> GmpSupported (IO ())
-#if __GLASGOW_HASKELL__ >= 710
+#if MIN_VERSION_integer_gmp(1,0,0)
 gmpExportInteger n (Ptr addr) = GmpSupported $ do
     _ <- exportIntegerToAddr n addr 1#
     return ()
@@ -126,11 +126,11 @@ gmpExportInteger _ _ = GmpUnsupported
 #endif
 
 gmpImportInteger :: Int -> Ptr Word8 -> GmpSupported (IO Integer)
-#if __GLASGOW_HASKELL__ >= 710
-gmpImportInteger n (Ptr addr) = GmpSupported $
+#if MIN_VERSION_integer_gmp(1,0,0)
+gmpImportInteger (I# n) (Ptr addr) = GmpSupported $
     importIntegerFromAddr addr (int2Word# n) 1#
 #elif MIN_VERSION_integer_gmp(0,5,1)
-gmpImportInteger n (Ptr addr) = GmpSupported $ IO $ \s ->
+gmpImportInteger (I# n) (Ptr addr) = GmpSupported $ IO $ \s ->
     importIntegerFromAddr addr (int2Word# n) 1# s
 #else
 gmpImportInteger _ _ = GmpUnsupported

@@ -40,6 +40,11 @@ Flag builtin_memory
   Default:           True
   Manual:            True
 
+Flag integer-gmp
+  Description:       Whether or not to use GMP for some functions
+  Default:           True
+  Manual:            True
+
 Library
   Exposed-modules:   Crypto.Cipher.AES
                      Crypto.Cipher.Blowfish
@@ -207,6 +212,9 @@ Library
     CPP-options:       -DWITH_BYTESTRING_SUPPORT
   else
     build-depends:     memory
+
+  if impl(ghc) && flag(integer-gmp)
+    Build-depends:   integer-gmp
 
 Test-Suite test-cryptonite
   type:              exitcode-stdio-1.0
