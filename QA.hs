@@ -65,6 +65,10 @@ perModuleAllowedModules =
             [ ModuleName "Data.ByteString"
             ]
       )
+    , ("Crypto/Internal/Compat.hs",
+            [ ModuleName "System.IO.Unsafe"
+            ]
+      )
     ]
 
 data Issue =
