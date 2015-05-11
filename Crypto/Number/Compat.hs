@@ -28,7 +28,7 @@ module Crypto.Number.Compat
 #define MIN_VERSION_integer_gmp(a,b,c) 0
 #endif
 
-#if MIN_VERSION_integer_gmp(0,5,1)
+#if __GLASGOW_HASKELL__ >= 710 || MIN_VERSION_integer_gmp(0,5,1)
 import GHC.Integer.GMP.Internals
 import GHC.Base
 import GHC.Integer.Logarithms (integerLog2#)
