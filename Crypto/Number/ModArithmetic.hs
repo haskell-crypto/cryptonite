@@ -1,9 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE CPP #-}
-#ifndef MIN_VERSION_integer_gmp
-#define MIN_VERSION_integer_gmp(a,b,c) 0
-#endif
 -- |
 -- Module      : Crypto.Number.ModArithmetic
 -- License     : BSD-style
@@ -16,11 +12,6 @@ module Crypto.Number.ModArithmetic
     -- * exponentiation
       expSafe
     , expFast
-    , exponentiation_rtl_binary
-    , exponentiation
-    -- * deprecated name for exponentiation
-    , exponantiation_rtl_binary
-    , exponantiation
     -- * inverse computing
     , inverse
     , inverseCoprimes
@@ -28,13 +19,8 @@ module Crypto.Number.ModArithmetic
 
 import Control.Exception (throw, Exception)
 import Data.Typeable
-
-#if MIN_VERSION_integer_gmp(0,5,1)
-import GHC.Integer.GMP.Internals
-#else
-import Crypto.Number.Basic (gcde)
-import Data.Bits
-#endif
+import Crypto.Number.Basic
+import Crypto.Number.Compat
 
 -- | Raised when two numbers are supposed to be coprimes but are not.
 data CoprimesAssertionError = CoprimesAssertionError
@@ -59,15 +45,12 @@ expSafe :: Integer -- ^ base
         -> Integer -- ^ exponant
         -> Integer -- ^ modulo
         -> Integer -- ^ result
-#if MIN_VERSION_integer_gmp(0,5,1)
 expSafe b e m
-#if !(MIN_VERSION_integer_gmp(1,0,0))
-    | odd m     = powModSecInteger b e m
-#endif
-    | otherwise = powModInteger b e m
-#else
-expSafe = exponentiation
-#endif
+    | odd m     = gmpPowModSecInteger b e m `onGmpUnsupported`
+                  (gmpPowModInteger b e m    `onGmpUnsupported`
+                  exponentiation b e m)
+    | otherwise = gmpPowModInteger b e m    `onGmpUnsupported`
+                  exponentiation b e m
 
 -- | Compute the modular exponentiation of base^exponant using
 -- the fastest algorithm without any consideration for
@@ -79,36 +62,11 @@ expFast :: Integer -- ^ base
         -> Integer -- ^ exponant
         -> Integer -- ^ modulo
         -> Integer -- ^ result
-expFast =
-#if MIN_VERSION_integer_gmp(0,5,1)
-    powModInteger
-#else
-    exponentiation
-#endif
-
--- note on exponentiation: 0^0 is treated as 1 for mimicking the standard library;
--- the mathematic debate is still open on whether or not this is true, but pratically
--- in computer science it shouldn't be useful for anything anyway.
-
--- | exponentiation_rtl_binary computes modular exponentiation as b^e mod m
--- using the right-to-left binary exponentiation algorithm (HAC 14.79)
-exponentiation_rtl_binary :: Integer -> Integer -> Integer -> Integer
-#if MIN_VERSION_integer_gmp(0,5,1)
-exponentiation_rtl_binary = expSafe
-#else
-exponentiation_rtl_binary 0 0 m = 1 `mod` m
-exponentiation_rtl_binary b e m = loop e b 1
-    where sq x          = (x * x) `mod` m
-          loop !0 _  !a = a `mod` m
-          loop !i !s !a = loop (i `shiftR` 1) (sq s) (if odd i then a * s else a)
-#endif
+expFast b e m = gmpPowModInteger b e m `onGmpUnsupported` exponentiation b e m
 
 -- | exponentiation computes modular exponentiation as b^e mod m
 -- using repetitive squaring.
 exponentiation :: Integer -> Integer -> Integer -> Integer
-#if MIN_VERSION_integer_gmp(0,5,1)
-exponentiation = expSafe
-#else
 exponentiation b e m
     | b == 1    = b
     | e == 0    = 1
@@ -116,29 +74,15 @@ exponentiation b e m
     | even e    = let p = (exponentiation b (e `div` 2) m) `mod` m
                    in (p^(2::Integer)) `mod` m
     | otherwise = (b * exponentiation b (e-1) m) `mod` m
-#endif
-
---{-# DEPRECATED exponantiation_rtl_binary "typo in API name it's called exponentiation_rtl_binary #-}
-exponantiation_rtl_binary :: Integer -> Integer -> Integer -> Integer
-exponantiation_rtl_binary = exponentiation_rtl_binary
-
---{-# DEPRECATED exponentiation "typo in API name it's called exponentiation #-}
-exponantiation :: Integer -> Integer -> Integer -> Integer
-exponantiation = exponentiation
 
 -- | inverse computes the modular inverse as in g^(-1) mod m
 inverse :: Integer -> Integer -> Maybe Integer
-#if MIN_VERSION_integer_gmp(0,5,1)
-inverse g m
-    | r == 0    = Nothing
-    | otherwise = Just r
-  where r = recipModInteger g m
-#else
-inverse g m
-    | d > 1     = Nothing
-    | otherwise = Just (x `mod` m)
-  where (x,_,d) = gcde g m
-#endif
+inverse g m = gmpInverse g m `onGmpUnsupported` v
+  where
+    v
+        | d > 1     = Nothing
+        | otherwise = Just (x `mod` m)
+    (x,_,d) = gcde g m
 
 -- | Compute the modular inverse of 2 coprime numbers.
 -- This is equivalent to inverse except that the result

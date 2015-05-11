@@ -24,7 +24,7 @@ import Crypto.Internal.Imports
 import Crypto.Number.Compat
 import Crypto.Number.Generate
 import Crypto.Number.Basic (sqrti, gcde)
-import Crypto.Number.ModArithmetic (exponantiation)
+import Crypto.Number.ModArithmetic (expSafe)
 import Crypto.Random.Types
 
 import Data.Bits
@@ -107,7 +107,7 @@ primalityTestMillerRabin tries !n =
     factorise !si !vi
         | vi `testBit` 0 = (si, vi)
         | otherwise     = factorise (si+1) (vi `shiftR` 1) -- probably faster to not shift v continously, but just once.
-    expmod = exponantiation
+    expmod = expSafe
 
     -- when iteration reach zero, we have a probable prime
     loop []     = True
@@ -142,7 +142,7 @@ primalityTestFermat :: Int -- ^ number of iterations of the algorithm
                     -> Bool
 primalityTestFermat n a p = and $ map expTest [a..(a+fromIntegral n)]
     where !pm1 = p-1
-          expTest i = exponantiation i pm1 p == 1
+          expTest i = expSafe i pm1 p == 1
 
 -- | Test naively is integer is prime.
 -- while naive, we skip even number and stop iteration at i > sqrt(n)
