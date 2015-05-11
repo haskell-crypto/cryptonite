@@ -5,14 +5,7 @@
 -- Stability   : experimental
 -- Portability : Good
 
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE BangPatterns #-}
-#ifndef MIN_VERSION_integer_gmp
-#define MIN_VERSION_integer_gmp(a,b,c) 0
-#endif
-#if MIN_VERSION_integer_gmp(0,5,1)
-{-# LANGUAGE MagicHash #-}
-#endif
 module Crypto.Number.Prime
     (
       generatePrime
@@ -28,17 +21,13 @@ module Crypto.Number.Prime
 
 import Crypto.Internal.Imports
 
+import Crypto.Number.Compat
 import Crypto.Number.Generate
 import Crypto.Number.Basic (sqrti, gcde)
 import Crypto.Number.ModArithmetic (exponantiation)
 import Crypto.Random.Types
 
-#if MIN_VERSION_integer_gmp(0,5,1)
-import GHC.Integer.GMP.Internals
-import GHC.Base
-#else
 import Data.Bits
-#endif
 
 -- | returns if the number is probably prime.
 -- first a list of small primes are implicitely tested for divisibility,
@@ -84,27 +73,24 @@ findPrimeFromWith prop !n
 -- | find a prime from a starting point with no specific property.
 findPrimeFrom :: MonadRandom m => Integer -> m Integer
 findPrimeFrom n =
-#if MIN_VERSION_integer_gmp(0,5,1)
-    return $ nextPrimeInteger n
-#else
-    findPrimeFromWith (\_ -> return True) n
-#endif
+    case gmpNextPrime n of
+        GmpSupported p -> return p
+        GmpUnsupported -> findPrimeFromWith (\_ -> return True) n
 
 -- | Miller Rabin algorithm return if the number is probably prime or composite.
 -- the tries parameter is the number of recursion, that determines the accuracy of the test.
 primalityTestMillerRabin :: MonadRandom m => Int -> Integer -> m Bool
-#if MIN_VERSION_integer_gmp(0,5,1)
-primalityTestMillerRabin (I# tries) !n =
-    case testPrimeInteger n tries of
-        0# -> return False
-        _  -> return True
-#else
-primalityTestMillerRabin tries !n
-    | n <= 3     = error "Miller-Rabin requires tested value to be > 3"
-    | even n     = return False
-    | tries <= 0 = error "Miller-Rabin tries need to be > 0"
-    | otherwise  = loop <$> generateTries tries
+primalityTestMillerRabin tries !n =
+    case gmpTestPrimeMillerRabin tries n of
+        GmpSupported b -> return b
+        GmpUnsupported -> run
   where
+    run
+        | n <= 3     = error "Miller-Rabin requires tested value to be > 3"
+        | even n     = return False
+        | tries <= 0 = error "Miller-Rabin tries need to be > 0"
+        | otherwise  = loop <$> generateTries tries
+
     !nm1 = n-1
     !nm2 = n-2
 
@@ -136,7 +122,6 @@ primalityTestMillerRabin tries !n
         | x2 == 1   = False
         | x2 /= nm1 = loop' ws ((x2*x2) `mod` n) (r+1)
         | otherwise = loop ws
-#endif
 
 {-
     n < z -> witness to test

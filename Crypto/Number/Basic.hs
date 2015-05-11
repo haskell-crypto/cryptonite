@@ -1,14 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE CPP #-}
-#ifndef MIN_VERSION_integer_gmp
-#define MIN_VERSION_integer_gmp(a,b,c) 0
-#endif
-#if MIN_VERSION_integer_gmp(0,5,1)
-{-# LANGUAGE UnboxedTuples #-}
-#endif
-#ifdef VERSION_integer_gmp
-{-# LANGUAGE MagicHash #-}
-#endif
 -- |
 -- Module      : Crypto.Number.Basic
 -- License     : BSD-style
@@ -16,6 +5,7 @@
 -- Stability   : experimental
 -- Portability : Good
 
+{-# LANGUAGE BangPatterns #-}
 module Crypto.Number.Basic
     ( sqrti
     , gcde
@@ -23,15 +13,7 @@ module Crypto.Number.Basic
     , log2
     ) where
 
-#if MIN_VERSION_integer_gmp(0,5,1)
-import GHC.Integer.GMP.Internals
-#else
-import Data.Bits
-#endif
-#ifdef VERSION_integer_gmp
-import GHC.Exts
-import GHC.Integer.Logarithms (integerLog2#)
-#endif
+import Crypto.Number.Compat
 
 -- | sqrti returns two integer (l,b) so that l <= sqrt i <= b
 -- the implementation is quite naive, use an approximation for the first number
@@ -70,35 +52,25 @@ sqrti i
 -- gcde 'a' 'b' find (x,y,gcd(a,b)) where ax + by = d
 --
 gcde :: Integer -> Integer -> (Integer, Integer, Integer)
-#if MIN_VERSION_integer_gmp(0,5,1)
-gcde a b = (s, t, g)
-  where (# g, s #) = gcdExtInteger a b
-        t = (g - s * a) `div` b
-#else
-gcde a b = if d < 0 then (-x,-y,-d) else (x,y,d) where
+gcde a b = onGmpUnsupported (gmpGcde a b) $
+    if d < 0 then (-x,-y,-d) else (x,y,d)
+  where
     (d, x, y)                     = f (a,1,0) (b,0,1)
     f t              (0, _, _)    = t
     f (a', sa, ta) t@(b', sb, tb) =
         let (q, r) = a' `divMod` b' in
         f t (r, sa - (q * sb), ta - (q * tb))
-#endif
-
 
 -- | check if a list of integer are all even
 areEven :: [Integer] -> Bool
 areEven = and . map even
 
 log2 :: Integer -> Int
-#ifdef VERSION_integer_gmp
-log2 0 = 0
-log2 x = I# (integerLog2# x)
-#else
--- http://www.haskell.org/pipermail/haskell-cafe/2008-February/039465.html
-log2 = imLog 2
+log2 n = onGmpUnsupported (gmpLog2 n) $ imLog 2 n
   where
+    -- http://www.haskell.org/pipermail/haskell-cafe/2008-February/039465.html
     imLog b x = if x < b then 0 else (x `div` b^l) `doDiv` l
       where
         l = 2 * imLog (b * b) x
         doDiv x' l' = if x' < b then l' else (x' `div` b) `doDiv` (l' + 1)
-#endif
 {-# INLINE log2 #-}
