@@ -37,6 +37,7 @@ perModuleAllowedExtensions =
     , ("Crypto/Cipher/Types/AEAD.hs", [Rank2Types])
     , ("Crypto/Cipher/Camellia/Primitive.hs", [MagicHash])
     , ("Crypto/Cipher/DES/Primitive.hs", [FlexibleInstances])
+    , ("Crypto/Number/Compat.hs", [UnboxedTuples,MagicHash,CPP])
     ]
 
 disallowedModules =
