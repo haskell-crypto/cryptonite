@@ -38,7 +38,7 @@ import Crypto.Internal.Imports
 import Crypto.Number.ModArithmetic (expSafe, expFast, inverse)
 import Crypto.Number.Generate (generateMax)
 import Crypto.Number.Serialize (os2ip)
-import Crypto.Number.Basic (gcde_binary)
+import Crypto.Number.Basic (gcde)
 import Crypto.Random.Types
 import Crypto.PubKey.HashDescr (HashFunction)
 import Crypto.PubKey.DH (PrivateNumber(..), PublicNumber(..), Params(..), SharedKey(..))
@@ -108,7 +108,7 @@ signWith k (Params p g) (PrivateNumber x) hashF msg
     where r          = expSafe g k p
           h          = os2ip $ hashF msg
           s          = ((h - x*r) * kInv) `mod` (p-1)
-          (kInv,_,d) = gcde_binary k (p-1)
+          (kInv,_,d) = gcde k (p-1)
 
 -- | sign message
 --

@@ -29,7 +29,7 @@ module Crypto.Number.Prime
 import Crypto.Internal.Imports
 
 import Crypto.Number.Generate
-import Crypto.Number.Basic (sqrti, gcde_binary)
+import Crypto.Number.Basic (sqrti, gcde)
 import Crypto.Number.ModArithmetic (exponantiation)
 import Crypto.Random.Types
 
@@ -175,7 +175,7 @@ primalityTestNaive n
 
 -- | Test is two integer are coprime to each other
 isCoprime :: Integer -> Integer -> Bool
-isCoprime m n = case gcde_binary m n of (_,_,d) -> d == 1
+isCoprime m n = case gcde m n of (_,_,d) -> d == 1
 
 -- | list of the first primes till 2903..
 firstPrimes :: [Integer]
