@@ -114,7 +114,7 @@ gmpSizeInBytes _ = GmpUnsupported
 
 gmpExportInteger :: Integer -> Ptr Word8 -> GmpSupported (IO ())
 #if __GLASGOW_HASKELL__ >= 710
-gmpExportInteger n (Ptr addr) = GmpSupported $
+gmpExportInteger n (Ptr addr) = GmpSupported $ do
     _ <- exportIntegerToAddr n addr 1#
     return ()
 #elif MIN_VERSION_integer_gmp(0,5,1)
