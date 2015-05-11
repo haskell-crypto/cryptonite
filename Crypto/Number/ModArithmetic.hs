@@ -32,7 +32,7 @@ import Data.Typeable
 #if MIN_VERSION_integer_gmp(0,5,1)
 import GHC.Integer.GMP.Internals
 #else
-import Crypto.Number.Basic (gcde_binary)
+import Crypto.Number.Basic (gcde)
 import Data.Bits
 #endif
 
@@ -137,7 +137,7 @@ inverse g m
 inverse g m
     | d > 1     = Nothing
     | otherwise = Just (x `mod` m)
-  where (x,_,d) = gcde_binary g m
+  where (x,_,d) = gcde g m
 #endif
 
 -- | Compute the modular inverse of 2 coprime numbers.
