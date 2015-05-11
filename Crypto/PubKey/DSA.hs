@@ -29,10 +29,10 @@ module Crypto.PubKey.DSA
 import Crypto.Random.Types
 import Data.Data
 import Data.Maybe
-import Data.ByteString (ByteString)
 import Crypto.Number.ModArithmetic (expFast, expSafe, inverse)
 import Crypto.Number.Serialize
 import Crypto.Number.Generate
+import Crypto.Internal.ByteArray (ByteArrayAccess)
 import Crypto.Hash
 
 -- | DSA Public Number, usually embedded in DSA Public Key
@@ -91,11 +91,11 @@ calculatePublic :: Params -> PrivateNumber -> PublicNumber
 calculatePublic (Params p g _) x = expSafe g x p
 
 -- | sign message using the private key and an explicit k number.
-signWith :: HashAlgorithm hash
+signWith :: (ByteArrayAccess msg, HashAlgorithm hash)
          => Integer         -- ^ k random number
          -> PrivateKey      -- ^ private key
          -> hash            -- ^ hash function
-         -> ByteString      -- ^ message to sign
+         -> msg             -- ^ message to sign
          -> Maybe Signature
 signWith k pk hashAlg msg
     | r == 0 || s == 0  = Nothing
@@ -110,7 +110,7 @@ signWith k pk hashAlg msg
           s         = (kInv * (hm + x * r)) `mod` q
 
 -- | sign message using the private key.
-sign :: (HashAlgorithm hash, MonadRandom m) => PrivateKey -> hash -> ByteString -> m Signature
+sign :: (ByteArrayAccess msg, HashAlgorithm hash, MonadRandom m) => PrivateKey -> hash -> msg -> m Signature
 sign pk hashAlg msg = do
     k <- generateMax q
     case signWith k pk hashAlg msg of
@@ -120,7 +120,7 @@ sign pk hashAlg msg = do
     (Params _ _ q) = private_params pk
 
 -- | verify a bytestring using the public key.
-verify :: HashAlgorithm hash => hash -> PublicKey -> Signature -> ByteString -> Bool
+verify :: (ByteArrayAccess msg, HashAlgorithm hash) => hash -> PublicKey -> Signature -> msg -> Bool
 verify hashAlg pk (Signature r s) m
     -- Reject the signature if either 0 < r < q or 0 < s < q is not satisfied.
     | r <= 0 || r >= q || s <= 0 || s >= q = False

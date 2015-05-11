@@ -18,7 +18,7 @@ module Crypto.PubKey.ECC.ECDSA
 import Control.Monad
 import Crypto.Random.Types
 import Data.Bits (shiftR)
-import Data.ByteString (ByteString)
+import Crypto.Internal.ByteArray (ByteArrayAccess)
 import Data.Data
 import Crypto.Number.ModArithmetic (inverse)
 import Crypto.Number.Serialize
@@ -60,11 +60,11 @@ toPrivateKey (KeyPair curve _ priv) = PrivateKey curve priv
 -- | Sign message using the private key and an explicit k number.
 --
 -- /WARNING:/ Vulnerable to timing attacks.
-signWith :: HashAlgorithm hash
+signWith :: (ByteArrayAccess msg, HashAlgorithm hash)
          => Integer    -- ^ k random number
          -> PrivateKey -- ^ private key
          -> hash       -- ^ hash function
-         -> ByteString -- ^ message to sign
+         -> msg        -- ^ message to sign
          -> Maybe Signature
 signWith k (PrivateKey curve d) hashAlg msg = do
     let z = tHash hashAlg msg n
@@ -81,10 +81,8 @@ signWith k (PrivateKey curve d) hashAlg msg = do
 -- | Sign message using the private key.
 --
 -- /WARNING:/ Vulnerable to timing attacks.
-sign :: (HashAlgorithm hash, MonadRandom m)
-     => PrivateKey
-     -> hash
-     -> ByteString -> m Signature
+sign :: (ByteArrayAccess msg, HashAlgorithm hash, MonadRandom m)
+     => PrivateKey -> hash -> msg -> m Signature
 sign pk hashAlg msg = do
     k <- generateBetween 1 (n - 1)
     case signWith k pk hashAlg msg of
@@ -93,7 +91,7 @@ sign pk hashAlg msg = do
   where n = ecc_n . common_curve $ private_curve pk
 
 -- | Verify a bytestring using the public key.
-verify :: HashAlgorithm hash => hash -> PublicKey -> Signature -> ByteString -> Bool
+verify :: (ByteArrayAccess msg, HashAlgorithm hash) => hash -> PublicKey -> Signature -> msg -> Bool
 verify _       (PublicKey _ PointO) _ _ = False
 verify hashAlg pk@(PublicKey curve q) (Signature r s) msg
     | r < 1 || r >= n || s < 1 || s >= n = False
@@ -114,7 +112,7 @@ verify hashAlg pk@(PublicKey curve q) (Signature r s) msg
         cc = common_curve $ public_curve pk
 
 -- | Truncate and hash.
-tHash :: HashAlgorithm hash => hash -> ByteString -> Integer -> Integer
+tHash :: (ByteArrayAccess msg, HashAlgorithm hash) => hash -> msg -> Integer -> Integer
 tHash hashAlg m n
     | d > 0 = shiftR e d
     | otherwise = e
