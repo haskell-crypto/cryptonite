@@ -18,8 +18,6 @@ module Crypto.Cipher.Camellia.Primitive
 
 import           Data.Word
 import           Data.Bits
-import qualified Data.ByteString as B hiding (length)
-import qualified Data.ByteString.Unsafe as B
 
 import           Crypto.Error
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray)
@@ -45,18 +43,16 @@ w64tow8 x = (t1, t2, t3, t4, t5, t6, t7, t8)
         t7 = fromIntegral (x `shiftR` 8)
         t8 = fromIntegral (x)
 
-w8tow64 :: B.ByteString -> Word64
-w8tow64 b = (sh t1 56 .|. sh t2 48 .|. sh t3 40 .|. sh t4 32 .|. sh t5 24 .|. sh t6 16 .|. sh t7 8 .|. sh t8 0)
-    where
-        t1     = B.unsafeIndex b 0
-        t2     = B.unsafeIndex b 1
-        t3     = B.unsafeIndex b 2
-        t4     = B.unsafeIndex b 3
-        t5     = B.unsafeIndex b 4
-        t6     = B.unsafeIndex b 5
-        t7     = B.unsafeIndex b 6
-        t8     = B.unsafeIndex b 7
-        sh i r = (fromIntegral i) `shiftL` r
+w8tow64 :: (Word8, Word8, Word8, Word8, Word8, Word8, Word8, Word8) -> Word64
+w8tow64 (t1,t2,t3,t4,t5,t6,t7,t8) =
+    (fromIntegral t1 `shiftL` 56) .|.
+    (fromIntegral t2 `shiftL` 48) .|.
+    (fromIntegral t3 `shiftL` 40) .|.
+    (fromIntegral t4 `shiftL` 32) .|.
+    (fromIntegral t5 `shiftL` 24) .|.
+    (fromIntegral t6 `shiftL` 16) .|.
+    (fromIntegral t7 `shiftL` 8)  .|.
+    (fromIntegral t8)
 
 sbox :: Int -> Word8
 sbox = arrayRead8 t
@@ -191,7 +187,7 @@ feistel fin sk =
     let y6 = t2' `xor` t3' `xor` t5' `xor` t7' `xor` t8' in
     let y7 = t3' `xor` t4' `xor` t5' `xor` t6' `xor` t8' in
     let y8 = t1' `xor` t4' `xor` t5' `xor` t6' `xor` t7' in
-    w8tow64 $ B.pack [y1, y2, y3, y4, y5, y6, y7, y8]
+    w8tow64 (y1, y2, y3, y4, y5, y6, y7, y8)
 
 fl :: Word64 -> Word64 -> Word64
 fl fin sk =
