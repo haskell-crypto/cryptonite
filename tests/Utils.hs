@@ -52,3 +52,10 @@ splitB l b =
         else    
             [ b ]
 
+assertBytesEq :: ByteString -> ByteString -> Bool
+assertBytesEq b1 b2 | b1 /= b2  = error ("expected: " ++ show b1 ++ " got: " ++ show b2)
+                    | otherwise = True
+
+assertEq :: (Show a, Eq a) => a -> a -> Bool
+assertEq b1 b2 | b1 /= b2  = error ("expected: " ++ show b1 ++ " got: " ++ show b2)
+               | otherwise = True

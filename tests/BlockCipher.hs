@@ -444,10 +444,6 @@ testBlockCipher kats cipher = testGroup (cipherName cipher)
     ++ testModes cipher
     )
 
-assertEq :: ByteString -> ByteString -> Bool
-assertEq b1 b2 | b1 /= b2  = error ("b1: " ++ show b1 ++ " b2: " ++ show b2)
-               | otherwise = True
-
 cipherMakeKey :: Cipher cipher => cipher -> ByteString -> Key cipher
 cipherMakeKey _ bs = Key bs
 

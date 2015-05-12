@@ -160,10 +160,6 @@ macIncrementalTests =
         prop_inc1 _ (MacIncrementalList secret msgs result) =
             result `assertEq` HMAC.finalize (foldl' HMAC.update (HMAC.initialize secret) msgs)
 
-        assertEq a b
-            | a == b    = True
-            | otherwise = False -- error ("expected: " ++ show a ++ " got: " ++ show b)
-
 tests = testGroup "HMAC"
     [ testGroup "KATs" macTests
     , testGroup "properties" macIncrementalTests
