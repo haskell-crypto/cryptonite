@@ -6,7 +6,6 @@ import Crypto.Hash (MD5(..), SHA1(..), SHA256(..)
                    , Kekkak_224(..), Kekkak_256(..), Kekkak_384(..), Kekkak_512(..)
                    , SHA3_224(..), SHA3_256(..), SHA3_384(..), SHA3_512(..)
                    , HashAlgorithm, digestFromByteString)
---import Data.Foldable (foldl')
 import qualified Data.ByteString as B
 
 import Imports
@@ -116,12 +115,10 @@ macTests =
 data MacIncremental a = MacIncremental ByteString ByteString (HMAC.HMAC a)
     deriving (Show,Eq)
 
-arbitraryBS = B.pack <$> (choose (1,299) >>= \i -> replicateM i arbitrary)
-
 instance HashAlgorithm a => Arbitrary (MacIncremental a) where
     arbitrary = do
-        key <- B.pack <$> replicateM 65 (choose (0x30,0x30)) -- B.pack arbitraryBS
-        msg <- B.pack <$> replicateM 2 (choose (0x40,0x40)) -- B.pack arbitraryBS
+        key <- arbitraryBSof 1 89
+        msg <- arbitraryBSof 1 99
         return $ MacIncremental key msg (HMAC.hmac key msg)
 
 data MacIncrementalList a = MacIncrementalList ByteString [ByteString] (HMAC.HMAC a)
@@ -129,11 +126,9 @@ data MacIncrementalList a = MacIncrementalList ByteString [ByteString] (HMAC.HMA
 
 instance HashAlgorithm a => Arbitrary (MacIncrementalList a) where
     arbitrary = do
-        --key  <- arbitraryBS
-        --msgs <- choose (1,20) >>= \i -> replicateM i arbitraryBS
-        key  <- B.pack <$> replicateM 128 (choose (0x30,0x30)) -- B.pack arbitraryBS
-        msgs <- B.pack <$> replicateM 2 (choose (0x40,0x40)) -- B.pack arbitraryBS
-        return $ MacIncrementalList key [msgs] (HMAC.hmac key (B.concat [msgs]))
+        key  <- arbitraryBSof 1 89
+        msgs <- choose (1,20) >>= \n -> replicateM n (arbitraryBSof 1 99)
+        return $ MacIncrementalList key msgs (HMAC.hmac key (B.concat msgs))
 
 macIncrementalTests :: [TestTree]
 macIncrementalTests =

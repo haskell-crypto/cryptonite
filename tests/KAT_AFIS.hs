@@ -33,8 +33,7 @@ instance Show AFISParams where
     show (AFISParams dat expand _ _) = "data: " ++ show dat ++ " expanded: " ++ show expand
 
 instance Arbitrary AFISParams where
-    arbitrary = AFISParams <$> arbitraryBS <*> choose (2,2) <*> elements [SHA1] <*> arbitrary
-      where arbitraryBS = choose (3,46) >>= \sz -> B.pack <$> replicateM sz arbitrary 
+    arbitrary = AFISParams <$> arbitraryBSof 3 46 <*> choose (2,2) <*> elements [SHA1] <*> arbitrary
 
 instance Arbitrary ChaChaDRG where
     arbitrary = drgNewTest <$> arbitrary

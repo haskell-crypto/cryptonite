@@ -14,6 +14,12 @@ newtype ChunkingLen = ChunkingLen [Int]
 instance Arbitrary ChunkingLen where
     arbitrary = ChunkingLen `fmap` replicateM 16 (choose (0,14))
 
+arbitraryBS :: Int -> Gen ByteString
+arbitraryBS n = B.pack `fmap` replicateM n arbitrary
+
+arbitraryBSof :: Int -> Int -> Gen ByteString
+arbitraryBSof minSize maxSize = choose (minSize, maxSize) >>= \n -> (B.pack `fmap` replicateM n arbitrary)
+
 chunkS :: ChunkingLen -> ByteString -> [ByteString]
 chunkS (ChunkingLen originalChunks) = loop originalChunks
   where loop l bs
