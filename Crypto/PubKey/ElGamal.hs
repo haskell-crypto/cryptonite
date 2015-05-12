@@ -33,15 +33,15 @@ module Crypto.PubKey.ElGamal
     ) where
 
 import Data.Maybe (fromJust)
-import Data.ByteString (ByteString)
 import Crypto.Internal.Imports
+import Crypto.Internal.ByteArray (ByteArrayAccess)
 import Crypto.Number.ModArithmetic (expSafe, expFast, inverse)
 import Crypto.Number.Generate (generateMax)
 import Crypto.Number.Serialize (os2ip)
 import Crypto.Number.Basic (gcde)
 import Crypto.Random.Types
-import Crypto.PubKey.HashDescr (HashFunction)
 import Crypto.PubKey.DH (PrivateNumber(..), PublicNumber(..), Params(..), SharedKey(..))
+import Crypto.Hash
 
 -- | ElGamal Signature
 data Signature = Signature (Integer, Integer)
@@ -95,18 +95,19 @@ decrypt (Params p _) (PrivateNumber a) (c1,c2) = (c2 * sm1) `mod` p
 -- with some appropriate value of k, the signature generation can fail,
 -- and no signature is returned. User of this function need to retry
 -- with a different k value.
-signWith :: Integer         -- ^ random number k, between 0 and p-1 and gcd(k,p-1)=1
+signWith :: (ByteArrayAccess msg, HashAlgorithm hash)
+         => Integer         -- ^ random number k, between 0 and p-1 and gcd(k,p-1)=1
          -> Params          -- ^ DH params (p,g)
          -> PrivateNumber   -- ^ DH private key
-         -> HashFunction    -- ^ collision resistant hash function
-         -> ByteString      -- ^ message to sign
+         -> hash            -- ^ collision resistant hash algorithm
+         -> msg             -- ^ message to sign
          -> Maybe Signature
-signWith k (Params p g) (PrivateNumber x) hashF msg
+signWith k (Params p g) (PrivateNumber x) hashAlg msg
     | k >= p-1 || d > 1 = Nothing -- gcd(k,p-1) is not 1
     | s == 0            = Nothing
     | otherwise         = Just $ Signature (r,s)
     where r          = expSafe g k p
-          h          = os2ip $ hashF msg
+          h          = os2ip $ hashWith hashAlg msg
           s          = ((h - x*r) * kInv) `mod` (p-1)
           (kInv,_,d) = gcde k (p-1)
 
@@ -116,28 +117,29 @@ signWith k (Params p g) (PrivateNumber x) hashF msg
 -- as the signature might fail, the function will automatically retry
 -- until a proper signature has been created.
 --
-sign :: MonadRandom m
+sign :: (ByteArrayAccess msg, HashAlgorithm hash, MonadRandom m)
      => Params         -- ^ DH params (p,g)
      -> PrivateNumber  -- ^ DH private key
-     -> HashFunction   -- ^ collision resistant hash function
-     -> ByteString     -- ^ message to sign
+     -> hash           -- ^ collision resistant hash algorithm
+     -> msg            -- ^ message to sign
      -> m Signature
-sign params@(Params p _) priv hashF msg = do
+sign params@(Params p _) priv hashAlg msg = do
     k <- generateMax (p-1)
-    case signWith k params priv hashF msg of
-        Nothing  -> sign params priv hashF msg
+    case signWith k params priv hashAlg msg of
+        Nothing  -> sign params priv hashAlg msg
         Just sig -> return sig
 
 -- | verify a signature
-verify :: Params
+verify :: (ByteArrayAccess msg, HashAlgorithm hash)
+       => Params
        -> PublicNumber
-       -> HashFunction
-       -> ByteString
+       -> hash
+       -> msg
        -> Signature
        -> Bool
-verify (Params p g) (PublicNumber y) hashF msg (Signature (r,s))
+verify (Params p g) (PublicNumber y) hashAlg msg (Signature (r,s))
     | or [r <= 0,r >= p,s <= 0,s >= (p-1)] = False
     | otherwise                            = lhs == rhs
-    where h   = os2ip $ hashF msg
+    where h   = os2ip $ hashWith hashAlg msg
           lhs = expFast g h p
           rhs = (expFast y r p * expFast r s p) `mod` p
