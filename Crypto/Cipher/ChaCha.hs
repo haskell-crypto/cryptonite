@@ -110,7 +110,7 @@ combine prev@(State nbRounds prevSt prevOut) src
                                                (dstPtr `plusPtr` prevBufLen)
                                                (castPtr stPtr)
                                                (srcPtr `plusPtr` prevBufLen)
-                                               (fromIntegral newBytesToGenerate)
+                                               (fromIntegral adjustedLen)
 
         -- return combined byte
         return ( BS.PS fptr 0 outputLen

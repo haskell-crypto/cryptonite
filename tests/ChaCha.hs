@@ -23,6 +23,14 @@ b12_256_k0_i0 =
 b20_256_k0_i0 =
     "\x76\xb8\xe0\xad\xa0\xf1\x3d\x90\x40\x5d\x6a\xe5\x53\x86\xbd\x28\xbd\xd2\x19\xb8\xa0\x8d\xed\x1a\xa8\x36\xef\xcc\x8b\x77\x0d\xc7\xda\x41\x59\x7c\x51\x57\x48\x8d\x77\x24\xe0\x3f\xb8\xd8\x4a\x37\x6a\x43\xb8\xf4\x15\x18\xa1\x1c\xc3\x87\xb6\x69\xb2\xee\x65\x86\x9f\x07\xe7\xbe\x55\x51\x38\x7a\x98\xba\x97\x7c\x73\x2d\x08\x0d\xcb\x0f\x29\xa0\x48\xe3\x65\x69\x12\xc6\x53\x3e\x32\xee\x7a\xed\x29\xb7\x21\x76\x9c\xe6\x4e\x43\xd5\x71\x33\xb0\x74\xd8\x39\xd5\x31\xed\x1f\x28\x51\x0a\xfb\x45\xac\xe1\x0a\x1f\x4b\x79\x4d\x6f"
 
+data Vector = Vector Int -- rounds
+                     ByteString -- key
+                     ByteString -- nonce
+    deriving (Show,Eq)
+
+instance Arbitrary Vector where
+    arbitrary = Vector 20 <$> arbitraryBS 16 <*> arbitraryBS 12
+
 tests = testGroup "ChaCha"
     [ testCase "8-128-K0-I0"  (chachaRunSimple b8_128_k0_i0 8 16 8)
     , testCase "12-128-K0-I0" (chachaRunSimple b12_128_k0_i0 12 16 8)
@@ -30,7 +38,23 @@ tests = testGroup "ChaCha"
     , testCase "8-256-K0-I0"  (chachaRunSimple b8_256_k0_i0 8 32 8)
     , testCase "12-256-K0-I0" (chachaRunSimple b12_256_k0_i0 12 32 8)
     , testCase "20-256-K0-I0" (chachaRunSimple b20_256_k0_i0 20 32 8)
+    , testProperty "chunking" chachaChunks
     ]
   where chachaRunSimple expected rounds klen nonceLen =
             let chacha = ChaCha.initialize rounds (B.replicate klen 0) (B.replicate nonceLen 0)
              in expected @=? fst (ChaCha.generate chacha (B.length expected))
+
+        chachaChunks :: ChunkingLen -> Vector -> Bool
+        chachaChunks (ChunkingLen ckLen) (Vector rounds key iv) =
+            let initChaCha    = ChaCha.initialize rounds key iv
+                nbBytes       = 1048
+                (expected,_)  = ChaCha.generate initChaCha nbBytes
+                chunks        = loop nbBytes ckLen (ChaCha.initialize rounds key iv)
+             in expected == B.concat chunks
+
+          where loop n []     chacha = loop n ckLen chacha
+                loop 0 _      _      = []
+                loop n (x:xs) chacha =
+                    let len       = min x n
+                        (c, next) = ChaCha.generate chacha len
+                     in c : loop (n - len) xs next

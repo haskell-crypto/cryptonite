@@ -21,7 +21,6 @@ import qualified Data.ByteString.Internal as BS
 import qualified Data.ByteString as BS
 import Crypto.Internal.Compat
 import Crypto.Internal.Imports
-import Data.Bits (xor)
 import Foreign.Ptr
 import Foreign.ForeignPtr
 import Foreign.C.Types
@@ -29,6 +28,7 @@ import Foreign.C.Types
 -- | Salsa context
 data State = State Int           -- number of rounds
                    ScrubbedBytes -- Salsa's state
+                   Int           -- offset of data in previously generated chunk
                    ByteString    -- previous generated chunk
 
 round64 :: Int -> (Bool, Int)
@@ -54,7 +54,7 @@ initialize nbRounds key nonce
             B.withByteArray nonce $ \noncePtr  ->
             B.withByteArray key   $ \keyPtr ->
                 ccryptonite_salsa_init stPtr kLen keyPtr nonceLen noncePtr
-        return $ State nbRounds stPtr B.empty
+        return $ State nbRounds stPtr 0 B.empty
   where kLen     = B.length key
         nonceLen = B.length nonce
 
@@ -64,13 +64,15 @@ combine :: ByteArray ba
         => State      -- ^ the current Salsa state
         -> ba         -- ^ the source to xor with the generator
         -> (ba, State)
-combine prev@(State nbRounds prevSt prevOut) src
-    | outputLen == 0  = (B.empty, prev)
-    | outputLen <= prevBufLen =
+combine prev@(State nbRounds prevSt prevOffset prevOut) src
+    | outputLen == 0          = (B.empty, prev)
+    | outputLen <= prevBufLen = unsafeDoIO $ do
         -- we have enough byte in the previous buffer to complete the query
         -- without having to generate any extra bytes
-        let (b1,b2) = BS.splitAt outputLen prevOut
-         in (B.convert $ BS.pack $ BS.zipWith xor b1 (B.convert src), State nbRounds prevSt b2)
+        output <- B.copy src              $ \dst ->
+                  B.withByteArray prevOut $ \prevPtr ->
+                        memXor dst dst (prevPtr `plusPtr` prevOffset) outputLen
+        return (output, State nbRounds prevSt (prevOffset + outputLen) prevOut)
     | otherwise = unsafeDoIO $ do
         -- adjusted len is the number of bytes lefts to generate after
         -- copying from the previous buffer.
@@ -83,7 +85,7 @@ combine prev@(State nbRounds prevSt prevOut) src
             B.withByteArray src $ \srcPtr -> do
                 -- copy the previous buffer by xor if any
                 B.withByteArray prevOut $ \prevPtr ->
-                    memXor dstPtr srcPtr prevPtr prevBufLen
+                    memXor dstPtr srcPtr (prevPtr `plusPtr` prevOffset) prevBufLen
 
                 -- then create a new mutable copy of state
                 B.copy prevSt $ \stPtr ->
@@ -91,13 +93,13 @@ combine prev@(State nbRounds prevSt prevOut) src
                                                (dstPtr `plusPtr` prevBufLen)
                                                (castPtr stPtr)
                                                (srcPtr `plusPtr` prevBufLen)
-                                               (fromIntegral newBytesToGenerate)
+                                               (fromIntegral adjustedLen)
         -- return combined byte
         return ( B.convert (BS.PS fptr 0 outputLen)
-               , State nbRounds newSt (if roundedAlready then BS.empty else BS.PS fptr outputLen nextBufLen))
+               , State nbRounds newSt 0 (if roundedAlready then BS.empty else BS.PS fptr outputLen nextBufLen))
   where
         outputLen  = B.length src
-        prevBufLen = B.length prevOut
+        prevBufLen = B.length prevOut - prevOffset
 
 -- | Generate a number of bytes from the Salsa output directly
 --
