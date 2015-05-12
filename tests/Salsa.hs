@@ -6,12 +6,9 @@ import qualified Crypto.Cipher.Salsa as Salsa
 
 import           Imports
 
-key :: B.ByteString
-key = "\xEA\xEB\xEC\xED\xEE\xEF\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\xFA\xFB\xFC\xFD\xFE\xFF\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
+type Vector = (Int, B.ByteString, B.ByteString, [(Int, B.ByteString)])
 
-iv  = B.replicate 8 0
-
-vectors :: [(Int, B.ByteString, B.ByteString, [(Int, B.ByteString)] )]
+vectors :: [Vector]
 vectors =
     [ (20, key, iv
       , [ (0, "\x99\xA8\xCC\xEC\x6C\x5B\x2A\x0B\x6E\x33\x6C\xB2\x06\x52\x24\x1C\x32\xB2\x4D\x34\xAC\xC0\x45\x7E\xF6\x79\x17\x8E\xDE\x7C\xF8\x05\x80\x5A\x93\x05\xC7\xC4\x99\x09\x68\x3B\xD1\xA8\x03\x32\x78\x17\x62\x7C\xA4\x6F\xE8\xB9\x29\xB6\xDF\x00\x12\xBD\x86\x41\x83\xBE")
@@ -26,10 +23,22 @@ vectors =
         , (131008, "\xA1\x3F\xFA\x12\x08\xF8\xBF\x50\x90\x08\x86\xFA\xAB\x40\xFD\x10\xE8\xCA\xA3\x06\xE6\x3D\xF3\x95\x36\xA1\x56\x4F\xB7\x60\xB2\x42\xA9\xD6\xA4\x62\x8C\xDC\x87\x87\x62\x83\x4E\x27\xA5\x41\xDA\x2A\x5E\x3B\x34\x45\x98\x9C\x76\xF6\x11\xE0\xFE\xC6\xD9\x1A\xCA\xCC")
         ])
     ]
+  where
+        key :: B.ByteString
+        key = "\xEA\xEB\xEC\xED\xEE\xEF\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\xFA\xFB\xFC\xFD\xFE\xFF\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09"
+
+        iv  = B.replicate 8 0
+
+newtype RandomVector = RandomVector Vector
+    deriving (Show,Eq)
+
+instance Arbitrary RandomVector where
+    arbitrary = RandomVector <$> elements vectors
 
 tests = testGroup "Salsa"
     [ testGroup "KAT" $
         map (\(i,f) -> testCase (show (i :: Int)) f) $ zip [1..] $ map (\(r, k,i,e) -> salsaRunSimple e r k i) vectors
+    , testProperty "chunking" salsaChunks
     ]
   where
         salsaRunSimple expected rounds key nonce =
@@ -45,3 +54,18 @@ tests = testGroup "Salsa"
                 let (e, salsaNext) = Salsa.generate salsa (B.length expectBs)
                  in e : salsaLoop (current + B.length expectBs) salsaNext rs
             | otherwise = error "internal error in salsaLoop"
+
+        salsaChunks :: ChunkingLen -> RandomVector -> Bool
+        salsaChunks (ChunkingLen ckLen) (RandomVector (rounds, key, iv, _)) =
+            let initSalsa    = Salsa.initialize rounds key iv
+                nbBytes      = 1048
+                (expected,_) = Salsa.generate initSalsa nbBytes
+                chunks       = loop nbBytes ckLen (Salsa.initialize rounds key iv)
+             in expected == B.concat chunks
+
+          where loop n []     salsa = loop n ckLen salsa
+                loop 0 _      _     = []
+                loop n (x:xs) salsa =
+                    let len       = min x n
+                        (c, next) = Salsa.generate salsa len
+                     in c : loop (n - len) xs next
