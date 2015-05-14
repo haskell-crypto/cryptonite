@@ -1,5 +1,5 @@
 -- |
--- Module      : Data.Memory.ByteArray.ScrubbedBytes
+-- Module      : Data.ByteArray.ScrubbedBytes
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : Stable
@@ -9,7 +9,7 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE CPP #-}
-module Data.Memory.ByteArray.ScrubbedBytes
+module Data.ByteArray.ScrubbedBytes
     ( ScrubbedBytes
     ) where
 
@@ -19,7 +19,7 @@ import           GHC.Ptr
 import           Data.Memory.Internal.CompatPrim
 import           Data.Memory.Internal.Compat     (unsafeDoIO)
 import           Data.Memory.PtrMethods          (memConstEqual)
-import           Data.Memory.ByteArray.Types
+import           Data.ByteArray.Types
 
 -- | ScrubbedBytes is a memory chunk which have the properties of:
 --
@@ -46,7 +46,10 @@ instance ByteArray ScrubbedBytes where
 
 newScrubbedBytes :: Int -> IO ScrubbedBytes
 newScrubbedBytes (I# sz)
-    | booleanPrim (sz <=# 0#) = error "negative or null size for scrubbed array" -- TODO raise a proper exception
+    | booleanPrim (sz <# 0#)  = error "ScrubbedBytes: size must be >= 0"
+    | booleanPrim (sz ==# 0#) = IO $ \s ->
+        case newAlignedPinnedByteArray# 0# 8# s of
+            (# s2, mba #) -> (# s2, ScrubbedBytes mba #)
     | otherwise               = IO $ \s ->
         case newAlignedPinnedByteArray# sz 8# s of
             (# s1, mbarr #) ->

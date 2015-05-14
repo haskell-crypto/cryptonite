@@ -1,16 +1,16 @@
 -- |
--- Module      : Data.Memory.ByteArray.MemView
+-- Module      : Data.ByteArray.MemView
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : stable
 -- Portability : Good
 --
-module Data.Memory.ByteArray.MemView
+module Data.ByteArray.MemView
     ( MemView(..)
     ) where
 
 import           Foreign.Ptr
-import           Data.Memory.ByteArray.Types
+import           Data.ByteArray.Types
 import           Data.Memory.Internal.Imports
 
 data MemView = MemView !(Ptr Word8) !Int

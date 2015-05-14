@@ -1,15 +1,20 @@
 -- |
--- Module      : Data.Memory.ByteArray.Methods
+-- Module      : Data.ByteArray.Methods
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : stable
 -- Portability : Good
 --
 {-# LANGUAGE BangPatterns #-}
-module Data.Memory.ByteArray.Methods
+module Data.ByteArray.Methods
     ( alloc
     , allocAndFreeze
+    , create
+    , unsafeCreate
+    , pack
+    , unpack
     , empty
+    , replicate
     , zero
     , copy
     , take
@@ -19,9 +24,10 @@ module Data.Memory.ByteArray.Methods
     , copyAndFreeze
     , split
     , xor
-    , eq
     , index
+    , eq
     , constEq
+    , append
     , concat
     , toW64BE
     , toW64LE
@@ -31,7 +37,7 @@ module Data.Memory.ByteArray.Methods
 
 import           Data.Memory.Internal.Compat
 import           Data.Memory.Internal.Imports hiding (empty)
-import           Data.Memory.ByteArray.Types
+import           Data.ByteArray.Types
 import           Data.Memory.Endian
 import           Data.Memory.PtrMethods
 import           Data.Memory.ExtendedWords
@@ -39,23 +45,48 @@ import           Data.Memory.Encoding.Base16
 import           Foreign.Storable
 import           Foreign.Ptr
 
-import           Prelude hiding (length, take, concat)
+import           Prelude hiding (length, take, concat, replicate)
+import qualified Prelude
 
 alloc :: ByteArray ba => Int -> (Ptr p -> IO ()) -> IO ba
 alloc n f = snd `fmap` allocRet n f
 
+create :: ByteArray ba => Int -> (Ptr p -> IO ()) -> IO ba
+create n f = alloc n f
+
 allocAndFreeze :: ByteArray a => Int -> (Ptr p -> IO ()) -> a
 allocAndFreeze sz f = unsafeDoIO (alloc sz f)
+{-# NOINLINE allocAndFreeze #-}
+
+unsafeCreate :: ByteArray a => Int -> (Ptr p -> IO ()) -> a
+unsafeCreate sz f = unsafeDoIO (alloc sz f)
+{-# NOINLINE unsafeCreate #-}
 
 empty :: ByteArray a => a
 empty = unsafeDoIO (alloc 0 $ \_ -> return ())
+
+-- | Pack a list of bytes into a bytearray
+pack :: ByteArray a => [Word8] -> a
+pack l = unsafeCreate (Prelude.length l) (fill 0 l)
+  where fill _ []     _ = return ()
+        fill i (x:xs) p = pokeByteOff p i x >> fill (i+1) xs p
+
+-- | Un-pack a bytearray into a list of bytes
+unpack :: ByteArrayAccess a => a -> [Word8]
+unpack bs = loop 0
+  where !len = length bs
+        loop i
+            | i == len  = []
+            | otherwise =
+                let !v = unsafeDoIO $ withByteArray bs (\p -> peekByteOff p i)
+                 in v : loop (i+1)
 
 -- | Create a xor of bytes between a and b.
 --
 -- the returns byte array is the size of the smallest input.
 xor :: (ByteArrayAccess a, ByteArrayAccess b, ByteArray c) => a -> b -> c
 xor a b =
-    allocAndFreeze n $ \pc ->
+    unsafeCreate n $ \pc ->
     withByteArray a  $ \pa ->
     withByteArray b  $ \pb ->
         memXor pc pa pb n
@@ -80,14 +111,14 @@ split n bs
 
 take :: ByteArray bs => Int -> bs -> bs
 take n bs =
-    allocAndFreeze m $ \d -> withByteArray bs $ \s -> memCopy d s m
+    unsafeCreate m $ \d -> withByteArray bs $ \s -> memCopy d s m
   where
         m   = min len n
         len = length bs
 
 concat :: ByteArray bs => [bs] -> bs
 concat []    = empty
-concat allBs = allocAndFreeze total (loop allBs)
+concat allBs = unsafeCreate total (loop allBs)
   where
         total = sum $ map length allBs
 
@@ -96,6 +127,9 @@ concat allBs = allocAndFreeze total (loop allBs)
             let sz = length b
             withByteArray b $ \p -> memCopy dst p sz
             loop bs (dst `plusPtr` sz)
+
+append :: ByteArray bs => bs -> bs -> bs
+append b1 b2 = concat [b1,b2]
 
 copy :: (ByteArrayAccess bs1, ByteArray bs2) => bs1 -> (Ptr p -> IO ()) -> IO bs2
 copy bs f =
@@ -111,12 +145,19 @@ copyRet bs f =
 
 copyAndFreeze :: (ByteArrayAccess bs1, ByteArray bs2) => bs1 -> (Ptr p -> IO ()) -> bs2
 copyAndFreeze bs f =
-    allocAndFreeze (length bs) $ \d -> do
+    unsafeCreate (length bs) $ \d -> do
         withByteArray bs $ \s -> memCopy d s (length bs)
         f (castPtr d)
 
+replicate :: ByteArray ba => Int -> Word8 -> ba
+replicate 0 _ = empty
+replicate n b = unsafeCreate n $ \ptr -> memSet ptr b n
+{-# NOINLINE replicate #-}
+
 zero :: ByteArray ba => Int -> ba
-zero n = allocAndFreeze n $ \ptr -> memSet ptr 0 n
+zero 0 = empty
+zero n = unsafeCreate n $ \ptr -> memSet ptr 0 n
+{-# NOINLINE zero #-}
 
 eq :: (ByteArrayAccess bs1, ByteArrayAccess bs2) => bs1 -> bs2 -> Bool
 eq b1 b2
@@ -150,8 +191,8 @@ toW64LE bs ofs = unsafeDoIO $ withByteArray bs $ \p -> peek (p `plusPtr` ofs)
 
 mapAsWord128 :: ByteArray bs => (Word128 -> Word128) -> bs -> bs
 mapAsWord128 f bs =
-    allocAndFreeze len $ \dst ->
-    withByteArray bs   $ \src ->
+    unsafeCreate len $ \dst ->
+    withByteArray bs $ \src ->
         loop (len `div` 16) dst src
   where
         len        = length bs
@@ -167,8 +208,8 @@ mapAsWord128 f bs =
 
 mapAsWord64 :: ByteArray bs => (Word64 -> Word64) -> bs -> bs
 mapAsWord64 f bs =
-    allocAndFreeze len $ \dst ->
-    withByteArray bs            $ \src ->
+    unsafeCreate len $ \dst ->
+    withByteArray bs $ \src ->
         loop (len `div` 8) dst src
   where
         len        = length bs
@@ -186,6 +227,6 @@ convert = flip copyAndFreeze (\_ -> return ())
 
 convertHex :: (ByteArrayAccess bin, ByteArray bout) => bin -> bout
 convertHex b =
-    allocAndFreeze (length b * 2) $ \bout ->
-    withByteArray b               $ \bin  ->
+    unsafeCreate (length b * 2) $ \bout ->
+    withByteArray b             $ \bin  ->
         toHexadecimal bout bin (length b)

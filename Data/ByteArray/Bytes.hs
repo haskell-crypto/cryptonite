@@ -1,5 +1,5 @@
 -- |
--- Module      : Data.Memory.ByteArray.Bytes
+-- Module      : Data.ByteArray.Bytes
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : stable
@@ -10,7 +10,7 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE UnboxedTuples #-}
-module Data.Memory.ByteArray.Bytes
+module Data.ByteArray.Bytes
     ( Bytes
     ) where
 
@@ -19,8 +19,8 @@ import           GHC.Prim
 import           GHC.Ptr
 import           Data.Memory.Internal.CompatPrim
 import           Data.Memory.Internal.Compat      (unsafeDoIO)
-import           Data.Memory.ByteArray.Types
 import           Data.Memory.Encoding.Base16      (showHexadecimal)
+import           Data.ByteArray.Types
 
 data Bytes = Bytes (MutableByteArray# RealWorld)
 
@@ -37,9 +37,11 @@ instance ByteArray Bytes where
 
 ------------------------------------------------------------------------
 newBytes :: Int -> IO Bytes
-newBytes (I# sz) = IO $ \s ->
-    case newAlignedPinnedByteArray# sz 8# s of
-        (# s', mbarr #) -> (# s', Bytes mbarr #)
+newBytes (I# sz)
+    | booleanPrim (sz <# 0#) = error "Bytes: size must be >= 0"
+    | otherwise              = IO $ \s ->
+        case newAlignedPinnedByteArray# sz 8# s of
+            (# s', mbarr #) -> (# s', Bytes mbarr #)
 
 touchBytes :: Bytes -> IO ()
 touchBytes (Bytes mba) = IO $ \s -> case touch# mba s of s' -> (# s', () #)

@@ -11,4 +11,4 @@ module Crypto.Internal.ByteArray
     ( module X
     ) where
 
-import Data.Memory.ByteArray as X
+import Data.ByteArray as X

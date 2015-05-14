@@ -1,12 +1,12 @@
 -- |
--- Module      : Data.Memory.ByteArray.Types
+-- Module      : Data.ByteArray.Types
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : stable
 -- Portability : Good
 --
 {-# LANGUAGE CPP #-}
-module Data.Memory.ByteArray.Types
+module Data.ByteArray.Types
     ( ByteArrayAccess(..)
     , ByteArray(..)
     ) where

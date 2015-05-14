@@ -7,7 +7,7 @@ import qualified Data.ByteString.Char8 as B ()
 import Imports
 
 import qualified Crypto.MAC.Poly1305 as Poly1305
-import qualified Data.Memory.ByteArray as B (convert)
+import qualified Data.ByteArray as B (convert)
 
 instance Show Poly1305.Auth where
     show _ = "Auth"

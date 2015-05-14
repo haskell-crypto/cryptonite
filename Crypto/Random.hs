@@ -20,7 +20,7 @@ module Crypto.Random
 import Crypto.Random.Types
 import Crypto.Random.ChaChaDRG
 import Crypto.Random.Entropy
-import Data.Memory.ByteArray (ScrubbedBytes)
+import Data.ByteArray (ScrubbedBytes)
 import Crypto.Internal.Imports
 
 drgNew :: IO ChaChaDRG
