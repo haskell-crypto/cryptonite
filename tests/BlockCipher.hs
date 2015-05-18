@@ -16,7 +16,7 @@ import           Imports
 import           Data.Maybe
 import           Crypto.Error
 import           Crypto.Cipher.Types
-import           Data.ByteArray as B hiding (pack)
+import           Data.ByteArray as B hiding (pack, null)
 import qualified Data.ByteString as B
 
 ------------------------------------------------------------------------

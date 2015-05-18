@@ -16,5 +16,5 @@ chunk :: ByteArray b => Int -> b -> [b]
 chunk sz bs = split bs
   where split b | B.length b <= sz = [b]
                 | otherwise        =
-                        let (b1, b2) = B.split sz b
+                        let (b1, b2) = B.splitAt sz b
                          in b1 : split b2

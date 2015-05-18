@@ -12,3 +12,5 @@ module Crypto.Internal.ByteArray
     ) where
 
 import Data.ByteArray as X
+import Data.ByteArray.Mapping as X
+import Data.ByteArray.Encoding as X

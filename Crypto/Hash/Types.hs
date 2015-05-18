@@ -55,4 +55,4 @@ newtype Digest a = Digest Bytes
     deriving (Eq,ByteArrayAccess)
 
 instance Show (Digest a) where
-    show (Digest bs) = show (B.convertHex bs :: Bytes)
+    show (Digest bs) = show (B.convertToBase B.Base16 bs :: Bytes)
