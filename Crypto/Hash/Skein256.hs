@@ -18,6 +18,7 @@ import           Foreign.Ptr (Ptr)
 import           Data.Word (Word8, Word32)
 
 
+-- | Skein256 (224 bits) cryptographic hash algorithm
 data Skein256_224 = Skein256_224
     deriving (Show)
 
@@ -29,6 +30,7 @@ instance HashAlgorithm Skein256_224 where
     hashInternalUpdate        = c_skein256_update
     hashInternalFinalize      = c_skein256_finalize
 
+-- | Skein256 (256 bits) cryptographic hash algorithm
 data Skein256_256 = Skein256_256
     deriving (Show)
 
@@ -41,11 +43,11 @@ instance HashAlgorithm Skein256_256 where
     hashInternalFinalize      = c_skein256_finalize
 
 
-foreign import ccall unsafe "cryptonite_skein256.h cryptonite_skein256_init"
+foreign import ccall unsafe "cryptonite_skein256_init"
     c_skein256_init :: Ptr (Context a) -> Word32 -> IO ()
 
-foreign import ccall "cryptonite_skein256.h cryptonite_skein256_update"
+foreign import ccall "cryptonite_skein256_update"
     c_skein256_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
 
-foreign import ccall unsafe "cryptonite_skein256.h cryptonite_skein256_finalize"
+foreign import ccall unsafe "cryptonite_skein256_finalize"
     c_skein256_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()

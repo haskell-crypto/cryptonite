@@ -18,6 +18,7 @@ import           Foreign.Ptr (Ptr)
 import           Data.Word (Word8, Word32)
 
 %{CUSTOMIZABLE%}
+-- | %%MODULENAME%% (%%CUSTOM_BITSIZE%% bits) cryptographic hash algorithm
 data %%MODULENAME%%_%%CUSTOM_BITSIZE%% = %%MODULENAME%%_%%CUSTOM_BITSIZE%%
     deriving (Show)
 

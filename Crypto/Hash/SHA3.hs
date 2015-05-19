@@ -18,6 +18,7 @@ import           Foreign.Ptr (Ptr)
 import           Data.Word (Word8, Word32)
 
 
+-- | SHA3 (224 bits) cryptographic hash algorithm
 data SHA3_224 = SHA3_224
     deriving (Show)
 
@@ -29,6 +30,7 @@ instance HashAlgorithm SHA3_224 where
     hashInternalUpdate        = c_sha3_update
     hashInternalFinalize      = c_sha3_finalize
 
+-- | SHA3 (256 bits) cryptographic hash algorithm
 data SHA3_256 = SHA3_256
     deriving (Show)
 
@@ -40,6 +42,7 @@ instance HashAlgorithm SHA3_256 where
     hashInternalUpdate        = c_sha3_update
     hashInternalFinalize      = c_sha3_finalize
 
+-- | SHA3 (384 bits) cryptographic hash algorithm
 data SHA3_384 = SHA3_384
     deriving (Show)
 
@@ -51,6 +54,7 @@ instance HashAlgorithm SHA3_384 where
     hashInternalUpdate        = c_sha3_update
     hashInternalFinalize      = c_sha3_finalize
 
+-- | SHA3 (512 bits) cryptographic hash algorithm
 data SHA3_512 = SHA3_512
     deriving (Show)
 
@@ -63,11 +67,11 @@ instance HashAlgorithm SHA3_512 where
     hashInternalFinalize      = c_sha3_finalize
 
 
-foreign import ccall unsafe "cryptonite_sha3.h cryptonite_sha3_init"
+foreign import ccall unsafe "cryptonite_sha3_init"
     c_sha3_init :: Ptr (Context a) -> Word32 -> IO ()
 
-foreign import ccall "cryptonite_sha3.h cryptonite_sha3_update"
+foreign import ccall "cryptonite_sha3_update"
     c_sha3_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
 
-foreign import ccall unsafe "cryptonite_sha3.h cryptonite_sha3_finalize"
+foreign import ccall unsafe "cryptonite_sha3_finalize"
     c_sha3_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()

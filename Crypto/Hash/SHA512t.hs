@@ -18,6 +18,7 @@ import           Foreign.Ptr (Ptr)
 import           Data.Word (Word8, Word32)
 
 
+-- | SHA512t (224 bits) cryptographic hash algorithm
 data SHA512t_224 = SHA512t_224
     deriving (Show)
 
@@ -29,6 +30,7 @@ instance HashAlgorithm SHA512t_224 where
     hashInternalUpdate        = c_sha512t_update
     hashInternalFinalize      = c_sha512t_finalize
 
+-- | SHA512t (256 bits) cryptographic hash algorithm
 data SHA512t_256 = SHA512t_256
     deriving (Show)
 

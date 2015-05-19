@@ -15,6 +15,7 @@ import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
 import           Data.Word (Word8, Word32)
 
+-- | SHA384 cryptographic hash algorithm
 data SHA384 = SHA384
     deriving (Show)
 
@@ -26,11 +27,11 @@ instance HashAlgorithm SHA384 where
     hashInternalUpdate        = c_sha384_update
     hashInternalFinalize      = c_sha384_finalize
 
-foreign import ccall unsafe "cryptonite_sha512.h cryptonite_sha384_init"
+foreign import ccall unsafe "cryptonite_sha384_init"
     c_sha384_init :: Ptr (Context a)-> IO ()
 
-foreign import ccall "cryptonite_sha512.h cryptonite_sha384_update"
+foreign import ccall "cryptonite_sha384_update"
     c_sha384_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
 
-foreign import ccall unsafe "cryptonite_sha512.h cryptonite_sha384_finalize"
+foreign import ccall unsafe "cryptonite_sha384_finalize"
     c_sha384_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()

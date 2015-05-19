@@ -15,6 +15,7 @@ import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
 import           Data.Word (Word8, Word32)
 
+-- | %%MODULENAME%% cryptographic hash algorithm
 data %%MODULENAME%% = %%MODULENAME%%
     deriving (Show)
 

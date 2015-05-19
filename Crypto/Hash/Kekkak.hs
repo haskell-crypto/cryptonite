@@ -18,6 +18,7 @@ import           Foreign.Ptr (Ptr)
 import           Data.Word (Word8, Word32)
 
 
+-- | Kekkak (224 bits) cryptographic hash algorithm
 data Kekkak_224 = Kekkak_224
     deriving (Show)
 
@@ -29,6 +30,7 @@ instance HashAlgorithm Kekkak_224 where
     hashInternalUpdate        = c_kekkak_update
     hashInternalFinalize      = c_kekkak_finalize
 
+-- | Kekkak (256 bits) cryptographic hash algorithm
 data Kekkak_256 = Kekkak_256
     deriving (Show)
 
@@ -40,6 +42,7 @@ instance HashAlgorithm Kekkak_256 where
     hashInternalUpdate        = c_kekkak_update
     hashInternalFinalize      = c_kekkak_finalize
 
+-- | Kekkak (384 bits) cryptographic hash algorithm
 data Kekkak_384 = Kekkak_384
     deriving (Show)
 
@@ -51,6 +54,7 @@ instance HashAlgorithm Kekkak_384 where
     hashInternalUpdate        = c_kekkak_update
     hashInternalFinalize      = c_kekkak_finalize
 
+-- | Kekkak (512 bits) cryptographic hash algorithm
 data Kekkak_512 = Kekkak_512
     deriving (Show)
 
@@ -63,11 +67,11 @@ instance HashAlgorithm Kekkak_512 where
     hashInternalFinalize      = c_kekkak_finalize
 
 
-foreign import ccall unsafe "cryptonite_kekkak.h cryptonite_kekkak_init"
+foreign import ccall unsafe "cryptonite_kekkak_init"
     c_kekkak_init :: Ptr (Context a) -> Word32 -> IO ()
 
-foreign import ccall "cryptonite_kekkak.h cryptonite_kekkak_update"
+foreign import ccall "cryptonite_kekkak_update"
     c_kekkak_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
 
-foreign import ccall unsafe "cryptonite_kekkak.h cryptonite_kekkak_finalize"
+foreign import ccall unsafe "cryptonite_kekkak_finalize"
     c_kekkak_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()

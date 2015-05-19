@@ -18,6 +18,7 @@ import           Foreign.Ptr (Ptr)
 import           Data.Word (Word8, Word32)
 
 
+-- | Skein512 (224 bits) cryptographic hash algorithm
 data Skein512_224 = Skein512_224
     deriving (Show)
 
@@ -29,6 +30,7 @@ instance HashAlgorithm Skein512_224 where
     hashInternalUpdate        = c_skein512_update
     hashInternalFinalize      = c_skein512_finalize
 
+-- | Skein512 (256 bits) cryptographic hash algorithm
 data Skein512_256 = Skein512_256
     deriving (Show)
 
@@ -40,6 +42,7 @@ instance HashAlgorithm Skein512_256 where
     hashInternalUpdate        = c_skein512_update
     hashInternalFinalize      = c_skein512_finalize
 
+-- | Skein512 (384 bits) cryptographic hash algorithm
 data Skein512_384 = Skein512_384
     deriving (Show)
 
@@ -51,6 +54,7 @@ instance HashAlgorithm Skein512_384 where
     hashInternalUpdate        = c_skein512_update
     hashInternalFinalize      = c_skein512_finalize
 
+-- | Skein512 (512 bits) cryptographic hash algorithm
 data Skein512_512 = Skein512_512
     deriving (Show)
 
@@ -63,11 +67,11 @@ instance HashAlgorithm Skein512_512 where
     hashInternalFinalize      = c_skein512_finalize
 
 
-foreign import ccall unsafe "cryptonite_skein512.h cryptonite_skein512_init"
+foreign import ccall unsafe "cryptonite_skein512_init"
     c_skein512_init :: Ptr (Context a) -> Word32 -> IO ()
 
-foreign import ccall "cryptonite_skein512.h cryptonite_skein512_update"
+foreign import ccall "cryptonite_skein512_update"
     c_skein512_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
 
-foreign import ccall unsafe "cryptonite_skein512.h cryptonite_skein512_finalize"
+foreign import ccall unsafe "cryptonite_skein512_finalize"
     c_skein512_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()

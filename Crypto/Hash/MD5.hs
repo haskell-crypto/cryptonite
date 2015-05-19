@@ -15,6 +15,7 @@ import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
 import           Data.Word (Word8, Word32)
 
+-- | MD5 cryptographic hash algorithm
 data MD5 = MD5
     deriving (Show)
 
@@ -26,11 +27,11 @@ instance HashAlgorithm MD5 where
     hashInternalUpdate        = c_md5_update
     hashInternalFinalize      = c_md5_finalize
 
-foreign import ccall unsafe "cryptonite_md5.h cryptonite_md5_init"
+foreign import ccall unsafe "cryptonite_md5_init"
     c_md5_init :: Ptr (Context a)-> IO ()
 
-foreign import ccall "cryptonite_md5.h cryptonite_md5_update"
+foreign import ccall "cryptonite_md5_update"
     c_md5_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
 
-foreign import ccall unsafe "cryptonite_md5.h cryptonite_md5_finalize"
+foreign import ccall unsafe "cryptonite_md5_finalize"
     c_md5_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()
