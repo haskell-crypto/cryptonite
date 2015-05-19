@@ -69,7 +69,7 @@ initialize secret = unsafeDoIO (doHashAlg undefined)
                                 ctx <- hashMutableInitWith alg
                                 hashMutableUpdate ctx secret
                                 digest <- hashMutableFinalize ctx
-                                hashMutableScrub ctx
+                                hashMutableReset ctx
                                 -- pad it if necessary
                                 if digestSize < blockSize
                                     then do

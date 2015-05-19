@@ -16,7 +16,7 @@ module Crypto.Hash.IO
     , hashMutableInitWith
     , hashMutableUpdate
     , hashMutableFinalize
-    , hashMutableScrub
+    , hashMutableReset
     ) where
 
 import           Crypto.Hash.Types
@@ -56,6 +56,9 @@ hashMutableFinalize mc = doFinalize undefined (B.withByteArray mc) B.alloc
                         hashInternalFinalize ctx dig
             return $ Digest b
 
--- FIXME not implemented just yet.
-hashMutableScrub :: HashAlgorithm a => MutableContext a -> IO ()
-hashMutableScrub (MutableContext _) = return ()
+-- | Reset the mutable context to the initial state of the hash
+hashMutableReset :: HashAlgorithm a => MutableContext a -> IO ()
+hashMutableReset mc = doReset mc (B.withByteArray mc)
+  where
+    doReset :: HashAlgorithm a => MutableContext a -> ((Ptr (Context a) -> IO ()) -> IO ()) -> IO ()
+    doReset _ withCtx = withCtx hashInternalInit
