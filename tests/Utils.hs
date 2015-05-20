@@ -14,6 +14,12 @@ newtype ChunkingLen = ChunkingLen [Int]
 instance Arbitrary ChunkingLen where
     arbitrary = ChunkingLen `fmap` replicateM 16 (choose (0,14))
 
+newtype ArbitraryBS0_2901 = ArbitraryBS0_2901 ByteString
+    deriving (Show,Eq,Ord)
+
+instance Arbitrary ArbitraryBS0_2901 where
+    arbitrary = ArbitraryBS0_2901 `fmap` arbitraryBSof 0 2901
+
 arbitraryBS :: Int -> Gen ByteString
 arbitraryBS n = B.pack `fmap` replicateM n arbitrary
 
@@ -65,3 +71,6 @@ assertBytesEq b1 b2 | b1 /= b2  = error ("expected: " ++ show b1 ++ " got: " ++ 
 assertEq :: (Show a, Eq a) => a -> a -> Bool
 assertEq b1 b2 | b1 /= b2  = error ("expected: " ++ show b1 ++ " got: " ++ show b2)
                | otherwise = True
+
+propertyEq :: (Show a, Eq a) => a -> a -> Bool
+propertyEq = assertEq

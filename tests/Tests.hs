@@ -24,22 +24,30 @@ import qualified KAT_TripleDES
 import qualified KAT_AFIS
 
 tests = testGroup "cryptonite"
-    [ ChaCha.tests
-    , Salsa.tests
-    , Hash.tests
-    , Poly1305.tests
-    , KAT_HMAC.tests
+    [ Hash.tests
+    , testGroup "MAC"
+        [ Poly1305.tests
+        , KAT_HMAC.tests
+        ]
     , KAT_Curve25519.tests
     , KAT_Ed25519.tests
     , KAT_PubKey.tests
-    , KAT_PBKDF2.tests
-    , KAT_Scrypt.tests
-    , KAT_AES.tests
-    , KAT_Blowfish.tests
-    , KAT_Camellia.tests
-    , KAT_DES.tests
-    , KAT_TripleDES.tests
-    , KAT_RC4.tests
+    , testGroup "KDF"
+        [ KAT_PBKDF2.tests
+        , KAT_Scrypt.tests
+        ]
+    , testGroup "block-cipher"
+        [ KAT_AES.tests
+        , KAT_Blowfish.tests
+        , KAT_Camellia.tests
+        , KAT_DES.tests
+        , KAT_TripleDES.tests
+        ]
+    , testGroup "stream-cipher"
+        [ KAT_RC4.tests
+        , ChaCha.tests
+        , Salsa.tests
+        ]
     , KAT_AFIS.tests
     ]
 

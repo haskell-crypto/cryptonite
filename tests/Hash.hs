@@ -140,36 +140,29 @@ expected = [
         "28e361fe8c56e617caa56c28c7c36e5c13be552b77081be82b642f08bb7ef085b9a81910fe98269386b9aacfd2349076c9506126e198f6f6ad44c12017ca77b1" ])
     ]
 
+runhash :: HashAlg -> ByteString -> ByteString
 runhash (HashAlg hashAlg) v = B.convertToBase B.Base16 $ hashWith hashAlg $ v
+
+runhashinc :: HashAlg -> [ByteString] -> ByteString
 runhashinc (HashAlg hashAlg) v = B.convertToBase B.Base16 $ hashinc $ v
   where hashinc = hashFinalize . foldl hashUpdate (hashInitWith hashAlg)
 
 makeTestAlg (name, hashAlg, results) =
     testGroup name $ concatMap maketest (zip3 is vectors results)
   where
-        runtest :: ByteString -> ByteString
-        runtest v = runhash hashAlg v
-
         is :: [Int]
-        is = [0..]
-
-        runtestinc :: Int -> ByteString -> ByteString
-        runtestinc i v = runhashinc hashAlg $ splitB i v
+        is = [1..]
 
         maketest (i, v, r) =
-            [ testCase (show i ++ " one-pass") (r @=? runtest v)
-            , testCase (show i ++ " inc 1") (r @=? runtestinc 1 v)
-            , testCase (show i ++ " inc 2") (r @=? runtestinc 2 v)
-            , testCase (show i ++ " inc 3") (r @=? runtestinc 3 v)
-            , testCase (show i ++ " inc 4") (r @=? runtestinc 4 v)
-            , testCase (show i ++ " inc 5") (r @=? runtestinc 5 v)
-            , testCase (show i ++ " inc 9") (r @=? runtestinc 9 v)
-            , testCase (show i ++ " inc 16") (r @=? runtestinc 16 v)
+            [ testCase (show i) (r @=? runhash hashAlg v)
             ]
 
-katTests :: [TestTree]
-katTests = map makeTestAlg expected
+makeTestChunk (hashName, hashAlg, _) =
+    [ testProperty hashName $ \ckLen (ArbitraryBS0_2901 inp) ->
+        runhash hashAlg inp `propertyEq` runhashinc hashAlg (chunkS ckLen inp)
+    ]
 
 tests = testGroup "hash"
-    [ testGroup "KATs" katTests
+    [ testGroup "KATs" (map makeTestAlg expected)
+    , testGroup "Chunking" (concatMap makeTestChunk expected)
     ]
