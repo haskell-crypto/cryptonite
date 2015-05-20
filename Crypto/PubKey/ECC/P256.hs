@@ -17,6 +17,21 @@
 module Crypto.PubKey.ECC.P256
     ( Scalar
     , Point
+    -- * point arithmetic
+    , pointAdd
+    , pointMul
+    , pointsMulVarTime
+    , pointIsValid
+    , toPoint
+    -- * scalar arithmetic
+    , scalarZero
+    , scalarAdd
+    , scalarSub
+    , scalarInv
+    , scalarInvVarTime
+    , scalarCmp
+    , scalarFromBinary
+    , scalarToBinary
     ) where
 
 import           Data.Word
@@ -92,6 +107,7 @@ pointIsValid p = unsafeDoIO $ withPoint p $ \px py -> do
 -- Scalar methods
 ------------------------------------------------------------------------
 
+-- | The scalar representing 0
 scalarZero :: Scalar
 scalarZero = withNewScalarFreeze $ \d -> ccryptonite_p256_init d
 
@@ -128,12 +144,14 @@ scalarInvVarTime a =
     withNewScalarFreeze $ \b -> withScalar a $ \pa ->
         ccryptonite_p256_modinv_vartime ccryptonite_SECP256r1_n pa b
 
+-- | Compare 2 Scalar
 scalarCmp :: Scalar -> Scalar -> Ordering
 scalarCmp a b = unsafeDoIO $
     withScalar a $ \pa -> withScalar b $ \pb -> do
         v <- ccryptonite_p256_cmp pa pb
         return $ compare v 0
 
+-- | convert a scalar from binary
 scalarFromBinary :: ByteArrayAccess ba => ba -> CryptoFailable Scalar
 scalarFromBinary ba
     | B.length ba /= scalarSize = CryptoFailed $ CryptoError_SecretKeySizeInvalid
@@ -141,6 +159,7 @@ scalarFromBinary ba
         CryptoPassed $ withNewScalarFreeze $ \p -> B.withByteArray ba $ \b ->
             ccryptonite_p256_from_bin b p
 
+-- | convert a scalar to binary
 scalarToBinary :: ByteArray ba => Scalar -> ba
 scalarToBinary s = B.allocAndFreeze scalarSize $ \b -> withScalar s $ \p ->
     ccryptonite_p256_to_bin p b

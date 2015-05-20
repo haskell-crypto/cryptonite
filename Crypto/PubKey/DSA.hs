@@ -12,6 +12,8 @@ module Crypto.PubKey.DSA
     , Signature(..)
     , PublicKey(..)
     , PrivateKey(..)
+    , PublicNumber
+    , PrivateNumber
     -- * generation
     , generatePrivate
     , calculatePublic

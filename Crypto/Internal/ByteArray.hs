@@ -7,10 +7,13 @@
 --
 -- Simple and efficient byte array types
 --
+{-# OPTIONS_HADDOCK hide #-}
 module Crypto.Internal.ByteArray
-    ( module X
+    ( module Data.ByteArray
+    , module Data.ByteArray.Mapping
+    , module Data.ByteArray.Encoding
     ) where
 
-import Data.ByteArray as X
-import Data.ByteArray.Mapping as X
-import Data.ByteArray.Encoding as X
+import Data.ByteArray
+import Data.ByteArray.Mapping
+import Data.ByteArray.Encoding

@@ -10,7 +10,8 @@
 -- attacks. The 'm' parameter is implicitly derived from the irreducible
 -- polynomial where applicable.
 module Crypto.Number.F2m
-    ( addF2m
+    ( BinaryPolynomial
+    , addF2m
     , mulF2m
     , squareF2m
     , modF2m

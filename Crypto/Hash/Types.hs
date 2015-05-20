@@ -12,8 +12,7 @@ module Crypto.Hash.Types
     ( HashAlgorithm(..)
     , Context(..)
     , Digest(..)
-    )
-    where
+    ) where
 
 import           Crypto.Internal.ByteArray (ByteArrayAccess, Bytes)
 import qualified Crypto.Internal.ByteArray as B
@@ -22,23 +21,23 @@ import           Foreign.Ptr (Ptr)
 
 -- | Class representing hashing algorithms.
 --
--- The hash algorithm is built over 3 primitives:
---
--- * init     : create a new hashing context
---
--- * updates  : update the hashing context with some strict bytestrings
---              and return the new context
---
--- * finalize : finalize the context into a digest
---
+-- The interface presented here is update in place
+-- and lowlevel. the Hash module takes care of
+-- hidding the mutable interface properly.
 class HashAlgorithm a where
+    -- | Get the block size of a hash algorithm
     hashBlockSize           :: a -> Int
+    -- | Get the digest size of a hash algorithm
     hashDigestSize          :: a -> Int
+    -- | Get the size of the context used for a hash algorithm
     hashInternalContextSize :: a -> Int
     --hashAlgorithmFromProxy  :: Proxy a -> a
 
+    -- | Initialize a context pointer to the initial state of a hash algorithm
     hashInternalInit     :: Ptr (Context a) -> IO ()
+    -- | Update the context with some raw data
     hashInternalUpdate   :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
+    -- | Finalize the context and set the digest raw memory to the right value
     hashInternalFinalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()
 
 {-

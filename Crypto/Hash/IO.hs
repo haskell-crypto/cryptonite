@@ -9,8 +9,7 @@
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Crypto.Hash.IO
-    (
-      HashAlgorithm
+    ( HashAlgorithm(..)
     , MutableContext
     , hashMutableInit
     , hashMutableInitWith
