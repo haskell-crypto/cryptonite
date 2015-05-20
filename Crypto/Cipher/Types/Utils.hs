@@ -12,6 +12,7 @@ module Crypto.Cipher.Types.Utils where
 import           Crypto.Internal.ByteArray (ByteArray)
 import qualified Crypto.Internal.ByteArray as B
 
+-- | Chunk some input byte array into @sz byte list of byte array.
 chunk :: ByteArray b => Int -> b -> [b]
 chunk sz bs = split bs
   where split b | B.length b <= sz = [b]

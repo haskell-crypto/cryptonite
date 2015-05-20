@@ -89,6 +89,7 @@ instance BlockCipher128 AES where
     xtsEncrypt = encryptXTS
     xtsDecrypt = decryptXTS
 
+-- | Create an AES AEAD implementation for GCM
 gcmMode :: AES -> AEADModeImpl AESGCM
 gcmMode aes = AEADModeImpl
     { aeadImplAppendHeader = gcmAppendAAD
@@ -97,6 +98,7 @@ gcmMode aes = AEADModeImpl
     , aeadImplFinalize     = gcmFinish aes
     }
 
+-- | Create an AES AEAD implementation for OCB
 ocbMode :: AES -> AEADModeImpl AESOCB
 ocbMode aes = AEADModeImpl
     { aeadImplAppendHeader = ocbAppendAAD aes

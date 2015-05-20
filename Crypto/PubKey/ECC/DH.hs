@@ -1,12 +1,22 @@
-module Crypto.PubKey.ECC.DH (
-    Curve
-  , PublicPoint
-  , PrivateNumber
-  , SharedKey(..)
-  , generatePrivate
-  , calculatePublic
-  , getShared
-  ) where
+-- |
+-- Module      : Crypto.PubKey.ECC.DH
+-- License     : BSD-style
+-- Maintainer  : Vincent Hanquez <vincent@snarc.org>
+-- Stability   : experimental
+-- Portability : unknown
+--
+-- Elliptic curve Diffie Hellman
+--
+module Crypto.PubKey.ECC.DH
+    (
+      Curve
+    , PublicPoint
+    , PrivateNumber
+    , SharedKey(..)
+    , generatePrivate
+    , calculatePublic
+    , getShared
+    ) where
 
 import Crypto.Number.Generate (generateMax)
 import Crypto.PubKey.ECC.Prim (pointMul)

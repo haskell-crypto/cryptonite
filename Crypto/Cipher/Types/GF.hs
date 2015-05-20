@@ -20,6 +20,8 @@ import           Foreign.Storable
 import           Foreign.Ptr
 import           Data.Bits
 
+-- | Compute the gfmul with the XTS polynomial
+--
 -- block size need to be 128 bits.
 --
 -- FIXME: add support for big endian.

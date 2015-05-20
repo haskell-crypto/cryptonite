@@ -11,12 +11,16 @@
 -----------------------------------------------------------------------------
 
 
-module Crypto.Cipher.DES.Primitive (encrypt, decrypt, Block(..)) where
+module Crypto.Cipher.DES.Primitive
+    ( encrypt
+    , decrypt
+    , Block(..)
+    ) where
 
 import Data.Word
 import Data.Bits
-import Data.Memory.Endian
 
+-- | a DES block (64 bits)
 newtype Block = Block { unBlock :: Word64 }
 
 type Rotation = Int
@@ -210,12 +214,10 @@ takeDrop n (x:xs) = (x:ys, zs)
 
 -- | Basic DES encryption which takes a key and a block of plaintext
 -- and returns the encrypted block of ciphertext according to the standard.
-
 encrypt :: Word64 -> Block -> Block
 encrypt = flip des_enc
 
 -- | Basic DES decryption which takes a key and a block of ciphertext and
 -- returns the decrypted block of plaintext according to the standard.
-
 decrypt :: Word64 -> Block -> Block
 decrypt = flip des_dec

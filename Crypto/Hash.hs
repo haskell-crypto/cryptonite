@@ -99,9 +99,14 @@ hashFinalize c = doFinalize undefined (B.copy c) (B.allocAndFreeze)
 hashInitWith :: HashAlgorithm alg => alg -> Context alg
 hashInitWith _ = hashInit
 
+-- | Run the 'hash' function but takes an explicit hash algorithm parameter
 hashWith :: (ByteArrayAccess ba, HashAlgorithm alg) => alg -> ba -> Digest alg
 hashWith _ = hash
 
+-- | Try to transform a bytearray into a Digest of specific algorithm.
+--
+-- If the digest is not the right size for the algorithm specified, then
+-- Nothing is returned.
 digestFromByteString :: (HashAlgorithm a, ByteArrayAccess ba) => ba -> Maybe (Digest a)
 digestFromByteString = from undefined
   where

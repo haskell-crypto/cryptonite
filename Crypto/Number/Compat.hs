@@ -36,14 +36,17 @@ import GHC.Integer.Logarithms (integerLog2#)
 import Data.Word
 import GHC.Ptr (Ptr(..))
 
+-- | GMP Supported / Unsupported
 data GmpSupported a = GmpSupported a
                     | GmpUnsupported
                     deriving (Show,Eq)
 
+-- | Simple combinator in case the operation is not supported through GMP
 onGmpUnsupported :: GmpSupported a -> a -> a
 onGmpUnsupported (GmpSupported a) _ = a
 onGmpUnsupported GmpUnsupported   f = f
 
+-- | Compute the GCDE of a two integer through GMP
 gmpGcde :: Integer -> Integer -> GmpSupported (Integer, Integer, Integer)
 #if MIN_VERSION_integer_gmp(0,5,1)
 gmpGcde a b =
@@ -54,6 +57,7 @@ gmpGcde a b =
 gmpGcde _ _ = GmpUnsupported
 #endif
 
+-- | Compute the binary logarithm of an integer through GMP
 gmpLog2 :: Integer -> GmpSupported Int
 #if MIN_VERSION_integer_gmp(0,5,1)
 gmpLog2 0 = GmpSupported 0
@@ -62,6 +66,8 @@ gmpLog2 x = GmpSupported (I# (integerLog2# x))
 gmpLog2 _ = GmpUnsupported
 #endif
 
+-- | Compute the power modulus using extra security to remain constant
+-- time wise through GMP
 gmpPowModSecInteger :: Integer -> Integer -> Integer -> GmpSupported Integer
 #if MIN_VERSION_integer_gmp(1,0,0)
 gmpPowModSecInteger b e m = GmpUnsupported
@@ -71,6 +77,7 @@ gmpPowModSecInteger b e m = GmpSupported (powModSecInteger b e m)
 gmpPowModSecInteger _ _ _ = GmpUnsupported
 #endif
 
+-- | Compute the power modulus through GMP
 gmpPowModInteger :: Integer -> Integer -> Integer -> GmpSupported Integer
 #if MIN_VERSION_integer_gmp(0,5,1)
 gmpPowModInteger b e m = GmpSupported (powModInteger b e m)
@@ -78,6 +85,7 @@ gmpPowModInteger b e m = GmpSupported (powModInteger b e m)
 gmpPowModInteger _ _ _ = GmpUnsupported
 #endif
 
+-- | Inverse modulus of a number through GMP
 gmpInverse :: Integer -> Integer -> GmpSupported (Maybe Integer)
 #if MIN_VERSION_integer_gmp(0,5,1)
 gmpInverse g m
@@ -88,6 +96,7 @@ gmpInverse g m
 gmpInverse _ _ = GmpUnsupported
 #endif
 
+-- | Get the next prime from a specific value through GMP
 gmpNextPrime :: Integer -> GmpSupported Integer
 #if MIN_VERSION_integer_gmp(0,5,1)
 gmpNextPrime n = GmpSupported (nextPrimeInteger n)
@@ -95,6 +104,7 @@ gmpNextPrime n = GmpSupported (nextPrimeInteger n)
 gmpNextPrime _ = GmpUnsupported
 #endif
 
+-- | Test if a number is prime using Miller Rabin
 gmpTestPrimeMillerRabin :: Int -> Integer -> GmpSupported Bool
 #if MIN_VERSION_integer_gmp(0,5,1)
 gmpTestPrimeMillerRabin (I# tries) !n = GmpSupported $
@@ -105,6 +115,7 @@ gmpTestPrimeMillerRabin (I# tries) !n = GmpSupported $
 gmpTestPrimeMillerRabin _ _ = GmpUnsupported
 #endif
 
+-- | Return the size in bytes of a integer
 gmpSizeInBytes :: Integer -> GmpSupported Int
 #if MIN_VERSION_integer_gmp(0,5,1)
 gmpSizeInBytes n = GmpSupported (I# (word2Int# (sizeInBaseInteger n 256#)))
@@ -112,6 +123,7 @@ gmpSizeInBytes n = GmpSupported (I# (word2Int# (sizeInBaseInteger n 256#)))
 gmpSizeInBytes _ = GmpUnsupported
 #endif
 
+-- | Export an integer to a memory
 gmpExportInteger :: Integer -> Ptr Word8 -> GmpSupported (IO ())
 #if MIN_VERSION_integer_gmp(1,0,0)
 gmpExportInteger n (Ptr addr) = GmpSupported $ do
@@ -125,6 +137,7 @@ gmpExportInteger n (Ptr addr) = GmpSupported $ IO $ \s ->
 gmpExportInteger _ _ = GmpUnsupported
 #endif
 
+-- | Import an integer from a memory
 gmpImportInteger :: Int -> Ptr Word8 -> GmpSupported (IO Integer)
 #if MIN_VERSION_integer_gmp(1,0,0)
 gmpImportInteger (I# n) (Ptr addr) = GmpSupported $

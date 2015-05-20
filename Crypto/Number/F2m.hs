@@ -22,6 +22,7 @@ import Data.Bits ((.&.),(.|.),xor,shift,testBit)
 import Crypto.Number.Basic
 import Crypto.Internal.Imports
 
+-- | Binary Polynomial represented by an integer
 type BinaryPolynomial = Integer
 
 -- | Addition over F₂m. This is just a synonym of  'xor'.

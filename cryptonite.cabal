@@ -126,7 +126,6 @@ Library
                      Crypto.Internal.ByteArray
                      Crypto.Internal.Compat
                      Crypto.Internal.CompatPrim
-                     Crypto.Internal.Hex
                      Crypto.Internal.Imports
                      Crypto.Internal.Words
                      Crypto.Internal.WordArray

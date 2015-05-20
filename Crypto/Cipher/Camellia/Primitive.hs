@@ -107,6 +107,7 @@ rotl128 v@(Word128 x1 x2) w
             (x1high, x1low) = splitBits (x1 `rotateL` w)
             (x2high, x2low) = splitBits (x2 `rotateL` w)
 
+-- | Camellia context
 data Camellia = Camellia
     { k  :: Array64
     , kw :: Array64
@@ -135,9 +136,9 @@ setKeyInterim keyseed = (w64tow128 kL, w64tow128 kR, w64tow128 kA, w64tow128 kB)
               in (d4, d3)
 
 -- | Initialize a 128-bit key
+--
 -- Return the initialized key or a error message if the given 
 -- keyseed was not 16-bytes in length.
---
 initCamellia :: ByteArray key
              => key -- ^ The key to create the camellia context
              -> CryptoFailable Camellia

@@ -65,6 +65,7 @@ gcde a b = onGmpUnsupported (gmpGcde a b) $
 areEven :: [Integer] -> Bool
 areEven = and . map even
 
+-- | Compute the binary logarithm of a integer
 log2 :: Integer -> Int
 log2 n = onGmpUnsupported (gmpLog2 n) $ imLog 2 n
   where

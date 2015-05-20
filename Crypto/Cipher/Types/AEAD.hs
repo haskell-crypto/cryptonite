@@ -16,6 +16,7 @@ import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray)
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Internal.Imports
 
+-- | AEAD Implementation
 data AEADModeImpl st = AEADModeImpl
     { aeadImplAppendHeader :: forall ba . ByteArrayAccess ba => st -> ba -> st
     , aeadImplEncrypt      :: forall ba . ByteArray ba => st -> ba -> (ba, st)
@@ -29,15 +30,19 @@ data AEAD cipher = forall st . AEAD
     , aeadState    :: st
     }
 
+-- | Append some header information to an AEAD context
 aeadAppendHeader :: ByteArrayAccess aad => AEAD cipher -> aad -> AEAD cipher
 aeadAppendHeader (AEAD impl st) aad = AEAD impl $ (aeadImplAppendHeader impl) st aad
 
+-- | Encrypt some data and update the AEAD context
 aeadEncrypt :: ByteArray ba => AEAD cipher -> ba -> (ba, AEAD cipher)
 aeadEncrypt (AEAD impl st) ba = second (AEAD impl) $ (aeadImplEncrypt impl) st ba
 
+-- | Decrypt some data and update the AEAD context
 aeadDecrypt :: ByteArray ba => AEAD cipher -> ba -> (ba, AEAD cipher)
 aeadDecrypt (AEAD impl st) ba = second (AEAD impl) $ (aeadImplDecrypt impl) st ba
 
+-- | Finalize the AEAD context and return the authentication tag
 aeadFinalize :: AEAD cipher -> Int -> AuthTag
 aeadFinalize (AEAD impl st) n = (aeadImplFinalize impl) st n
 

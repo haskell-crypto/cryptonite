@@ -8,6 +8,7 @@
 module Crypto.Random.Types
     (
       MonadRandom(..)
+    , MonadPseudoRandom
     , DRG(..)
     , withDRG
     ) where
@@ -16,15 +17,20 @@ import Crypto.Random.Entropy
 import Crypto.Internal.ByteArray
 import Crypto.Internal.Imports
 
+-- | A monad constraint that allows to generate random bytes
 class (Functor m, Monad m) => MonadRandom m where
     getRandomBytes :: ByteArray byteArray => Int -> m byteArray
 
+-- | A Deterministic Random Generator (DRG) class
 class DRG gen where
+    -- | Generate N bytes of randomness from a DRG
     randomBytesGenerate :: ByteArray byteArray => Int -> gen -> (byteArray, gen)
 
 instance MonadRandom IO where
     getRandomBytes = getEntropy
 
+-- | A simple Monad class very similar to a State Monad
+-- with the state being a DRG.
 newtype MonadPseudoRandom gen a = MonadPseudoRandom
     { runPseudoRandom :: gen -> (a, gen)
     }
@@ -49,5 +55,7 @@ instance DRG gen => Monad (MonadPseudoRandom gen) where
 instance DRG gen => MonadRandom (MonadPseudoRandom gen) where
     getRandomBytes n = MonadPseudoRandom (randomBytesGenerate n)
 
+-- | Run a pure computation with a Deterministic Random Generator
+-- in the 'MonadPseudoRandom'
 withDRG :: DRG gen => gen -> MonadPseudoRandom gen a -> (a, gen)
 withDRG gen m = runPseudoRandom m gen

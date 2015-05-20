@@ -58,6 +58,7 @@ instance BlockCipher c => ByteArrayAccess (IV c) where
 instance Eq (IV c) where
     (IV a) == (IV b) = B.eq a b
 
+-- | XTS callback
 type XTS ba cipher = (cipher, cipher)
                   -> IV cipher        -- ^ Usually represent the Data Unit (e.g. disk sector)
                   -> DataUnitOffset   -- ^ Offset in the data unit in number of blocks

@@ -37,8 +37,16 @@ data Context = BF (Int -> Word32) -- p
                   (Int -> Word32) -- sbox2
                   (Int -> Word32) -- sbox2
 
-encrypt, decrypt :: ByteArray ba => Context -> ba -> ba
+-- | Encrypt blocks
+--
+-- Input need to be a multiple of 8 bytes
+encrypt :: ByteArray ba => Context -> ba -> ba
 encrypt = cipher
+
+-- | Decrypt blocks
+--
+-- Input need to be a multiple of 8 bytes
+decrypt :: ByteArray ba => Context -> ba -> ba
 decrypt = cipher . decryptContext
 
 decryptContext :: Context -> Context
@@ -50,6 +58,9 @@ cipher ctx b
     | B.length b `mod` 8 /= 0 = error "invalid data length"
     | otherwise               = B.mapAsWord64 (coreCrypto ctx) b
 
+-- | Initialize a new Blowfish context from a key.
+--
+-- key need to be between 0 to 448 bits.
 initBlowfish :: ByteArrayAccess key => key -> CryptoFailable Context
 initBlowfish key
     | len > (448 `div` 8) = CryptoFailed $ CryptoError_KeySizeInvalid
