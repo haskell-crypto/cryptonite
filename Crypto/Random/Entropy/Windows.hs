@@ -9,6 +9,7 @@
 --   Copyright (c) Thomas DuBuisson.
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE CPP #-}
 module Crypto.Random.Entropy.Windows
     ( WinCryptoAPI
     ) where
