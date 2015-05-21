@@ -53,6 +53,9 @@ On the following haskell versions:
 * GHC 7.8.x
 * GHC 7.10.x
 
+Further platforms and architectures probably works too, but until maintainer(s) don't have regular
+access to them, we can't commit for further support
+
 Links
 -----
 
