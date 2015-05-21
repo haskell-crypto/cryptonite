@@ -5,28 +5,36 @@
 -- Stability   : experimental
 -- Portability : Good
 --
+{-# LANGUAGE BangPatterns #-}
 module Crypto.PubKey.MaskGenFunction
     ( MaskGenAlgorithm
     , mgf1
     ) where
 
-import Data.ByteString (ByteString)
-import qualified Data.ByteString as B
-import Crypto.Number.Serialize (i2ospOf_)
-import Crypto.Hash (hashWith, HashAlgorithm)
-import qualified Crypto.Internal.ByteArray as B (convert)
+import           Crypto.Number.Serialize (i2ospOf_)
+import           Crypto.Hash
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, Bytes)
+import qualified Crypto.Internal.ByteArray as B
 
 -- | Represent a mask generation algorithm
-type MaskGenAlgorithm =
-       ByteString -- ^ seed
-    -> Int        -- ^ length to generate
-    -> ByteString
+type MaskGenAlgorithm seed output =
+       seed   -- ^ seed
+    -> Int    -- ^ length to generate
+    -> output
 
 -- | Mask generation algorithm MGF1
-mgf1 :: HashAlgorithm hashAlg => hashAlg -> MaskGenAlgorithm
-mgf1 hashAlg seed len = loop B.empty 0
-    where loop t counter
-            | B.length t >= len = B.take len t
-            | otherwise         = let counterBS = i2ospOf_ 4 counter
-                                      newT = t `B.append` B.convert (hashWith hashAlg (seed `B.append` counterBS))
-                                   in loop newT (counter+1)
+mgf1 :: (ByteArrayAccess seed, ByteArray output, HashAlgorithm hashAlg)
+     => hashAlg
+     -> seed
+     -> Int
+     -> output
+mgf1 hashAlg seed len =
+    let !seededCtx = hashUpdate (hashInitWith hashAlg) seed
+     in B.take len $ B.concat $ map (hashCounter seededCtx) [0..fromIntegral (maxCounter-1)]
+  where
+    digestLen     = hashDigestSize hashAlg
+    (chunks,left) = len `divMod` digestLen
+    maxCounter    = if left > 0 then chunks + 1 else chunks
+
+    hashCounter :: HashAlgorithm a => Context a -> Integer -> Digest a
+    hashCounter ctx counter = hashFinalize $ hashUpdate ctx (i2ospOf_ 4 counter :: Bytes)

@@ -25,20 +25,23 @@ import           Crypto.Hash
 import           Data.Bits (xor, shiftR, (.&.))
 import           Data.Word
 
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray)
 import qualified Crypto.Internal.ByteArray as B (convert)
 import           Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 
 -- | Parameters for PSS signature/verification.
-data PSSParams hash = PSSParams
+data PSSParams hash seed output = PSSParams
     { pssHash         :: hash             -- ^ Hash function to use
-    , pssMaskGenAlg   :: MaskGenAlgorithm -- ^ Mask Gen algorithm to use
+    , pssMaskGenAlg   :: MaskGenAlgorithm seed output -- ^ Mask Gen algorithm to use
     , pssSaltLength   :: Int              -- ^ Length of salt. need to be <= to hLen.
     , pssTrailerField :: Word8            -- ^ Trailer field, usually 0xbc
     }
 
 -- | Default Params with a specified hash function
-defaultPSSParams :: HashAlgorithm hash => hash -> PSSParams hash
+defaultPSSParams :: (ByteArrayAccess seed, ByteArray output, HashAlgorithm hash)
+                 => hash
+                 -> PSSParams hash seed output
 defaultPSSParams hashAlg =
     PSSParams { pssHash         = hashAlg
               , pssMaskGenAlg   = mgf1 hashAlg
@@ -47,7 +50,7 @@ defaultPSSParams hashAlg =
               }
 
 -- | Default Params using SHA1 algorithm.
-defaultPSSParamsSHA1 :: PSSParams SHA1
+defaultPSSParamsSHA1 :: PSSParams SHA1 ByteString ByteString
 defaultPSSParamsSHA1 = defaultPSSParams SHA1
 
 -- | Sign using the PSS parameters and the salt explicitely passed as parameters.
@@ -56,7 +59,7 @@ defaultPSSParamsSHA1 = defaultPSSParams SHA1
 signWithSalt :: HashAlgorithm hash
              => ByteString    -- ^ Salt to use
              -> Maybe Blinder -- ^ optional blinder to use
-             -> PSSParams hash -- ^ PSS Parameters to use
+             -> PSSParams hash ByteString ByteString -- ^ PSS Parameters to use
              -> PrivateKey    -- ^ RSA Private Key
              -> ByteString    -- ^ Message to sign
              -> Either Error ByteString
@@ -80,7 +83,7 @@ signWithSalt salt blinder params pk m
 -- | Sign using the PSS Parameters
 sign :: (HashAlgorithm hash, MonadRandom m)
      => Maybe Blinder   -- ^ optional blinder to use
-     -> PSSParams hash  -- ^ PSS Parameters to use
+     -> PSSParams hash ByteString ByteString -- ^ PSS Parameters to use
      -> PrivateKey      -- ^ RSA Private Key
      -> ByteString      -- ^ Message to sign
      -> m (Either Error ByteString)
@@ -90,7 +93,7 @@ sign blinder params pk m = do
 
 -- | Sign using the PSS Parameters and an automatically generated blinder.
 signSafer :: (HashAlgorithm hash, MonadRandom m)
-          => PSSParams hash -- ^ PSS Parameters to use
+          => PSSParams hash ByteString ByteString -- ^ PSS Parameters to use
           -> PrivateKey     -- ^ private key
           -> ByteString     -- ^ message to sign
           -> m (Either Error ByteString)
@@ -100,8 +103,9 @@ signSafer params pk m = do
 
 -- | Verify a signature using the PSS Parameters
 verify :: HashAlgorithm hash
-       => PSSParams hash -- ^ PSS Parameters to use to verify,
-                         --   this need to be identical to the parameters when signing
+       => PSSParams hash ByteString ByteString
+                     -- ^ PSS Parameters to use to verify,
+                     --   this need to be identical to the parameters when signing
        -> PublicKey  -- ^ RSA Public Key
        -> ByteString -- ^ Message to verify
        -> ByteString -- ^ Signature

@@ -31,17 +31,20 @@ import           Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 import           Data.Bits (xor)
 
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray)
 import qualified Crypto.Internal.ByteArray as B (convert)
 
 -- | Parameters for OAEP encryption/decryption
-data OAEPParams hash = OAEPParams
-    { oaepHash       :: hash             -- ^ Hash function to use.
-    , oaepMaskGenAlg :: MaskGenAlgorithm -- ^ Mask Gen algorithm to use.
-    , oaepLabel      :: Maybe ByteString -- ^ Optional label prepended to message.
+data OAEPParams hash seed output = OAEPParams
+    { oaepHash       :: hash                         -- ^ Hash function to use.
+    , oaepMaskGenAlg :: MaskGenAlgorithm seed output -- ^ Mask Gen algorithm to use.
+    , oaepLabel      :: Maybe ByteString             -- ^ Optional label prepended to message.
     }
 
 -- | Default Params with a specified hash function
-defaultOAEPParams :: HashAlgorithm hash => hash -> OAEPParams hash
+defaultOAEPParams :: (ByteArrayAccess seed, ByteArray output, HashAlgorithm hash)
+                  => hash
+                  -> OAEPParams hash seed output
 defaultOAEPParams hashAlg =
     OAEPParams { oaepHash         = hashAlg
                , oaepMaskGenAlg   = mgf1 hashAlg
@@ -51,7 +54,7 @@ defaultOAEPParams hashAlg =
 -- | Encrypt a message using OAEP with a predefined seed.
 encryptWithSeed :: HashAlgorithm hash
                 => ByteString      -- ^ Seed
-                -> OAEPParams hash -- ^ OAEP params to use for encryption
+                -> OAEPParams hash ByteString ByteString -- ^ OAEP params to use for encryption
                 -> PublicKey       -- ^ Public key.
                 -> ByteString      -- ^ Message to encrypt
                 -> Either Error ByteString
@@ -78,7 +81,7 @@ encryptWithSeed seed oaep pk msg
 
 -- | Encrypt a message using OAEP
 encrypt :: (HashAlgorithm hash, MonadRandom m)
-        => OAEPParams hash -- ^ OAEP params to use for encryption.
+        => OAEPParams hash ByteString ByteString -- ^ OAEP params to use for encryption.
         -> PublicKey       -- ^ Public key.
         -> ByteString      -- ^ Message to encrypt
         -> m (Either Error ByteString)
@@ -92,7 +95,7 @@ encrypt oaep pk msg = do
 --
 -- It doesn't apply the RSA decryption primitive
 unpad :: HashAlgorithm hash
-      => OAEPParams hash -- ^ OAEP params to use
+      => OAEPParams hash ByteString ByteString -- ^ OAEP params to use
       -> Int             -- ^ size of the key in bytes
       -> ByteString      -- ^ encoded message (not encrypted)
       -> Either Error ByteString
@@ -128,7 +131,7 @@ unpad oaep k em
 -- If unsure always set a blinder or use decryptSafer
 decrypt :: HashAlgorithm hash
         => Maybe Blinder   -- ^ Optional blinder
-        -> OAEPParams hash -- ^ OAEP params to use for decryption
+        -> OAEPParams hash ByteString ByteString -- ^ OAEP params to use for decryption
         -> PrivateKey      -- ^ Private key
         -> ByteString      -- ^ Cipher text
         -> Either Error ByteString
@@ -142,7 +145,7 @@ decrypt blinder oaep pk cipher
 
 -- | Decrypt a ciphertext using OAEP and by automatically generating a blinder.
 decryptSafer :: (HashAlgorithm hash, MonadRandom m)
-             => OAEPParams hash -- ^ OAEP params to use for decryption
+             => OAEPParams hash ByteString ByteString -- ^ OAEP params to use for decryption
              -> PrivateKey -- ^ Private key
              -> ByteString -- ^ Cipher text
              -> m (Either Error ByteString)
