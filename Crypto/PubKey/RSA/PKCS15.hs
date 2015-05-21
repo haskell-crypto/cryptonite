@@ -27,6 +27,7 @@ import           Crypto.PubKey.RSA.Types
 import           Crypto.PubKey.RSA.Prim
 import           Crypto.PubKey.RSA (generateBlinder)
 import           Crypto.PubKey.HashDescr
+import           Crypto.Hash (HashAlgorithm)
 
 import           Data.ByteString (ByteString)
 
@@ -115,16 +116,17 @@ encrypt pk m = do
 -- information from the timing of the operation, the blinder can be set to None.
 --
 -- If unsure always set a blinder or use signSafer
-sign :: Maybe Blinder -- ^ optional blinder
-     -> HashDescr     -- ^ hash descriptor
+sign :: HashAlgorithm hashAlg
+     => Maybe Blinder -- ^ optional blinder
+     -> HashDescr hashAlg ByteString -- ^ hash descriptor
      -> PrivateKey    -- ^ private key
      -> ByteString    -- ^ message to sign
      -> Either Error ByteString
 sign blinder hashDescr pk m = dp blinder pk `fmap` makeSignature hashDescr (private_size pk) m
 
 -- | sign message using the private key and by automatically generating a blinder.
-signSafer :: MonadRandom m
-          => HashDescr  -- ^ Hash descriptor
+signSafer :: (HashAlgorithm hashAlg, MonadRandom m)
+          => HashDescr hashAlg ByteString -- ^ Hash descriptor
           -> PrivateKey -- ^ private key
           -> ByteString -- ^ message to sign
           -> m (Either Error ByteString)
@@ -133,13 +135,21 @@ signSafer hashDescr pk m = do
     return (sign (Just blinder) hashDescr pk m)
 
 -- | verify message with the signed message
-verify :: HashDescr -> PublicKey -> ByteString -> ByteString -> Bool
+verify :: HashAlgorithm hashAlg
+       => HashDescr hashAlg ByteString
+       -> PublicKey
+       -> ByteString
+       -> ByteString
+       -> Bool
 verify hashDescr pk m sm =
     case makeSignature hashDescr (public_size pk) m of
         Left _  -> False
         Right s -> s == (ep pk sm)
 
-{- makeSignature for sign and verify -}
-makeSignature :: HashDescr -> Int -> ByteString -> Either Error ByteString
-makeSignature hashDescr klen m = padSignature klen signature
-    where signature = (digestToASN1 hashDescr) $ (hashFunction hashDescr) m
+-- | make signature digest, used in 'sign' and 'verify'
+makeSignature :: HashAlgorithm hashAlg
+              => HashDescr hashAlg ByteString
+              -> Int
+              -> ByteString
+              -> Either Error ByteString
+makeSignature hashDescr klen m = padSignature klen (runHashDescr hashDescr m)
