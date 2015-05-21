@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 -- |
 -- Module      : Crypto.PubKey.HashDescr
 -- License     : BSD-style
