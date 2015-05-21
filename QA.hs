@@ -29,6 +29,7 @@ perModuleAllowedExtensions =
     , ("Crypto/Internal/WordArray.hs", [UnboxedTuples,MagicHash])
     , ("Crypto/Internal/Hex.hs", [Rank2Types, UnboxedTuples, MagicHash])
     , ("Crypto/Random/Entropy/Backend.hs", [ExistentialQuantification,CPP])
+    , ("Crypto/Random/Entropy/Windows.hs", [CPP])
     , ("Crypto/Cipher/Blowfish/Box.hs", [MagicHash])
     , ("Crypto/Cipher/Blowfish.hs", [CPP])
     , ("Crypto/Cipher/AES.hs", [CPP])
@@ -213,12 +214,13 @@ main = do
                             s' -> w : wordsWhen p s'' where (w, s'') = break p s'
 
 processCPP file content = do
-    contentProcessed <- readProcess "cpphs" [d minVersionBase] content
+    contentProcessed <- readProcess "cpphs" [d minVersionBase, d arch] content
     return $ simpleCPP contentProcessed
   where
 
     d s = "-D" ++ s
     minVersionBase = "MIN_VERSION_base(a,b,c)=(((a) >= 4) && ((b) >= 7))"
+    arch = "ARCH_X86"
 
     -- simple CPP just strip # starting line
     simpleCPP = unlines . filter (not . isHashStart) . lines
