@@ -28,14 +28,14 @@ module Crypto.PubKey.DSA
     , toPrivateKey
     ) where
 
-import Crypto.Random.Types
-import Data.Data
-import Data.Maybe
-import Crypto.Number.ModArithmetic (expFast, expSafe, inverse)
-import Crypto.Number.Serialize
-import Crypto.Number.Generate
-import Crypto.Internal.ByteArray (ByteArrayAccess)
-import Crypto.Hash
+import           Crypto.Random.Types
+import           Data.Data
+import           Data.Maybe
+import           Crypto.Number.ModArithmetic (expFast, expSafe, inverse)
+import           Crypto.Number.Serialize
+import           Crypto.Number.Generate
+import           Crypto.Internal.ByteArray (ByteArrayAccess)
+import           Crypto.Hash
 
 -- | DSA Public Number, usually embedded in DSA Public Key
 type PublicNumber = Integer
