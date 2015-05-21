@@ -37,6 +37,7 @@ module Crypto.Cipher.Types.Block
     ) where
 
 import           Data.Word
+import           Data.Monoid
 import           Crypto.Error
 import           Crypto.Cipher.Types.Base
 import           Crypto.Cipher.Types.GF
@@ -186,14 +187,14 @@ ivAdd (IV b) i = IV $ copy b
                 else loop hi (ofs - 1) p
 
 cbcEncryptGeneric :: (ByteArray ba, BlockCipher cipher) => cipher -> IV cipher -> ba -> ba
-cbcEncryptGeneric cipher ivini input = B.concat $ doEnc ivini $ chunk (blockSize cipher) input
+cbcEncryptGeneric cipher ivini input = mconcat $ doEnc ivini $ chunk (blockSize cipher) input
   where doEnc _  []     = []
         doEnc iv (i:is) =
             let o = ecbEncrypt cipher $ B.xor iv i
              in o : doEnc (IV o) is
 
 cbcDecryptGeneric :: (ByteArray ba, BlockCipher cipher) => cipher -> IV cipher -> ba -> ba
-cbcDecryptGeneric cipher ivini input = B.concat $ doDec ivini $ chunk (blockSize cipher) input
+cbcDecryptGeneric cipher ivini input = mconcat $ doDec ivini $ chunk (blockSize cipher) input
   where
         doDec _  []     = []
         doDec iv (i:is) =
@@ -201,7 +202,7 @@ cbcDecryptGeneric cipher ivini input = B.concat $ doDec ivini $ chunk (blockSize
              in o : doDec (IV i) is
 
 cfbEncryptGeneric :: (ByteArray ba, BlockCipher cipher) => cipher -> IV cipher -> ba -> ba
-cfbEncryptGeneric cipher ivini input = B.concat $ doEnc ivini $ chunk (blockSize cipher) input
+cfbEncryptGeneric cipher ivini input = mconcat $ doEnc ivini $ chunk (blockSize cipher) input
   where
         doEnc _  []     = []
         doEnc (IV iv) (i:is) =
@@ -209,7 +210,7 @@ cfbEncryptGeneric cipher ivini input = B.concat $ doEnc ivini $ chunk (blockSize
              in o : doEnc (IV o) is
 
 cfbDecryptGeneric :: (ByteArray ba, BlockCipher cipher) => cipher -> IV cipher -> ba -> ba
-cfbDecryptGeneric cipher ivini input = B.concat $ doDec ivini $ chunk (blockSize cipher) input
+cfbDecryptGeneric cipher ivini input = mconcat $ doDec ivini $ chunk (blockSize cipher) input
   where
         doDec _  []     = []
         doDec (IV iv) (i:is) =
@@ -217,7 +218,7 @@ cfbDecryptGeneric cipher ivini input = B.concat $ doDec ivini $ chunk (blockSize
              in o : doDec (IV i) is
 
 ctrCombineGeneric :: (ByteArray ba, BlockCipher cipher) => cipher -> IV cipher -> ba -> ba
-ctrCombineGeneric cipher ivini input = B.concat $ doCnt ivini $ chunk (blockSize cipher) input
+ctrCombineGeneric cipher ivini input = mconcat $ doCnt ivini $ chunk (blockSize cipher) input
   where doCnt _  [] = []
         doCnt iv@(IV ivd) (i:is) =
             let ivEnc = ecbEncrypt cipher ivd
@@ -237,7 +238,7 @@ xtsGeneric :: (ByteArray ba, BlockCipher128 cipher)
            -> ba
            -> ba
 xtsGeneric f (cipher, tweakCipher) (IV iv) sPoint input =
-    B.concat $ doXts iniTweak $ chunk (blockSize cipher) input
+    mconcat $ doXts iniTweak $ chunk (blockSize cipher) input
   where encTweak = ecbEncrypt tweakCipher iv
         iniTweak = iterate xtsGFMul encTweak !! fromIntegral sPoint
         doXts _     []     = []
