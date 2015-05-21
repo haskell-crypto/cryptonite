@@ -13,10 +13,10 @@ module Crypto.PubKey.RSA.Prim
     , ep
     ) where
 
-import Data.ByteString (ByteString)
-import Crypto.PubKey.RSA.Types
-import Crypto.Number.ModArithmetic (expFast, expSafe)
-import Crypto.Number.Serialize (os2ip, i2ospOf_)
+import           Data.ByteString (ByteString)
+import           Crypto.PubKey.RSA.Types
+import           Crypto.Number.ModArithmetic (expFast, expSafe)
+import           Crypto.Number.Serialize (os2ip, i2ospOf_)
 
 {- dpSlow computes the decrypted message not using any precomputed cache value.
    only n and d need to valid. -}

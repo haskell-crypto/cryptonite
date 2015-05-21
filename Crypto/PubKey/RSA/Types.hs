@@ -19,7 +19,7 @@ module Crypto.PubKey.RSA.Types
     , private_e
     ) where
 
-import Data.Data
+import           Data.Data
 
 -- | Blinder which is used to obfuscate the timing
 -- of the decryption primitive (used by decryption and signing).

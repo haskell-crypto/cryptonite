@@ -22,28 +22,32 @@ module Crypto.PubKey.RSA.PKCS15
     , verify
     ) where
 
-import Crypto.Random.Types
-import Crypto.PubKey.Internal (and')
-import Crypto.PubKey.RSA.Types
-import Data.ByteString (ByteString)
-import qualified Data.ByteString as B
-import Crypto.PubKey.RSA.Prim
-import Crypto.PubKey.RSA (generateBlinder)
-import Crypto.PubKey.HashDescr
+import           Crypto.Random.Types
+import           Crypto.PubKey.Internal (and')
+import           Crypto.PubKey.RSA.Types
+import           Crypto.PubKey.RSA.Prim
+import           Crypto.PubKey.RSA (generateBlinder)
+import           Crypto.PubKey.HashDescr
+
+import           Data.ByteString (ByteString)
+
+import           Crypto.Internal.ByteArray (ByteArray, Bytes)
+import qualified Crypto.Internal.ByteArray as B
 
 -- | This produce a standard PKCS1.5 padding for encryption
-pad :: MonadRandom m => Int -> ByteString -> m (Either Error ByteString)
+pad :: (MonadRandom m, ByteArray message) => Int -> message -> m (Either Error message)
 pad len m
     | B.length m > len - 11 = return (Left MessageTooLong)
     | otherwise             = do
         padding <- getNonNullRandom (len - B.length m - 3)
-        return $ Right $ B.concat [ B.singleton 0, B.singleton 2, padding, B.singleton 0, m ]
+        return $ Right $ B.concat [ B.pack [0,2], padding, B.pack [0], m ]
 
-  where {- get random non-null bytes -}
-    getNonNullRandom :: MonadRandom m => Int -> m ByteString
+  where
+    -- get random non-null bytes
+    getNonNullRandom :: (ByteArray bytearray, MonadRandom m) => Int -> m bytearray
     getNonNullRandom n = do
         bs0 <- getRandomBytes n
-        let bytes = B.pack $ filter (/= 0) $ B.unpack $ bs0
+        let bytes = B.pack $ filter (/= 0) $ B.unpack (bs0 :: Bytes)
             left  = n - B.length bytes
         if left == 0
             then return bytes
@@ -51,25 +55,25 @@ pad len m
                     return (bytes `B.append` bend)
 
 -- | Produce a standard PKCS1.5 padding for signature
-padSignature :: Int -> ByteString -> Either Error ByteString
+padSignature :: ByteArray signature => Int -> signature -> Either Error signature
 padSignature klen signature
     | klen < siglen+1 = Left SignatureTooLong
-    | otherwise       = Right $ B.concat [B.singleton 0,B.singleton 1,padding,B.singleton 0,signature]
-    where
+    | otherwise       = Right (B.pack padding `B.append` signature)
+  where
         siglen    = B.length signature
-        padding   = B.replicate (klen - siglen - 3) 0xff
+        padding   = 0 : 1 : (replicate (klen - siglen - 3) 0xff ++ [0])
 
 -- | Try to remove a standard PKCS1.5 encryption padding.
-unpad :: ByteString -> Either Error ByteString
+unpad :: ByteArray bytearray => bytearray -> Either Error bytearray
 unpad packed
     | paddingSuccess = Right m
     | otherwise      = Left MessageNotRecognized
-    where
+  where
         (zt, ps0m)   = B.splitAt 2 packed
         (ps, zm)     = B.span (/= 0) ps0m
         (z, m)       = B.splitAt 1 zm
-        paddingSuccess = and' [ zt == "\x00\x02"
-                              , z  == "\x00"
+        paddingSuccess = and' [ zt `B.constEq` (B.pack [0,2] :: Bytes)
+                              , z == B.zero 1
                               , B.length ps >= 8
                               ]
 

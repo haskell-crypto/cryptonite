@@ -21,16 +21,16 @@ module Crypto.PubKey.RSA.OAEP
     , decryptSafer
     ) where
 
-import Crypto.Hash
-import Crypto.Random.Types
-import Crypto.PubKey.RSA.Types
-import Crypto.PubKey.MaskGenFunction
-import Crypto.PubKey.RSA.Prim
-import Crypto.PubKey.RSA (generateBlinder)
-import Crypto.PubKey.Internal (and')
-import Data.ByteString (ByteString)
+import           Crypto.Hash
+import           Crypto.Random.Types
+import           Crypto.PubKey.RSA.Types
+import           Crypto.PubKey.MaskGenFunction
+import           Crypto.PubKey.RSA.Prim
+import           Crypto.PubKey.RSA (generateBlinder)
+import           Crypto.PubKey.Internal (and')
+import           Data.ByteString (ByteString)
 import qualified Data.ByteString as B
-import Data.Bits (xor)
+import           Data.Bits (xor)
 
 import qualified Crypto.Internal.ByteArray as B (convert)
 

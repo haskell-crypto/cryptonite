@@ -16,17 +16,18 @@ module Crypto.PubKey.RSA.PSS
     , verify
     ) where
 
-import Crypto.Random.Types
-import Crypto.PubKey.RSA.Types
-import Data.ByteString (ByteString)
-import qualified Data.ByteString as B
-import Crypto.PubKey.RSA.Prim
-import Crypto.PubKey.RSA (generateBlinder)
-import Crypto.PubKey.MaskGenFunction
-import Crypto.Hash
-import Data.Bits (xor, shiftR, (.&.))
-import Data.Word
+import           Crypto.Random.Types
+import           Crypto.PubKey.RSA.Types
+import           Crypto.PubKey.RSA.Prim
+import           Crypto.PubKey.RSA (generateBlinder)
+import           Crypto.PubKey.MaskGenFunction
+import           Crypto.Hash
+import           Data.Bits (xor, shiftR, (.&.))
+import           Data.Word
+
 import qualified Crypto.Internal.ByteArray as B (convert)
+import           Data.ByteString (ByteString)
+import qualified Data.ByteString as B
 
 -- | Parameters for PSS signature/verification.
 data PSSParams hash = PSSParams
