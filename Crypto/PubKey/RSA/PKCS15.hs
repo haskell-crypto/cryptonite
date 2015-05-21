@@ -5,7 +5,6 @@
 -- Stability   : experimental
 -- Portability : Good
 --
-{-# LANGUAGE OverloadedStrings #-}
 module Crypto.PubKey.RSA.PKCS15
     (
     -- * padding and unpadding

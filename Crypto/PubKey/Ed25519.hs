@@ -8,7 +8,6 @@
 -- Ed25519 support
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE BangPatterns #-}
 module Crypto.PubKey.Ed25519
     ( SecretKey

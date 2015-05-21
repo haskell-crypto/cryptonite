@@ -8,7 +8,6 @@
 -- P256 support
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE EmptyDataDecls #-}
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}

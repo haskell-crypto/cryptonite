@@ -8,7 +8,6 @@
 -- RSA OAEP mode
 -- <http://en.wikipedia.org/wiki/Optimal_asymmetric_encryption_padding>
 --
-{-# LANGUAGE OverloadedStrings #-}
 module Crypto.PubKey.RSA.OAEP
     (
       OAEPParams(..)
@@ -117,8 +116,8 @@ unpad oaep k em
           (ps1,msg)  = B.splitAt 1 db2
 
           paddingSuccess = and' [ labelHash' == labelHash -- no need for constant eq
-                                , ps1        == "\x01"
-                                , pb         == "\x00"
+                                , ps1        == B.replicate 1 0x1
+                                , pb         == B.replicate 1 0x0
                                 ]
 
 -- | Decrypt a ciphertext using OAEP
