@@ -11,6 +11,7 @@
 -- TODO: provide a mapping between integer and ciphertext
 --       generate numbers correctly
 --
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Crypto.PubKey.ElGamal
     ( Params
     , PublicNumber
@@ -48,6 +49,7 @@ data Signature = Signature (Integer, Integer)
 
 -- | ElGamal Ephemeral key. also called Temporary key.
 newtype EphemeralKey = EphemeralKey Integer
+    deriving (NFData)
 
 -- | generate a private number with no specific property
 -- this number is usually called a and need to be between

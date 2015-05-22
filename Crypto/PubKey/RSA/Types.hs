@@ -6,6 +6,7 @@
 -- Portability : Good
 --
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Crypto.PubKey.RSA.Types
     ( Error(..)
     , Blinder(..)
@@ -20,6 +21,7 @@ module Crypto.PubKey.RSA.Types
     ) where
 
 import           Data.Data
+import           Crypto.Internal.Imports
 
 -- | Blinder which is used to obfuscate the timing
 -- of the decryption primitive (used by decryption and signing).
@@ -42,6 +44,9 @@ data PublicKey = PublicKey
     , public_e    :: Integer  -- ^ public exponant e
     } deriving (Show,Read,Eq,Data,Typeable)
 
+instance NFData PublicKey where
+    rnf (PublicKey sz n e) = rnf n `seq` rnf e `seq` sz `seq` ()
+
 -- | Represent a RSA private key.
 -- 
 -- Only the pub, d fields are mandatory to fill.
@@ -62,6 +67,10 @@ data PrivateKey = PrivateKey
     , private_qinv :: Integer   -- ^ q^(-1) mod p
     } deriving (Show,Read,Eq,Data,Typeable)
 
+instance NFData PrivateKey where
+    rnf (PrivateKey pub d p q dp dq qinv) =
+        rnf pub `seq` rnf d `seq` rnf p `seq` rnf q `seq` rnf dp `seq` rnf dq `seq` qinv `seq` ()
+
 -- | get the size in bytes from a private key
 private_size :: PrivateKey -> Int
 private_size = public_size . private_pub
@@ -78,7 +87,7 @@ private_e = public_e . private_pub
 --
 -- note the RSA private key contains already an instance of public key for efficiency
 newtype KeyPair = KeyPair PrivateKey
-    deriving (Show,Read,Eq,Data,Typeable)
+    deriving (Show,Read,Eq,Data,Typeable,NFData)
 
 -- | Public key of a RSA KeyPair
 toPublicKey :: KeyPair -> PublicKey

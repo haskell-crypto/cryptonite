@@ -61,6 +61,11 @@ Flag integer-gmp
   Default:           True
   Manual:            True
 
+Flag support_deepseq
+  Description:       add deepseq instances for cryptographic types
+  Default:           True
+  Manual:            True
+
 Library
   Exposed-modules:   Crypto.Cipher.AES
                      Crypto.Cipher.Blowfish
@@ -147,6 +152,7 @@ Library
                      Crypto.Internal.ByteArray
                      Crypto.Internal.Compat
                      Crypto.Internal.CompatPrim
+                     Crypto.Internal.DeepSeq
                      Crypto.Internal.Imports
                      Crypto.Internal.Words
                      Crypto.Internal.WordArray
@@ -215,6 +221,10 @@ Library
 
   if impl(ghc) && flag(integer-gmp)
     Build-depends:   integer-gmp
+
+  if flag(support_deepseq)
+    CPP-options:     -DWITH_DEEPSEQ_SUPPORT
+    Build-depends:   deepseq
 
 Test-Suite test-cryptonite
   type:              exitcode-stdio-1.0

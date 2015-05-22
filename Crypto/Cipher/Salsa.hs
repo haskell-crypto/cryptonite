@@ -6,6 +6,7 @@
 -- Portability : good
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Crypto.Cipher.Salsa
     ( initialize
     , combine
@@ -22,6 +23,7 @@ import           Foreign.C.Types
 
 -- | Salsa context
 newtype State = State ScrubbedBytes
+    deriving (NFData)
 
 -- | Initialize a new Salsa context with the number of rounds,
 -- the key and the nonce associated.

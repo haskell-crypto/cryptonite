@@ -26,11 +26,12 @@ import           Foreign.Ptr
 import           Crypto.Internal.ByteArray (ScrubbedBytes, ByteArray, ByteArrayAccess)
 import qualified Crypto.Internal.ByteArray as B
 
-import Crypto.Internal.Compat
+import           Crypto.Internal.Compat
+import           Crypto.Internal.Imports
 
 -- | The encryption state for RC4
 newtype State = State ScrubbedBytes
-    deriving (ByteArrayAccess)
+    deriving (ByteArrayAccess,NFData)
 
 -- | C Call for initializing the encryptor
 foreign import ccall unsafe "cryptonite_rc4.h cryptonite_rc4_init"

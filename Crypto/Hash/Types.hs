@@ -14,6 +14,7 @@ module Crypto.Hash.Types
     , Digest(..)
     ) where
 
+import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArrayAccess, Bytes)
 import qualified Crypto.Internal.ByteArray as B
 import           Data.Word
@@ -47,11 +48,11 @@ hashContextGetAlgorithm = undefined
 
 -- | Represent a context for a given hash algorithm.
 newtype Context a = Context Bytes
-    deriving (ByteArrayAccess)
+    deriving (ByteArrayAccess,NFData)
 
 -- | Represent a digest for a given hash algorithm.
 newtype Digest a = Digest Bytes
-    deriving (Eq,ByteArrayAccess)
+    deriving (Eq,ByteArrayAccess,NFData)
 
 instance Show (Digest a) where
     show (Digest bs) = show (B.convertToBase B.Base16 bs :: Bytes)

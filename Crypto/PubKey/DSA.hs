@@ -35,6 +35,7 @@ import           Crypto.Number.ModArithmetic (expFast, expSafe, inverse)
 import           Crypto.Number.Serialize
 import           Crypto.Number.Generate
 import           Crypto.Internal.ByteArray (ByteArrayAccess)
+import           Crypto.Internal.Imports
 import           Crypto.Hash
 
 -- | DSA Public Number, usually embedded in DSA Public Key
@@ -50,17 +51,26 @@ data Params = Params
     , params_q :: Integer -- ^ DSA q
     } deriving (Show,Read,Eq,Data,Typeable)
 
+instance NFData Params where
+    rnf (Params p g q) = p `seq` g `seq` q `seq` ()
+
 -- | Represent a DSA signature namely R and S.
 data Signature = Signature
     { sign_r :: Integer -- ^ DSA r
     , sign_s :: Integer -- ^ DSA s
     } deriving (Show,Read,Eq,Data,Typeable)
 
+instance NFData Signature where
+    rnf (Signature r s) = r `seq` s `seq` ()
+
 -- | Represent a DSA public key.
 data PublicKey = PublicKey
     { public_params :: Params       -- ^ DSA parameters
     , public_y      :: PublicNumber -- ^ DSA public Y
     } deriving (Show,Read,Eq,Data,Typeable)
+
+instance NFData PublicKey where
+    rnf (PublicKey params y) = y `seq` params `seq` ()
 
 -- | Represent a DSA private key.
 --
@@ -71,9 +81,15 @@ data PrivateKey = PrivateKey
     , private_x      :: PrivateNumber -- ^ DSA private X
     } deriving (Show,Read,Eq,Data,Typeable)
 
+instance NFData PrivateKey where
+    rnf (PrivateKey params x) = x `seq` params `seq` ()
+
 -- | Represent a DSA key pair
 data KeyPair = KeyPair Params PublicNumber PrivateNumber
     deriving (Show,Read,Eq,Data,Typeable)
+
+instance NFData KeyPair where
+    rnf (KeyPair params y x) = x `seq` y `seq` params `seq` ()
 
 -- | Public key of a DSA Key pair
 toPublicKey :: KeyPair -> PublicKey

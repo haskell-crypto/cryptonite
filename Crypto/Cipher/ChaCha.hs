@@ -6,6 +6,7 @@
 -- Portability : good
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Crypto.Cipher.ChaCha
     ( initialize
     , combine
@@ -26,9 +27,11 @@ import           Foreign.C.Types
 
 -- | ChaCha context
 newtype State = State ScrubbedBytes
+    deriving (NFData)
 
 -- | ChaCha context for DRG purpose (see Crypto.Random.ChaChaDRG)
 newtype StateSimple = StateSimple ScrubbedBytes -- just ChaCha's state
+    deriving (NFData)
 
 -- | Initialize a new ChaCha context with the number of rounds,
 -- the key and the nonce associated.

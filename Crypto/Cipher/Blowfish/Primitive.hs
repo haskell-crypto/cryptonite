@@ -18,12 +18,13 @@ module Crypto.Cipher.Blowfish.Primitive
     , decrypt
     ) where
 
-import           Control.Monad (forM_, when)
+import           Control.Monad (when)
 import           Data.Bits
 import           Data.Word
 
 import           Crypto.Error
 import           Crypto.Internal.Compat
+import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray)
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Internal.Words
@@ -36,6 +37,9 @@ data Context = BF (Int -> Word32) -- p
                   (Int -> Word32) -- sbox1
                   (Int -> Word32) -- sbox2
                   (Int -> Word32) -- sbox2
+
+instance NFData Context where
+    rnf (BF p a b c d) = p `seq` a `seq` b `seq` c `seq` d `seq` ()
 
 -- | Encrypt blocks
 --

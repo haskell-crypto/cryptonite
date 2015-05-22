@@ -25,7 +25,8 @@ module Crypto.PubKey.ECC.Types
     , getCurveByName
     ) where
 
-import Data.Data
+import           Data.Data
+import           Crypto.Internal.Imports
 
 -- | Define either a binary curve or a prime curve.
 data Curve = CurveF2m CurveBinary -- ^ 𝔽(2^m)
@@ -43,10 +44,17 @@ data Point = Point Integer Integer
            | PointO -- ^ Point at Infinity
            deriving (Show,Read,Eq,Data,Typeable)
 
+instance NFData Point where
+    rnf (Point x y) = x `seq` y `seq` ()
+    rnf PointO = ()
+
 -- | Define an elliptic curve in 𝔽(2^m).
 -- The firt parameter is the Integer representatioin of the irreducible polynomial f(x).
 data CurveBinary = CurveBinary Integer CurveCommon
     deriving (Show,Read,Eq,Data,Typeable)
+
+instance NFData CurveBinary where
+    rnf (CurveBinary i cc) = i `seq` cc `seq` ()
 
 -- | Define an elliptic curve in 𝔽p.
 -- The first parameter is the Prime Number.

@@ -35,15 +35,15 @@ import           Crypto.Error
 
 -- | An Ed25519 Secret key
 newtype SecretKey = SecretKey ScrubbedBytes
-    deriving (Eq,ByteArrayAccess)
+    deriving (Eq,ByteArrayAccess,NFData)
 
 -- | An Ed25519 public key
 newtype PublicKey = PublicKey Bytes
-    deriving (Show,Eq,ByteArrayAccess)
+    deriving (Show,Eq,ByteArrayAccess,NFData)
 
 -- | An Ed25519 signature
 newtype Signature = Signature Bytes
-    deriving (Show,Eq,ByteArrayAccess)
+    deriving (Show,Eq,ByteArrayAccess,NFData)
 
 -- | Try to build a public key from a bytearray
 publicKey :: ByteArrayAccess ba => ba -> CryptoFailable PublicKey

@@ -5,6 +5,7 @@
 -- Stability   : stable
 -- Portability : good
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Crypto.Cipher.AES
     ( AES128
     , AES192
@@ -15,15 +16,19 @@ import Crypto.Error
 import Crypto.Cipher.Types
 import Crypto.Cipher.Types.Block
 import Crypto.Cipher.AES.Primitive
+import Crypto.Internal.Imports
 
 -- | AES with 128 bit key
 newtype AES128 = AES128 AES
+    deriving (NFData)
 
 -- | AES with 192 bit key
 newtype AES192 = AES192 AES
+    deriving (NFData)
 
 -- | AES with 256 bit key
 newtype AES256 = AES256 AES
+    deriving (NFData)
 
 instance Cipher AES128 where
     cipherName    _ = "AES128"

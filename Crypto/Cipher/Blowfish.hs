@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 -- |
 -- Module      : Crypto.Cipher.Blowfish
 -- License     : BSD-style
@@ -6,6 +5,8 @@
 -- Stability   : stable
 -- Portability : good
 --
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Crypto.Cipher.Blowfish
     ( Blowfish
     , Blowfish64
@@ -14,23 +15,29 @@ module Crypto.Cipher.Blowfish
     , Blowfish448
     ) where
 
+import Crypto.Internal.Imports
 import Crypto.Cipher.Types
 import Crypto.Cipher.Blowfish.Primitive
 
 -- | variable keyed blowfish state
 newtype Blowfish = Blowfish Context
+    deriving (NFData)
 
 -- | 64 bit keyed blowfish state
 newtype Blowfish64 = Blowfish64 Context
+    deriving (NFData)
 
 -- | 128 bit keyed blowfish state
 newtype Blowfish128 = Blowfish128 Context
+    deriving (NFData)
 
 -- | 256 bit keyed blowfish state
 newtype Blowfish256 = Blowfish256 Context
+    deriving (NFData)
 
 -- | 448 bit keyed blowfish state
 newtype Blowfish448 = Blowfish448 Context
+    deriving (NFData)
 
 instance Cipher Blowfish where
     cipherName _    = "blowfish"

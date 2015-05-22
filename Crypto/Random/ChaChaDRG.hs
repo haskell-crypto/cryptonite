@@ -5,6 +5,7 @@
 -- Stability   : stable
 -- Portability : good
 --
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Crypto.Random.ChaChaDRG
     ( ChaChaDRG
     , initialize
@@ -12,9 +13,9 @@ module Crypto.Random.ChaChaDRG
     ) where
 
 import           Crypto.Random.Types
+import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArray, ScrubbedBytes)
 import qualified Crypto.Internal.ByteArray as B
-import           Data.Word
 import           Foreign.Storable (pokeElemOff)
 
 import qualified Crypto.Cipher.ChaCha as C
@@ -24,6 +25,7 @@ instance DRG ChaChaDRG where
 
 -- | ChaCha Deterministic Random Generator
 newtype ChaChaDRG = ChaChaDRG C.StateSimple
+    deriving (NFData)
 
 -- | Initialize a new ChaCha context with the number of rounds,
 -- the key and the nonce associated.

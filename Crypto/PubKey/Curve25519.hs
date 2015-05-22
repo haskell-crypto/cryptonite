@@ -33,16 +33,16 @@ import qualified Crypto.Internal.ByteArray as B
 
 -- | A Curve25519 Secret key
 newtype SecretKey = SecretKey ScrubbedBytes
-    deriving (Show,Eq,ByteArrayAccess)
+    deriving (Show,Eq,ByteArrayAccess,NFData)
 
 -- | A Curve25519 public key
 newtype PublicKey = PublicKey Bytes
-    deriving (Show,Eq,ByteArrayAccess)
+    deriving (Show,Eq,ByteArrayAccess,NFData)
 
 -- | A Curve25519 Diffie Hellman secret related to a
 -- public key and a secret key.
 newtype DhSecret = DhSecret ScrubbedBytes
-    deriving (Show,Eq,ByteArrayAccess)
+    deriving (Show,Eq,ByteArrayAccess,NFData)
 
 -- | Try to build a public key from a bytearray
 publicKey :: ByteArrayAccess bs => bs -> Either String PublicKey
