@@ -17,47 +17,49 @@ module Crypto.KDF.PBKDF2
 
 import           Data.Word
 import           Data.Bits
-import           Data.ByteString (ByteString)
-import qualified Data.ByteString as B
 import           Foreign.Marshal.Alloc
 import           Foreign.Ptr (plusPtr)
 
 import           Crypto.Hash (HashAlgorithm)
 import qualified Crypto.MAC.HMAC as HMAC
 
-import           Crypto.Internal.ByteArray (ByteArray)
-import qualified Crypto.Internal.ByteArray as B (allocAndFreeze, convert, withByteArray)
+import           Crypto.Internal.ByteArray (ByteArray, ByteArrayAccess, Bytes)
+import qualified Crypto.Internal.ByteArray as B
 import           Data.Memory.PtrMethods
 
 -- | The PRF used for PBKDF2
-type PRF = B.ByteString -- ^ the password parameters
-        -> B.ByteString -- ^ the content
-        -> B.ByteString -- ^ prf(password,content)
+type PRF password =
+       password -- ^ the password parameters
+    -> Bytes    -- ^ the content
+    -> Bytes    -- ^ prf(password,content)
 
 -- | PRF for PBKDF2 using HMAC with the hash algorithm as parameter
-prfHMAC :: HashAlgorithm a
-        => a   -- ^ the Hash Algorithm to use with HMAC
-        -> PRF -- ^ the PRF functiont o use
+prfHMAC :: (HashAlgorithm a, ByteArrayAccess password)
+        => a
+        -> PRF password
 prfHMAC alg k = hmacIncr alg (HMAC.initialize k)
-  where hmacIncr :: HashAlgorithm a => a -> HMAC.Context a -> (ByteString -> ByteString)
+  where hmacIncr :: HashAlgorithm a => a -> HMAC.Context a -> (Bytes -> Bytes)
         hmacIncr _ !ctx = \b -> B.convert $ HMAC.finalize $ HMAC.update ctx b
 
 -- | Parameters for PBKDF2
 data Parameters = Parameters
-    { password     :: ByteString -- ^ Password (bytes encoded)
-    , salt         :: ByteString -- ^ Salt (bytes encoded)
-    , iterCounts   :: Int        -- ^ the number of user-defined iterations for the algorithms. e.g. WPA2 uses 4000.
-    , outputLength :: Int        -- ^ the number of bytes to generate out of PBKDF2
+    { iterCounts   :: Int -- ^ the number of user-defined iterations for the algorithms. e.g. WPA2 uses 4000.
+    , outputLength :: Int -- ^ the number of bytes to generate out of PBKDF2
     }
 
 -- | generate the pbkdf2 key derivation function from the output
-generate :: ByteArray ba => PRF -> Parameters -> ba
-generate prf params =
+generate :: (ByteArrayAccess password, ByteArrayAccess salt, ByteArray ba)
+         => PRF password
+         -> Parameters
+         -> password
+         -> salt
+         -> ba
+generate prf params password salt =
     B.allocAndFreeze (outputLength params) $ \p -> do
         memSet p 0 (outputLength params)
         loop 1 (outputLength params) p
   where
-    !runPRF = prf (password params)
+    !runPRF = prf password
     !hLen   = B.length $ runPRF B.empty
 
     -- run the following f function on each complete chunk.
@@ -76,21 +78,22 @@ generate prf params =
                     let uData = runPRF uprev
                     B.withByteArray uData $ \u -> memXor p p u hLen
                     applyMany (i-1) uData
-            applyMany (iterCounts params) (salt params `B.append` toBS iterNb)
+            applyMany (iterCounts params) (B.convert salt `B.append` toBS iterNb)
             loop (iterNb+1) (len - hLen) (p `plusPtr` hLen)
 
     partial iterNb len p = allocaBytesAligned hLen 8 $ \tmp -> do
-        let applyMany 0 _     = return ()
+        let applyMany :: Int -> Bytes -> IO ()
+            applyMany 0 _     = return ()
             applyMany i uprev = do
                 let uData = runPRF uprev
                 B.withByteArray uData $ \u -> memXor tmp tmp u hLen
                 applyMany (i-1) uData
         memSet tmp 0 hLen
-        applyMany (iterCounts params) (salt params `B.append` toBS iterNb)
+        applyMany (iterCounts params) (B.convert salt `B.append` toBS iterNb)
         memCopy p tmp len
 
     -- big endian encoding of Word32
-    toBS :: Word32 -> ByteString
+    toBS :: ByteArray ba => Word32 -> ba
     toBS w = B.pack [a,b,c,d]
       where a = fromIntegral (w `shiftR` 24)
             b = fromIntegral ((w `shiftR` 16) .&. 0xff)

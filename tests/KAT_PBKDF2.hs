@@ -49,7 +49,7 @@ tests = testGroup "PBKDF2"
   where katTests prf vects = map (toKatTest prf) $ zip is vects
 
         toKatTest prf (i, ((pass, salt, iter, dkLen), output)) =
-            testCase (show i) (output @=? PBKDF2.generate prf (PBKDF2.Parameters pass salt iter dkLen))
+            testCase (show i) (output @=? PBKDF2.generate prf (PBKDF2.Parameters iter dkLen) pass salt)
 
         is :: [Int]
         is = [1..]
