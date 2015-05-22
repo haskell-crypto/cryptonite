@@ -66,16 +66,15 @@ Links
 * [Salsa](http://cr.yp.to/snuffle.html)
 * [Salsa128-test-vectors](https://github.com/alexwebr/salsa20/blob/master/test_vectors.128)
 * [Salsa256-test-vectors](https://github.com/alexwebr/salsa20/blob/master/test_vectors.256)
-
 * [PBKDF2](http://tools.ietf.org/html/rfc2898)
 * [PBKDF2-test-vectors](http://www.ietf.org/rfc/rfc6070.txt)
 * [Scrypt](http://www.tarsnap.com/scrypt.html)
-
 * [Curve25519](http://cr.yp.to/ecdh.html)
 * [Ed25519](http://ed25519.cr.yp.to/papers.html)
+* [AFIS](http://clemens.endorphin.org/cryptography)
 
 TODO
 ----
 
-* remove copy of read-only part of ChaCha / Salsa state by splitting the stuff in two.
+* finish google P256 binding
 * add support for XSalsa
