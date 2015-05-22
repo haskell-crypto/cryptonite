@@ -17,7 +17,6 @@ module Crypto.Hash.Types
 import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArrayAccess, Bytes)
 import qualified Crypto.Internal.ByteArray as B
-import           Data.Word
 import           Foreign.Ptr (Ptr)
 
 -- | Class representing hashing algorithms.
