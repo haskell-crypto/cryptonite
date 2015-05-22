@@ -230,6 +230,36 @@ Test-Suite test-cryptonite
   type:              exitcode-stdio-1.0
   hs-source-dirs:    tests
   Main-is:           Tests.hs
+  Other-modules:     BlockCipher
+                     ChaCha
+                     Hash
+                     Imports
+                     KAT_AES.KATCBC
+                     KAT_AES.KATECB
+                     KAT_AES.KATGCM
+                     KAT_AES.KATOCB3
+                     KAT_AES.KATXTS
+                     KAT_AES
+                     KAT_AFIS
+                     KAT_Blowfish
+                     KAT_Camellia
+                     KAT_Curve25519
+                     KAT_DES
+                     KAT_Ed25519
+                     KAT_HMAC
+                     KAT_PBKDF2
+                     KAT_PubKey.DSA
+                     KAT_PubKey.ECC
+                     KAT_PubKey.ECDSA
+                     KAT_PubKey.OAEP
+                     KAT_PubKey.PSS
+                     KAT_PubKey
+                     KAT_RC4
+                     KAT_Scrypt
+                     KAT_TripleDES
+                     Poly1305
+                     Salsa
+                     Utils
   Build-Depends:     base >= 3 && < 5
                    , bytestring
                    , memory
