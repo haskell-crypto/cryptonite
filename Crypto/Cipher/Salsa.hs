@@ -13,30 +13,15 @@ module Crypto.Cipher.Salsa
     , State
     ) where
 
-import Data.ByteString (ByteString)
-import           Data.Memory.PtrMethods (memXor)
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, ScrubbedBytes)
 import qualified Crypto.Internal.ByteArray as B
-import qualified Data.ByteString.Internal as BS
-import qualified Data.ByteString as BS
-import Crypto.Internal.Compat
-import Crypto.Internal.Imports
-import Foreign.Ptr
-import Foreign.ForeignPtr
-import Foreign.C.Types
+import           Crypto.Internal.Compat
+import           Crypto.Internal.Imports
+import           Foreign.Ptr
+import           Foreign.C.Types
 
 -- | Salsa context
-data State = State Int           -- number of rounds
-                   ScrubbedBytes -- Salsa's state
-                   Int           -- offset of data in previously generated chunk
-                   ByteString    -- previous generated chunk
-
-round64 :: Int -> (Bool, Int)
-round64 len
-    | len == 0  = (True, 0)
-    | m == 0    = (True, len)
-    | otherwise = (False, len + (64 - m))
-  where m = len `mod` 64
+newtype State = State ScrubbedBytes
 
 -- | Initialize a new Salsa context with the number of rounds,
 -- the key and the nonce associated.
@@ -50,11 +35,11 @@ initialize nbRounds key nonce
     | not (nonceLen `elem` [8,12])    = error "Salsa: nonce length should be 64 or 96 bits"
     | not (nbRounds `elem` [8,12,20]) = error "Salsa: rounds should be 8, 12 or 20"
     | otherwise = unsafeDoIO $ do
-        stPtr <- B.alloc 64 $ \stPtr ->
+        stPtr <- B.alloc 132 $ \stPtr ->
             B.withByteArray nonce $ \noncePtr  ->
             B.withByteArray key   $ \keyPtr ->
-                ccryptonite_salsa_init stPtr kLen keyPtr nonceLen noncePtr
-        return $ State nbRounds stPtr 0 B.empty
+                ccryptonite_salsa_init stPtr (fromIntegral nbRounds) kLen keyPtr nonceLen noncePtr
+        return $ State stPtr
   where kLen     = B.length key
         nonceLen = B.length nonce
 
@@ -64,59 +49,33 @@ combine :: ByteArray ba
         => State      -- ^ the current Salsa state
         -> ba         -- ^ the source to xor with the generator
         -> (ba, State)
-combine prev@(State nbRounds prevSt prevOffset prevOut) src
-    | outputLen == 0          = (B.empty, prev)
-    | outputLen <= prevBufLen = unsafeDoIO $ do
-        -- we have enough byte in the previous buffer to complete the query
-        -- without having to generate any extra bytes
-        output <- B.copy src              $ \dst ->
-                  B.withByteArray prevOut $ \prevPtr ->
-                        memXor dst dst (prevPtr `plusPtr` prevOffset) outputLen
-        return (output, State nbRounds prevSt (prevOffset + outputLen) prevOut)
-    | otherwise = unsafeDoIO $ do
-        -- adjusted len is the number of bytes lefts to generate after
-        -- copying from the previous buffer.
-        let adjustedLen = outputLen - prevBufLen
-            (roundedAlready, newBytesToGenerate) = round64 adjustedLen
-            nextBufLen  = newBytesToGenerate - adjustedLen
-
-        fptr <- BS.mallocByteString (newBytesToGenerate + prevBufLen)
-        newSt <- withForeignPtr fptr $ \dstPtr ->
-            B.withByteArray src $ \srcPtr -> do
-                -- copy the previous buffer by xor if any
-                B.withByteArray prevOut $ \prevPtr ->
-                    memXor dstPtr srcPtr (prevPtr `plusPtr` prevOffset) prevBufLen
-
-                -- then create a new mutable copy of state
-                B.copy prevSt $ \stPtr ->
-                    ccryptonite_salsa_combine nbRounds
-                                               (dstPtr `plusPtr` prevBufLen)
-                                               (castPtr stPtr)
-                                               (srcPtr `plusPtr` prevBufLen)
-                                               (fromIntegral adjustedLen)
-        -- return combined byte
-        return ( B.convert (BS.PS fptr 0 outputLen)
-               , State nbRounds newSt 0 (if roundedAlready then BS.empty else BS.PS fptr outputLen nextBufLen))
-  where
-        outputLen  = B.length src
-        prevBufLen = B.length prevOut - prevOffset
+combine prevSt@(State prevStMem) src
+    | B.null src = (B.empty, prevSt)
+    | otherwise  = unsafeDoIO $ do
+        (out, st) <- B.copyRet prevStMem $ \ctx ->
+            B.alloc (B.length src) $ \dstPtr ->
+            B.withByteArray src    $ \srcPtr -> do
+                ccryptonite_salsa_combine dstPtr ctx srcPtr (fromIntegral $ B.length src)
+        return (out, State st)
 
 -- | Generate a number of bytes from the Salsa output directly
---
--- TODO: use salsa_generate directly instead of using combine xor'ing with 0.
 generate :: ByteArray ba
          => State -- ^ the current Salsa state
          -> Int   -- ^ the length of data to generate
          -> (ba, State)
-generate st len = combine st (B.zero len)
+generate prevSt@(State prevStMem) len
+    | len <= 0  = (B.empty, prevSt)
+    | otherwise = unsafeDoIO $ do
+        (out, st) <- B.copyRet prevStMem $ \ctx ->
+            B.alloc len $ \dstPtr ->
+                ccryptonite_salsa_generate dstPtr ctx (fromIntegral len)
+        return (out, State st)
 
 foreign import ccall "cryptonite_salsa_init"
-    ccryptonite_salsa_init :: Ptr State -> Int -> Ptr Word8 -> Int -> Ptr Word8 -> IO ()
+    ccryptonite_salsa_init :: Ptr State -> Int -> Int -> Ptr Word8 -> Int -> Ptr Word8 -> IO ()
 
 foreign import ccall "cryptonite_salsa_combine"
-    ccryptonite_salsa_combine :: Int -> Ptr Word8 -> Ptr State -> Ptr Word8 -> CUInt -> IO ()
+    ccryptonite_salsa_combine :: Ptr Word8 -> Ptr State -> Ptr Word8 -> CUInt -> IO ()
 
-{-
 foreign import ccall "cryptonite_salsa_generate"
-    ccryptonite_salsa_generate :: Int -> Ptr Word8 -> Ptr State -> CUInt -> IO ()
--}
+    ccryptonite_salsa_generate :: Ptr Word8 -> Ptr State -> CUInt -> IO ()

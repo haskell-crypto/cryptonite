@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Vincent Hanquez <vincent@snarc.org>
+ * Copyright (c) 2014-2015 Vincent Hanquez <vincent@snarc.org>
  *
  * All rights reserved.
  *
@@ -29,11 +29,10 @@
  */
 
 #include <stdint.h>
+#include <string.h>
+#include <stdio.h>
 #include "cryptonite_salsa.h"
 #include "cryptonite_bitfn.h"
-#include <stdio.h>
-
-#define USE_8BITS 0
 
 static const uint8_t sigma[16] = "expand 32-byte k";
 static const uint8_t tau[16] = "expand 16-byte k";
@@ -43,6 +42,9 @@ static const uint8_t tau[16] = "expand 16-byte k";
 	c ^= rol32(b+a, 9); \
 	d ^= rol32(c+b, 13); \
 	a ^= rol32(d+c, 18);
+
+#define ALIGNED64(PTR) \
+	(((uintptr_t)(const void *)(PTR)) % 8 == 0)
 
 #define SALSA_CORE_LOOP \
 	for (i = rounds; i > 0; i -= 2) { \
@@ -117,9 +119,9 @@ void cryptonite_salsa_core_xor(int rounds, block *out, block *in)
 }
 
 /* only 2 valid values for keylen are 256 (32) and 128 (16) */
-void cryptonite_salsa_init(cryptonite_salsa_state *st,
-                            uint32_t keylen, const uint8_t *key,
-                            uint32_t ivlen, const uint8_t *iv)
+void cryptonite_salsa_init_core(cryptonite_salsa_state *st,
+                                uint32_t keylen, const uint8_t *key,
+                                uint32_t ivlen, const uint8_t *iv)
 {
 	const uint8_t *constants = (keylen == 32) ? sigma : tau;
 	int i;
@@ -157,67 +159,139 @@ void cryptonite_salsa_init(cryptonite_salsa_state *st,
 	}
 }
 
-void cryptonite_salsa_combine(uint32_t rounds, block *dst, cryptonite_salsa_state *st, const block *src, uint32_t bytes)
+void cryptonite_salsa_init(cryptonite_salsa_context *ctx, uint8_t nb_rounds,
+                           uint32_t keylen, const uint8_t *key,
+                           uint32_t ivlen, const uint8_t *iv)
+{
+	memset(ctx, 0, sizeof(*ctx));
+	ctx->nb_rounds = nb_rounds;
+	cryptonite_salsa_init_core(&ctx->st, keylen, key, ivlen, iv);
+}
+
+void cryptonite_salsa_combine(uint8_t *dst, cryptonite_salsa_context *ctx, const uint8_t *src, uint32_t bytes)
 {
 	block out;
+	cryptonite_salsa_state *st;
 	int i;
 
 	if (!bytes)
 		return;
 
-	for (;; bytes -= 64, src += 1, dst += 1) {
-		salsa_core(rounds, &out, st);
+	/* xor the previous buffer first (if any) */
+	if (ctx->prev_len > 0) {
+		int to_copy = (ctx->prev_len < bytes) ? ctx->prev_len : bytes;
+		for (i = 0; i < to_copy; i++)
+			dst[i] = src[i] ^ ctx->prev[ctx->prev_ofs+i];
+		memset(ctx->prev + ctx->prev_ofs, 0, to_copy);
+		ctx->prev_len -= to_copy;
+		ctx->prev_ofs += to_copy;
+		src += to_copy;
+		dst += to_copy;
+		bytes -= to_copy;
+	}
 
+	if (bytes == 0)
+		return;
+
+	st = &ctx->st;
+
+	/* xor new 64-bytes chunks and store the left over if any */
+	for (; bytes >= 64; bytes -= 64, src += 64, dst += 64) {
+		/* generate new chunk and update state */
+		salsa_core(ctx->nb_rounds, &out, st);
 		st->d[8] += 1;
 		if (st->d[8] == 0)
 			st->d[9] += 1;
 
-		if (bytes <= 64) {
-			for (i = 0; i < bytes; i++)
-				dst->b[i] = src->b[i] ^ out.b[i];
-			for (; i < 64; i++)
-				dst->b[i] = out.b[i];
-			return;
-		}
-
-#if USE_8BITS
 		for (i = 0; i < 64; ++i)
-			dst->b[i] = src->b[i] ^ out.b[i];
-#else
-		/* fast copy using 64 bits */
-		for (i = 0; i < 8; i++)
-			dst->q[i] = src->q[i] ^ out.q[i];
-#endif
+			dst[i] = src[i] ^ out.b[i];
+	}
+
+	if (bytes > 0) {
+		/* generate new chunk and update state */
+		salsa_core(ctx->nb_rounds, &out, st);
+		st->d[8] += 1;
+		if (st->d[8] == 0)
+			st->d[9] += 1;
+
+		/* xor as much as needed */
+		for (i = 0; i < bytes; i++)
+			dst[i] = src[i] ^ out.b[i];
+		
+		/* copy the left over in the buffer */
+		ctx->prev_len = 64 - bytes;
+		ctx->prev_ofs = i;
+		for (; i < 64; i++) {
+			ctx->prev[i] = out.b[i];
+		}
 	}
 }
 
-void cryptonite_salsa_generate(uint32_t rounds, block *dst, cryptonite_salsa_state *st, uint32_t bytes)
+void cryptonite_salsa_generate(uint8_t *dst, cryptonite_salsa_context *ctx, uint32_t bytes)
 {
+	cryptonite_salsa_state *st;
 	block out;
 	int i;
 
 	if (!bytes)
 		return;
 
-	for (;; bytes -= 64, dst += 1) {
-		salsa_core(rounds, &out, st);
+	/* xor the previous buffer first (if any) */
+	if (ctx->prev_len > 0) {
+		int to_copy = (ctx->prev_len < bytes) ? ctx->prev_len : bytes;
+		for (i = 0; i < to_copy; i++)
+			dst[i] = ctx->prev[ctx->prev_ofs+i];
+		memset(ctx->prev + ctx->prev_ofs, 0, to_copy);
+		ctx->prev_len -= to_copy;
+		ctx->prev_ofs += to_copy;
+		dst += to_copy;
+		bytes -= to_copy;
+	}
 
+	if (bytes == 0)
+		return;
+
+	st = &ctx->st;
+
+	if (ALIGNED64(dst)) {
+		/* xor new 64-bytes chunks and store the left over if any */
+		for (; bytes >= 64; bytes -= 64, dst += 64) {
+			/* generate new chunk and update state */
+			salsa_core(ctx->nb_rounds, (block *) dst, st);
+			st->d[8] += 1;
+			if (st->d[8] == 0)
+				st->d[9] += 1;
+		}
+	} else {
+		/* xor new 64-bytes chunks and store the left over if any */
+		for (; bytes >= 64; bytes -= 64, dst += 64) {
+			/* generate new chunk and update state */
+			salsa_core(ctx->nb_rounds, &out, st);
+			st->d[8] += 1;
+			if (st->d[8] == 0)
+				st->d[9] += 1;
+
+			for (i = 0; i < 64; ++i)
+				dst[i] = out.b[i];
+		}
+	}
+
+	if (bytes > 0) {
+		/* generate new chunk and update state */
+		salsa_core(ctx->nb_rounds, &out, st);
 		st->d[8] += 1;
 		if (st->d[8] == 0)
 			st->d[9] += 1;
 
-		if (bytes <= 64) {
-			for (i = 0; i < bytes; ++i)
-				dst->b[i] = out.b[i];
-			return;
-		}
-#if USE_8BITS
-		for (i = 0; i < 64; ++i)
-			dst->b[i] = out.b[i];
-#else
-		for (i = 0; i < 8; i++)
-			dst->q[i] = out.q[i];
-#endif
+		/* xor as much as needed */
+		for (i = 0; i < bytes; i++)
+			dst[i] = out.b[i];
+		
+		/* copy the left over in the buffer */
+		ctx->prev_len = 64 - bytes;
+		ctx->prev_ofs = i;
+		for (; i < 64; i++)
+			ctx->prev[i] = out.b[i];
 	}
 }
 

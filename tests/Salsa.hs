@@ -38,7 +38,9 @@ instance Arbitrary RandomVector where
 tests = testGroup "Salsa"
     [ testGroup "KAT" $
         map (\(i,f) -> testCase (show (i :: Int)) f) $ zip [1..] $ map (\(r, k,i,e) -> salsaRunSimple e r k i) vectors
-    , testProperty "chunking" salsaChunks
+    , testProperty "generate-combine" salsaGenerateCombine
+    , testProperty "chunking-generate" salsaGenerateChunks
+    , testProperty "chunking-combine" salsaCombineChunks
     ]
   where
         salsaRunSimple expected rounds key nonce =
@@ -55,8 +57,20 @@ tests = testGroup "Salsa"
                  in e : salsaLoop (current + B.length expectBs) salsaNext rs
             | otherwise = error "internal error in salsaLoop"
 
-        salsaChunks :: ChunkingLen -> RandomVector -> Bool
-        salsaChunks (ChunkingLen ckLen) (RandomVector (rounds, key, iv, _)) =
+        salsaGenerateCombine :: ChunkingLen0_127 -> RandomVector -> Int0_2901 -> Bool
+        salsaGenerateCombine (ChunkingLen0_127 ckLen) (RandomVector (rounds, key, iv, _)) (Int0_2901 nbBytes) =
+            let initSalsa    = Salsa.initialize rounds key iv
+             in loop nbBytes ckLen initSalsa
+          where loop n []     salsa = loop n ckLen salsa
+                loop 0 _      _     = True
+                loop n (x:xs) salsa =
+                    let len        = min x n
+                        (c1, next) = Salsa.generate salsa len
+                        (c2, _)    = Salsa.combine salsa (B.replicate len 0)
+                     in if c1 == c2 then loop (n - len) xs next else False
+
+        salsaGenerateChunks :: ChunkingLen -> RandomVector -> Bool
+        salsaGenerateChunks (ChunkingLen ckLen) (RandomVector (rounds, key, iv, _)) =
             let initSalsa    = Salsa.initialize rounds key iv
                 nbBytes      = 1048
                 (expected,_) = Salsa.generate initSalsa nbBytes
@@ -69,3 +83,18 @@ tests = testGroup "Salsa"
                     let len       = min x n
                         (c, next) = Salsa.generate salsa len
                      in c : loop (n - len) xs next
+
+        salsaCombineChunks :: ChunkingLen -> RandomVector -> ArbitraryBS0_2901 -> Bool
+        salsaCombineChunks (ChunkingLen ckLen) (RandomVector (rounds, key, iv, _)) (ArbitraryBS0_2901 wholebs) =
+            let initSalsa    = Salsa.initialize rounds key iv
+                (expected,_) = Salsa.combine initSalsa wholebs
+                chunks       = loop wholebs ckLen initSalsa
+             in expected `propertyEq` B.concat chunks
+
+          where loop bs []     salsa = loop bs ckLen salsa
+                loop bs (x:xs) salsa
+                    | B.null bs = []
+                    | otherwise =
+                        let (bs1, bs2) = B.splitAt (min x (B.length bs)) bs
+                            (c, next)  = Salsa.combine salsa bs1
+                         in c : loop bs2 xs next
