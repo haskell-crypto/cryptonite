@@ -38,19 +38,21 @@ tests = testGroup "ChaCha"
     , testCase "8-256-K0-I0"  (chachaRunSimple b8_256_k0_i0 8 32 8)
     , testCase "12-256-K0-I0" (chachaRunSimple b12_256_k0_i0 12 32 8)
     , testCase "20-256-K0-I0" (chachaRunSimple b20_256_k0_i0 20 32 8)
-    , testProperty "chunking" chachaChunks
+    , testProperty "generate-combine" chachaGenerateCombine
+    , testProperty "chunking-generate" chachaGenerateChunks
+    , testProperty "chunking-combine" chachaCombineChunks
     ]
   where chachaRunSimple expected rounds klen nonceLen =
             let chacha = ChaCha.initialize rounds (B.replicate klen 0) (B.replicate nonceLen 0)
              in expected @=? fst (ChaCha.generate chacha (B.length expected))
 
-        chachaChunks :: ChunkingLen -> Vector -> Bool
-        chachaChunks (ChunkingLen ckLen) (Vector rounds key iv) =
+        chachaGenerateChunks :: ChunkingLen -> Vector -> Bool
+        chachaGenerateChunks (ChunkingLen ckLen) (Vector rounds key iv) =
             let initChaCha    = ChaCha.initialize rounds key iv
                 nbBytes       = 1048
                 (expected,_)  = ChaCha.generate initChaCha nbBytes
-                chunks        = loop nbBytes ckLen (ChaCha.initialize rounds key iv)
-             in expected == B.concat chunks
+                chunks        = loop nbBytes ckLen initChaCha
+             in expected `propertyEq` B.concat chunks
 
           where loop n []     chacha = loop n ckLen chacha
                 loop 0 _      _      = []
@@ -58,3 +60,31 @@ tests = testGroup "ChaCha"
                     let len       = min x n
                         (c, next) = ChaCha.generate chacha len
                      in c : loop (n - len) xs next
+
+        chachaGenerateCombine :: ChunkingLen0_127 -> Vector -> Int0_2901 -> Bool
+        chachaGenerateCombine (ChunkingLen0_127 ckLen) (Vector rounds key iv) (Int0_2901 nbBytes) =
+            let initChaCha    = ChaCha.initialize rounds key iv
+             in loop nbBytes ckLen initChaCha
+          where loop n []     chacha = loop n ckLen chacha
+                loop 0 _      _     = True
+                loop n (x:xs) chacha =
+                    let len        = min x n
+                        (c1, next) = ChaCha.generate chacha len
+                        (c2, _)    = ChaCha.combine chacha (B.replicate len 0)
+                     in if c1 == c2 then loop (n - len) xs next else False
+
+
+        chachaCombineChunks :: ChunkingLen0_127 -> Vector -> ArbitraryBS0_2901 -> Bool
+        chachaCombineChunks (ChunkingLen0_127 ckLen) (Vector rounds key iv) (ArbitraryBS0_2901 wholebs) =
+            let initChaCha    = ChaCha.initialize rounds key iv
+                (expected,_)  = ChaCha.combine initChaCha wholebs
+                chunks        = loop wholebs ckLen initChaCha
+             in expected `propertyEq` B.concat chunks
+
+          where loop bs []     chacha = loop bs ckLen chacha
+                loop bs (x:xs) chacha
+                    | B.null bs = []
+                    | otherwise =
+                        let (bs1, bs2) = B.splitAt (min x (B.length bs)) bs
+                            (c, next)  = ChaCha.combine chacha bs1
+                         in c : loop bs2 xs next

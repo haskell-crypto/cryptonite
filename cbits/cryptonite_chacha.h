@@ -38,8 +38,17 @@ typedef union {
 
 typedef block cryptonite_chacha_state;
 
-void cryptonite_chacha_init(cryptonite_chacha_state *st, uint32_t keylen, const uint8_t *key, uint32_t ivlen, const uint8_t *iv);
-void cryptonite_chacha_combine(uint32_t rounds, block *dst, cryptonite_chacha_state *st, const block *src, uint32_t bytes);
-void cryptonite_chacha_generate(uint32_t rounds, block *dst, cryptonite_chacha_state *st, uint32_t bytes);
+typedef struct {
+	cryptonite_chacha_state st;
+	uint8_t prev[64];
+	uint8_t prev_ofs;
+	uint8_t prev_len;
+	uint8_t nb_rounds;
+} cryptonite_chacha_context;
+
+void cryptonite_chacha_init_core(cryptonite_chacha_state *st, uint32_t keylen, const uint8_t *key, uint32_t ivlen, const uint8_t *iv);
+void cryptonite_chacha_init(cryptonite_chacha_context *ctx, uint8_t nb_rounds, uint32_t keylen, const uint8_t *key, uint32_t ivlen, const uint8_t *iv);
+void cryptonite_chacha_combine(uint8_t *dst, cryptonite_chacha_context *st, const uint8_t *src, uint32_t bytes);
+void cryptonite_chacha_generate(uint8_t *dst, cryptonite_chacha_context *st, uint32_t bytes);
 
 #endif

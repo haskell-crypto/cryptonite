@@ -14,11 +14,24 @@ newtype ChunkingLen = ChunkingLen [Int]
 instance Arbitrary ChunkingLen where
     arbitrary = ChunkingLen `fmap` replicateM 16 (choose (0,14))
 
+newtype ChunkingLen0_127 = ChunkingLen0_127 [Int]
+    deriving (Show,Eq)
+
+instance Arbitrary ChunkingLen0_127 where
+    arbitrary = ChunkingLen0_127 `fmap` replicateM 16 (choose (0,127))
+
+
 newtype ArbitraryBS0_2901 = ArbitraryBS0_2901 ByteString
     deriving (Show,Eq,Ord)
 
 instance Arbitrary ArbitraryBS0_2901 where
     arbitrary = ArbitraryBS0_2901 `fmap` arbitraryBSof 0 2901
+
+newtype Int0_2901 = Int0_2901 Int
+    deriving (Show,Eq,Ord)
+
+instance Arbitrary Int0_2901 where
+    arbitrary = Int0_2901 `fmap` choose (0,2901)
 
 arbitraryBS :: Int -> Gen ByteString
 arbitraryBS n = B.pack `fmap` replicateM n arbitrary
