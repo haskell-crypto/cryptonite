@@ -20,6 +20,7 @@ module Crypto.Number.Compat
     , gmpNextPrime
     , gmpTestPrimeMillerRabin
     , gmpSizeInBytes
+    , gmpSizeInBits
     , gmpExportInteger
     , gmpImportInteger
     ) where
@@ -121,6 +122,13 @@ gmpSizeInBytes :: Integer -> GmpSupported Int
 gmpSizeInBytes n = GmpSupported (I# (word2Int# (sizeInBaseInteger n 256#)))
 #else
 gmpSizeInBytes _ = GmpUnsupported
+#endif
+
+gmpSizeInBits :: Integer -> GmpSupported Int
+#if MIN_VERSION_integer_gmp(0,5,1)
+gmpSizeInBits n = GmpSupported (I# (word2Int# (sizeInBaseInteger n 2#)))
+#else
+gmpSizeInBits _ = GmpUnsupported
 #endif
 
 -- | Export an integer to a memory
