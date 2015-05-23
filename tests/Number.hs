@@ -4,6 +4,7 @@ import Imports
 
 import Crypto.Number.Basic
 import Crypto.Number.Generate
+import Crypto.Number.Prime
 import Data.Bits
 
 tests = testGroup "number"
@@ -27,4 +28,11 @@ tests = testGroup "number"
     , testProperty "generate-range" $ \testDRG (Positive range) ->
         let r = withTestDRG testDRG $ generateMax range
          in 0 <= r && r < range
+    , testProperty "generate-prime" $ \testDRG (Positive baseBits) ->
+        let bits  = 8 + baseBits
+            prime = withTestDRG testDRG $ generatePrime bits
+        -- with small base bits numbers, the probability that we "cross" this bit size ness
+        -- to the next is quite high, as the number generated has two highest bit set.
+        --
+         in bits == numBits prime || (if baseBits < 80 then (bits + 1) == numBits prime else False)
     ]
