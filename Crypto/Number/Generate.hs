@@ -49,20 +49,18 @@ generateParams bits genTopPolicy generateOdd
     | otherwise = os2ip . tweak <$> getRandomBytes bytes
   where
     tweak :: ScrubbedBytes -> ScrubbedBytes
-    tweak orig =
-        case (genTopPolicy, generateOdd) of
-            (Nothing       , False) -> orig
-            (Nothing       , True ) -> B.copyAndFreeze orig $ \p -> (p `plusPtr` (bytes-1)) |= 0x1
-            (Just topPolicy, _    ) -> B.copyAndFreeze orig $ \p0 -> do
-                let p1   = p0 `plusPtr` 1
-                    pEnd = p0 `plusPtr` (bytes - 1)
-                case topPolicy of
-                    SetHighest                -> p0 |= (1 `shiftL` bit)
-                    SetTwoHighest | bit == 0  -> do p0 $= 0x1
-                                                    p1 |= 0x80
-                                  | otherwise -> p0 |= (0x3 `shiftL` (bit - 1))
-                p0 &= (complement $ mask)
-                when generateOdd (pEnd |= 0x1)
+    tweak orig = B.copyAndFreeze orig $ \p0 -> do
+        let p1   = p0 `plusPtr` 1
+            pEnd = p0 `plusPtr` (bytes - 1)
+        case genTopPolicy of
+            Nothing             -> return ()
+            Just SetHighest     -> p0 |= (1 `shiftL` bit)
+            Just SetTwoHighest
+                | bit == 0      -> do p0 $= 0x1
+                                      p1 |= 0x80
+                | otherwise     -> p0 |= (0x3 `shiftL` (bit - 1))
+        p0 &= (complement $ mask)
+        when generateOdd (pEnd |= 0x1)
 
     ($=) :: Ptr Word8 -> Word8 -> IO ()
     ($=) p w = poke p w
