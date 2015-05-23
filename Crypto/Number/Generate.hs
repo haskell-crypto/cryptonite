@@ -93,13 +93,13 @@ generateMax range
         generateSimple = flip mod range `fmap` generateParams bits Nothing False
 
         loopGenerate count
-            | count == 0 = error "internal: generateMax (normal) doesn't seems to work properly"
+            | count == 0 = error $ "internal: generateMax(" ++ show range ++ " bits=" ++ show bits ++ ") (normal) doesn't seems to work properly"
             | otherwise  = do
                 r <- generateParams bits Nothing False
                 if isValid r then return r else loopGenerate (count-1)
 
         loopGenerateOver count
-            | count == 0 = error "internal: generateMax (over) doesn't seems to work properly"
+            | count == 0 = error $ "internal: generateMax(" ++ show range ++ " bits=" ++ show bits ++ ") (over) doesn't seems to work properly"
             | otherwise  = do
                 r <- generateParams (bits+1) Nothing False
                 let r2 = r - range
