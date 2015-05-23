@@ -16,7 +16,7 @@ module Crypto.Random
     , DRG(..)
     -- * Random abstraction
     , MonadRandom(..)
-    , MonadPseudoRandom(..)
+    , MonadPseudoRandom
     ) where
 
 import Crypto.Random.Types
