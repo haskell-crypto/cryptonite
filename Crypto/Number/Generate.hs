@@ -10,7 +10,6 @@ module Crypto.Number.Generate
     , generateParams
     , generateMax
     , generateBetween
-    , generateOfSize
     ) where
 
 import           Crypto.Internal.Imports
@@ -123,8 +122,6 @@ generateMax range
 
 -- | generate a number between the inclusive bound [low,high].
 generateBetween :: MonadRandom m => Integer -> Integer -> m Integer
-generateBetween low high = (low +) <$> generateMax (high - low + 1)
-
--- | generate a positive integer of a specific bit size.
-generateOfSize :: MonadRandom m => Int -> m Integer
-generateOfSize bits = generateParams bits (Just SetTwoHighest) False
+generateBetween low high
+    | low == 1  = generateMax high >>= \r -> if r == 0 then generateBetween low high else return r
+    | otherwise = (low +) <$> generateMax (high - low + 1)

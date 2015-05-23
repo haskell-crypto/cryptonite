@@ -53,7 +53,7 @@ generatePrime bits = do
 -- as such it shouldn't be used if this number is supposed to be kept safe.
 generateSafePrime :: MonadRandom m => Int -> m Integer
 generateSafePrime bits = do
-    sp <- generateOfSize bits
+    sp <- generateParams bits (Just SetTwoHighest) True
     let p = findPrimeFromWith (\i -> isProbablyPrime (2*i+1)) (sp `div` 2)
     return (2*p+1)
 
