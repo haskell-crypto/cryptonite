@@ -11,7 +11,6 @@ module Crypto.Number.Generate
     , generateMax
     , generateBetween
     , generateOfSize
-    , generateBits
     ) where
 
 import           Crypto.Internal.Imports
@@ -22,7 +21,7 @@ import           Control.Monad (when)
 import           Foreign.Ptr
 import           Foreign.Storable
 import           Data.Bits ((.|.), (.&.), shiftL, complement, testBit)
-import           Crypto.Internal.ByteArray (Bytes, ScrubbedBytes)
+import           Crypto.Internal.ByteArray (ScrubbedBytes)
 import qualified Crypto.Internal.ByteArray as B
 
 
@@ -126,25 +125,6 @@ generateMax range
 generateBetween :: MonadRandom m => Integer -> Integer -> m Integer
 generateBetween low high = (low +) <$> generateMax (high - low + 1)
 
--- | generate a positive integer of a specific size in bits.
--- the number of bits need to be multiple of 8. It will always returns
--- an integer that is close to 2^(1+bits/8) by setting the 2 highest bits to 1.
+-- | generate a positive integer of a specific bit size.
 generateOfSize :: MonadRandom m => Int -> m Integer
-generateOfSize bits = os2ip . setHighest <$> getRandomBytes (bits `div` 8)
-  where
-    setHighest :: ScrubbedBytes -> ScrubbedBytes
-    setHighest ran = case B.unpack ran of
-                        []     -> B.empty
-                        (w:ws) -> B.pack ((w .|. 0xc0) : ws)
-
--- | Generate a number with the specified number of bits
-generateBits :: MonadRandom m => Int -> m Integer
-generateBits nbBits = modF . os2ipBytes <$> getRandomBytes nbBytes'
-  where (nbBytes, strayBits) = nbBits `divMod` 8
-        nbBytes' | strayBits == 0 = nbBytes
-                 | otherwise      = nbBytes + 1
-        modF | strayBits == 0 = id
-             | otherwise      = (.&.) (2^nbBits - 1)
-
-os2ipBytes :: Bytes -> Integer
-os2ipBytes = os2ip
+generateOfSize bits = generateParams bits (Just SetTwoHighest) False
