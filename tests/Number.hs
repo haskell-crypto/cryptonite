@@ -29,7 +29,7 @@ tests = testGroup "number"
         let r = withTestDRG testDRG $ generateMax range
          in 0 <= r && r < range
     , testProperty "generate-prime" $ \testDRG (Positive baseBits) ->
-        let bits  = 32 + baseBits -- no point generating lower than 32 bits ..
+        let bits  = 48 + baseBits -- no point generating lower than 48 bits ..
             prime = withTestDRG testDRG $ generatePrime bits
         -- with small base bits numbers, the probability that we "cross" this bit size ness
         -- to the next is quite high, as the number generated has two highest bit set.
