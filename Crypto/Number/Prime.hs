@@ -26,6 +26,7 @@ import Crypto.Number.Generate
 import Crypto.Number.Basic (sqrti, gcde)
 import Crypto.Number.ModArithmetic (expSafe)
 import Crypto.Random.Types
+import Crypto.Random.Probabilistic
 
 import Data.Bits
 
@@ -33,17 +34,17 @@ import Data.Bits
 -- first a list of small primes are implicitely tested for divisibility,
 -- then a fermat primality test is used with arbitrary numbers and
 -- then the Miller Rabin algorithm is used with an accuracy of 30 recursions
-isProbablyPrime :: MonadRandom m => Integer -> m Bool
+isProbablyPrime :: Integer -> Bool
 isProbablyPrime !n
-    | any (\p -> p `divides` n) (filter (< n) firstPrimes) = return False
+    | any (\p -> p `divides` n) (filter (< n) firstPrimes) = False
     | primalityTestFermat 50 (n`div`2) n                   = primalityTestMillerRabin 30 n
-    | otherwise                                            = return False
+    | otherwise                                            = False
 
 -- | generate a prime number of the required bitsize
 generatePrime :: MonadRandom m => Int -> m Integer
 generatePrime bits = do
-    sp <- generateOfSize bits
-    findPrimeFrom sp
+    sp <- generateParams bits (Just SetTwoHighest) True
+    return $ findPrimeFrom sp
 
 -- | generate a prime number of the form 2p+1 where p is also prime.
 -- it is also knowed as a Sophie Germaine prime or safe prime.
@@ -53,37 +54,35 @@ generatePrime bits = do
 generateSafePrime :: MonadRandom m => Int -> m Integer
 generateSafePrime bits = do
     sp <- generateOfSize bits
-    p  <- findPrimeFromWith (\i -> isProbablyPrime (2*i+1)) (sp `div` 2)
+    let p = findPrimeFromWith (\i -> isProbablyPrime (2*i+1)) (sp `div` 2)
     return (2*p+1)
 
 -- | find a prime from a starting point where the property hold.
-findPrimeFromWith :: MonadRandom m => (Integer -> m Bool) -> Integer -> m Integer
+findPrimeFromWith :: (Integer -> Bool) -> Integer -> Integer
 findPrimeFromWith prop !n
     | even n        = findPrimeFromWith prop (n+1)
-    | otherwise     = do
-        primed <- isProbablyPrime n
-        if not primed
+    | otherwise     =
+        if not (isProbablyPrime n)
             then findPrimeFromWith prop (n+2)
-            else do
-                validate <- prop n
-                if validate
-                    then return n
+            else
+                if prop n
+                    then n
                     else findPrimeFromWith prop (n+2)
 
 -- | find a prime from a starting point with no specific property.
-findPrimeFrom :: MonadRandom m => Integer -> m Integer
+findPrimeFrom :: Integer -> Integer
 findPrimeFrom n =
     case gmpNextPrime n of
-        GmpSupported p -> return p
-        GmpUnsupported -> findPrimeFromWith (\_ -> return True) n
+        GmpSupported p -> p
+        GmpUnsupported -> findPrimeFromWith (\_ -> True) n
 
 -- | Miller Rabin algorithm return if the number is probably prime or composite.
 -- the tries parameter is the number of recursion, that determines the accuracy of the test.
-primalityTestMillerRabin :: MonadRandom m => Int -> Integer -> m Bool
+primalityTestMillerRabin :: Int -> Integer -> Bool
 primalityTestMillerRabin tries !n =
     case gmpTestPrimeMillerRabin tries n of
-        GmpSupported b -> return b
-        GmpUnsupported -> run
+        GmpSupported b -> b
+        GmpUnsupported -> probabilistic run
   where
     run
         | n <= 3     = error "Miller-Rabin requires tested value to be > 3"
