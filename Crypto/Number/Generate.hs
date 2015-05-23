@@ -7,7 +7,7 @@
 
 module Crypto.Number.Generate
     ( GenTopPolicy(..)
-    , generate
+    , generateParams
     , generateMax
     , generateBetween
     , generateOfSize
@@ -41,12 +41,12 @@ data GenTopPolicy =
 -- If @generateOdd is set to 'True', then the number generated
 -- is guaranteed to be odd. Otherwise it will be whatever is generated
 --
-generate :: MonadRandom m
-         => Int                -- ^ number of bits
-         -> Maybe GenTopPolicy -- ^ top bit policy
-         -> Bool               -- ^ force the number to be odd
-         -> m Integer
-generate bits genTopPolicy generateOdd
+generateParams :: MonadRandom m
+               => Int                -- ^ number of bits
+               -> Maybe GenTopPolicy -- ^ top bit policy
+               -> Bool               -- ^ force the number to be odd
+               -> m Integer
+generateParams bits genTopPolicy generateOdd
     | bits <= 0 = return 0
     | otherwise = os2ip . tweak <$> getRandomBytes bytes
   where
