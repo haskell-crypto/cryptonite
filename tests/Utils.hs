@@ -2,11 +2,21 @@ module Utils where
 
 import Control.Monad (replicateM)
 import Data.Char
+import Data.Word
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as L
+import Crypto.Random
 
 import Test.Tasty.QuickCheck
+
+newtype TestDRG = TestDRG (Word64, Word64, Word64, Word64, Word64)
+    deriving (Show,Eq)
+
+instance Arbitrary TestDRG where
+    arbitrary = TestDRG `fmap` arbitrary
+
+withTestDRG (TestDRG l) f = fst $ withDRG (drgNewTest l) f
 
 newtype ChunkingLen = ChunkingLen [Int]
     deriving (Show,Eq)

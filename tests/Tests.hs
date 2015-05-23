@@ -3,6 +3,7 @@ module Main where
 
 import Imports
 
+import qualified Number
 import qualified Hash
 import qualified Poly1305
 import qualified Salsa
@@ -24,7 +25,8 @@ import qualified KAT_TripleDES
 import qualified KAT_AFIS
 
 tests = testGroup "cryptonite"
-    [ Hash.tests
+    [ Number.tests
+    , Hash.tests
     , testGroup "MAC"
         [ Poly1305.tests
         , KAT_HMAC.tests
