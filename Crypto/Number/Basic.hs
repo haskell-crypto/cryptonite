@@ -11,6 +11,8 @@ module Crypto.Number.Basic
     , gcde
     , areEven
     , log2
+    , numBits
+    , numBytes
     ) where
 
 import Crypto.Number.Compat
@@ -75,3 +77,24 @@ log2 n = onGmpUnsupported (gmpLog2 n) $ imLog 2 n
         l = 2 * imLog (b * b) x
         doDiv x' l' = if x' < b then l' else (x' `div` b) `doDiv` (l' + 1)
 {-# INLINE log2 #-}
+
+-- | Compute the number of bits for an integer
+numBits :: Integer -> Int
+numBits n = gmpSizeInBits n `onGmpUnsupported` (if n == 0 then 1 else computeBits 0 n)
+  where computeBits !acc i
+            | q == 0 =
+                if r >= 0x80 then acc+8
+                else if r >= 0x40 then acc+7
+                else if r >= 0x20 then acc+6
+                else if r >= 0x10 then acc+5
+                else if r >= 0x08 then acc+4
+                else if r >= 0x04 then acc+3
+                else if r >= 0x02 then acc+2
+                else if r >= 0x01 then acc+1
+                else acc -- should be catch by previous loop
+            | otherwise = computeBits (acc+8) q
+          where (q,r) = i `divMod` 256
+
+-- | Compute the number of bytes for an integer
+numBytes :: Integer -> Int
+numBytes n = gmpSizeInBytes n `onGmpUnsupported` ((numBits n + 7) `div` 8)
