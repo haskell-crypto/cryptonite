@@ -15,7 +15,7 @@ module Crypto.Random.Entropy.Windows
     ) where
 
 import Data.Int (Int32)
-import Data.Word (Word32, Word8)
+import Data.Word
 import Foreign.C.String (CString, withCString)
 import Foreign.Ptr (Ptr, nullPtr)
 import Foreign.Marshal.Alloc (alloca)
