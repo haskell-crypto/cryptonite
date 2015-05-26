@@ -86,7 +86,8 @@ pointAdd a b = withNewPoint $ \dx dy ->
 pointMul :: Scalar -> Point -> Point
 pointMul scalar p = withNewPoint $ \dx dy ->
     withScalar scalar $ \n -> withPoint p $ \px py ->
-        ccryptonite_p256_point_mul n dx dy px py
+        undefined
+        --ccryptonite_p256_point_mul n dx dy px py
 
 -- | multiply the point @p with @n2 and add a lifted to curve value @n1
 --
@@ -134,7 +135,8 @@ scalarSub a b =
 scalarInv :: Scalar -> Scalar
 scalarInv a =
     withNewScalarFreeze $ \b -> withScalar a $ \pa ->
-        ccryptonite_p256_modinv ccryptonite_SECP256r1_n pa b
+        undefined
+        --ccryptonite_p256_modinv ccryptonite_SECP256r1_n pa b
 
 -- | similar to 'scalarInv' but instead of
 -- trying to be constant time, do it as fast as possible
@@ -161,7 +163,8 @@ scalarFromBinary ba
 -- | convert a scalar to binary
 scalarToBinary :: ByteArray ba => Scalar -> ba
 scalarToBinary s = B.allocAndFreeze scalarSize $ \b -> withScalar s $ \p ->
-    ccryptonite_p256_to_bin p b
+    undefined
+    --ccryptonite_p256_to_bin p b
 
 ------------------------------------------------------------------------
 -- Memory Helpers
@@ -207,8 +210,8 @@ foreign import ccall "cryptonite_p256_mod"
     ccryptonite_p256_mod :: Ptr P256Scalar -> Ptr P256Scalar -> Ptr P256Scalar -> IO ()
 foreign import ccall "cryptonite_p256_modmul"
     ccryptonite_p256_modmul :: Ptr P256Scalar -> Ptr P256Scalar -> P256Digit -> Ptr P256Scalar -> Ptr P256Scalar -> IO ()
-foreign import ccall "cryptonite_p256_modinv"
-    ccryptonite_p256_modinv :: Ptr P256Scalar -> Ptr P256Scalar -> Ptr P256Scalar -> IO ()
+--foreign import ccall "cryptonite_p256_modinv"
+--    ccryptonite_p256_modinv :: Ptr P256Scalar -> Ptr P256Scalar -> Ptr P256Scalar -> IO ()
 foreign import ccall "cryptonite_p256_modinv_vartime"
     ccryptonite_p256_modinv_vartime :: Ptr P256Scalar -> Ptr P256Scalar -> Ptr P256Scalar -> IO ()
 foreign import ccall "cryptonite_p256_base_point_mul"
@@ -221,11 +224,11 @@ foreign import ccall "cryptonite_p256e_point_add"
                                 -> Ptr P256X -> Ptr P256Y
                                 -> Ptr P256X -> Ptr P256Y
                                 -> IO ()
-foreign import ccall "cryptonite_p256_point_mul"
-    ccryptonite_p256_point_mul :: Ptr P256Scalar
-                               -> Ptr P256X -> Ptr P256Y
-                               -> Ptr P256X -> Ptr P256Y
-                               -> IO ()
+--foreign import ccall "cryptonite_p256_point_mul"
+--    ccryptonite_p256_point_mul :: Ptr P256Scalar
+--                               -> Ptr P256X -> Ptr P256Y
+--                               -> Ptr P256X -> Ptr P256Y
+--                               -> IO ()
 foreign import ccall "cryptonite_p256_points_mul_vartime"
     ccryptonite_p256_points_mul_vartime :: Ptr P256Scalar -> Ptr P256Scalar
                                         -> Ptr P256X -> Ptr P256Y
@@ -234,8 +237,8 @@ foreign import ccall "cryptonite_p256_points_mul_vartime"
 foreign import ccall "cryptonite_p256_is_valid_point"
     ccryptonite_p256_is_valid_point :: Ptr P256X -> Ptr P256Y -> IO CInt
 
-foreign import ccall "cryptonite_p256_to_bin"
-    ccryptonite_p256_to_bin :: Ptr P256Scalar -> Ptr Word8 -> IO ()
+--foreign import ccall "cryptonite_p256_to_bin"
+--    ccryptonite_p256_to_bin :: Ptr P256Scalar -> Ptr Word8 -> IO ()
 
 foreign import ccall "cryptonite_p256_from_bin"
     ccryptonite_p256_from_bin :: Ptr Word8 -> Ptr P256Scalar -> IO ()
