@@ -371,3 +371,17 @@ void cryptonite_p256_from_bin(const uint8_t src[P256_NBYTES], cryptonite_p256_in
     p += 4;
   }
 }
+
+void cryptonite_p256_to_bin(const cryptonite_p256_int* src, uint8_t dst[P256_NBYTES])
+{
+	int i;
+	uint8_t* p = &dst[0];
+	for (i = P256_NDIGITS -1; i > 0; --i) {
+		const cryptonite_p256_digit dig = P256_DIGIT(src, i);
+		p[0] = dig >> 24;
+		p[1] = dig >> 16;
+		p[2] = dig >> 8;
+		p[3] = dig;
+		p += 4;
+	}
+}
