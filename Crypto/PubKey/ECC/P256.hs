@@ -81,6 +81,8 @@ pointAdd a b = withNewPoint $ \dx dy ->
         ccryptonite_p256e_point_add ax ay bx by dx dy
 
 -- | Multiply a point by a scalar
+--
+-- warning: variable time
 pointMul :: Scalar -> Point -> Point
 pointMul scalar p = withNewPoint $ \dx dy ->
     withScalar scalar $ \n -> withPoint p $ \px py -> withScalarZero $ \nzero ->
@@ -89,6 +91,8 @@ pointMul scalar p = withNewPoint $ \dx dy ->
 -- | multiply the point @p with @n2 and add a lifted to curve value @n1
 --
 -- > n1 * G + n2 * p
+--
+-- warning: variable time
 pointsMulVarTime :: Scalar -> Scalar -> Point -> Point
 pointsMulVarTime n1 n2 p = withNewPoint $ \dx dy ->
     withScalar n1 $ \pn1 -> withScalar n2 $ \pn2 -> withPoint p $ \px py ->
@@ -130,7 +134,7 @@ scalarSub a b =
 --
 -- > 1 / a
 --
--- variable time.
+-- warning: variable time
 scalarInv :: Scalar -> Scalar
 scalarInv a =
     withNewScalarFreeze $ \b -> withScalar a $ \pa ->
@@ -177,7 +181,6 @@ withTempScalar :: (Ptr P256Scalar -> IO a) -> IO a
 withTempScalar f = ignoreSnd <$> B.allocRet scalarSize f
   where ignoreSnd :: (a, ScrubbedBytes) -> a
         ignoreSnd = fst
-{-# NOINLINE withTempScalar #-}
 
 withScalar :: Scalar -> (Ptr P256Scalar -> IO a) -> IO a
 withScalar (Scalar d) f = B.withByteArray d f
