@@ -17,6 +17,7 @@ import KAT_PubKey.DSA
 import KAT_PubKey.ECC
 import KAT_PubKey.ECDSA
 import Utils
+import qualified KAT_PubKey.P256 as P256
 
 data VectorMgf = VectorMgf { seed :: ByteString
                            , dbMask :: ByteString
@@ -39,6 +40,7 @@ tests = testGroup "PubKey"
     , dsaTests
     , eccTests
     , ecdsaTests
+    , P256.tests
     ]
 
 --newKats = [ eccKatTests ]
