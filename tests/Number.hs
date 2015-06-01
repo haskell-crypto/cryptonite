@@ -8,9 +8,7 @@ import Crypto.Number.Basic
 import Crypto.Number.Generate
 import Crypto.Number.Serialize
 import Crypto.Number.Prime
-import Crypto.Number.Serialize
 import Data.Bits
-import Data.ByteString (ByteString)
 
 serializationVectors :: [(Int, Integer, ByteString)]
 serializationVectors =
