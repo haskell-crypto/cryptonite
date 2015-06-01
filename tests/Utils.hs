@@ -118,3 +118,26 @@ assertEq b1 b2 | b1 /= b2  = error ("expected: " ++ show b1 ++ " got: " ++ show 
 
 propertyEq :: (Show a, Eq a) => a -> a -> Bool
 propertyEq = assertEq
+
+data PropertyTest =
+      forall a . (Show a, Eq a) => EqTest String a a
+
+type PropertyName = String
+
+eqTest :: (Show a, Eq a)
+       => PropertyName
+       -> a -- ^ expected value
+       -> a -- ^ got
+       -> PropertyTest
+eqTest name a b = EqTest name a b
+
+propertyHold :: [PropertyTest] -> Bool
+propertyHold l =
+    case foldl runProperty [] l of
+        []     -> True
+        failed -> error (intercalate "\n" failed)
+  where
+    runProperty acc (EqTest name a b)
+        | a == b    = acc
+        | otherwise =
+            (name ++ ": expected " ++ show a ++ " but got: " ++ show b) : acc
