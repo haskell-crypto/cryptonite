@@ -47,7 +47,7 @@ expSafe :: Integer -- ^ base
         -> Integer -- ^ result
 expSafe b e m
     | odd m     = gmpPowModSecInteger b e m `onGmpUnsupported`
-                  (gmpPowModInteger b e m    `onGmpUnsupported`
+                  (gmpPowModInteger b e m   `onGmpUnsupported`
                   exponentiation b e m)
     | otherwise = gmpPowModInteger b e m    `onGmpUnsupported`
                   exponentiation b e m

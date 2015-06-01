@@ -33,17 +33,9 @@ i2osp m ptr ptrSz
     | m < 0      = return 0
     | m == 0     = pokeByteOff ptr 0 (0 :: Word8) >> return 1
     | ptrSz < sz = return 0
-    | otherwise  = fillPtr >> return sz
+    | otherwise  = fillPtr ptr sz m >> return sz
   where
-    !sz = numBytes m
-
-    fillPtr = gmpExportInteger m ptr `onGmpUnsupported` export ptr (sz-1) m
-    export p ofs i
-        | ofs == 0  = pokeByteOff p ofs (fromIntegral i :: Word8)
-        | otherwise = do
-            let (i', b) = i `divMod` 256
-            pokeByteOff p ofs (fromIntegral b :: Word8)
-            export p (ofs-1) i'
+    !sz    = numBytes m
 
 -- | Similar to 'i2osp', except it will pad any remaining space with zero.
 i2ospOf :: Integer -> Ptr Word8 -> Int -> IO Int
@@ -51,25 +43,30 @@ i2ospOf m ptr ptrSz
     | ptrSz <= 0 = return 0
     | m < 0      = return 0
     | ptrSz < sz = return 0
-    | otherwise  = (if padSz > 0 then memSet ptr 0 padSz else return ()) >> fillPtr (ptr `plusPtr` padSz) >> return ptrSz
+    | otherwise  = do
+        if padSz > 0 then memSet ptr 0 padSz else return ()
+        fillPtr (ptr `plusPtr` padSz) sz m
+        return ptrSz
   where
     !sz    = numBytes m
     !padSz = ptrSz - sz
 
-    fillPtr p = gmpExportInteger m p `onGmpUnsupported` export p (sz-1) m
-    export p ofs i
+fillPtr :: Ptr Word8 -> Int -> Integer -> IO ()
+fillPtr p sz m = gmpExportInteger m p `onGmpUnsupported` export (sz-1) m
+  where
+    export ofs i
         | ofs == 0  = pokeByteOff p ofs (fromIntegral i :: Word8)
         | otherwise = do
             let (i', b) = i `divMod` 256
             pokeByteOff p ofs (fromIntegral b :: Word8)
-            export p (ofs-1) i'
+            export (ofs-1) i'
 
 -- | transform a big endian binary integer representation pointed by a pointer and a size
 -- into an integer
 os2ip :: Ptr Word8 -> Int -> IO Integer
 os2ip ptr ptrSz
     | ptrSz <= 0 = return 0
-    | otherwise  = {-gmpImportInteger ptrSz ptr `onGmpUnsupported` -} loop 0 0 ptr 
+    | otherwise  = gmpImportInteger ptrSz ptr `onGmpUnsupported` loop 0 0 ptr
   where
     loop :: Integer -> Int -> Ptr Word8 -> IO Integer
     loop !acc i p
