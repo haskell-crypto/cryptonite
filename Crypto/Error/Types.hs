@@ -49,6 +49,14 @@ data CryptoFailable a =
       CryptoPassed a
     | CryptoFailed CryptoError
 
+instance Show a => Show (CryptoFailable a) where
+    show (CryptoPassed a)   = "CryptoPassed " ++ show a
+    show (CryptoFailed err) = "CryptoFailed " ++ show err
+instance Eq a => Eq (CryptoFailable a) where
+    (==) (CryptoPassed a)  (CryptoPassed b)  = a == b
+    (==) (CryptoFailed e1) (CryptoFailed e2) = e1 == e2
+    (==) _                 _                 = False
+
 instance Functor CryptoFailable where
     fmap f (CryptoPassed a) = CryptoPassed (f a)
     fmap _ (CryptoFailed r) = CryptoFailed r
