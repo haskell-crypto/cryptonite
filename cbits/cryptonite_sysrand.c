@@ -28,6 +28,7 @@
  * SUCH DAMAGE.
  */
 
+#include <stdlib.h>
 #include <stdint.h>
 #include <sys/time.h>
 #include "cryptonite_sha512.h"
