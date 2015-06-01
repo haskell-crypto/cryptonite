@@ -132,7 +132,6 @@ tests = testGroup "P256"
             pe2   = ECC.pointMul curve (unP256 r2) curveGen
             pR    = P256.toPoint (P256.scalarAdd (unP256Scalar r1) (unP256Scalar r2))
             peR   = ECC.pointAdd curve pe1 pe2
-            (x,y) = P256.pointToIntegers (P256.pointAdd p1 p2) -- P256.pointToIntegers pR
          in propertyHold [ eqTest "p256" pR (P256.pointAdd p1 p2)
                          , eqTest "ecc" peR (pointP256ToECC pR)
                          ]
