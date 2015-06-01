@@ -1,3 +1,4 @@
+{-# LANGUAGE ExistentialQuantification #-}
 module Utils where
 
 import Control.Applicative
