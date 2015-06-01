@@ -11,8 +11,6 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE EmptyDataDecls #-}
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
-{-# OPTIONS_GHC -fno-warn-unused-matches #-}
-{-# OPTIONS_GHC -fno-warn-unused-imports #-}
 module Crypto.PubKey.ECC.P256
     ( Scalar
     , Point
@@ -22,36 +20,50 @@ module Crypto.PubKey.ECC.P256
     , pointsMulVarTime
     , pointIsValid
     , toPoint
+    , pointToIntegers
+    , pointFromIntegers
+    , pointToBinary
+    , pointFromBinary
     -- * scalar arithmetic
     , scalarZero
+    , scalarIsZero
     , scalarAdd
     , scalarSub
     , scalarInv
     , scalarCmp
     , scalarFromBinary
     , scalarToBinary
+    , scalarFromInteger
+    , scalarToInteger
     ) where
 
 import           Data.Word
 import           Foreign.Ptr
 import           Foreign.C.Types
+import           Control.Monad
 
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray
 import qualified Crypto.Internal.ByteArray as B
+import           Data.Memory.PtrMethods (memSet)
 import           Crypto.Error
+import           Crypto.Number.Serialize.Internal (os2ip, i2ospOf)
+import qualified Crypto.Number.Serialize as S (os2ip, i2ospOf)
 
 -- | A P256 scalar
-newtype Scalar = Scalar ScrubbedBytes
+newtype Scalar = Scalar Bytes
     deriving (Eq,ByteArrayAccess)
 
 -- | A P256 point
-data Point = Point !Bytes !Bytes
+newtype Point = Point Bytes
     deriving (Show,Eq)
 
 scalarSize :: Int
 scalarSize = 32
+
+pointSize :: Int
+pointSize = 64
 
 type P256Digit  = Word32
 
@@ -71,8 +83,11 @@ data P256X
 -- > scalar * G
 --
 toPoint :: Scalar -> Point
-toPoint s = withNewPoint $ \px py -> withScalar s $ \p ->
-    ccryptonite_p256_basepoint_mul p px py
+toPoint s
+    | scalarIsZero s = error "cannot create point from zero"
+    | otherwise      =
+        withNewPoint $ \px py -> withScalar s $ \p ->
+            ccryptonite_p256_basepoint_mul p px py
 
 -- | Add a point to another point
 pointAdd :: Point -> Point -> Point
@@ -104,6 +119,46 @@ pointIsValid p = unsafeDoIO $ withPoint p $ \px py -> do
     r <- ccryptonite_p256_is_valid_point px py
     return (r /= 0)
 
+pointToIntegers :: Point -> (Integer, Integer)
+pointToIntegers p = unsafeDoIO $ withPoint p $ \px py ->
+    allocTemp 32 (serialize (castPtr px) (castPtr py))
+  where
+    serialize px py temp = do
+        ccryptonite_p256_to_bin px temp
+        x <- os2ip temp scalarSize
+        ccryptonite_p256_to_bin py temp
+        y <- os2ip temp scalarSize
+        return (x,y)
+
+pointFromIntegers :: (Integer, Integer) -> Point
+pointFromIntegers (x,y) = withNewPoint $ \dx dy ->
+    allocTemp scalarSize (\temp -> fill temp (castPtr dx) x >> fill temp (castPtr dy) y)
+  where
+    -- put @n to @temp in big endian format, then from @temp to @dest in p256 scalar format
+    fill :: Ptr Word8 -> Ptr P256Scalar -> Integer -> IO ()
+    fill temp dest n = do
+        -- write the integer in big endian format to temp
+        memSet temp 0 scalarSize
+        e <- i2ospOf n temp scalarSize
+        if e == 0
+            then error "pointFromIntegers: filling failed"
+            else return ()
+        -- then fill dest with the P256 scalar from temp
+        ccryptonite_p256_from_bin temp dest
+
+pointToBinary :: ByteArray ba => Point -> ba
+pointToBinary p = B.unsafeCreate pointSize $ \dst -> withPoint p $ \px py -> do
+    ccryptonite_p256_to_bin (castPtr px) dst
+    ccryptonite_p256_to_bin (castPtr py) (dst `plusPtr` 32)
+
+pointFromBinary :: ByteArrayAccess ba => ba -> CryptoFailable Point
+pointFromBinary ba
+    | B.length ba /= pointSize = CryptoFailed $ CryptoError_PublicKeySizeInvalid
+    | otherwise                =
+        CryptoPassed $ withNewPoint $ \px py -> B.withByteArray ba $ \src -> do
+            ccryptonite_p256_from_bin src                        (castPtr px)
+            ccryptonite_p256_from_bin (src `plusPtr` scalarSize) (castPtr py)
+
 ------------------------------------------------------------------------
 -- Scalar methods
 ------------------------------------------------------------------------
@@ -112,14 +167,27 @@ pointIsValid p = unsafeDoIO $ withPoint p $ \px py -> do
 scalarZero :: Scalar
 scalarZero = withNewScalarFreeze $ \d -> ccryptonite_p256_init d
 
+scalarIsZero :: Scalar -> Bool
+scalarIsZero s = unsafeDoIO $ withScalar s $ \d -> do
+    result <- ccryptonite_p256_is_zero d
+    return $ result /= 0
+
+scalarNeedReducing :: Ptr P256Scalar -> IO Bool
+scalarNeedReducing d = do
+    c <- ccryptonite_p256_cmp d ccryptonite_SECP256r1_n
+    return (c >= 0)
+
 -- | Perform addition between two scalars
 --
 -- > a + b
 scalarAdd :: Scalar -> Scalar -> Scalar
 scalarAdd a b =
     withNewScalarFreeze $ \d -> withScalar a $ \pa -> withScalar b $ \pb -> do
-        void $ ccryptonite_p256_add pa pb d
-        ccryptonite_p256_mod ccryptonite_SECP256r1_n d d
+        carry <- ccryptonite_p256_add pa pb d
+        when (carry /= 0) $ void $ ccryptonite_p256_sub d ccryptonite_SECP256r1_n d
+        needReducing <- scalarNeedReducing d
+        when needReducing $ do
+            ccryptonite_p256_mod ccryptonite_SECP256r1_n d d
 
 -- | Perform subtraction between two scalars
 --
@@ -127,8 +195,11 @@ scalarAdd a b =
 scalarSub :: Scalar -> Scalar -> Scalar
 scalarSub a b =
     withNewScalarFreeze $ \d -> withScalar a $ \pa -> withScalar b $ \pb -> do
-        void $ ccryptonite_p256_sub pa pb d
-        ccryptonite_p256_mod ccryptonite_SECP256r1_n d d
+        borrow <- ccryptonite_p256_sub pa pb d
+        when (borrow /= 0) $ void $ ccryptonite_p256_add d ccryptonite_SECP256r1_n d
+        --needReducing <- scalarNeedReducing d
+        --when needReducing $ do
+        --    ccryptonite_p256_mod ccryptonite_SECP256r1_n d d
 
 -- | Give the inverse of the scalar
 --
@@ -154,33 +225,40 @@ scalarFromBinary ba
     | otherwise                 =
         CryptoPassed $ withNewScalarFreeze $ \p -> B.withByteArray ba $ \b ->
             ccryptonite_p256_from_bin b p
+{-# NOINLINE scalarFromBinary #-}
 
 -- | convert a scalar to binary
 scalarToBinary :: ByteArray ba => Scalar -> ba
-scalarToBinary s = B.allocAndFreeze scalarSize $ \b -> withScalar s $ \p ->
+scalarToBinary s = B.unsafeCreate scalarSize $ \b -> withScalar s $ \p ->
     ccryptonite_p256_to_bin p b
+{-# NOINLINE scalarToBinary #-}
+
+scalarFromInteger :: Integer -> CryptoFailable Scalar
+scalarFromInteger i =
+    maybe (CryptoFailed CryptoError_SecretKeySizeInvalid) scalarFromBinary (S.i2ospOf 32 i :: Maybe Bytes)
+
+scalarToInteger :: Scalar -> Integer
+scalarToInteger s = S.os2ip (scalarToBinary s :: Bytes)
 
 ------------------------------------------------------------------------
 -- Memory Helpers
 ------------------------------------------------------------------------
 withNewPoint :: (Ptr P256X -> Ptr P256Y -> IO ()) -> Point
-withNewPoint f = unsafeDoIO $ do
-    (x,y) <- B.allocRet pointCoordSize $ \py -> B.alloc pointCoordSize $ \px -> f px py
-    return $! Point x y
-  where pointCoordSize = 32
+withNewPoint f = Point $ B.unsafeCreate pointSize $ \px -> f px (pxToPy px)
 {-# NOINLINE withNewPoint #-}
 
 withPoint :: Point -> (Ptr P256X -> Ptr P256Y -> IO a) -> IO a
-withPoint (Point x y) f = B.withByteArray x $ \px -> B.withByteArray y $ \py -> f px py
+withPoint (Point d) f = B.withByteArray d $ \px -> f px (pxToPy px)
+
+pxToPy :: Ptr P256X -> Ptr P256Y
+pxToPy px = castPtr (px `plusPtr` scalarSize)
 
 withNewScalarFreeze :: (Ptr P256Scalar -> IO ()) -> Scalar
 withNewScalarFreeze f = Scalar $ B.allocAndFreeze scalarSize f
 {-# NOINLINE withNewScalarFreeze #-}
 
 withTempScalar :: (Ptr P256Scalar -> IO a) -> IO a
-withTempScalar f = ignoreSnd <$> B.allocRet scalarSize f
-  where ignoreSnd :: (a, ScrubbedBytes) -> a
-        ignoreSnd = fst
+withTempScalar f = allocTempScrubbed scalarSize (f . castPtr)
 
 withScalar :: Scalar -> (Ptr P256Scalar -> IO a) -> IO a
 withScalar (Scalar d) f = B.withByteArray d f
@@ -190,6 +268,18 @@ withScalarZero f =
     withTempScalar $ \d -> do
         ccryptonite_p256_init d
         f d
+
+allocTemp :: Int -> (Ptr Word8 -> IO a) -> IO a
+allocTemp n f = ignoreSnd <$> B.allocRet n f
+  where
+    ignoreSnd :: (a, Bytes) -> a
+    ignoreSnd = fst
+
+allocTempScrubbed :: Int -> (Ptr Word8 -> IO a) -> IO a
+allocTempScrubbed n f = ignoreSnd <$> B.allocRet n f
+  where
+    ignoreSnd :: (a, ScrubbedBytes) -> a
+    ignoreSnd = fst
 
 ------------------------------------------------------------------------
 -- Foreign bindings
@@ -203,10 +293,14 @@ foreign import ccall "&cryptonite_SECP256r1_b"
 
 foreign import ccall "cryptonite_p256_init"
     ccryptonite_p256_init :: Ptr P256Scalar -> IO ()
+foreign import ccall "cryptonite_p256_is_zero"
+    ccryptonite_p256_is_zero :: Ptr P256Scalar -> IO CInt
 foreign import ccall "cryptonite_p256_clear"
     ccryptonite_p256_clear :: Ptr P256Scalar -> IO ()
 foreign import ccall "cryptonite_p256_add"
     ccryptonite_p256_add :: Ptr P256Scalar -> Ptr P256Scalar -> Ptr P256Scalar -> IO CInt
+foreign import ccall "cryptonite_p256_add_d"
+    ccryptonite_p256_add_d :: Ptr P256Scalar -> P256Digit -> Ptr P256Scalar -> IO CInt
 foreign import ccall "cryptonite_p256_sub"
     ccryptonite_p256_sub :: Ptr P256Scalar -> Ptr P256Scalar -> Ptr P256Scalar -> IO CInt
 foreign import ccall "cryptonite_p256_cmp"
