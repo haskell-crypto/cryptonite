@@ -11,6 +11,43 @@ import Test.Tasty.KAT.FileLoader
 
 import Imports
 
+instance Arbitrary ECC.Curve where
+    arbitrary = ECC.getCurveByName <$> elements
+        [ ECC.SEC_p112r1
+        , ECC.SEC_p112r2
+        , ECC.SEC_p128r1
+        , ECC.SEC_p128r2
+        , ECC.SEC_p160k1
+        , ECC.SEC_p160r1
+        , ECC.SEC_p160r2
+        , ECC.SEC_p192k1
+        , ECC.SEC_p192r1
+        , ECC.SEC_p224k1
+        , ECC.SEC_p224r1
+        , ECC.SEC_p256k1
+        , ECC.SEC_p256r1
+        , ECC.SEC_p384r1
+        , ECC.SEC_p521r1
+        , ECC.SEC_t113r1
+        , ECC.SEC_t113r2
+        , ECC.SEC_t131r1
+        , ECC.SEC_t131r2
+        , ECC.SEC_t163k1
+        , ECC.SEC_t163r1
+        , ECC.SEC_t163r2
+        , ECC.SEC_t193r1
+        , ECC.SEC_t193r2
+        , ECC.SEC_t233k1
+        , ECC.SEC_t233r1
+        , ECC.SEC_t239k1
+        , ECC.SEC_t283k1
+        , ECC.SEC_t283r1
+        , ECC.SEC_t409k1
+        , ECC.SEC_t409r1
+        , ECC.SEC_t571k1
+        , ECC.SEC_t571r1
+        ]
+
 data VectorPoint = VectorPoint
     { curve :: ECC.Curve
     , x     :: Integer
@@ -101,8 +138,18 @@ vectorsPoint =
 
 doPointValidTest (i, vector) = testCase (show i) (valid vector @=? ECC.isPointValid (curve vector) (ECC.Point (x vector) (y vector)))
 
+
 eccTests = testGroup "ECC"
     [ testGroup "valid-point" $ map doPointValidTest (zip [katZero..] vectorsPoint)
+    , testGroup "property" $
+        [ testProperty "point-add" $ \curve (QAInteger r1) (QAInteger r2) ->
+            let curveN   = ECC.ecc_n . ECC.common_curve $ curve
+                curveGen = ECC.ecc_g . ECC.common_curve $ curve
+                p1       = ECC.pointMul curve r1 curveGen
+                p2       = ECC.pointMul curve r2 curveGen
+                pR       = ECC.pointMul curve ((r1 + r2) `mod` curveN) curveGen
+             in pR `propertyEq` ECC.pointAdd curve p1 p2
+        ]
     ]
 
 eccKatTests = do
