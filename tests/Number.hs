@@ -2,9 +2,11 @@ module Number (tests) where
 
 import Imports
 
+import Data.ByteArray (Bytes)
 import Crypto.Number.Basic
 import Crypto.Number.Generate
 import Crypto.Number.Prime
+import Crypto.Number.Serialize
 import Data.Bits
 
 tests = testGroup "number"
@@ -35,4 +37,6 @@ tests = testGroup "number"
         -- to the next is quite high, as the number generated has two highest bit set.
         --
          in bits == numBits prime || (if baseBits < 64 then (bits + 1) == numBits prime else False)
+    , testProperty "marshalling" $ \qaInt ->
+        getQAInteger qaInt == os2ip (i2osp (getQAInteger qaInt) :: Bytes)
     ]
