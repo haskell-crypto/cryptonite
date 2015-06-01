@@ -86,6 +86,7 @@ Library
                      Crypto.Number.ModArithmetic
                      Crypto.Number.Prime
                      Crypto.Number.Serialize
+                     Crypto.Number.Serialize.Internal
                      Crypto.KDF.PBKDF2
                      Crypto.KDF.Scrypt
                      Crypto.Hash
