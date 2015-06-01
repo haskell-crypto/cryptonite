@@ -51,7 +51,9 @@ tests = testGroup "number"
          in bits == numBits prime || (if baseBits < 64 then (bits + 1) == numBits prime else False)
     , testProperty "marshalling" $ \qaInt ->
         getQAInteger qaInt == os2ip (i2osp (getQAInteger qaInt) :: Bytes)
-    , testGroup "serialization-kat" $ map toSerializationKat $ zip [katZero..] serializationVectors
+    , testGroup "marshalling-kat-to-bytearray" $ map toSerializationKat $ zip [katZero..] serializationVectors
+    , testGroup "marshalling-kat-to-integer" $ map toSerializationKatInteger $ zip [katZero..] serializationVectors
     ] 
   where
     toSerializationKat (i, (sz, n, ba)) = testCase (show i) (ba @=? i2ospOf_ sz n)
+    toSerializationKatInteger (i, (_, n, ba)) = testCase (show i) (n @=? os2ip ba)
