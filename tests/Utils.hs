@@ -1,12 +1,16 @@
 module Utils where
 
+import Control.Applicative
 import Control.Monad (replicateM)
 import Data.Char
 import Data.Word
+import Data.List
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as L
 import Crypto.Random
+import Crypto.Number.Serialize (os2ip)
+import Prelude
 
 import Test.Tasty.QuickCheck
 
@@ -42,6 +46,23 @@ newtype Int0_2901 = Int0_2901 Int
 
 instance Arbitrary Int0_2901 where
     arbitrary = Int0_2901 `fmap` choose (0,2901)
+
+-- | a integer wrapper with a better range property
+newtype QAInteger = QAInteger { getQAInteger :: Integer }
+    deriving (Show,Eq)
+
+instance Arbitrary QAInteger where
+    arbitrary = oneof
+        [ QAInteger . fromIntegral <$> (choose (0, 655536) :: Gen Int)  -- small integer
+        , larger <$> choose (0,4096) <*> choose (0, 65536) -- medium integer
+        , QAInteger . os2ip . B.pack <$> (choose (0,32) >>= \n -> replicateM n arbitrary) -- [ 0 .. 2^32 ] sized integer
+        ]
+      where
+        larger :: Int -> Int -> QAInteger
+        larger p b = QAInteger (fromIntegral p * somePrime + fromIntegral b)
+
+        somePrime :: Integer
+        somePrime = 18446744073709551557
 
 arbitraryBS :: Int -> Gen ByteString
 arbitraryBS n = B.pack `fmap` replicateM n arbitrary
@@ -84,7 +105,7 @@ splitB l b =
         then
             let (b1, b2) = B.splitAt l b in
             b1 : splitB l b2
-        else    
+        else
             [ b ]
 
 assertBytesEq :: ByteString -> ByteString -> Bool
