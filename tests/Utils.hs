@@ -54,7 +54,7 @@ newtype QAInteger = QAInteger { getQAInteger :: Integer }
 
 instance Arbitrary QAInteger where
     arbitrary = oneof
-        [ QAInteger . fromIntegral <$> (choose (0, 655536) :: Gen Int)  -- small integer
+        [ QAInteger . fromIntegral <$> (choose (0, 65536) :: Gen Int)  -- small integer
         , larger <$> choose (0,4096) <*> choose (0, 65536) -- medium integer
         , QAInteger . os2ip . B.pack <$> (choose (0,32) >>= \n -> replicateM n arbitrary) -- [ 0 .. 2^32 ] sized integer
         ]
