@@ -44,7 +44,7 @@ i2ospOf m ptr ptrSz
     | m < 0      = return 0
     | ptrSz < sz = return 0
     | otherwise  = do
-        if padSz > 0 then memSet ptr 0 padSz else return ()
+        memSet ptr 0 ptrSz
         fillPtr (ptr `plusPtr` padSz) sz m
         return ptrSz
   where
