@@ -76,5 +76,4 @@ Links
 TODO
 ----
 
-* finish google P256 binding
 * add support for XSalsa
