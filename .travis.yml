@@ -4,7 +4,7 @@ env:
  - CABALVER=1.16 GHCVER=7.0.4
  - CABALVER=1.16 GHCVER=7.4.2
  - CABALVER=1.18 GHCVER=7.6.3
- - CABALVER=1.18 GHCVER=7.8.3
+ - CABALVER=1.18 GHCVER=7.8.4
  - CABALVER=1.22 GHCVER=7.10.1
  - CABALVER=head GHCVER=head
 
@@ -17,9 +17,11 @@ addons:
         sources:
          - hvr-ghc
         packages:
+         - cabal-install-1.16
          - cabal-install-1.18
          - cabal-install-1.20
          - cabal-install-1.22
+         - cabal-install-head
          - ghc-7.0.4
          - ghc-7.4.2
          - ghc-7.6.3
