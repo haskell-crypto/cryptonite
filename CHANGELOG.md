@@ -1,3 +1,7 @@
+## 0.3
+
+* Use scrubbed bytes instead of bytes for P256 scalar
+
 ## 0.2
 
 * Fix P256 compilation and exactness, + add tests
