@@ -52,7 +52,7 @@ import           Crypto.Number.Serialize.Internal (os2ip, i2ospOf)
 import qualified Crypto.Number.Serialize as S (os2ip, i2ospOf)
 
 -- | A P256 scalar
-newtype Scalar = Scalar Bytes
+newtype Scalar = Scalar ScrubbedBytes
     deriving (Eq,ByteArrayAccess)
 
 -- | A P256 point
