@@ -351,11 +351,13 @@ doECB :: ByteArray ba
       => (Ptr b -> Ptr AES -> CString -> CUInt -> IO ())
       -> AES -> ba -> ba
 doECB f ctx input
-    | r /= 0    = error $ "Encryption error: input length must be a multiple of block size (16). Its length is: " ++ (show len)
-    | otherwise = B.allocAndFreeze len $ \o ->
-                  keyToPtr ctx $ \k ->
-                  withByteArray input $ \i ->
-                  f (castPtr o) k i (fromIntegral nbBlocks)
+    | len == 0     = B.empty
+    | r /= 0       = error $ "Encryption error: input length must be a multiple of block size (16). Its length is: " ++ (show len)
+    | otherwise    =
+        B.allocAndFreeze len $ \o ->
+        keyToPtr ctx         $ \k ->
+        withByteArray input  $ \i ->
+            f (castPtr o) k i (fromIntegral nbBlocks)
   where (nbBlocks, r) = len `quotRem` 16
         len           = B.length input
 
