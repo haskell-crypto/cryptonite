@@ -32,7 +32,7 @@ data KeySizeSpecifier =
 -- | Offset inside an XTS data unit, measured in block size.
 type DataUnitOffset = Word32
 
--- | Authentification Tag for AE cipher mode
+-- | Authentication Tag for AE cipher mode
 newtype AuthTag = AuthTag { unAuthTag :: Bytes }
     deriving (Show, ByteArrayAccess)
 

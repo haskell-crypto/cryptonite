@@ -49,10 +49,10 @@ aeadFinalize (AEAD impl st) n = (aeadImplFinalize impl) st n
 -- | Simple AEAD encryption
 aeadSimpleEncrypt :: (ByteArrayAccess aad, ByteArray ba)
                   => AEAD a        -- ^ A new AEAD Context
-                  -> aad           -- ^ Optional Authentified Header
+                  -> aad           -- ^ Optional Authentication data header
                   -> ba            -- ^ Optional Plaintext
                   -> Int           -- ^ Tag length
-                  -> (AuthTag, ba) -- ^ Authentification tag and ciphertext
+                  -> (AuthTag, ba) -- ^ Authentication tag and ciphertext
 aeadSimpleEncrypt aeadIni header input taglen = (tag, output)
   where aead                = aeadAppendHeader aeadIni header
         (output, aeadFinal) = aeadEncrypt aead input
@@ -61,9 +61,9 @@ aeadSimpleEncrypt aeadIni header input taglen = (tag, output)
 -- | Simple AEAD decryption
 aeadSimpleDecrypt :: (ByteArrayAccess aad, ByteArray ba)
                   => AEAD a        -- ^ A new AEAD Context
-                  -> aad           -- ^ Optional Authentified Header
-                  -> ba            -- ^ Optional Plaintext
-                  -> AuthTag       -- ^ Tag length
+                  -> aad           -- ^ Optional Authentication data header
+                  -> ba            -- ^ Ciphertext
+                  -> AuthTag       -- ^ The authentication tag
                   -> Maybe ba      -- ^ Plaintext
 aeadSimpleDecrypt aeadIni header input authTag
     | tag == authTag = Just output

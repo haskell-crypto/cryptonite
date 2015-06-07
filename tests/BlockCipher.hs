@@ -75,7 +75,7 @@ data KAT_AEAD = KAT_AEAD
     { aeadMode       :: AEADMode
     , aeadKey        :: ByteString -- ^ Key
     , aeadIV         :: ByteString -- ^ IV for initialization
-    , aeadHeader     :: ByteString -- ^ Authentificated Header
+    , aeadHeader     :: ByteString -- ^ Authenticated Header
     , aeadPlaintext  :: ByteString -- ^ Plaintext
     , aeadCiphertext :: ByteString -- ^ Ciphertext
     , aeadTaglen     :: Int        -- ^ aead tag len
@@ -104,7 +104,7 @@ testECB (_, _, cipherInit) ecbEncrypt ecbDecrypt kats =
             ]
           where ctx = cipherInit (ecbKey d)
         --propTest = testProperty "decrypt.encrypt" (ECBUnit key plaintext) =
-        
+
         --testProperty_ECB (ECBUnit (cipherInit -> ctx) (toBytes -> plaintext)) =
         --    plaintext `assertEq` ecbDecrypt ctx (ecbEncrypt ctx plaintext)
 

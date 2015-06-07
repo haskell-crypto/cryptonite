@@ -166,7 +166,7 @@ withOCBKeyAndCopySt aes (AESOCB gcmSt) f =
 
 -- | Initialize a new context with a key
 --
--- Key need to be of length 16, 24 or 32 bytes. any other values will cause undefined behavior
+-- Key needs to be of length 16, 24 or 32 bytes. Any other values will return failure
 initAES :: ByteArrayAccess key => key -> CryptoFailable AES
 initAES k
     | len == 16 = CryptoPassed $ initWithRounds 10
@@ -418,7 +418,7 @@ gcmInit ctx iv = unsafeDoIO $ do
             c_aes_gcm_init (castPtr gcmStPtr) k v (fromIntegral $ B.length iv)
     return $ AESGCM sm
 
--- | append data which is going to just be authentified to the GCM context.
+-- | append data which is only going to be authenticated to the GCM context.
 --
 -- need to happen after initialization and before appending encryption/decryption data.
 {-# NOINLINE gcmAppendAAD #-}
@@ -489,7 +489,7 @@ ocbInit ctx iv = unsafeDoIO $ do
             c_aes_ocb_init (castPtr ocbStPtr) k v (fromIntegral $ B.length iv)
     return $ AESOCB sm
 
--- | append data which is going to just be authentified to the OCB context.
+-- | append data which is going to just be authenticated to the OCB context.
 --
 -- need to happen after initialization and before appending encryption/decryption data.
 {-# NOINLINE ocbAppendAAD #-}
