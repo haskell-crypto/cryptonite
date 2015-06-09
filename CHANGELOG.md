@@ -1,6 +1,7 @@
 ## 0.3
 
 * Fix documentation in cipher sub section (Luke Taylor)
+* Cleanup AES dead functions (Luke Taylor)
 * Fix Show instance of Digest to display without quotes similar to cryptohash
 * Use scrubbed bytes instead of bytes for P256 scalar
 
