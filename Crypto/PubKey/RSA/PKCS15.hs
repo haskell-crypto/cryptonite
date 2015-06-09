@@ -100,9 +100,9 @@ decryptSafer pk b = do
     blinder <- generateBlinder (private_n pk)
     return (decrypt (Just blinder) pk b)
 
--- | encrypt a bytestring using the public key and a CPRG random generator.
+-- | encrypt a bytestring using the public key.
 --
--- the message need to be smaller than the key size - 11
+-- the message needs to be smaller than the key size - 11
 encrypt :: MonadRandom m => PublicKey -> ByteString -> m (Either Error ByteString)
 encrypt pk m = do
     r <- pad (public_size pk) m
