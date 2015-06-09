@@ -54,4 +54,5 @@ newtype Digest a = Digest Bytes
     deriving (Eq,Ord,ByteArrayAccess,NFData)
 
 instance Show (Digest a) where
-    show (Digest bs) = show (B.convertToBase B.Base16 bs :: Bytes)
+    show (Digest bs) = map (toEnum . fromIntegral)
+                     $ B.unpack (B.convertToBase B.Base16 bs :: Bytes)
