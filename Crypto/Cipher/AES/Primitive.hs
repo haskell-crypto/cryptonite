@@ -30,32 +30,20 @@ module Crypto.Cipher.AES.Primitive
     , encryptCBC
     , encryptCTR
     , encryptXTS
-    , encryptGCM
-    , encryptOCB
 
     -- * decryption
     , decryptECB
     , decryptCBC
     , decryptCTR
     , decryptXTS
-    , decryptGCM
-    , decryptOCB
 
     -- * incremental GCM
     , gcmMode
     , gcmInit
-    , gcmAppendAAD
-    , gcmAppendEncrypt
-    , gcmAppendDecrypt
-    , gcmFinish
 
     -- * incremental OCB
     , ocbMode
     , ocbInit
-    , ocbAppendAAD
-    , ocbAppendEncrypt
-    , ocbAppendDecrypt
-    , ocbFinish
     ) where
 
 import           Data.Word
@@ -86,7 +74,7 @@ instance BlockCipher AES where
     aeadInit AEAD_GCM aes iv = CryptoPassed $ AEAD (gcmMode aes) (gcmInit aes iv)
     aeadInit AEAD_OCB aes iv = CryptoPassed $ AEAD (ocbMode aes) (ocbInit aes iv)
     aeadInit _        _   _  = CryptoFailed CryptoError_AEADModeNotSupported
-instance BlockCipher128 AES where 
+instance BlockCipher128 AES where
     xtsEncrypt = encryptXTS
     xtsDecrypt = decryptXTS
 
@@ -196,7 +184,7 @@ encryptCBC = doCBC c_aes_encrypt_cbc
 -- to make the standard counter mode block operations.
 --
 -- if the length requested is not a multiple of the block cipher size,
--- more data will be returned, so that the returned bytestring is
+-- more data will be returned, so that the returned bytearray is
 -- a multiple of the block cipher size.
 {-# NOINLINE genCTR #-}
 genCTR :: ByteArray ba
@@ -215,7 +203,7 @@ genCTR ctx (IV iv) len
 -- to make the standard counter mode block operations.
 --
 -- if the length requested is not a multiple of the block cipher size,
--- more data will be returned, so that the returned bytestring is
+-- more data will be returned, so that the returned bytearray is
 -- a multiple of the block cipher size.
 --
 -- Similiar to 'genCTR' but also return the next IV for continuation
@@ -257,31 +245,6 @@ encryptCTR ctx iv input
   where doEncrypt o = withKeyAndIV ctx iv $ \k v -> withByteArray input $ \i ->
                       c_aes_encrypt_ctr (castPtr o) k v i (fromIntegral len)
         len = B.length input
-
--- | encrypt using Galois counter mode (GCM)
--- return the encrypted bytestring and the tag associated
---
--- note: encrypted data is identical to CTR mode in GCM, however
--- a tag is also computed.
-{-# NOINLINE encryptGCM #-}
-encryptGCM :: (ByteArrayAccess iv, ByteArrayAccess aad, ByteArray ba)
-           => AES        -- ^ AES Context
-           -> iv         -- ^ IV initial vector of any size
-           -> aad        -- ^ data to authenticate (AAD)
-           -> ba         -- ^ data to encrypt
-           -> (ba, AuthTag) -- ^ ciphertext and tag
-encryptGCM = doGCM gcmAppendEncrypt
-
--- | encrypt using OCB v3
--- return the encrypted bytestring and the tag associated
-{-# NOINLINE encryptOCB #-}
-encryptOCB :: (ByteArrayAccess iv, ByteArrayAccess aad, ByteArray ba)
-           => AES        -- ^ AES Context
-           -> iv         -- ^ IV initial vector of any size
-           -> aad        -- ^ data to authenticate (AAD)
-           -> ba         -- ^ data to encrypt
-           -> (ba, AuthTag) -- ^ ciphertext and tag
-encryptOCB = doOCB ocbAppendEncrypt
 
 -- | encrypt using XTS
 --
@@ -325,26 +288,6 @@ decryptXTS :: ByteArray ba
            -> ba         -- ^ input to decrypt
            -> ba         -- ^ output decrypted
 decryptXTS = doXTS c_aes_decrypt_xts
-
--- | decrypt using Galois Counter Mode (GCM)
-{-# NOINLINE decryptGCM #-}
-decryptGCM :: (ByteArrayAccess aad, ByteArrayAccess iv, ByteArray ba)
-           => AES        -- ^ Key
-           -> iv         -- ^ IV initial vector of any size
-           -> aad        -- ^ data to authenticate (AAD)
-           -> ba         -- ^ data to decrypt
-           -> (ba, AuthTag) -- ^ plaintext and tag
-decryptGCM = doGCM gcmAppendDecrypt
-
--- | decrypt using Offset Codebook Mode (OCB)
-{-# NOINLINE decryptOCB #-}
-decryptOCB :: (ByteArrayAccess aad, ByteArrayAccess iv, ByteArray ba)
-           => AES        -- ^ Key
-           -> iv         -- ^ IV initial vector of any size
-           -> aad        -- ^ data to authenticate (AAD)
-           -> ba         -- ^ data to decrypt
-           -> (ba, AuthTag) -- ^ plaintext and tag
-decryptOCB = doOCB ocbAppendDecrypt
 
 {-# INLINE doECB #-}
 doECB :: ByteArray ba
@@ -395,20 +338,6 @@ doXTS f (key1,key2) iv spoint input
 -- GCM
 ------------------------------------------------------------------------
 
-{-# INLINE doGCM #-}
-doGCM :: (ByteArrayAccess iv, ByteArrayAccess aad, ByteArray ba)
-      => (AES -> AESGCM -> ba -> (ba, AESGCM))
-      -> AES
-      -> iv
-      -> aad
-      -> ba
-      -> (ba, AuthTag)
-doGCM f ctx iv aad input = (output, tag)
-  where tag             = gcmFinish ctx after 16
-        (output, after) = f ctx afterAAD input
-        afterAAD        = gcmAppendAAD ini aad
-        ini             = gcmInit ctx iv
-
 -- | initialize a gcm context
 {-# NOINLINE gcmInit #-}
 gcmInit :: ByteArrayAccess iv => AES -> iv -> AESGCM
@@ -420,7 +349,7 @@ gcmInit ctx iv = unsafeDoIO $ do
 
 -- | append data which is only going to be authenticated to the GCM context.
 --
--- need to happen after initialization and before appending encryption/decryption data.
+-- needs to happen after initialization and before appending encryption/decryption data.
 {-# NOINLINE gcmAppendAAD #-}
 gcmAppendAAD :: ByteArrayAccess aad => AESGCM -> aad -> AESGCM
 gcmAppendAAD gcmSt input = unsafeDoIO doAppend
@@ -431,8 +360,8 @@ gcmAppendAAD gcmSt input = unsafeDoIO doAppend
 
 -- | append data to encrypt and append to the GCM context
 --
--- bytestring need to be multiple of AES block size, unless it's the last call to this function.
--- need to happen after AAD appending, or after initialization if no AAD data.
+-- the bytearray needs to be a multiple of AES block size, unless it's the last call to this function.
+-- needs to happen after AAD appending, or after initialization if no AAD data.
 {-# NOINLINE gcmAppendEncrypt #-}
 gcmAppendEncrypt :: ByteArray ba => AES -> AESGCM -> ba -> (ba, AESGCM)
 gcmAppendEncrypt ctx gcm input = unsafeDoIO $ withGCMKeyAndCopySt ctx gcm doEnc
@@ -444,8 +373,8 @@ gcmAppendEncrypt ctx gcm input = unsafeDoIO $ withGCMKeyAndCopySt ctx gcm doEnc
 
 -- | append data to decrypt and append to the GCM context
 --
--- bytestring need to be multiple of AES block size, unless it's the last call to this function.
--- need to happen after AAD appending, or after initialization if no AAD data.
+-- the bytearray needs to be a multiple of AES block size, unless it's the last call to this function.
+-- needs to happen after AAD appending, or after initialization if no AAD data.
 {-# NOINLINE gcmAppendDecrypt #-}
 gcmAppendDecrypt :: ByteArray ba => AES -> AESGCM -> ba -> (ba, AESGCM)
 gcmAppendDecrypt ctx gcm input = unsafeDoIO $ withGCMKeyAndCopySt ctx gcm doDec
@@ -465,20 +394,6 @@ gcmFinish ctx gcm taglen = AuthTag $ B.take taglen computeTag
 ------------------------------------------------------------------------
 -- OCB v3
 ------------------------------------------------------------------------
-
-{-# INLINE doOCB #-}
-doOCB :: (ByteArrayAccess iv, ByteArrayAccess aad, ByteArray ba)
-      => (AES -> AESOCB -> ba -> (ba, AESOCB))
-      -> AES
-      -> iv
-      -> aad
-      -> ba
-      -> (ba, AuthTag)
-doOCB f ctx iv aad input = (output, tag)
-  where tag             = ocbFinish ctx after 16
-        (output, after) = f ctx afterAAD input
-        afterAAD        = ocbAppendAAD ctx ini aad
-        ini             = ocbInit ctx iv
 
 -- | initialize an ocb context
 {-# NOINLINE ocbInit #-}
@@ -501,7 +416,7 @@ ocbAppendAAD ctx ocb input = unsafeDoIO (snd `fmap` withOCBKeyAndCopySt ctx ocb 
 
 -- | append data to encrypt and append to the OCB context
 --
--- bytestring need to be multiple of AES block size, unless it's the last call to this function.
+-- the bytearray needs to be a multiple of the AES block size, unless it's the last call to this function.
 -- need to happen after AAD appending, or after initialization if no AAD data.
 {-# NOINLINE ocbAppendEncrypt #-}
 ocbAppendEncrypt :: ByteArray ba => AES -> AESOCB -> ba -> (ba, AESOCB)
@@ -514,7 +429,7 @@ ocbAppendEncrypt ctx ocb input = unsafeDoIO $ withOCBKeyAndCopySt ctx ocb doEnc
 
 -- | append data to decrypt and append to the OCB context
 --
--- bytestring need to be multiple of AES block size, unless it's the last call to this function.
+-- the bytearray needs to be a multiple of the AES block size, unless it's the last call to this function.
 -- need to happen after AAD appending, or after initialization if no AAD data.
 {-# NOINLINE ocbAppendDecrypt #-}
 ocbAppendDecrypt :: ByteArray ba => AES -> AESOCB -> ba -> (ba, AESOCB)
