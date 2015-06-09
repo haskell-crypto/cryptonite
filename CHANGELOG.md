@@ -1,5 +1,6 @@
 ## 0.3
 
+* Fix Show instance of Digest to display without quotes similar to cryptohash
 * Use scrubbed bytes instead of bytes for P256 scalar
 
 ## 0.2
