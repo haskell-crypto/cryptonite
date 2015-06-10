@@ -1,5 +1,5 @@
 Name:                cryptonite
-Version:             0.2
+Version:             0.3
 Synopsis:            Cryptography Primitives sink
 Description:
     A repository of cryptographic primitives.
@@ -93,7 +93,6 @@ Library
                      Crypto.Hash.IO
                      Crypto.Hash.Algorithms
                      Crypto.PubKey.Curve25519
-                     Crypto.PubKey.HashDescr
                      Crypto.PubKey.MaskGenFunction
                      Crypto.PubKey.DH
                      Crypto.PubKey.DSA
