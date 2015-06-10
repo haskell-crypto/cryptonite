@@ -1,5 +1,7 @@
 ## 0.3
 
+* Remove Crypto.PubKey.HashDescr in favor of just having the algorithm
+  specified in PKCS15 RSA function.
 * Fix documentation in cipher sub section (Luke Taylor)
 * Cleanup AES dead functions (Luke Taylor)
 * Fix Show instance of Digest to display without quotes similar to cryptohash
