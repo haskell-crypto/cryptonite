@@ -171,7 +171,7 @@ encrypt pk m = do
 -- If unsure always set a blinder or use signSafer
 sign :: HashAlgorithmASN1 hashAlg
      => Maybe Blinder -- ^ optional blinder
-     -> hashAlg       -- ^ hash algorithm
+     -> Maybe hashAlg -- ^ hash algorithm
      -> PrivateKey    -- ^ private key
      -> ByteString    -- ^ message to sign
      -> Either Error ByteString
@@ -179,9 +179,9 @@ sign blinder hashDescr pk m = dp blinder pk `fmap` makeSignature hashDescr (priv
 
 -- | sign message using the private key and by automatically generating a blinder.
 signSafer :: (HashAlgorithmASN1 hashAlg, MonadRandom m)
-          => hashAlg    -- ^ Hash algorithm
-          -> PrivateKey -- ^ private key
-          -> ByteString -- ^ message to sign
+          => Maybe hashAlg -- ^ Hash algorithm
+          -> PrivateKey    -- ^ private key
+          -> ByteString    -- ^ message to sign
           -> m (Either Error ByteString)
 signSafer hashAlg pk m = do
     blinder <- generateBlinder (private_n pk)
@@ -189,7 +189,7 @@ signSafer hashAlg pk m = do
 
 -- | verify message with the signed message
 verify :: HashAlgorithmASN1 hashAlg
-       => hashAlg
+       => Maybe hashAlg
        -> PublicKey
        -> ByteString
        -> ByteString
@@ -201,8 +201,9 @@ verify hashAlg pk m sm =
 
 -- | make signature digest, used in 'sign' and 'verify'
 makeSignature :: HashAlgorithmASN1 hashAlg
-              => hashAlg
+              => Maybe hashAlg -- ^ optional hashing algorithm
               -> Int
               -> ByteString
               -> Either Error ByteString
-makeSignature hashAlg klen m = padSignature klen (hashDigestASN1 $ hashWith hashAlg m)
+makeSignature Nothing        klen m = padSignature klen m
+makeSignature (Just hashAlg) klen m = padSignature klen (hashDigestASN1 $ hashWith hashAlg m)
