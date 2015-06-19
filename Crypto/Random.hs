@@ -27,8 +27,10 @@ import Data.ByteArray (ByteArray, ScrubbedBytes)
 import Crypto.Internal.Imports
 
 -- | Create a new DRG from system entropy
-drgNew :: IO ChaChaDRG
-drgNew = initialize <$> (getEntropy 40 :: IO ScrubbedBytes)
+drgNew :: MonadRandom randomly => randomly ChaChaDRG
+drgNew = do
+    b <- getRandomBytes 40
+    return $ initialize (b :: ScrubbedBytes)
 
 -- | Create a new DRG from 5 Word64.
 --
