@@ -1,5 +1,6 @@
 ## 0.3
 
+* Allow drgNew to run in any MonadRandom, providing cascading initialization
 * Remove Crypto.PubKey.HashDescr in favor of just having the algorithm
   specified in PKCS15 RSA function.
 * Fix documentation in cipher sub section (Luke Taylor)
