@@ -1,3 +1,8 @@
+## 0.4
+
+* Add a System DRG that represent a referentially transparent of evaluated bytes
+  while using lazy evaluation for future entropy values.
+
 ## 0.3
 
 * Allow drgNew to run in any MonadRandom, providing cascading initialization
