@@ -9,7 +9,9 @@ module Crypto.Random
     (
     -- * Deterministic instances
       ChaChaDRG
+    , SystemDRG
     -- * Deterministic Random class
+    , getSystemDRG
     , drgNew
     , drgNewTest
     , withDRG
@@ -22,7 +24,7 @@ module Crypto.Random
 
 import Crypto.Random.Types
 import Crypto.Random.ChaChaDRG
-import Crypto.Random.Entropy
+import Crypto.Random.SystemDRG
 import Data.ByteArray (ByteArray, ScrubbedBytes)
 import Crypto.Internal.Imports
 
