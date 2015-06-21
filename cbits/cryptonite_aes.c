@@ -233,7 +233,7 @@ void cryptonite_aes_initkey(aes_key *key, uint8_t *origkey, uint8_t size)
 	case 32: key->nbr = 14; key->strength = 2; break;
 	}
 #if defined(ARCH_X86) && defined(WITH_AESNI)
-	initialize_hw(initialize_table_ni);
+	cryptonite_aesni_initialize_hw(initialize_table_ni);
 #endif
 	init_f _init = GET_INIT(key->strength);
 	_init(key, origkey, size);

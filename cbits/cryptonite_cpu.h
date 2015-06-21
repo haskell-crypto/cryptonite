@@ -37,9 +37,9 @@
 #endif
 
 #ifdef USE_AESNI
-void initialize_hw(void (*init_table)(int, int));
+void cryptonite_aesni_initialize_hw(void (*init_table)(int, int));
 #else
-#define initialize_hw(init_table) 	(0)
+#define cryptonite_aesni_initialize_hw(init_table) 	(0)
 #endif
 
 #endif
