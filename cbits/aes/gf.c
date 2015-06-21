@@ -39,7 +39,7 @@
  * to speed up the multiplication.
  * TODO: optimise with tables
  */
-void gf_mul(block128 *a, block128 *b)
+void cryptonite_gf_mul(block128 *a, block128 *b)
 {
 	uint64_t a0, a1, v0, v1;
 	int i, j;
@@ -62,7 +62,7 @@ void gf_mul(block128 *a, block128 *b)
 }
 
 /* inplace GFMUL for xts mode */
-void gf_mulx(block128 *a)
+void cryptonite_gf_mulx(block128 *a)
 {
 	const uint64_t gf_mask = cpu_to_le64(0x8000000000000000ULL);
 	uint64_t r = ((a->q[1] & gf_mask) ? cpu_to_le64(0x87) : 0);

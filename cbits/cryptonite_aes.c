@@ -336,7 +336,7 @@ void cryptonite_aes_ocb_decrypt(uint8_t *output, aes_ocb *ocb, aes_key *key, uin
 static void gcm_ghash_add(aes_gcm *gcm, block128 *b)
 {
 	block128_xor(&gcm->tag, b);
-	gf_mul(&gcm->tag, &gcm->h);
+	cryptonite_gf_mul(&gcm->tag, &gcm->h);
 }
 
 void cryptonite_aes_gcm_init(aes_gcm *gcm, aes_key *key, uint8_t *iv, uint32_t len)
@@ -359,15 +359,15 @@ void cryptonite_aes_gcm_init(aes_gcm *gcm, aes_key *key, uint8_t *iv, uint32_t l
 		int i;
 		for (; len >= 16; len -= 16, iv += 16) {
 			block128_xor(&gcm->iv, (block128 *) iv);
-			gf_mul(&gcm->iv, &gcm->h);
+			cryptonite_gf_mul(&gcm->iv, &gcm->h);
 		}
 		if (len > 0) {
 			block128_xor_bytes(&gcm->iv, iv, len);
-			gf_mul(&gcm->iv, &gcm->h);
+			cryptonite_gf_mul(&gcm->iv, &gcm->h);
 		}
 		for (i = 15; origlen; --i, origlen >>= 8)
 			gcm->iv.b[i] ^= (uint8_t) origlen;
-		gf_mul(&gcm->iv, &gcm->h);
+		cryptonite_gf_mul(&gcm->iv, &gcm->h);
 	}
 
 	block128_copy(&gcm->civ, &gcm->iv);
@@ -596,9 +596,9 @@ void cryptonite_aes_generic_encrypt_xts(aes_block *output, aes_key *k1, aes_key 
 
 	/* TO OPTIMISE: this is really inefficient way to do that */
 	while (spoint-- > 0)
-		gf_mulx(&tweak);
+		cryptonite_gf_mulx(&tweak);
 
-	for ( ; nb_blocks-- > 0; input++, output++, gf_mulx(&tweak)) {
+	for ( ; nb_blocks-- > 0; input++, output++, cryptonite_gf_mulx(&tweak)) {
 		block128_vxor(&block, input, &tweak);
 		cryptonite_aes_encrypt_block(&block, k1, &block);
 		block128_vxor(output, &block, &tweak);
@@ -616,9 +616,9 @@ void cryptonite_aes_generic_decrypt_xts(aes_block *output, aes_key *k1, aes_key 
 
 	/* TO OPTIMISE: this is really inefficient way to do that */
 	while (spoint-- > 0)
-		gf_mulx(&tweak);
+		cryptonite_gf_mulx(&tweak);
 
-	for ( ; nb_blocks-- > 0; input++, output++, gf_mulx(&tweak)) {
+	for ( ; nb_blocks-- > 0; input++, output++, cryptonite_gf_mulx(&tweak)) {
 		block128_vxor(&block, input, &tweak);
 		cryptonite_aes_decrypt_block(&block, k1, &block);
 		block128_vxor(output, &block, &tweak);
