@@ -191,36 +191,36 @@ static void initialize_table_ni(int aesni, int pclmul)
 {
 	if (!aesni)
 		return;
-	cryptonite_aes_branch_table[INIT_128] = aes_ni_init;
-	cryptonite_aes_branch_table[INIT_256] = aes_ni_init;
+	cryptonite_aes_branch_table[INIT_128] = cryptonite_aesni_init;
+	cryptonite_aes_branch_table[INIT_256] = cryptonite_aesni_init;
 
-	cryptonite_aes_branch_table[ENCRYPT_BLOCK_128] = aes_ni_encrypt_block128;
-	cryptonite_aes_branch_table[DECRYPT_BLOCK_128] = aes_ni_decrypt_block128;
-	cryptonite_aes_branch_table[ENCRYPT_BLOCK_256] = aes_ni_encrypt_block256;
-	cryptonite_aes_branch_table[DECRYPT_BLOCK_256] = aes_ni_decrypt_block256;
+	cryptonite_aes_branch_table[ENCRYPT_BLOCK_128] = cryptonite_aesni_encrypt_block128;
+	cryptonite_aes_branch_table[DECRYPT_BLOCK_128] = cryptonite_aesni_decrypt_block128;
+	cryptonite_aes_branch_table[ENCRYPT_BLOCK_256] = cryptonite_aesni_encrypt_block256;
+	cryptonite_aes_branch_table[DECRYPT_BLOCK_256] = cryptonite_aesni_decrypt_block256;
 	/* ECB */
-	cryptonite_aes_branch_table[ENCRYPT_ECB_128] = aes_ni_encrypt_ecb128;
-	cryptonite_aes_branch_table[DECRYPT_ECB_128] = aes_ni_decrypt_ecb128;
-	cryptonite_aes_branch_table[ENCRYPT_ECB_256] = aes_ni_encrypt_ecb256;
-	cryptonite_aes_branch_table[DECRYPT_ECB_256] = aes_ni_decrypt_ecb256;
+	cryptonite_aes_branch_table[ENCRYPT_ECB_128] = cryptonite_aesni_encrypt_ecb128;
+	cryptonite_aes_branch_table[DECRYPT_ECB_128] = cryptonite_aesni_decrypt_ecb128;
+	cryptonite_aes_branch_table[ENCRYPT_ECB_256] = cryptonite_aesni_encrypt_ecb256;
+	cryptonite_aes_branch_table[DECRYPT_ECB_256] = cryptonite_aesni_decrypt_ecb256;
 	/* CBC */
-	cryptonite_aes_branch_table[ENCRYPT_CBC_128] = aes_ni_encrypt_cbc128;
-	cryptonite_aes_branch_table[DECRYPT_CBC_128] = aes_ni_decrypt_cbc128;
-	cryptonite_aes_branch_table[ENCRYPT_CBC_256] = aes_ni_encrypt_cbc256;
-	cryptonite_aes_branch_table[DECRYPT_CBC_256] = aes_ni_decrypt_cbc256;
+	cryptonite_aes_branch_table[ENCRYPT_CBC_128] = cryptonite_aesni_encrypt_cbc128;
+	cryptonite_aes_branch_table[DECRYPT_CBC_128] = cryptonite_aesni_decrypt_cbc128;
+	cryptonite_aes_branch_table[ENCRYPT_CBC_256] = cryptonite_aesni_encrypt_cbc256;
+	cryptonite_aes_branch_table[DECRYPT_CBC_256] = cryptonite_aesni_decrypt_cbc256;
 	/* CTR */
-	cryptonite_aes_branch_table[ENCRYPT_CTR_128] = aes_ni_encrypt_ctr128;
-	cryptonite_aes_branch_table[ENCRYPT_CTR_256] = aes_ni_encrypt_ctr256;
+	cryptonite_aes_branch_table[ENCRYPT_CTR_128] = cryptonite_aesni_encrypt_ctr128;
+	cryptonite_aes_branch_table[ENCRYPT_CTR_256] = cryptonite_aesni_encrypt_ctr256;
 	/* XTS */
-	cryptonite_aes_branch_table[ENCRYPT_XTS_128] = aes_ni_encrypt_xts128;
-	cryptonite_aes_branch_table[ENCRYPT_XTS_256] = aes_ni_encrypt_xts256;
+	cryptonite_aes_branch_table[ENCRYPT_XTS_128] = cryptonite_aesni_encrypt_xts128;
+	cryptonite_aes_branch_table[ENCRYPT_XTS_256] = cryptonite_aesni_encrypt_xts256;
 	/* GCM */
-	cryptonite_aes_branch_table[ENCRYPT_GCM_128] = aes_ni_gcm_encrypt128;
-	cryptonite_aes_branch_table[ENCRYPT_GCM_256] = aes_ni_gcm_encrypt256;
+	cryptonite_aes_branch_table[ENCRYPT_GCM_128] = cryptonite_aesni_gcm_encrypt128;
+	cryptonite_aes_branch_table[ENCRYPT_GCM_256] = cryptonite_aesni_gcm_encrypt256;
 	/* OCB */
 	/*
-	cryptonite_aes_branch_table[ENCRYPT_OCB_128] = aes_ni_ocb_encrypt128;
-	cryptonite_aes_branch_table[ENCRYPT_OCB_256] = aes_ni_ocb_encrypt256;
+	cryptonite_aes_branch_table[ENCRYPT_OCB_128] = cryptonite_aesni_ocb_encrypt128;
+	cryptonite_aes_branch_table[ENCRYPT_OCB_256] = cryptonite_aesni_ocb_encrypt256;
 	*/
 }
 #endif

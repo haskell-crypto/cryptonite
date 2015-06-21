@@ -63,7 +63,7 @@ static __m128i aes_128_key_expansion_aa(__m128i key, __m128i keygened)
 	return _mm_xor_si128(key, keygened);
 }
 
-void aes_ni_init(aes_key *key, uint8_t *ikey, uint8_t size)
+void cryptonite_aesni_init(aes_key *key, uint8_t *ikey, uint8_t size)
 {
 	__m128i k[28];
 	uint64_t *out = (uint64_t *) key->data;
