@@ -1,3 +1,7 @@
+## 0.5
+
+* Fix all strays exports to all be under the cryptonite prefix.
+
 ## 0.4
 
 * Add a System DRG that represent a referentially transparent of evaluated bytes
