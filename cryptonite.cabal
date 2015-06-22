@@ -51,6 +51,11 @@ Flag support_aesni
   Default:           True
   Manual:            True
 
+Flag support_rdrand
+  Description:       allow compilation with AESNI on system and architecture that supports it
+  Default:           True
+  Manual:            True
+
 Flag support_pclmuldq
   Description:       Allow compilation with pclmuldq on architecture that supports it
   Default:           False
@@ -202,7 +207,7 @@ Library
   if arch(i386)
     CPP-options: -DARCH_X86
 
-  if arch(x86_64)
+  if flag(support_rdrand) && arch(x86_64)
     CPP-options:    -DARCH_X86_64
     CPP-options:    -DSUPPORT_RDRAND
     Other-modules:  Crypto.Random.Entropy.RDRand
