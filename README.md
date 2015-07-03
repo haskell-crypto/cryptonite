@@ -57,6 +57,33 @@ On the following haskell versions:
 Further platforms and architectures probably works too, but until maintainer(s) don't have regular
 access to them, we can't commit for further support
 
+Known Building Issues
+---------------------
+
+on OSX <= 10.7, the system compiler doesn't understand the '-maes' option, and
+with the lack of autodetection feature builtin in .cabal file, it is left on
+the user to disable the aesni. See the [Disabling AESNI] section
+
+Disabling AESNI
+---------------
+
+It may be useful to disable AESNI (for building, testing or runtime purpose), and one can do that with the
+*support_aesni* flag.
+
+As part of configure of cryptonite:
+
+```
+  cabal configure --flag='-support_aesni'
+```
+
+or as part of an installation:
+
+```
+  cabal install --constraint="cryptonite -support_aesni"
+```
+
+For help with cabal flags, see: [stackoverflow : is there a way to define flags for cabal](http://stackoverflow.com/questions/23523869/is-there-any-way-to-define-flags-for-cabal-dependencies)
+
 Links
 -----
 
