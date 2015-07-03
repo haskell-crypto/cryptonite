@@ -31,7 +31,7 @@ newtype DevURandom = DevURandom DeviceName
 instance EntropySource DevRandom where
     entropyOpen = fmap DevRandom `fmap` testOpen "/dev/random"
     entropyGather (DevRandom name) ptr n =
-        withDev name $ \h -> gatherDevEntropy h ptr n
+        withDev name $ \h -> gatherDevEntropyNonBlock h ptr n
     entropyClose (DevRandom _)  = return ()
 
 instance EntropySource DevURandom where
@@ -66,4 +66,9 @@ closeDev h = hClose h
 gatherDevEntropy :: H -> Ptr Word8 -> Int -> IO Int
 gatherDevEntropy h ptr sz =
      (fromIntegral `fmap` hGetBufSome h ptr (fromIntegral sz))
+    `E.catch` \(_ :: IOException) -> return 0
+
+gatherDevEntropyNonBlock :: H -> Ptr Word8 -> Int -> IO Int
+gatherDevEntropyNonBlock h ptr sz =
+     (fromIntegral `fmap` hGetBufNonBlocking h ptr (fromIntegral sz))
     `E.catch` \(_ :: IOException) -> return 0
