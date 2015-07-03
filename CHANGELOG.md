@@ -1,3 +1,8 @@
+## 0.6
+
+* Add instructions in README for building on old OSX
+* Fix blocking /dev/random Andrey Sverdlichenko
+
 ## 0.5
 
 * Fix all strays exports to all be under the cryptonite prefix.
