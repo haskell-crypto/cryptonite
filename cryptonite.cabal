@@ -97,6 +97,7 @@ Library
                      Crypto.Hash
                      Crypto.Hash.IO
                      Crypto.Hash.Algorithms
+                     Crypto.Hash.Types
                      Crypto.PubKey.Curve25519
                      Crypto.PubKey.MaskGenFunction
                      Crypto.PubKey.DH
@@ -132,7 +133,6 @@ Library
                      Crypto.Cipher.Types.Utils
                      Crypto.Error.Types
                      Crypto.Number.Compat
-                     Crypto.Hash.Types
                      Crypto.Hash.SHA1
                      Crypto.Hash.SHA224
                      Crypto.Hash.SHA256
