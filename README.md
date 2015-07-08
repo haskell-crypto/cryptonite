@@ -40,6 +40,7 @@ cryptonite supports the following platform:
 * Windows >= 8
 * OSX >= 10.8
 * Linux
+* BSDs
 
 On the following architectures:
 
