@@ -14,6 +14,7 @@ import Crypto.Number.Serialize (os2ip)
 import Prelude
 
 import Test.Tasty.QuickCheck
+import Test.Tasty.HUnit ((@=?))
 
 newtype TestDRG = TestDRG (Word64, Word64, Word64, Word64, Word64)
     deriving (Show,Eq)
@@ -142,3 +143,6 @@ propertyHold l =
         | a == b    = acc
         | otherwise =
             (name ++ ": expected " ++ show a ++ " but got: " ++ show b) : acc
+
+propertyHoldCase :: [PropertyTest] -> IO ()
+propertyHoldCase l = True @=? propertyHold l
