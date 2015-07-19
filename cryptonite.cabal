@@ -76,6 +76,7 @@ Library
                      Crypto.Cipher.Blowfish
                      Crypto.Cipher.Camellia
                      Crypto.Cipher.ChaCha
+                     Crypto.Cipher.ChaChaPoly1305
                      Crypto.Cipher.DES
                      Crypto.Cipher.RC4
                      Crypto.Cipher.Salsa

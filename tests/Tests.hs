@@ -8,6 +8,7 @@ import qualified Hash
 import qualified Poly1305
 import qualified Salsa
 import qualified ChaCha
+import qualified ChaChaPoly1305
 import qualified KAT_HMAC
 import qualified KAT_PBKDF2
 import qualified KAT_Curve25519
@@ -48,6 +49,7 @@ tests = testGroup "cryptonite"
     , testGroup "stream-cipher"
         [ KAT_RC4.tests
         , ChaCha.tests
+        , ChaChaPoly1305.tests
         , Salsa.tests
         ]
     , KAT_AFIS.tests
