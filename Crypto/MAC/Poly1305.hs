@@ -12,13 +12,14 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Crypto.MAC.Poly1305
     ( Ctx
+    , State
     , Auth(..)
 
     -- * Incremental MAC Functions
-    , initialize -- :: Ctx
-    , update     -- :: Ctx -> ByteString -> Ctx
-    , updates    -- :: Ctx -> [ByteString] -> Ctx
-    , finalize   -- :: Ctx -> Auth
+    , initialize -- :: State
+    , update     -- :: State -> ByteString -> State
+    , updates    -- :: State -> [ByteString] -> State
+    , finalize   -- :: State -> Auth
     -- * One-pass MAC function
     , auth
     ) where
@@ -29,9 +30,12 @@ import           Data.Word
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ScrubbedBytes, Bytes)
 import qualified Crypto.Internal.ByteArray as B
 
--- | Poly1305 Context
-newtype Ctx = Ctx ScrubbedBytes
+-- | Poly1305 State
+newtype State = State ScrubbedBytes
     deriving (ByteArrayAccess)
+
+type Ctx = State
+{-# DEPRECATED Ctx "use Poly1305 State instead" #-}
 
 -- | Poly1305 Auth
 newtype Auth = Auth Bytes
@@ -41,35 +45,35 @@ instance Eq Auth where
     (Auth a1) == (Auth a2) = B.constEq a1 a2
 
 foreign import ccall unsafe "cryptonite_poly1305.h cryptonite_poly1305_init"
-    c_poly1305_init :: Ptr Ctx -> Ptr Word8 -> IO ()
+    c_poly1305_init :: Ptr State -> Ptr Word8 -> IO ()
 
 foreign import ccall "cryptonite_poly1305.h cryptonite_poly1305_update"
-    c_poly1305_update :: Ptr Ctx -> Ptr Word8 -> CUInt -> IO ()
+    c_poly1305_update :: Ptr State -> Ptr Word8 -> CUInt -> IO ()
 
 foreign import ccall unsafe "cryptonite_poly1305.h cryptonite_poly1305_finalize"
-    c_poly1305_finalize :: Ptr Word8 -> Ptr Ctx -> IO ()
+    c_poly1305_finalize :: Ptr Word8 -> Ptr State -> IO ()
 
 -- | initialize a Poly1305 context
 initialize :: ByteArrayAccess key
            => key
-           -> Ctx
+           -> State
 initialize key
     | B.length key /= 32 = error "Poly1305: key length expected 32 bytes"
-    | otherwise          = Ctx $ B.allocAndFreeze 84 $ \ctxPtr ->
+    | otherwise          = State $ B.allocAndFreeze 84 $ \ctxPtr ->
         B.withByteArray key $ \keyPtr ->
             c_poly1305_init (castPtr ctxPtr) keyPtr
 {-# NOINLINE initialize #-}
 
 -- | update a context with a bytestring
-update :: ByteArrayAccess ba => Ctx -> ba -> Ctx
-update (Ctx prevCtx) d = Ctx $ B.copyAndFreeze prevCtx $ \ctxPtr ->
+update :: ByteArrayAccess ba => State -> ba -> State
+update (State prevCtx) d = State $ B.copyAndFreeze prevCtx $ \ctxPtr ->
     B.withByteArray d $ \dataPtr ->
         c_poly1305_update (castPtr ctxPtr) dataPtr (fromIntegral $ B.length d)
 {-# NOINLINE update #-}
 
 -- | updates a context with multiples bytestring
-updates :: ByteArrayAccess ba => Ctx -> [ba] -> Ctx
-updates (Ctx prevCtx) d = Ctx $ B.copyAndFreeze prevCtx (loop d)
+updates :: ByteArrayAccess ba => State -> [ba] -> State
+updates (State prevCtx) d = State $ B.copyAndFreeze prevCtx (loop d)
   where loop []     _      = return ()
         loop (x:xs) ctxPtr = do
             B.withByteArray x $ \dataPtr -> c_poly1305_update ctxPtr dataPtr (fromIntegral $ B.length x)
@@ -77,8 +81,8 @@ updates (Ctx prevCtx) d = Ctx $ B.copyAndFreeze prevCtx (loop d)
 {-# NOINLINE updates #-}
 
 -- | finalize the context into a digest bytestring
-finalize :: Ctx -> Auth
-finalize (Ctx prevCtx) = Auth $ B.allocAndFreeze 16 $ \dst -> do
+finalize :: State -> Auth
+finalize (State prevCtx) = Auth $ B.allocAndFreeze 16 $ \dst -> do
     _ <- B.copy prevCtx (\ctxPtr -> c_poly1305_finalize dst (castPtr ctxPtr)) :: IO ScrubbedBytes
     return ()
 {-# NOINLINE finalize #-}
