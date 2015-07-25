@@ -1,5 +1,6 @@
 ## 0.6
 
+* Add ChaChaPoly1305 AE cipher
 * Add instructions in README for building on old OSX
 * Fix blocking /dev/random Andrey Sverdlichenko
 
