@@ -28,16 +28,17 @@ perModuleAllowedExtensions =
     , ("Crypto/Internal/Endian.hs", [CPP])
     , ("Crypto/Internal/WordArray.hs", [UnboxedTuples,MagicHash])
     , ("Crypto/Internal/Hex.hs", [Rank2Types, UnboxedTuples, MagicHash])
+    , ("Crypto/Internal/DeepSeq.hs", [CPP])
     , ("Crypto/Random/Entropy/Backend.hs", [ExistentialQuantification,CPP])
     , ("Crypto/Random/Entropy/Windows.hs", [CPP])
     , ("Crypto/Cipher/Blowfish/Box.hs", [MagicHash])
     , ("Crypto/Cipher/Blowfish.hs", [CPP])
     , ("Crypto/Cipher/AES.hs", [CPP])
-    , ("Crypto/PubKey/Curve25519.hs", [MagicHash])
     , ("Crypto/Cipher/Types/Block.hs", [Rank2Types, MultiParamTypeClasses])
     , ("Crypto/Cipher/Types/AEAD.hs", [Rank2Types])
     , ("Crypto/Cipher/Camellia/Primitive.hs", [MagicHash])
     , ("Crypto/Cipher/DES/Primitive.hs", [FlexibleInstances])
+    , ("Crypto/PubKey/Curve25519.hs", [MagicHash])
     , ("Crypto/Number/Compat.hs", [UnboxedTuples,MagicHash,CPP])
     ]
 
@@ -67,6 +68,10 @@ perModuleAllowedModules =
             ]
       )
     , ("Crypto/Internal/Compat.hs",
+            [ ModuleName "System.IO.Unsafe"
+            ]
+      )
+    , ("Crypto/Random/SystemDRG.hs",
             [ ModuleName "System.IO.Unsafe"
             ]
       )
