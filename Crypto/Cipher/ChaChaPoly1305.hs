@@ -82,7 +82,7 @@ initialize key (Nonce nonce)
   where
     rootState           = ChaCha.initialize 20 key nonce
     (polyKey, encState) = ChaCha.generate rootState 64
-    polyState           = Poly1305.initialize (B.take 32 polyKey :: ScrubbedBytes)
+    polyState           = throwCryptoError $ Poly1305.initialize (B.take 32 polyKey :: ScrubbedBytes)
 
 appendAAD :: ByteArrayAccess ba => ba -> State -> State
 appendAAD ba (State encState macState aadLength plainLength) =

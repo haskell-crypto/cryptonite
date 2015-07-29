@@ -29,6 +29,7 @@ import           Foreign.C.Types
 import           Data.Word
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ScrubbedBytes, Bytes)
 import qualified Crypto.Internal.ByteArray as B
+import           Crypto.Error
 
 -- | Poly1305 State
 newtype State = State ScrubbedBytes
@@ -56,10 +57,10 @@ foreign import ccall unsafe "cryptonite_poly1305.h cryptonite_poly1305_finalize"
 -- | initialize a Poly1305 context
 initialize :: ByteArrayAccess key
            => key
-           -> State
+           -> CryptoFailable State
 initialize key
-    | B.length key /= 32 = error "Poly1305: key length expected 32 bytes"
-    | otherwise          = State $ B.allocAndFreeze 84 $ \ctxPtr ->
+    | B.length key /= 32 = CryptoFailed $ CryptoError_MacKeyInvalid
+    | otherwise          = CryptoPassed $ State $ B.allocAndFreeze 84 $ \ctxPtr ->
         B.withByteArray key $ \keyPtr ->
             c_poly1305_init (castPtr ctxPtr) keyPtr
 {-# NOINLINE initialize #-}

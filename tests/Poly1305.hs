@@ -5,6 +5,7 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as B ()
 
 import Imports
+import Crypto.Error
 
 import qualified Crypto.MAC.Poly1305 as Poly1305
 import qualified Data.ByteArray as B (convert)
@@ -27,7 +28,7 @@ tests = testGroup "Poly1305"
     , testProperty "Chunking" $ \(Chunking chunkLen totalLen) ->
         let key = B.replicate 32 0
             msg = B.pack $ take totalLen $ concat (replicate 10 [1..255])
-         in Poly1305.auth key msg == Poly1305.finalize (foldr (flip Poly1305.update) (Poly1305.initialize key) (chunks chunkLen msg))
+         in Poly1305.auth key msg == Poly1305.finalize (foldr (flip Poly1305.update) (throwCryptoError $ Poly1305.initialize key) (chunks chunkLen msg))
     ]
   where
         chunks i bs
