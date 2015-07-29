@@ -5,7 +5,9 @@
 -- Stability   : experimental
 -- Portability : unknown
 --
--- Scrypt key derivation function as defined in Colin Percival's paper "Stronger Key Derivation via Sequential Memory-Hard Functions" <http://www.tarsnap.com/scrypt/scrypt.pdf>.
+-- Scrypt key derivation function as defined in Colin Percival's paper
+-- "Stronger Key Derivation via Sequential Memory-Hard Functions"
+-- <http://www.tarsnap.com/scrypt/scrypt.pdf>.
 --
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
