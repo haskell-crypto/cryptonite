@@ -21,10 +21,11 @@ serializationVectors =
 
 tests = testGroup "number"
     [ testProperty "num-bits" $ \(Int0_2901 i) ->
-        and [ (numBits (2^i-1) == i)
-            , (numBits (2^i) == i+1)
-            , (numBits (2^i + (2^i-1)) == i+1)
-            ]
+        if i == 0 then True else
+            and [ (numBits (2^i-1) == i)
+                , (numBits (2^i) == i+1)
+                , (numBits (2^i + (2^i-1)) == i+1)
+                ]
     , testProperty "num-bits2" $ \(Positive i) ->
         not (i `testBit` numBits i) && (i `testBit` (numBits i - 1))
     , testProperty "generate-param" $ \testDRG (Int0_2901 bits)  ->
