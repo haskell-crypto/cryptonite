@@ -20,12 +20,22 @@ tag = "\x1a\xe1\x0b\x59\x4f\x09\xe2\x6a\x7e\x90\x2e\xcb\xd0\x60\x06\x91"
 
 tests = testGroup "ChaChaPoly1305"
     [ testCase "V1" runEncrypt
+    , testCase "V1-decrypt" runDecrypt
     ]
   where runEncrypt =
             let ini                 = throwCryptoError $ AEAD.initialize key (throwCryptoError $ AEAD.nonce8 constant iv)
                 afterAAD            = AEAD.finalizeAAD (AEAD.appendAAD aad ini)
-                (out, afterEncrypt) = AEAD.combine plaintext afterAAD
+                (out, afterEncrypt) = AEAD.encrypt plaintext afterAAD
                 outtag              = AEAD.finalize afterEncrypt
              in propertyHoldCase [ eqTest "ciphertext" ciphertext out
+                                 , eqTest "tag" tag (B.convert outtag)
+                                 ]
+
+        runDecrypt =
+            let ini                 = throwCryptoError $ AEAD.initialize key (throwCryptoError $ AEAD.nonce8 constant iv)
+                afterAAD            = AEAD.finalizeAAD (AEAD.appendAAD aad ini)
+                (out, afterDecrypt) = AEAD.decrypt ciphertext afterAAD
+                outtag              = AEAD.finalize afterDecrypt
+             in propertyHoldCase [ eqTest "plaintext" plaintext out
                                  , eqTest "tag" tag (B.convert outtag)
                                  ]

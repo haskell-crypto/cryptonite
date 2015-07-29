@@ -17,7 +17,8 @@ module Crypto.Cipher.ChaChaPoly1305
     , initialize
     , appendAAD
     , finalizeAAD
-    , combine
+    , encrypt
+    , decrypt
     , finalize
     ) where
 
@@ -96,12 +97,20 @@ finalizeAAD (State encState macState aadLength plainLength) =
   where
     newMacState = Poly1305.update macState $ pad16 aadLength
 
-combine :: ByteArray ba => ba -> State -> (ba, State)
-combine input (State encState macState aadLength plainLength) =
+encrypt :: ByteArray ba => ba -> State -> (ba, State)
+encrypt input (State encState macState aadLength plainLength) =
     (output, State newEncState newMacState aadLength newPlainLength)
   where
     (output, newEncState) = ChaCha.combine encState input
     newMacState           = Poly1305.update macState output
+    newPlainLength        = plainLength + fromIntegral (B.length input)
+
+decrypt :: ByteArray ba => ba -> State -> (ba, State)
+decrypt input (State encState macState aadLength plainLength) =
+    (output, State newEncState newMacState aadLength newPlainLength)
+  where
+    (output, newEncState) = ChaCha.combine encState input
+    newMacState           = Poly1305.update macState input
     newPlainLength        = plainLength + fromIntegral (B.length input)
 
 finalize :: State -> Poly1305.Auth
