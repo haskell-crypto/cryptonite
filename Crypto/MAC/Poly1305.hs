@@ -29,6 +29,7 @@ import           Foreign.C.Types
 import           Data.Word
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ScrubbedBytes, Bytes)
 import qualified Crypto.Internal.ByteArray as B
+import           Crypto.Internal.DeepSeq
 import           Crypto.Error
 
 -- | Poly1305 State
@@ -40,7 +41,7 @@ type Ctx = State
 
 -- | Poly1305 Auth
 newtype Auth = Auth Bytes
-    deriving (ByteArrayAccess)
+    deriving (ByteArrayAccess,NFData)
 
 instance Eq Auth where
     (Auth a1) == (Auth a2) = B.constEq a1 a2
