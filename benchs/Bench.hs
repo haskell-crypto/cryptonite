@@ -11,11 +11,12 @@ import "cryptonite" Crypto.Cipher.Camellia
 import "cryptonite" Crypto.Cipher.AES
 import "cryptonite" Crypto.Cipher.Blowfish
 import "cryptonite" Crypto.Cipher.Types
+import qualified "cryptonite" Crypto.Cipher.ChaChaPoly1305 as CP
 
 import "cryptonite" Crypto.Hash (SHA512(..))
 import qualified "cryptonite" Crypto.KDF.PBKDF2 as PBKDF2
 
-import Crypto.Internal.ByteArray (ByteArray)
+import Data.ByteArray (ByteArray, Bytes)
 
 import qualified Data.ByteString as B
 
@@ -25,21 +26,25 @@ benchHash =
 
 benchPBKDF2 =
     [ bgroup "64"
-        [ bench "cryptonite-PBKDF2-100-64" $ nf (PBKDF2.generate (PBKDF2.prfHMAC SHA512) . params 64) 100
-        , bench "cryptonite-PBKDF2-1000-64" $ nf (PBKDF2.generate (PBKDF2.prfHMAC SHA512) . params 64) 1000
-        , bench "cryptonite-PBKDF2-10000-64" $ nf (PBKDF2.generate (PBKDF2.prfHMAC SHA512) . params 64) 10000
+        [ bench "cryptonite-PBKDF2-100-64" $ nf (pbkdf2 64) 100
+        , bench "cryptonite-PBKDF2-1000-64" $ nf (pbkdf2 64) 1000
+        , bench "cryptonite-PBKDF2-10000-64" $ nf (pbkdf2 64) 10000
         ]
     , bgroup "128"
-        [ bench "cryptonite-PBKDF2-100-128" $ nf (PBKDF2.generate (PBKDF2.prfHMAC SHA512) . params 128) 100
-        , bench "cryptonite-PBKDF2-1000-128" $ nf (PBKDF2.generate (PBKDF2.prfHMAC SHA512) . params 128) 1000
-        , bench "cryptonite-PBKDF2-10000-128" $ nf (PBKDF2.generate (PBKDF2.prfHMAC SHA512) . params 128) 10000
+        [ bench "cryptonite-PBKDF2-100-128" $ nf (pbkdf2 128) 100
+        , bench "cryptonite-PBKDF2-1000-128" $ nf (pbkdf2 128) 1000
+        , bench "cryptonite-PBKDF2-10000-128" $ nf (pbkdf2 128) 10000
         ]
     ]
   where
+        pbkdf2 :: Int -> Int -> B.ByteString
+        pbkdf2 n iter = PBKDF2.generate (PBKDF2.prfHMAC SHA512) (params n iter) mypass mysalt
+
+        mypass, mysalt :: B.ByteString
         mypass = "password"
         mysalt = "salt"
 
-        params n iter = PBKDF2.Parameters mypass mysalt iter n
+        params n iter = PBKDF2.Parameters iter n
 
 
 benchBlockCipher =
@@ -80,8 +85,27 @@ benchBlockCipher =
         iv16 :: BlockCipher c => IV c
         iv16 = maybe (error "iv size 16") id $ makeIV key16
 
+benchAE =
+    [ bench "ChaChaPoly1305" $ nf (run key32) (input64, input1024)
+    ]
+  where run k (ini, plain) =
+            let iniState            = throwCryptoError $ CP.initialize k (throwCryptoError $ CP.nonce12 nonce12)
+                afterAAD            = CP.finalizeAAD (CP.appendAAD ini iniState)
+                (out, afterEncrypt) = CP.encrypt plain afterAAD
+                outtag              = CP.finalize afterEncrypt
+             in (out, outtag)
+
+        input64 = B.replicate 64 0
+        input1024 = B.replicate 1024 0
+
+        nonce12 :: B.ByteString
+        nonce12 = B.replicate 12 0
+
+        key32 = B.replicate 32 0
+
 main = defaultMain
     [ bgroup "hash" benchHash
     , bgroup "block-cipher" benchBlockCipher
+    , bgroup "AE" benchAE
     , bgroup "pbkdf2" benchPBKDF2
     ]
