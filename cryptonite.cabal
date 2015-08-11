@@ -96,6 +96,7 @@ Library
                      Crypto.Number.Serialize.Internal
                      Crypto.KDF.PBKDF2
                      Crypto.KDF.Scrypt
+                     Crypto.KDF.BCrypt
                      Crypto.Hash
                      Crypto.Hash.IO
                      Crypto.Hash.Algorithms
