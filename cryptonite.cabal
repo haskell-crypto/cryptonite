@@ -243,6 +243,7 @@ Test-Suite test-cryptonite
   Main-is:           Tests.hs
   Other-modules:     BlockCipher
                      ChaCha
+                     BCrypt
                      Hash
                      Imports
                      KAT_AES.KATCBC

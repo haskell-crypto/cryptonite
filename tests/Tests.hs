@@ -4,6 +4,7 @@ module Main where
 import Imports
 
 import qualified Number
+import qualified BCrypt
 import qualified Hash
 import qualified Poly1305
 import qualified Salsa
@@ -40,6 +41,7 @@ tests = testGroup "cryptonite"
     , testGroup "KDF"
         [ KAT_PBKDF2.tests
         , KAT_Scrypt.tests
+        , BCrypt.tests
         ]
     , testGroup "block-cipher"
         [ KAT_AES.tests
