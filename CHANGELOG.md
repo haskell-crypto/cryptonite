@@ -1,3 +1,7 @@
+## 0.7
+
+* Fix ChaChaPoly1305 Decryption
+
 ## 0.6
 
 * Add ChaChaPoly1305 AE cipher
