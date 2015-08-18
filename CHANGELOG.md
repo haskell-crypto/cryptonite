@@ -1,5 +1,6 @@
 ## 0.7
 
+* Add PKCS5 / PKCS7 padding and unpadding methods
 * Fix ChaChaPoly1305 Decryption
 
 ## 0.6
