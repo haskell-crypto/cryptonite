@@ -24,10 +24,12 @@ import qualified KAT_RC4
 import qualified KAT_TripleDES
 -- misc --------------------------------
 import qualified KAT_AFIS
+import qualified Padding
 
 tests = testGroup "cryptonite"
     [ Number.tests
     , Hash.tests
+    , Padding.tests
     , testGroup "MAC"
         [ Poly1305.tests
         , KAT_HMAC.tests

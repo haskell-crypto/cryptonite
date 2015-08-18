@@ -83,6 +83,7 @@ Library
                      Crypto.Cipher.TripleDES
                      Crypto.Cipher.Types
                      Crypto.Data.AFIS
+                     Crypto.Data.Padding
                      Crypto.Error
                      Crypto.MAC.Poly1305
                      Crypto.MAC.HMAC
