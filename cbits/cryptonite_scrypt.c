@@ -46,7 +46,7 @@ static void blockmix_salsa8(uint32_t *in, uint32_t *out, uint32_t *X, const uint
 
 static inline uint64_t integerify(uint32_t *B, const uint32_t r)
 {
-	return le64_to_cpu(*((uint64_t *) (B + (2*r-1) * 16)));
+	return B[(2*r-1) * 16] | (uint64_t)B[(2*r-1) * 16 + 1] << 32;
 }
 
 static inline uint32_t load32(const uint8_t *p)
