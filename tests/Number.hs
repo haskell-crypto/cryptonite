@@ -30,7 +30,7 @@ tests = testGroup "number"
     , testProperty "generate-param" $ \testDRG (Int1_2901 bits)  ->
         let r = withTestDRG testDRG $ generateParams bits (Just SetHighest) False
          in r >= 0 && numBits r == bits && testBit r (bits-1)
-    , testProperty "generate-param2" $ \testDRG (Int0_2901 m1bits) ->
+    , testProperty "generate-param2" $ \testDRG (Int1_2901 m1bits) ->
         let bits = m1bits + 1 -- make sure minimum is 2
             r = withTestDRG testDRG $ generateParams bits (Just SetTwoHighest) False
          in r >= 0 && numBits r == bits && testBit r (bits-1) && testBit r (bits-2)
