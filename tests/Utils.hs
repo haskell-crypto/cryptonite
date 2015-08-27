@@ -46,8 +46,14 @@ instance Arbitrary ArbitraryBS0_2901 where
 newtype Int0_2901 = Int0_2901 Int
     deriving (Show,Eq,Ord)
 
+newtype Int1_2901 = Int1_2901 Int
+    deriving (Show,Eq,Ord)
+
 instance Arbitrary Int0_2901 where
     arbitrary = Int0_2901 `fmap` choose (0,2901)
+
+instance Arbitrary Int1_2901 where
+    arbitrary = Int1_2901 `fmap` choose (1,2901)
 
 -- | a integer wrapper with a better range property
 newtype QAInteger = QAInteger { getQAInteger :: Integer }
