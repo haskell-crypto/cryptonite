@@ -168,7 +168,7 @@ Library
                      Crypto.Internal.WordArray
   Build-depends:     base >= 4.3 && < 5
                    , bytestring
-                   , memory >= 0.2
+                   , memory >= 0.8
                    , ghc-prim
   ghc-options:       -Wall -fwarn-tabs -optc-O3
   default-language:  Haskell2010

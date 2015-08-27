@@ -2,6 +2,7 @@
 
 * Add PKCS5 / PKCS7 padding and unpadding methods
 * Fix ChaChaPoly1305 Decryption
+* Add support for BCrypt (Luke Taylor)
 
 ## 0.6
 
