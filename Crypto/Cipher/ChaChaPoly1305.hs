@@ -117,5 +117,5 @@ finalize :: State -> Poly1305.Auth
 finalize (State _ macState aadLength plainLength) =
     Poly1305.finalize $ Poly1305.updates macState
         [ pad16 plainLength
-        , either (error "finalize: internal error") id $ P.fill 16 (P.putStorable (LE aadLength) >> P.putStorable (LE plainLength))
+        , either (error "finalize: internal error") id $ P.fill 16 (P.putStorable (toLE aadLength) >> P.putStorable (toLE plainLength))
         ]
