@@ -142,13 +142,13 @@ doPointValidTest (i, vector) = testCase (show i) (valid vector @=? ECC.isPointVa
 eccTests = testGroup "ECC"
     [ testGroup "valid-point" $ map doPointValidTest (zip [katZero..] vectorsPoint)
     , testGroup "property" $
-        [ testProperty "point-add" $ \curve (QAInteger r1) (QAInteger r2) ->
-            let curveN   = ECC.ecc_n . ECC.common_curve $ curve
-                curveGen = ECC.ecc_g . ECC.common_curve $ curve
-                p1       = ECC.pointMul curve r1 curveGen
-                p2       = ECC.pointMul curve r2 curveGen
-                pR       = ECC.pointMul curve ((r1 + r2) `mod` curveN) curveGen
-             in pR `propertyEq` ECC.pointAdd curve p1 p2
+        [ testProperty "point-add" $ \aCurve (QAInteger r1) (QAInteger r2) ->
+            let curveN   = ECC.ecc_n . ECC.common_curve $ aCurve
+                curveGen = ECC.ecc_g . ECC.common_curve $ aCurve
+                p1       = ECC.pointMul aCurve r1 curveGen
+                p2       = ECC.pointMul aCurve r2 curveGen
+                pR       = ECC.pointMul aCurve ((r1 + r2) `mod` curveN) curveGen
+             in pR `propertyEq` ECC.pointAdd aCurve p1 p2
         ]
     ]
 
