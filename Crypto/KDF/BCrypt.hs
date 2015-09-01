@@ -1,24 +1,45 @@
 
 -- | Password encoding and validation using bcrypt.
 --
+-- Example usasge:
+--
+-- >>> import Crypto.KDF.BCrypt (hashPassword, validatePassword)
+-- >>> import qualified Data.ByteString.Char8 as B
+-- >>>
+-- >>> let bcryptHash = B.pack "$2a$10$MJJifxfaqQmbx1Mhsq3oq.YmMmfNhkyW4s/MS3K5rIMVfB7w0Q/OW"
+-- >>> let password = B.pack "password"
+-- >>> validatePassword password bcryptHash
+-- >>> True
+-- >>> let otherPassword = B.pack "otherpassword"
+-- >>> otherHash <- hashPassword 12 otherPasssword :: IO B.ByteString
+-- >>> validatePassword otherPassword otherHash
+-- >>> True
+--
 -- See <https://www.usenix.org/conference/1999-usenix-annual-technical-conference/future-adaptable-password-scheme>
 -- for details of the original algorithm.
 --
--- Hashes are strings of the form @$2a$10$MJJifxfaqQmbx1Mhsq3oq.YmMmfNhkyW4s/MS3K5rIMVfB7w0Q/OW@ which
--- encode a version number, an integer cost parameter and the concatenated salt and hash bytes (each
--- separately Base64 encoded. Incrementing the cost parameter approximately doubles the time taken
--- to calculate the hash.
+-- The functions @hashPassword@ and @validatePassword@ should be all that
+-- most users need.
 --
--- The different version numbers have evolved because of bugs in the standard C implementations.
--- The most up to date version is @2b@ and this implementation the @2b@ version prefix, but will also
--- attempt to validate against hashes with versions @2a@ and @2y@. Version @2@ or @2x@ will be rejected.
--- No attempt is made to differentiate between the different versions when validating a password, but
--- in practice this shouldn't cause any problems if passwords are UTF-8 encoded (which they should be).
+-- Hashes are strings of the form
+-- @$2a$10$MJJifxfaqQmbx1Mhsq3oq.YmMmfNhkyW4s/MS3K5rIMVfB7w0Q/OW@ which
+-- encode a version number, an integer cost parameter and the concatenated
+-- salt and hash bytes (each separately Base64 encoded. Incrementing the
+-- cost parameter approximately doubles the time taken to calculate the hash.
 --
--- The cost parameter can be between 4 and 31 inclusive, but anything less than 10 is probably not strong
--- enough. High values may be prohibitively slow depending on your hardware. Choose the highest value you
--- can without having an unacceptable impact on your users. The cost parameter can also varied depending on
--- the account, since it is unique to an individual hash.
+-- The different version numbers have evolved because of bugs in the standard
+-- C implementations. The most up to date version is @2b@ and this
+-- implementation the @2b@ version prefix, but will also attempt to validate
+-- against hashes with versions @2a@ and @2y@. Version @2@ or @2x@ will be
+-- rejected. No attempt is made to differentiate between the different versions
+-- when validating a password, but in practice this shouldn't cause any problems
+-- if passwords are UTF-8 encoded (which they should be).
+--
+-- The cost parameter can be between 4 and 31 inclusive, but anything less than
+-- 10 is probably not strong enough. High values may be prohibitively slow
+-- depending on your hardware. Choose the highest value you can without having
+-- an unacceptable impact on your users. The cost parameter can also be varied
+-- depending on the account, since it is unique to an individual hash.
 
 module Crypto.KDF.BCrypt
     ( hashPassword
@@ -39,6 +60,8 @@ import           Data.Char
 data BCryptHash = BCH Char Int Bytes Bytes
 
 -- | Create a bcrypt hash for a password with a provided cost value.
+-- Typically used to create a hash when a new user account is registered
+-- or when a user changes their password.
 --
 -- Each increment of the cost approximately doubles the time taken.
 -- The 16 bytes of random salt will be generated internally.
@@ -80,7 +103,7 @@ bcrypt cost salt password = B.concat [header, B.snoc costBytes dollar, b64 salt,
     b64 :: (ByteArray ba) => ba -> ba
     b64 = convertToBase Base64OpenBSD
 
--- | Check a password against a bcrypt hash
+-- | Check a password against a stored bcrypt hash when authenticating a user.
 --
 -- Returns @False@ if the password doesn't match the hash, or if the hash is
 -- invalid or an unsupported version.
