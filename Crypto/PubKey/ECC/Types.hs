@@ -28,6 +28,7 @@ module Crypto.PubKey.ECC.Types
 
 import           Data.Data
 import           Crypto.Internal.Imports
+import           Crypto.Number.Basic (numBits)
 
 -- | Define either a binary curve or a prime curve.
 data Curve = CurveF2m CurveBinary -- ^ 𝔽(2^m)
