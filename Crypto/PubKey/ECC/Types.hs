@@ -17,6 +17,7 @@ module Crypto.PubKey.ECC.Types
     , CurveBinary(..)
     , CurvePrime(..)
     , common_curve
+    , curveSizeBits
     , ecc_fx
     , ecc_p
     , CurveCommon(..)
@@ -159,6 +160,10 @@ curvesOIDs =
     , (SEC_t571r1, [1,3,132,0,39])
     ]
 -}
+
+-- | get the size of the curve in bits
+curveSizeBits :: Curve -> Int
+curveSizeBits = numBits . ecc_n . common_curve
 
 -- | Get the curve definition associated with a recommended known curve name.
 getCurveByName :: CurveName -> Curve
