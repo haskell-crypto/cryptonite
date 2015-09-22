@@ -2,8 +2,10 @@
 --
 -- /WARNING:/ These functions are vulnerable to timing attacks.
 module Crypto.PubKey.ECC.Prim
-    ( pointAdd
+    ( scalarGenerate
+    , pointAdd
     , pointDouble
+    , pointBaseMul
     , pointMul
     , isPointAtInfinity
     , isPointValid
@@ -12,7 +14,14 @@ module Crypto.PubKey.ECC.Prim
 import Data.Maybe
 import Crypto.Number.ModArithmetic
 import Crypto.Number.F2m
+import Crypto.Number.Generate (generateBetween)
 import Crypto.PubKey.ECC.Types
+import Crypto.Random
+
+scalarGenerate :: MonadRandom randomly => Curve -> randomly PrivateNumber
+scalarGenerate curve = generateBetween 1 (n - 1)
+  where
+        n = ecc_n $ common_curve curve
 
 --TODO: Extract helper function for `fromMaybe PointO...`
 
@@ -73,6 +82,12 @@ pointDouble (CurveF2m (CurveBinary fx cc)) (Point xp yp)
             yr = mulF2m fx xp xp `addF2m` mulF2m fx xr (s `addF2m` 1)
         return $ Point xr yr
   where a = ecc_a cc
+
+-- | Elliptic curve point multiplication using the base
+--
+-- /WARNING:/ Vulnerable to timing attacks.
+pointBaseMul :: Curve -> Integer -> Point
+pointBaseMul c n = pointMul c n (ecc_g $ common_curve c)
 
 -- | Elliptic curve point multiplication (double and add algorithm).
 --
