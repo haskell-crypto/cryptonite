@@ -15,6 +15,7 @@ module Crypto.PubKey.ECC.P256
     ( Scalar
     , Point
     -- * point arithmetic
+    , pointBase
     , pointAdd
     , pointMul
     , pointsMulVarTime
@@ -25,6 +26,7 @@ module Crypto.PubKey.ECC.P256
     , pointToBinary
     , pointFromBinary
     -- * scalar arithmetic
+    , scalarGenerate
     , scalarZero
     , scalarIsZero
     , scalarAdd
@@ -48,6 +50,7 @@ import           Crypto.Internal.ByteArray
 import qualified Crypto.Internal.ByteArray as B
 import           Data.Memory.PtrMethods (memSet)
 import           Crypto.Error
+import           Crypto.Random
 import           Crypto.Number.Serialize.Internal (os2ip, i2ospOf)
 import qualified Crypto.Number.Serialize as S (os2ip, i2ospOf)
 
@@ -75,6 +78,11 @@ data P256X
 -- Point methods
 ------------------------------------------------------------------------
 
+pointBase :: Point
+pointBase =
+    case scalarFromInteger 1 of
+        CryptoPassed s  -> toPoint s
+        CryptoFailed _ -> error "pointBase: assumption failed"
 
 -- | Lift to curve a scalar
 --
@@ -162,6 +170,15 @@ pointFromBinary ba
 ------------------------------------------------------------------------
 -- Scalar methods
 ------------------------------------------------------------------------
+
+-- | Generate a randomly generated new scalar
+scalarGenerate :: MonadRandom randomly => randomly Scalar
+scalarGenerate = unwrap . scalarFromBinary . witness <$> getRandomBytes 32
+  where
+    unwrap (CryptoFailed _) = error "scalarGenerate: assumption failed"
+    unwrap (CryptoPassed s) = s
+    witness :: ScrubbedBytes -> ScrubbedBytes
+    witness = id
 
 -- | The scalar representing 0
 scalarZero :: Scalar
