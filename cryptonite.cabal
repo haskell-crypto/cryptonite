@@ -199,6 +199,7 @@ Library
                    , cbits/cryptonite_whirlpool.c
                    , cbits/cryptonite_scrypt.c
                    , cbits/cryptonite_sysrand.c
+                   , cbits/cryptonite_util.c
   include-dirs:  cbits cbits/ed25519
 
   -- FIXME armel or mispel is also little endian.
