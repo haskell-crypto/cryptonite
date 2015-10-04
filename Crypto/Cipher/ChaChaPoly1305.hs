@@ -1,3 +1,5 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 -- |
 -- Module      : Crypto.Cipher.ChaChaPoly1305
 -- License     : BSD-style
@@ -14,6 +16,7 @@ module Crypto.Cipher.ChaChaPoly1305
     , Nonce
     , nonce12
     , nonce8
+    , incrementNonce
     , initialize
     , appendAAD
     , finalizeAAD
@@ -30,6 +33,8 @@ import qualified Crypto.Cipher.ChaCha as ChaCha
 import qualified Crypto.MAC.Poly1305  as Poly1305
 import           Data.Memory.Endian
 import qualified Data.ByteArray.Pack as P
+import           Foreign.Ptr
+import           Foreign.C.Types
 
 data State = State !ChaCha.State
                    !Poly1305.State
@@ -37,6 +42,7 @@ data State = State !ChaCha.State
                    !Word64 -- ciphertext length
 
 newtype Nonce = Nonce Bytes
+    deriving (ByteArrayAccess)
 
 -- Based on the following pseudo code:
 --
@@ -73,6 +79,12 @@ nonce8 constant iv
     | B.length constant /= 4 = CryptoFailed $ CryptoError_IvSizeInvalid
     | B.length iv       /= 8 = CryptoFailed $ CryptoError_IvSizeInvalid
     | otherwise              = CryptoPassed $ Nonce $ B.concat [constant, iv]
+
+-- | Increment a nonce
+incrementNonce :: Nonce -> Nonce
+incrementNonce (Nonce n) =
+    Nonce $ B.copyAndFreeze n $ \out -> do
+      cryptonite_util_increment_array out $ fromIntegral $ B.length n
 
 initialize :: ByteArrayAccess key
            => key -> Nonce -> CryptoFailable State
@@ -119,3 +131,6 @@ finalize (State _ macState aadLength plainLength) =
         [ pad16 plainLength
         , either (error "finalize: internal error") id $ P.fill 16 (P.putStorable (toLE aadLength) >> P.putStorable (toLE plainLength))
         ]
+
+foreign import ccall "cryptonite_util_increment_array"
+    cryptonite_util_increment_array :: Ptr Word8 -> CSize -> IO ()
