@@ -1,21 +1,42 @@
 {-# LANGUAGE OverloadedStrings #-}
 module KAT_Curve25519 ( tests ) where
 
+import           Crypto.PubKey.Curve25519 (SecretKey, PublicKey, DhSecret)
 import qualified Crypto.PubKey.Curve25519 as Curve25519
 import           Data.ByteArray as B
 import           Imports
 
-alicePrivate = either error id $ Curve25519.secretKey ("\x77\x07\x6d\x0a\x73\x18\xa5\x7d\x3c\x16\xc1\x72\x51\xb2\x66\x45\xdf\x4c\x2f\x87\xeb\xc0\x99\x2a\xb1\x77\xfb\xa5\x1d\xb9\x2c\x2a" :: ByteString)
-alicePublic  = either error id $ Curve25519.publicKey ("\x85\x20\xf0\x09\x89\x30\xa7\x54\x74\x8b\x7d\xdc\xb4\x3e\xf7\x5a\x0d\xbf\x3a\x0d\x26\x38\x1a\xf4\xeb\xa4\xa9\x8e\xaa\x9b\x4e\x6a" :: ByteString)
-bobPrivate   = either error id $ Curve25519.secretKey ("\x5d\xab\x08\x7e\x62\x4a\x8a\x4b\x79\xe1\x7f\x8b\x83\x80\x0e\xe6\x6f\x3b\xb1\x29\x26\x18\xb6\xfd\x1c\x2f\x8b\x27\xff\x88\xe0\xeb" :: ByteString)
-bobPublic    = either error id $ Curve25519.publicKey ("\xde\x9e\xdb\x7d\x7b\x7d\xc1\xb4\xd3\x5b\x61\xc2\xec\xe4\x35\x37\x3f\x83\x43\xc8\x5b\x78\x67\x4d\xad\xfc\x7e\x14\x6f\x88\x2b\x4f" :: ByteString)
-aliceMultBob = "\x4a\x5d\x9d\x5b\xa4\xce\x2d\xe1\x72\x8e\x3b\xf4\x80\x35\x0f\x25\xe0\x7e\x21\xc9\x47\xd1\x9e\x33\x76\xf0\x9b\x3c\x1e\x16\x17\x42" :: ByteString
+goodSecret :: ByteString
+goodSecret = "\x98\x6e\x4d\x65\x8f\xc7\x93\x7c\x11\x15\xa5\x16\xbd\xee\x26\xf3\x1a\x7c\xc8\x80\x6c\x54\xe5\x40\xb9\xf8\xfd\x46\x37\x34\x89\x60"
+
+badSecret :: ByteString
+badSecret = "\x77\x07\x6d\x0a\x73\x18\xa5\x7d\x3c\x16\xc1\x72\x51\xb2\x66\x45\xdf\x4c\x2f\x87\xeb\xc0\x99\x2a\xb1\x77\xfb\xa5\x1d\xb9\x2c\x2a"
+
+dhTest :: Assertion
+dhTest = do
+    (ask, apk) <- Curve25519.generateKeypair
+    (bsk, bpk) <- Curve25519.generateKeypair
+    print $ (B.convert ask :: ByteString)
+    assertBool "computed dh secrets do not match" $
+      Curve25519.dh apk bsk == Curve25519.dh bpk ask
+
+goodSecretTest :: Assertion
+goodSecretTest = do
+    case Curve25519.secretKey goodSecret of
+      (Left _)  -> assertFailure "valid secret rejected"
+      (Right _) -> return ()
+
+badSecretTest :: Assertion
+badSecretTest = do
+    case Curve25519.secretKey badSecret of
+      (Left _)  -> return ()
+      (Right _) -> assertFailure "invalid secret accepted"
 
 katTests :: [TestTree]
-katTests =
-    [ testCase "0" (aliceMultBob @=? B.convert (Curve25519.dh alicePublic bobPrivate))
-    , testCase "1" (aliceMultBob @=? B.convert (Curve25519.dh bobPublic alicePrivate))
-    ]
+katTests = [ testCase "dh secret computation" dhTest
+           , testCase "valid secret acceptance" goodSecretTest
+           , testCase "invalid secret rejection" badSecretTest
+           ]
 
 tests = testGroup "Curve25519"
     [ testGroup "KATs" katTests

@@ -17,19 +17,23 @@ module Crypto.PubKey.Curve25519
     , dhSecret
     , publicKey
     , secretKey
-    -- * methods
+    , generateKeypair
+    -- * Methods
     , dh
     , toPublic
     ) where
 
+import           Data.Bits
 import           Data.Word
 import           Foreign.Ptr
+import           Foreign.Storable
 import           GHC.Ptr
 
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ScrubbedBytes, Bytes, withByteArray)
 import qualified Crypto.Internal.ByteArray as B
+import           Crypto.Random.Entropy
 
 -- | A Curve25519 Secret key
 newtype SecretKey = SecretKey ScrubbedBytes
@@ -53,7 +57,7 @@ publicKey bs
 -- | Try to build a secret key from a bytearray
 secretKey :: ByteArrayAccess bs => bs -> Either String SecretKey
 secretKey bs
-    | B.length bs == 32 = unsafeDoIO $ do
+    | B.length bs == 32 = unsafeDoIO $
         withByteArray bs $ \inp -> do
             valid <- isValidPtr inp
             if valid
@@ -63,21 +67,41 @@ secretKey bs
   where
         --  e[0] &= 0xf8;
         --  e[31] &= 0x7f;
-        --  e[31] |= 40;
+        --  e[31] |= 0x40;
         isValidPtr :: Ptr Word8 -> IO Bool
-        isValidPtr _ = do
-            --b0  <- peekElemOff inp 0
-            --b31 <- peekElemOff inp 31
-            return True
-{-
-            return $ and [ testBit b0  0 == False
-                         , testBit b0  1 == False
-                         , testBit b0  2 == False
-                         , testBit b31 7 == False
-                         , testBit b31 6 == True
+        isValidPtr inp = do
+            b0  <- peekElemOff inp 0
+            b31 <- peekElemOff inp 31
+
+            return $ and [ not (testBit b0  0)
+                         , not (testBit b0  1)
+                         , not (testBit b0  2)
+                         , not (testBit b31 7)
+                         , testBit b31 6
                          ]
--}
+
 {-# NOINLINE secretKey #-}
+
+-- | Generate a keypair
+generateKeypair :: IO (SecretKey, PublicKey)
+generateKeypair = do
+    r <- getEntropy 32
+    unsafeDoIO $
+      return $ withByteArray r $ \inp -> do
+        -- "A user can, for example, generate 32 uniform random bytes,
+        -- clear bits 0,1,2 of the first byte, clear bit 7 of the last
+        -- byte, and set bit 6 of the last byte."
+        -- From: Public Key Cryptography - PKC 2006: 9th International
+        -- Conference on Theory and Practice of Public-Key Cryptography,
+        -- page 211
+        b0  <- (.&.) 0xf8 <$> peekElemOff inp 0 :: IO Word8
+        b31 <- (.&. 0x7f) . (.|. 0x40) <$> peekElemOff inp 31
+        pokeElemOff inp 0  b0
+        pokeElemOff inp 31 b31
+    let sk = SecretKey r
+    return (sk, toPublic sk)
+
+{-# NOINLINE generateKeypair #-}
 
 -- | Create a DhSecret from a bytearray object
 dhSecret :: ByteArrayAccess b => b -> Either String DhSecret
