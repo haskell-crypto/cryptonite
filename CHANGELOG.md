@@ -1,3 +1,8 @@
+## 0.8
+
+* Add support for ChaChaPoly1305 Nonce Increment (John Galt)
+* Move repository to the haskell-crypto organisation
+
 ## 0.7
 
 * Add PKCS5 / PKCS7 padding and unpadding methods
