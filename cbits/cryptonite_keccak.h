@@ -26,7 +26,7 @@
 
 #include <stdint.h>
 
-struct kekkak_ctx
+struct keccak_ctx
 {
 	uint32_t hashlen; /* in bytes */
 	uint32_t bufindex;
@@ -36,10 +36,10 @@ struct kekkak_ctx
 	uint8_t  buf[144]; /* minimum SHA3-224, otherwise buffer need increases */
 };
 
-#define SHA3_CTX_SIZE		sizeof(struct kekkak_ctx)
+#define SHA3_CTX_SIZE		sizeof(struct keccak_ctx)
 
-void cryptonite_kekkak_init(struct kekkak_ctx *ctx, uint32_t hashlen);
-void cryptonite_kekkak_update(struct kekkak_ctx *ctx, uint8_t *data, uint32_t len);
-void cryptonite_kekkak_finalize(struct kekkak_ctx *ctx, uint8_t *out);
+void cryptonite_keccak_init(struct keccak_ctx *ctx, uint32_t hashlen);
+void cryptonite_keccak_update(struct keccak_ctx *ctx, uint8_t *data, uint32_t len);
+void cryptonite_keccak_finalize(struct keccak_ctx *ctx, uint8_t *out);
 
 #endif

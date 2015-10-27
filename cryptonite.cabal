@@ -6,7 +6,7 @@ Description:
     .
     * Symmetric ciphers: AES, DES, 3DES, Blowfish, Camellia, RC4, Salsa, ChaCha.
     .
-    * Hash: SHA1, SHA2, SHA3, MD2, MD4, MD5, Kekkak, Skein, Ripemd, Tiger, Whirlpool
+    * Hash: SHA1, SHA2, SHA3, MD2, MD4, MD5, Keccak, Skein, Ripemd, Tiger, Whirlpool
     .
     * MAC: HMAC, Poly1305
     .
@@ -143,7 +143,7 @@ Library
                      Crypto.Hash.SHA512
                      Crypto.Hash.SHA512t
                      Crypto.Hash.SHA3
-                     Crypto.Hash.Kekkak
+                     Crypto.Hash.Keccak
                      Crypto.Hash.MD2
                      Crypto.Hash.MD4
                      Crypto.Hash.MD5
@@ -188,7 +188,7 @@ Library
                    , cbits/cryptonite_sha256.c
                    , cbits/cryptonite_sha512.c
                    , cbits/cryptonite_sha3.c
-                   , cbits/cryptonite_kekkak.c
+                   , cbits/cryptonite_keccak.c
                    , cbits/cryptonite_md2.c
                    , cbits/cryptonite_md4.c
                    , cbits/cryptonite_md5.c

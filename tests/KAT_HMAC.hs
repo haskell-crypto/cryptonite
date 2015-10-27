@@ -3,7 +3,7 @@ module KAT_HMAC (tests) where
 
 import qualified Crypto.MAC.HMAC as HMAC
 import Crypto.Hash (MD5(..), SHA1(..), SHA256(..)
-                   , Kekkak_224(..), Kekkak_256(..), Kekkak_384(..), Kekkak_512(..)
+                   , Keccak_224(..), Keccak_256(..), Keccak_384(..), Keccak_512(..)
                    , SHA3_224(..), SHA3_256(..), SHA3_384(..), SHA3_512(..)
                    , HashAlgorithm, digestFromByteString)
 import qualified Data.ByteString as B
@@ -43,27 +43,27 @@ sha256MACVectors =
     , MACVector "key"   v1      $ digest "\xf7\xbc\x83\xf4\x30\x53\x84\x24\xb1\x32\x98\xe6\xaa\x6f\xb1\x43\xef\x4d\x59\xa1\x49\x46\x17\x59\x97\x47\x9d\xbc\x2d\x1a\x3c\xd8"
     ]
 
-kekkak_key1 = "\x4a\x65\x66\x65"
-kekkak_data1 = "\x77\x68\x61\x74\x20\x64\x6f\x20\x79\x61\x20\x77\x61\x6e\x74\x20\x66\x6f\x72\x20\x6e\x6f\x74\x68\x69\x6e\x67\x3f"
+keccak_key1 = "\x4a\x65\x66\x65"
+keccak_data1 = "\x77\x68\x61\x74\x20\x64\x6f\x20\x79\x61\x20\x77\x61\x6e\x74\x20\x66\x6f\x72\x20\x6e\x6f\x74\x68\x69\x6e\x67\x3f"
 
-kekkak_224_MAC_Vectors :: [MACVector Kekkak_224]
-kekkak_224_MAC_Vectors =
-    [ MACVector kekkak_key1 kekkak_data1 $ digest "\xe8\x24\xfe\xc9\x6c\x07\x4f\x22\xf9\x92\x35\xbb\x94\x2d\xa1\x98\x26\x64\xab\x69\x2c\xa8\x50\x10\x53\xcb\xd4\x14"
+keccak_224_MAC_Vectors :: [MACVector Keccak_224]
+keccak_224_MAC_Vectors =
+    [ MACVector keccak_key1 keccak_data1 $ digest "\xe8\x24\xfe\xc9\x6c\x07\x4f\x22\xf9\x92\x35\xbb\x94\x2d\xa1\x98\x26\x64\xab\x69\x2c\xa8\x50\x10\x53\xcb\xd4\x14"
     ]
 
-kekkak_256_MAC_Vectors :: [MACVector Kekkak_256]
-kekkak_256_MAC_Vectors =
-    [  MACVector kekkak_key1 kekkak_data1 $ digest "\xaa\x9a\xed\x44\x8c\x7a\xbc\x8b\x5e\x32\x6f\xfa\x6a\x01\xcd\xed\xf7\xb4\xb8\x31\x88\x14\x68\xc0\x44\xba\x8d\xd4\x56\x63\x69\xa1"
+keccak_256_MAC_Vectors :: [MACVector Keccak_256]
+keccak_256_MAC_Vectors =
+    [  MACVector keccak_key1 keccak_data1 $ digest "\xaa\x9a\xed\x44\x8c\x7a\xbc\x8b\x5e\x32\x6f\xfa\x6a\x01\xcd\xed\xf7\xb4\xb8\x31\x88\x14\x68\xc0\x44\xba\x8d\xd4\x56\x63\x69\xa1"
     ]
 
-kekkak_384_MAC_Vectors :: [MACVector Kekkak_384]
-kekkak_384_MAC_Vectors =
-    [ MACVector kekkak_key1 kekkak_data1 $ digest "\x5a\xf5\xc9\xa7\x7a\x23\xa6\xa9\x3d\x80\x64\x9e\x56\x2a\xb7\x7f\x4f\x35\x52\xe3\xc5\xca\xff\xd9\x3b\xdf\x8b\x3c\xfc\x69\x20\xe3\x02\x3f\xc2\x67\x75\xd9\xdf\x1f\x3c\x94\x61\x31\x46\xad\x2c\x9d"
+keccak_384_MAC_Vectors :: [MACVector Keccak_384]
+keccak_384_MAC_Vectors =
+    [ MACVector keccak_key1 keccak_data1 $ digest "\x5a\xf5\xc9\xa7\x7a\x23\xa6\xa9\x3d\x80\x64\x9e\x56\x2a\xb7\x7f\x4f\x35\x52\xe3\xc5\xca\xff\xd9\x3b\xdf\x8b\x3c\xfc\x69\x20\xe3\x02\x3f\xc2\x67\x75\xd9\xdf\x1f\x3c\x94\x61\x31\x46\xad\x2c\x9d"
     ]
 
-kekkak_512_MAC_Vectors :: [MACVector Kekkak_512]
-kekkak_512_MAC_Vectors =
-    [ MACVector kekkak_key1 kekkak_data1 $ digest "\xc2\x96\x2e\x5b\xbe\x12\x38\x00\x78\x52\xf7\x9d\x81\x4d\xbb\xec\xd4\x68\x2e\x6f\x09\x7d\x37\xa3\x63\x58\x7c\x03\xbf\xa2\xeb\x08\x59\xd8\xd9\xc7\x01\xe0\x4c\xec\xec\xfd\x3d\xd7\xbf\xd4\x38\xf2\x0b\x8b\x64\x8e\x01\xbf\x8c\x11\xd2\x68\x24\xb9\x6c\xeb\xbd\xcb"
+keccak_512_MAC_Vectors :: [MACVector Keccak_512]
+keccak_512_MAC_Vectors =
+    [ MACVector keccak_key1 keccak_data1 $ digest "\xc2\x96\x2e\x5b\xbe\x12\x38\x00\x78\x52\xf7\x9d\x81\x4d\xbb\xec\xd4\x68\x2e\x6f\x09\x7d\x37\xa3\x63\x58\x7c\x03\xbf\xa2\xeb\x08\x59\xd8\xd9\xc7\x01\xe0\x4c\xec\xec\xfd\x3d\xd7\xbf\xd4\x38\xf2\x0b\x8b\x64\x8e\x01\xbf\x8c\x11\xd2\x68\x24\xb9\x6c\xeb\xbd\xcb"
     ]
 
 sha3_key1 = "\x4a\x65\x66\x65"
@@ -95,10 +95,10 @@ macTests =
     [ testGroup "md5" $ concatMap toMACTest $ zip is md5MACVectors
     , testGroup "sha1" $ concatMap toMACTest $ zip is sha1MACVectors
     , testGroup "sha256" $ concatMap toMACTest $ zip is sha256MACVectors
-    , testGroup "kekkak-224" $ concatMap toMACTest $ zip is kekkak_224_MAC_Vectors
-    , testGroup "kekkak-256" $ concatMap toMACTest $ zip is kekkak_256_MAC_Vectors
-    , testGroup "kekkak-384" $ concatMap toMACTest $ zip is kekkak_384_MAC_Vectors
-    , testGroup "kekkak-512" $ concatMap toMACTest $ zip is kekkak_512_MAC_Vectors
+    , testGroup "keccak-224" $ concatMap toMACTest $ zip is keccak_224_MAC_Vectors
+    , testGroup "keccak-256" $ concatMap toMACTest $ zip is keccak_256_MAC_Vectors
+    , testGroup "keccak-384" $ concatMap toMACTest $ zip is keccak_384_MAC_Vectors
+    , testGroup "keccak-512" $ concatMap toMACTest $ zip is keccak_512_MAC_Vectors
     , testGroup "sha3-224" $ concatMap toMACTest $ zip is sha3_224_MAC_Vectors
     , testGroup "sha3-256" $ concatMap toMACTest $ zip is sha3_256_MAC_Vectors
     , testGroup "sha3-384" $ concatMap toMACTest $ zip is sha3_384_MAC_Vectors
