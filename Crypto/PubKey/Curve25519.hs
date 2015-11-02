@@ -26,6 +26,7 @@ import           Data.Word
 import           Foreign.Ptr
 import           GHC.Ptr
 
+import           Crypto.Error
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ScrubbedBytes, Bytes, withByteArray)
@@ -45,21 +46,21 @@ newtype DhSecret = DhSecret ScrubbedBytes
     deriving (Show,Eq,ByteArrayAccess,NFData)
 
 -- | Try to build a public key from a bytearray
-publicKey :: ByteArrayAccess bs => bs -> Either String PublicKey
+publicKey :: ByteArrayAccess bs => bs -> CryptoFailable PublicKey
 publicKey bs
-    | B.length bs == 32 = Right $ PublicKey $ B.copyAndFreeze bs (\_ -> return ())
-    | otherwise               = Left "invalid public key size"
+    | B.length bs == 32 = CryptoPassed $ PublicKey $ B.copyAndFreeze bs (\_ -> return ())
+    | otherwise         = CryptoFailed CryptoError_PublicKeySizeInvalid
 
 -- | Try to build a secret key from a bytearray
-secretKey :: ByteArrayAccess bs => bs -> Either String SecretKey
+secretKey :: ByteArrayAccess bs => bs -> CryptoFailable SecretKey
 secretKey bs
     | B.length bs == 32 = unsafeDoIO $ do
         withByteArray bs $ \inp -> do
             valid <- isValidPtr inp
             if valid
-                then (Right . SecretKey) <$> B.copy bs (\_ -> return ())
-                else return $ Left "invalid secret key"
-    | otherwise = Left "secret key invalid size"
+                then (CryptoPassed . SecretKey) <$> B.copy bs (\_ -> return ())
+                else return $ CryptoFailed CryptoError_SecretKeyStructureInvalid
+    | otherwise = CryptoFailed CryptoError_SecretKeySizeInvalid
   where
         --  e[0] &= 0xf8;
         --  e[31] &= 0x7f;
@@ -80,10 +81,10 @@ secretKey bs
 {-# NOINLINE secretKey #-}
 
 -- | Create a DhSecret from a bytearray object
-dhSecret :: ByteArrayAccess b => b -> Either String DhSecret
+dhSecret :: ByteArrayAccess b => b -> CryptoFailable DhSecret
 dhSecret bs
-    | B.length bs == 32 = Right $ DhSecret $ B.copyAndFreeze bs (\_ -> return ())
-    | otherwise         = Left "invalid dh secret size"
+    | B.length bs == 32 = CryptoPassed $ DhSecret $ B.copyAndFreeze bs (\_ -> return ())
+    | otherwise         = CryptoFailed CryptoError_SharedSecretSizeInvalid
 
 -- | Compute the Diffie Hellman secret from a public key and a secret key
 dh :: PublicKey -> SecretKey -> DhSecret

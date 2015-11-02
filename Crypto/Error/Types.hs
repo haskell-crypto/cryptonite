@@ -33,6 +33,7 @@ data CryptoError =
     | CryptoError_SecretKeySizeInvalid
     | CryptoError_SecretKeyStructureInvalid
     | CryptoError_PublicKeySizeInvalid
+    | CryptoError_SharedSecretSizeInvalid
     -- Message authentification error
     | CryptoError_MacKeyInvalid
     deriving (Show,Eq,Enum,Data,Typeable)

@@ -1,6 +1,8 @@
 ## 0.9
 
 * Quiet down unused module imports
+* Move Curve25519 over to Crypto.Error instead of using Either String.
+
 ## 0.8
 
 * Add support for ChaChaPoly1305 Nonce Increment (John Galt)
