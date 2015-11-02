@@ -1,3 +1,6 @@
+## 0.9
+
+* Quiet down unused module imports
 ## 0.8
 
 * Add support for ChaChaPoly1305 Nonce Increment (John Galt)
