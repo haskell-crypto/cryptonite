@@ -36,6 +36,7 @@ import           Crypto.Error
 newtype State = State ScrubbedBytes
     deriving (ByteArrayAccess)
 
+-- | Poly1305 State. use State instead of Ctx
 type Ctx = State
 {-# DEPRECATED Ctx "use Poly1305 State instead" #-}
 

@@ -116,7 +116,7 @@ gmpTestPrimeMillerRabin (I# tries) !n = GmpSupported $
 gmpTestPrimeMillerRabin _ _ = GmpUnsupported
 #endif
 
--- | Return the size in bytes of a integer
+-- | Return the size in bytes of an integer
 gmpSizeInBytes :: Integer -> GmpSupported Int
 #if MIN_VERSION_integer_gmp(0,5,1)
 gmpSizeInBytes n = GmpSupported (I# (word2Int# (sizeInBaseInteger n 256#)))
@@ -124,6 +124,7 @@ gmpSizeInBytes n = GmpSupported (I# (word2Int# (sizeInBaseInteger n 256#)))
 gmpSizeInBytes _ = GmpUnsupported
 #endif
 
+-- | Return the size in bits of an integer
 gmpSizeInBits :: Integer -> GmpSupported Int
 #if MIN_VERSION_integer_gmp(0,5,1)
 gmpSizeInBits n = GmpSupported (I# (word2Int# (sizeInBaseInteger n 2#)))

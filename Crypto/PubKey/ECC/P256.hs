@@ -78,6 +78,7 @@ data P256X
 -- Point methods
 ------------------------------------------------------------------------
 
+-- | Get the base point for the P256 Curve
 pointBase :: Point
 pointBase =
     case scalarFromInteger 1 of
@@ -127,6 +128,7 @@ pointIsValid p = unsafeDoIO $ withPoint p $ \px py -> do
     r <- ccryptonite_p256_is_valid_point px py
     return (r /= 0)
 
+-- | Convert a point to (x,y) Integers
 pointToIntegers :: Point -> (Integer, Integer)
 pointToIntegers p = unsafeDoIO $ withPoint p $ \px py ->
     allocTemp 32 (serialize (castPtr px) (castPtr py))
@@ -138,6 +140,7 @@ pointToIntegers p = unsafeDoIO $ withPoint p $ \px py ->
         y <- os2ip temp scalarSize
         return (x,y)
 
+-- | Convert from (x,y) Integers to a point
 pointFromIntegers :: (Integer, Integer) -> Point
 pointFromIntegers (x,y) = withNewPoint $ \dx dy ->
     allocTemp scalarSize (\temp -> fill temp (castPtr dx) x >> fill temp (castPtr dy) y)
@@ -154,11 +157,13 @@ pointFromIntegers (x,y) = withNewPoint $ \dx dy ->
         -- then fill dest with the P256 scalar from temp
         ccryptonite_p256_from_bin temp dest
 
+-- | Convert a point to a binary representation
 pointToBinary :: ByteArray ba => Point -> ba
 pointToBinary p = B.unsafeCreate pointSize $ \dst -> withPoint p $ \px py -> do
     ccryptonite_p256_to_bin (castPtr px) dst
     ccryptonite_p256_to_bin (castPtr py) (dst `plusPtr` 32)
 
+-- | Convert from binary to a point
 pointFromBinary :: ByteArrayAccess ba => ba -> CryptoFailable Point
 pointFromBinary ba
     | B.length ba /= pointSize = CryptoFailed $ CryptoError_PublicKeySizeInvalid
@@ -184,6 +189,7 @@ scalarGenerate = unwrap . scalarFromBinary . witness <$> getRandomBytes 32
 scalarZero :: Scalar
 scalarZero = withNewScalarFreeze $ \d -> ccryptonite_p256_init d
 
+-- | Check if the scalar is 0
 scalarIsZero :: Scalar -> Bool
 scalarIsZero s = unsafeDoIO $ withScalar s $ \d -> do
     result <- ccryptonite_p256_is_zero d
@@ -250,10 +256,12 @@ scalarToBinary s = B.unsafeCreate scalarSize $ \b -> withScalar s $ \p ->
     ccryptonite_p256_to_bin p b
 {-# NOINLINE scalarToBinary #-}
 
+-- | Convert from an Integer to a P256 Scalar
 scalarFromInteger :: Integer -> CryptoFailable Scalar
 scalarFromInteger i =
     maybe (CryptoFailed CryptoError_SecretKeySizeInvalid) scalarFromBinary (S.i2ospOf 32 i :: Maybe Bytes)
 
+-- | Convert from a P256 Scalar to an Integer
 scalarToInteger :: Scalar -> Integer
 scalarToInteger s = S.os2ip (scalarToBinary s :: Bytes)
 

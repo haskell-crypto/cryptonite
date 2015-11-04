@@ -18,6 +18,7 @@ import Crypto.Number.Generate (generateBetween)
 import Crypto.PubKey.ECC.Types
 import Crypto.Random
 
+-- | Generate a valid scalar for a specific Curve
 scalarGenerate :: MonadRandom randomly => Curve -> randomly PrivateNumber
 scalarGenerate curve = generateBetween 1 (n - 1)
   where

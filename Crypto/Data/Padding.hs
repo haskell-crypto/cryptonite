@@ -17,6 +17,7 @@ module Crypto.Data.Padding
 import           Data.ByteArray (ByteArray, Bytes)
 import qualified Data.ByteArray as B
 
+-- | Format of padding
 data Format =
       PKCS5     -- ^ PKCS5: PKCS7 with hardcoded size of 8
     | PKCS7 Int -- ^ PKCS7 with padding size between 1 and 255

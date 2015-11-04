@@ -40,6 +40,7 @@ import qualified Crypto.Internal.ByteArray as B
 -- a ASN1 wrapped description the algorithm plus the content
 -- of the digest.
 class HashAlgorithm hashAlg => HashAlgorithmASN1 hashAlg where
+    -- | Convert a Digest into an ASN1 wrapped descriptive ByteArray
     hashDigestASN1 :: ByteArray out => Digest hashAlg -> out
 
 -- http://uk.emc.com/emc-plus/rsa-labs/pkcs/files/h11300-wp-pkcs-1v2-2-rsa-cryptography-standard.pdf
