@@ -7,9 +7,22 @@
 -- Stability   : stable
 -- Portability : good
 --
--- A simple AEAD scheme using ChaCha20 and Poly1305.
--- 
--- See RFC7539.
+-- A simple AEAD scheme using ChaCha20 and Poly1305. See RFC7539.
+--
+-- The State is not modified in place, so each function changing the State,
+-- returns a new State.
+--
+-- Authenticated Data need to be added before any call to 'encrypt' or 'decrypt',
+-- and once all the data has been added, then 'finalizeAAD' need to be called.
+--
+-- Once 'finalizeAAD' has been called, no further 'appendAAD' call should be make.
+--
+-- > encrypt nonce key hdr inp =
+-- >    let st1        = ChaChaPoly1305.initialize key nonce
+-- >        st2        = ChaChaPoly1305.finalizeAAD $ ChaChaPoly1305.appendAAD hdr st1
+-- >        (out, st3) = ChaChaPoly1305.encrypt inp st2
+-- >        auth       = ChaChaPoly1305.finalize st3
+-- >     in out `B.append` Data.ByteArray.convert auth
 --
 module Crypto.Cipher.ChaChaPoly1305
     ( State
@@ -36,11 +49,17 @@ import qualified Data.ByteArray.Pack as P
 import           Foreign.Ptr
 import           Foreign.Storable
 
+-- | A ChaChaPoly1305 State.
+--
+-- The state is immutable, and only new state can be created
 data State = State !ChaCha.State
                    !Poly1305.State
                    !Word64 -- AAD length
                    !Word64 -- ciphertext length
 
+-- | Valid Nonce for ChaChaPoly1305.
+--
+-- It can be created with 'nonce8' or 'nonce12'
 newtype Nonce = Nonce Bytes
     deriving (ByteArrayAccess)
 
@@ -72,7 +91,7 @@ nonce12 iv
 
 -- | 8 bytes IV, nonce constructor
 nonce8 :: ByteArrayAccess ba
-       => ba -- ^ 4 bytes constant 
+       => ba -- ^ 4 bytes constant
        -> ba -- ^ 8 bytes IV
        -> CryptoFailable Nonce
 nonce8 constant iv
@@ -93,6 +112,10 @@ incrementNonce (Nonce n) = Nonce $ B.copyAndFreeze n $ \s ->
               poke p r
               if r == 0 then loop s (p `plusPtr` (-1)) else return ()
 
+-- | Initialize a new ChaChaPoly1305 State
+--
+-- The key length need to be 256 bits, and the nonce
+-- procured using either `nonce8` or `nonce12`
 initialize :: ByteArrayAccess key
            => key -> Nonce -> CryptoFailable State
 initialize key (Nonce nonce)
@@ -103,6 +126,11 @@ initialize key (Nonce nonce)
     (polyKey, encState) = ChaCha.generate rootState 64
     polyState           = throwCryptoError $ Poly1305.initialize (B.take 32 polyKey :: ScrubbedBytes)
 
+-- | Append Authenticated Data to the State and return
+-- the new modified State.
+--
+-- Once no further call to this function need to be make,
+-- the user should call 'finalizeAAD'
 appendAAD :: ByteArrayAccess ba => ba -> State -> State
 appendAAD ba (State encState macState aadLength plainLength) =
     State encState newMacState newLength plainLength
@@ -110,12 +138,15 @@ appendAAD ba (State encState macState aadLength plainLength) =
     newMacState = Poly1305.update macState ba
     newLength   = aadLength + fromIntegral (B.length ba)
 
+-- | Finalize the Authenticated Data and return the finalized State
 finalizeAAD :: State -> State
 finalizeAAD (State encState macState aadLength plainLength) =
     State encState newMacState aadLength plainLength
   where
     newMacState = Poly1305.update macState $ pad16 aadLength
 
+-- | Encrypt a piece of data and returns the encrypted Data and the
+-- updated State.
 encrypt :: ByteArray ba => ba -> State -> (ba, State)
 encrypt input (State encState macState aadLength plainLength) =
     (output, State newEncState newMacState aadLength newPlainLength)
@@ -124,6 +155,8 @@ encrypt input (State encState macState aadLength plainLength) =
     newMacState           = Poly1305.update macState output
     newPlainLength        = plainLength + fromIntegral (B.length input)
 
+-- | Decrypt a piece of data and returns the decrypted Data and the
+-- updated State.
 decrypt :: ByteArray ba => ba -> State -> (ba, State)
 decrypt input (State encState macState aadLength plainLength) =
     (output, State newEncState newMacState aadLength newPlainLength)
@@ -132,6 +165,7 @@ decrypt input (State encState macState aadLength plainLength) =
     newMacState           = Poly1305.update macState input
     newPlainLength        = plainLength + fromIntegral (B.length input)
 
+-- | Generate an authentication tag from the State.
 finalize :: State -> Poly1305.Auth
 finalize (State _ macState aadLength plainLength) =
     Poly1305.finalize $ Poly1305.updates macState
