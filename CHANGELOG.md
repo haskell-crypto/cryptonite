@@ -2,6 +2,8 @@
 
 * Quiet down unused module imports
 * Move Curve25519 over to Crypto.Error instead of using Either String.
+* Add documentation for ChaChaPoly1305
+* Add missing documentation for various modules
 
 ## 0.8
 
