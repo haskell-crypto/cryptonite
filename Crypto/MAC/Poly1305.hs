@@ -14,7 +14,7 @@ module Crypto.MAC.Poly1305
     ( Ctx
     , State
     , Auth(..)
-
+    , authTag
     -- * Incremental MAC Functions
     , initialize -- :: State
     , update     -- :: State -> ByteString -> State
@@ -43,6 +43,11 @@ type Ctx = State
 -- | Poly1305 Auth
 newtype Auth = Auth Bytes
     deriving (ByteArrayAccess,NFData)
+
+authTag :: ByteArrayAccess b => b -> CryptoFailable Auth
+authTag b
+    | B.length b /= 32 = CryptoFailed $ CryptoError_AuthenticationTagSizeInvalid
+    | otherwise        = CryptoPassed $ Auth $ B.convert b
 
 instance Eq Auth where
     (Auth a1) == (Auth a2) = B.constEq a1 a2

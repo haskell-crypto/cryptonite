@@ -36,6 +36,7 @@ data CryptoError =
     | CryptoError_SharedSecretSizeInvalid
     -- Message authentification error
     | CryptoError_MacKeyInvalid
+    | CryptoError_AuthenticationTagSizeInvalid
     deriving (Show,Eq,Enum,Data,Typeable)
 
 instance E.Exception CryptoError
