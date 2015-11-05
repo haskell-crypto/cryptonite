@@ -4,6 +4,7 @@
 * Move Curve25519 over to Crypto.Error instead of using Either String.
 * Add documentation for ChaChaPoly1305
 * Add missing documentation for various modules
+* Add a way to create Poly1305 Auth tag.
 
 ## 0.8
 
