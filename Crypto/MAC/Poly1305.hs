@@ -46,7 +46,7 @@ newtype Auth = Auth Bytes
 
 authTag :: ByteArrayAccess b => b -> CryptoFailable Auth
 authTag b
-    | B.length b /= 32 = CryptoFailed $ CryptoError_AuthenticationTagSizeInvalid
+    | B.length b /= 16 = CryptoFailed $ CryptoError_AuthenticationTagSizeInvalid
     | otherwise        = CryptoPassed $ Auth $ B.convert b
 
 instance Eq Auth where
