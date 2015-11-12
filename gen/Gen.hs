@@ -21,7 +21,11 @@ data GenHashModule = GenHashModule
 
 hashModules =
     --              module      header        hash        ctx dg blk
-    [ GenHashModule "MD2"       "md2.h"       "md2"       96  16 16  []
+    [ GenHashModule "BLAKE2s"   "blake2.h"    "blake2s"   185 32 64  []
+    , GenHashModule "BLAKE2sp"  "blake2.h"    "blake2sp"  2185 32 64 []
+    , GenHashModule "BLAKE2b"   "blake2.h"    "blake2b"   361 64 128 []
+    , GenHashModule "BLAKE2bp"  "blake2.h"    "blake2sp"  2325 64 128 []
+    , GenHashModule "MD2"       "md2.h"       "md2"       96  16 16  []
     , GenHashModule "MD4"       "md4.h"       "md4"       96  16 64  []
     , GenHashModule "MD5"       "md5.h"       "md5"       96  16 64  []
     , GenHashModule "SHA1"      "sha1.h"      "sha1"      96  20 64  []

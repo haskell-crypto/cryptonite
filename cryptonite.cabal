@@ -147,6 +147,10 @@ Library
                      Crypto.Hash.MD2
                      Crypto.Hash.MD4
                      Crypto.Hash.MD5
+                     Crypto.Hash.BLAKE2s
+                     Crypto.Hash.BLAKE2sp
+                     Crypto.Hash.BLAKE2b
+                     Crypto.Hash.BLAKE2bp
                      Crypto.Hash.RIPEMD160
                      Crypto.Hash.Skein256
                      Crypto.Hash.Skein512
@@ -172,6 +176,7 @@ Library
                    , ghc-prim
   ghc-options:       -Wall -fwarn-tabs -optc-O3 -fno-warn-unused-imports
   default-language:  Haskell2010
+  cc-options:        -std=gnu99
   C-sources:         cbits/cryptonite_chacha.c
                    , cbits/cryptonite_salsa.c
                    , cbits/cryptonite_rc4.c
@@ -192,6 +197,10 @@ Library
                    , cbits/cryptonite_md2.c
                    , cbits/cryptonite_md4.c
                    , cbits/cryptonite_md5.c
+                   , cbits/cryptonite_blake2s.c
+                   , cbits/cryptonite_blake2sp.c
+                   , cbits/cryptonite_blake2b.c
+                   , cbits/cryptonite_blake2bp.c
                    , cbits/cryptonite_ripemd.c
                    , cbits/cryptonite_skein256.c
                    , cbits/cryptonite_skein512.c
@@ -199,7 +208,11 @@ Library
                    , cbits/cryptonite_whirlpool.c
                    , cbits/cryptonite_scrypt.c
                    , cbits/cryptonite_sysrand.c
-  include-dirs:  cbits cbits/ed25519
+                   , cbits/blake2/blake2s.c
+                   , cbits/blake2/blake2sp.c
+                   , cbits/blake2/blake2b.c
+                   , cbits/blake2/blake2bp.c
+  include-dirs:  cbits cbits/ed25519 cbits/blake2
 
   -- FIXME armel or mispel is also little endian.
   -- might be a good idea to also add a runtime autodetect mode.
