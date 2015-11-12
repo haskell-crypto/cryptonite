@@ -39,6 +39,8 @@ extra-source-files:  cbits/*.h
                      cbits/aes/*.h
                      cbits/ed25519/*.h
                      cbits/p256/*.h
+                     cbits/blake2/*.h
+                     cbits/blake2/*.c
                      cbits/aes/x86ni_impl.c
                      tests/*.hs
 
