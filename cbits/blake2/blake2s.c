@@ -162,6 +162,7 @@ static inline int blake2s_init0( blake2s_state *S )
 }
 
 /* init2 xors IV with input parameter block */
+__attribute__((visibility ("hidden")))
 int blake2s_init_param( blake2s_state *S, const blake2s_param *P )
 {
   //blake2s_init0( S );
@@ -178,6 +179,7 @@ int blake2s_init_param( blake2s_state *S, const blake2s_param *P )
 
 
 /* Some sort of default parameter block initialization, for sequential blake2s */
+__attribute__((visibility ("hidden")))
 int blake2s_init( blake2s_state *S, const uint8_t outlen )
 {
   /* Move interval verification here? */
@@ -199,7 +201,7 @@ int blake2s_init( blake2s_state *S, const uint8_t outlen )
   return blake2s_init_param( S, &P );
 }
 
-
+__attribute__((visibility ("hidden")))
 int blake2s_init_key( blake2s_state *S, const uint8_t outlen, const void *key, const uint8_t keylen )
 {
   /* Move interval verification here? */
@@ -293,6 +295,7 @@ static inline int blake2s_compress( blake2s_state *S, const uint8_t block[BLAKE2
 }
 
 /* inlen now in bytes */
+__attribute__((visibility ("hidden")))
 int blake2s_update( blake2s_state *S, const uint8_t *in, uint64_t inlen )
 {
   while( inlen > 0 )
@@ -324,6 +327,7 @@ int blake2s_update( blake2s_state *S, const uint8_t *in, uint64_t inlen )
 }
 
 /* Is this correct? */
+__attribute__((visibility ("hidden")))
 int blake2s_final( blake2s_state *S, uint8_t *out, uint8_t outlen )
 {
   uint8_t buffer[BLAKE2S_OUTBYTES] = {0};
@@ -352,6 +356,7 @@ int blake2s_final( blake2s_state *S, uint8_t *out, uint8_t outlen )
 }
 
 /* inlen, at least, should be uint64_t. Others can be size_t. */
+__attribute__((visibility ("hidden")))
 int blake2s( uint8_t *out, const void *in, const void *key, const uint8_t outlen, const uint64_t inlen, uint8_t keylen )
 {
   blake2s_state S[1];

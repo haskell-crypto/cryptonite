@@ -56,7 +56,7 @@ static inline int blake2sp_init_root( blake2s_state *S, uint8_t outlen, uint8_t 
   return blake2s_init_param( S, P );
 }
 
-
+__attribute__((visibility ("hidden")))
 int blake2sp_init( blake2sp_state *S, const uint8_t outlen )
 {
   if( !outlen || outlen > BLAKE2S_OUTBYTES ) return -1;
@@ -75,6 +75,7 @@ int blake2sp_init( blake2sp_state *S, const uint8_t outlen )
   return 0;
 }
 
+__attribute__((visibility ("hidden")))
 int blake2sp_init_key( blake2sp_state *S, const uint8_t outlen, const void *key, const uint8_t keylen )
 {
   if( !outlen || outlen > BLAKE2S_OUTBYTES ) return -1;
@@ -105,7 +106,7 @@ int blake2sp_init_key( blake2sp_state *S, const uint8_t outlen, const void *key,
   return 0;
 }
 
-
+__attribute__((visibility ("hidden")))
 int blake2sp_update( blake2sp_state *S, const uint8_t *in, uint64_t inlen )
 {
   size_t left = S->buflen;
@@ -155,7 +156,7 @@ int blake2sp_update( blake2sp_state *S, const uint8_t *in, uint64_t inlen )
   return 0;
 }
 
-
+__attribute__((visibility ("hidden")))
 int blake2sp_final( blake2sp_state *S, uint8_t *out, const uint8_t outlen )
 {
   uint8_t hash[PARALLELISM_DEGREE][BLAKE2S_OUTBYTES];
@@ -180,7 +181,7 @@ int blake2sp_final( blake2sp_state *S, uint8_t *out, const uint8_t outlen )
   return blake2s_final( S->R, out, outlen );
 }
 
-
+__attribute__((visibility ("hidden")))
 int blake2sp( uint8_t *out, const void *in, const void *key, uint8_t outlen, uint64_t inlen, uint8_t keylen )
 {
   uint8_t hash[PARALLELISM_DEGREE][BLAKE2S_OUTBYTES];

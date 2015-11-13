@@ -1,6 +1,6 @@
 #include "cryptonite_blake2sp.h"
 
-void cryptonite_blake2spp_init(blake2sp_ctx *ctx)
+void cryptonite_blake2sp_init(blake2sp_ctx *ctx)
 {
   blake2sp_init(ctx, 32);
 }

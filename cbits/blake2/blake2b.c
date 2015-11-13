@@ -175,6 +175,7 @@ static inline int blake2b_init0( blake2b_state *S )
 }
 
 /* init xors IV with input parameter block */
+__attribute__((visibility ("hidden")))
 int blake2b_init_param( blake2b_state *S, const blake2b_param *P )
 {
   //blake2b_init0( S );
@@ -191,6 +192,7 @@ int blake2b_init_param( blake2b_state *S, const blake2b_param *P )
 
 
 /* Some sort of default parameter block initialization, for sequential blake2b */
+__attribute__((visibility ("hidden")))
 int blake2b_init( blake2b_state *S, const uint8_t outlen )
 {
   if ( ( !outlen ) || ( outlen > BLAKE2B_OUTBYTES ) ) return -1;
@@ -212,6 +214,7 @@ int blake2b_init( blake2b_state *S, const uint8_t outlen )
   return blake2b_init_param( S, &P );
 }
 
+__attribute__((visibility ("hidden")))
 int blake2b_init_key( blake2b_state *S, const uint8_t outlen, const void *key, const uint8_t keylen )
 {
   if ( ( !outlen ) || ( outlen > BLAKE2B_OUTBYTES ) ) return -1;
@@ -316,7 +319,7 @@ static inline int blake2b_compress( blake2b_state *S, const uint8_t block[BLAKE2
   return 0;
 }
 
-
+__attribute__((visibility ("hidden")))
 int blake2b_update( blake2b_state *S, const uint8_t *in, uint64_t inlen )
 {
   while( inlen > 0 )
@@ -347,7 +350,7 @@ int blake2b_update( blake2b_state *S, const uint8_t *in, uint64_t inlen )
   return 0;
 }
 
-
+__attribute__((visibility ("hidden")))
 int blake2b_final( blake2b_state *S, uint8_t *out, uint8_t outlen )
 {
   if( outlen > BLAKE2B_OUTBYTES )
@@ -369,7 +372,7 @@ int blake2b_final( blake2b_state *S, uint8_t *out, uint8_t outlen )
   return 0;
 }
 
-
+__attribute__((visibility ("hidden")))
 int blake2b( uint8_t *out, const void *in, const void *key, const uint8_t outlen, const uint64_t inlen, uint8_t keylen )
 {
   blake2b_state S[1];
