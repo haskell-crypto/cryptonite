@@ -257,38 +257,3 @@ int blake2sp( uint8_t *out, const void *in, const void *key, uint8_t outlen, uin
 
   return blake2s_final( FS, out, outlen );
 }
-
-#if defined(BLAKE2SP_SELFTEST)
-#include <string.h>
-#include "blake2-kat.h"
-int main( int argc, char **argv )
-{
-  uint8_t key[BLAKE2S_KEYBYTES];
-  uint8_t buf[KAT_LENGTH];
-
-  for( size_t i = 0; i < BLAKE2S_KEYBYTES; ++i )
-    key[i] = ( uint8_t )i;
-
-  for( size_t i = 0; i < KAT_LENGTH; ++i )
-    buf[i] = ( uint8_t )i;
-
-  for( size_t i = 0; i < KAT_LENGTH; ++i )
-  {
-    uint8_t hash[BLAKE2S_OUTBYTES];
-    blake2sp( hash, buf, key, BLAKE2S_OUTBYTES, i, BLAKE2S_KEYBYTES );
-
-    if( 0 != memcmp( hash, blake2sp_keyed_kat[i], BLAKE2S_OUTBYTES ) )
-    {
-      puts( "error" );
-      return -1;
-    }
-  }
-
-  puts( "ok" );
-  return 0;
-}
-#endif
-
-
-
-
