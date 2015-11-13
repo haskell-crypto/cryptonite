@@ -5,6 +5,7 @@
 * Add documentation for ChaChaPoly1305
 * Add missing documentation for various modules
 * Add a way to create Poly1305 Auth tag.
+* Added support for the BLAKE2 family of hash algorithms
 
 ## 0.8
 
