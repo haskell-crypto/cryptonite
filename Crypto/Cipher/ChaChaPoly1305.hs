@@ -38,6 +38,7 @@ module Crypto.Cipher.ChaChaPoly1305
     , finalize
     ) where
 
+import           Control.Monad             (when)
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, Bytes, ScrubbedBytes)
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Internal.Imports
@@ -60,8 +61,14 @@ data State = State !ChaCha.State
 -- | Valid Nonce for ChaChaPoly1305.
 --
 -- It can be created with 'nonce8' or 'nonce12'
-newtype Nonce = Nonce Bytes
-    deriving (ByteArrayAccess)
+data Nonce = Nonce8 Bytes | Nonce12 Bytes
+
+instance ByteArrayAccess Nonce where
+  length (Nonce8  n) = B.length n
+  length (Nonce12 n) = B.length n
+
+  withByteArray (Nonce8  n) = B.withByteArray n
+  withByteArray (Nonce12 n) = B.withByteArray n
 
 -- Based on the following pseudo code:
 --
@@ -86,8 +93,8 @@ pad16 n
 -- | Nonce smart constructor 12 bytes IV, nonce constructor
 nonce12 :: ByteArrayAccess iv => iv -> CryptoFailable Nonce
 nonce12 iv
-    | B.length iv /= 12 = CryptoFailed  $ CryptoError_IvSizeInvalid
-    | otherwise         = CryptoPassed $ Nonce (B.convert iv)
+    | B.length iv /= 12 = CryptoFailed CryptoError_IvSizeInvalid
+    | otherwise         = CryptoPassed . Nonce12 . B.convert $ iv
 
 -- | 8 bytes IV, nonce constructor
 nonce8 :: ByteArrayAccess ba
@@ -95,22 +102,26 @@ nonce8 :: ByteArrayAccess ba
        -> ba -- ^ 8 bytes IV
        -> CryptoFailable Nonce
 nonce8 constant iv
-    | B.length constant /= 4 = CryptoFailed $ CryptoError_IvSizeInvalid
-    | B.length iv       /= 8 = CryptoFailed $ CryptoError_IvSizeInvalid
-    | otherwise              = CryptoPassed $ Nonce $ B.concat [constant, iv]
+    | B.length constant /= 4 = CryptoFailed CryptoError_IvSizeInvalid
+    | B.length iv       /= 8 = CryptoFailed CryptoError_IvSizeInvalid
+    | otherwise              = CryptoPassed . Nonce8 . B.concat $ [constant, iv]
 
 -- | Increment a nonce
 incrementNonce :: Nonce -> Nonce
-incrementNonce (Nonce n) = Nonce $ B.copyAndFreeze n $ \s ->
-    loop s $ s `plusPtr` ((B.length n) - 1)
+incrementNonce (Nonce8  n) = Nonce8  $ incrementNonce' n 4
+incrementNonce (Nonce12 n) = Nonce12 $ incrementNonce' n 0
+
+incrementNonce' :: Bytes -> Int -> Bytes
+incrementNonce' b offset = B.copyAndFreeze b $ \s ->
+    loop s (s `plusPtr` offset)
     where
       loop :: Ptr Word8 -> Ptr Word8 -> IO ()
       loop s p
-          | s == p    = peek s >>= poke s . (+) 1
+          | s == (p `plusPtr` (B.length b - offset - 1)) = peek s >>= poke s . (+) 1
           | otherwise = do
               r <- (+) 1 <$> peek p
               poke p r
-              if r == 0 then loop s (p `plusPtr` (-1)) else return ()
+              when (r == 0) $ loop s (p `plusPtr` 1)
 
 -- | Initialize a new ChaChaPoly1305 State
 --
@@ -118,8 +129,13 @@ incrementNonce (Nonce n) = Nonce $ B.copyAndFreeze n $ \s ->
 -- procured using either `nonce8` or `nonce12`
 initialize :: ByteArrayAccess key
            => key -> Nonce -> CryptoFailable State
-initialize key (Nonce nonce)
-    | B.length key /= 32 = CryptoFailed $ CryptoError_KeySizeInvalid
+initialize key (Nonce8  nonce) = initialize' key nonce
+initialize key (Nonce12 nonce) = initialize' key nonce
+
+initialize' :: ByteArrayAccess key
+            => key -> Bytes -> CryptoFailable State
+initialize' key nonce
+    | B.length key /= 32 = CryptoFailed CryptoError_KeySizeInvalid
     | otherwise          = CryptoPassed $ State encState polyState 0 0
   where
     rootState           = ChaCha.initialize 20 key nonce
