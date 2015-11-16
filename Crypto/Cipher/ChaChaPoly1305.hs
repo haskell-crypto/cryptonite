@@ -1,5 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
 -- |
 -- Module      : Crypto.Cipher.ChaChaPoly1305
 -- License     : BSD-style
