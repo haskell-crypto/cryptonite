@@ -46,7 +46,10 @@ newtype SharedKey = SharedKey Integer
 
 -- | generate params from a specific generator (2 or 5 are common values)
 -- we generate a safe prime (a prime number of the form 2p+1 where p is also prime)
-generateParams :: MonadRandom m => Int -> Integer -> m Params
+generateParams :: MonadRandom m =>
+                  Int                   -- ^ number of bits
+               -> Integer               -- ^ generator
+               -> m Params
 generateParams bits generator =
     (\p -> Params p generator) <$> generateSafePrime bits
 
