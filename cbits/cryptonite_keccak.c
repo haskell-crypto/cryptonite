@@ -25,7 +25,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "cryptonite_bitfn.h"
-#include "cryptonite_kekkak.h"
+#include "cryptonite_keccak.h"
 
 #define KECCAK_NB_ROUNDS 24
 
@@ -49,7 +49,7 @@ static const int keccak_rotc[24] =
 static const int keccak_piln[24] =
 	{ 10,7,11,17,18,3,5,16,8,21,24,4,15,23,19,13,12,2,20,14,22,9,6,1 };
 
-static inline void kekkak_do_chunk(uint64_t state[25], uint64_t buf[], int bufsz)
+static inline void keccak_do_chunk(uint64_t state[25], uint64_t buf[], int bufsz)
 {
 	int i, j, r;
 	uint64_t tmp, bc[5];
@@ -97,28 +97,28 @@ static inline void kekkak_do_chunk(uint64_t state[25], uint64_t buf[], int bufsz
 	}
 }
 
-void cryptonite_kekkak_init(struct kekkak_ctx *ctx, uint32_t hashlen)
+void cryptonite_keccak_init(struct keccak_ctx *ctx, uint32_t hashlen)
 {
 	memset(ctx, 0, sizeof(*ctx));
 	ctx->hashlen = hashlen / 8;
 	ctx->bufsz = 200 - 2 * ctx->hashlen;
 }
 
-void cryptonite_kekkak_update(struct kekkak_ctx *ctx, uint8_t *data, uint32_t len)
+void cryptonite_keccak_update(struct keccak_ctx *ctx, uint8_t *data, uint32_t len)
 {
 	uint32_t to_fill;
 
 	to_fill = ctx->bufsz - ctx->bufindex;
 
 	if (ctx->bufindex == ctx->bufsz) {
-		kekkak_do_chunk(ctx->state, (uint64_t *) ctx->buf, ctx->bufsz / 8);
+		keccak_do_chunk(ctx->state, (uint64_t *) ctx->buf, ctx->bufsz / 8);
 		ctx->bufindex = 0;
 	}
 
 	/* process partial buffer if there's enough data to make a block */
 	if (ctx->bufindex && len >= to_fill) {
 		memcpy(ctx->buf + ctx->bufindex, data, to_fill);
-		kekkak_do_chunk(ctx->state, (uint64_t *) ctx->buf, ctx->bufsz / 8);
+		keccak_do_chunk(ctx->state, (uint64_t *) ctx->buf, ctx->bufsz / 8);
 		len -= to_fill;
 		data += to_fill;
 		ctx->bufindex = 0;
@@ -126,7 +126,7 @@ void cryptonite_kekkak_update(struct kekkak_ctx *ctx, uint8_t *data, uint32_t le
 
 	/* process as much ctx->bufsz-block */
 	for (; len >= ctx->bufsz; len -= ctx->bufsz, data += ctx->bufsz)
-		kekkak_do_chunk(ctx->state, (uint64_t *) data, ctx->bufsz / 8);
+		keccak_do_chunk(ctx->state, (uint64_t *) data, ctx->bufsz / 8);
 
 	/* append data into buf */
 	if (len) {
@@ -135,13 +135,13 @@ void cryptonite_kekkak_update(struct kekkak_ctx *ctx, uint8_t *data, uint32_t le
 	}
 }
 
-void cryptonite_kekkak_finalize(struct kekkak_ctx *ctx, uint8_t *out)
+void cryptonite_keccak_finalize(struct keccak_ctx *ctx, uint8_t *out)
 {
 	uint64_t w[25];
 
 	/* process full buffer if needed */
 	if (ctx->bufindex == ctx->bufsz) {
-		kekkak_do_chunk(ctx->state, (uint64_t *) ctx->buf, ctx->bufsz / 8);
+		keccak_do_chunk(ctx->state, (uint64_t *) ctx->buf, ctx->bufsz / 8);
 		ctx->bufindex = 0;
 	}
 
@@ -151,7 +151,7 @@ void cryptonite_kekkak_finalize(struct kekkak_ctx *ctx, uint8_t *out)
 	ctx->buf[ctx->bufsz - 1] |= 0x80;
 
 	/* process */
-	kekkak_do_chunk(ctx->state, (uint64_t *) ctx->buf, ctx->bufsz / 8);
+	keccak_do_chunk(ctx->state, (uint64_t *) ctx->buf, ctx->bufsz / 8);
 
 	/* output */
 	cpu_to_le64_array(w, ctx->state, 25);
