@@ -6,6 +6,7 @@
 * Add missing documentation for various modules
 * Add a way to create Poly1305 Auth tag.
 * Added support for the BLAKE2 family of hash algorithms
+* Fix endianness of incrementNonce function for ChaChaPoly1305
 
 ## 0.8
 
