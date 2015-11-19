@@ -135,7 +135,7 @@ void cryptonite_keccak_update(struct keccak_ctx *ctx, uint8_t *data, uint32_t le
 	}
 }
 
-void cryptonite_keccak_finalize(struct keccak_ctx *ctx, uint8_t *out)
+void cryptonite_keccak_finalize(struct keccak_ctx *ctx, uint32_t hashlen, uint8_t *out)
 {
 	uint64_t w[25];
 

@@ -173,7 +173,7 @@ void cryptonite_skein512_update(struct skein512_ctx *ctx, const uint8_t *data, u
 	}
 }
 
-void cryptonite_skein512_finalize(struct skein512_ctx *ctx, uint8_t *out)
+void cryptonite_skein512_finalize(struct skein512_ctx *ctx, uint32_t hashlen, uint8_t *out)
 {
 	uint32_t outsize;
 	uint64_t *p = (uint64_t *) out;

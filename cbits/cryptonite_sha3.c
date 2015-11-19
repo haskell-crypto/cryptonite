@@ -135,7 +135,7 @@ void cryptonite_sha3_update(struct sha3_ctx *ctx, const uint8_t *data, uint32_t 
 	}
 }
 
-void cryptonite_sha3_finalize(struct sha3_ctx *ctx, uint8_t *out)
+void cryptonite_sha3_finalize(struct sha3_ctx *ctx, uint32_t hashlen, uint8_t *out)
 {
 	uint64_t w[25];
 
@@ -155,5 +155,5 @@ void cryptonite_sha3_finalize(struct sha3_ctx *ctx, uint8_t *out)
 
 	/* output */
 	cpu_to_le64_array(w, ctx->state, 25);
-	memcpy(out, w, ctx->hashlen);
+	memcpy(out, w, hashlen / 8);
 }

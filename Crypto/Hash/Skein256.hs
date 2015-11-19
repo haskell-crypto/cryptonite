@@ -28,7 +28,7 @@ instance HashAlgorithm Skein256_224 where
     hashInternalContextSize _ = 96
     hashInternalInit p        = c_skein256_init p 224
     hashInternalUpdate        = c_skein256_update
-    hashInternalFinalize      = c_skein256_finalize
+    hashInternalFinalize p    = c_skein256_finalize p 224
 
 -- | Skein256 (256 bits) cryptographic hash algorithm
 data Skein256_256 = Skein256_256
@@ -40,7 +40,7 @@ instance HashAlgorithm Skein256_256 where
     hashInternalContextSize _ = 96
     hashInternalInit p        = c_skein256_init p 256
     hashInternalUpdate        = c_skein256_update
-    hashInternalFinalize      = c_skein256_finalize
+    hashInternalFinalize p    = c_skein256_finalize p 256
 
 
 foreign import ccall unsafe "cryptonite_skein256_init"
@@ -50,4 +50,4 @@ foreign import ccall "cryptonite_skein256_update"
     c_skein256_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
 
 foreign import ccall unsafe "cryptonite_skein256_finalize"
-    c_skein256_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()
+    c_skein256_finalize :: Ptr (Context a) -> Word32 -> Ptr (Digest a) -> IO ()

@@ -196,15 +196,15 @@ void cryptonite_sha512_finalize(struct sha512_ctx *ctx, uint8_t *out)
 
 #include <stdio.h>
 
-void cryptonite_sha512t_init(struct sha512t_ctx *tctx, int t)
+void cryptonite_sha512t_init(struct sha512t_ctx *tctx, uint32_t hashlen)
 {
 	struct sha512_ctx *ctx = &tctx->ctx;
 	memset(ctx, 0, sizeof(*ctx));
-	if (t >= 512)
+	if (hashlen >= 512)
 		return;
-	tctx->t = t;
+	tctx->t = hashlen;
 
-	switch (t) {
+	switch (hashlen) {
 	case 224:
 		ctx->h[0] = 0x8c3d37c819544da2ULL;
 		ctx->h[1] = 0x73e1996689dcd4d6ULL;
@@ -234,7 +234,7 @@ void cryptonite_sha512t_init(struct sha512t_ctx *tctx, int t)
 		for (i = 0; i < 8; i++)
 			ctx->h[i] ^= 0xa5a5a5a5a5a5a5a5ULL;
 
-		i = sprintf(buf, "SHA-512/%d", t);
+		i = sprintf(buf, "SHA-512/%d", hashlen);
 		cryptonite_sha512_update(ctx, (uint8_t *) buf, i);
 		cryptonite_sha512_finalize(ctx, out);
 
@@ -251,7 +251,7 @@ void cryptonite_sha512t_update(struct sha512t_ctx *ctx, const uint8_t *data, uin
 	return cryptonite_sha512_update(&ctx->ctx, data, len);
 }
 
-void cryptonite_sha512t_finalize(struct sha512t_ctx *ctx, uint8_t *out)
+void cryptonite_sha512t_finalize(struct sha512t_ctx *ctx, uint32_t hashlen, uint8_t *out)
 {
 	uint8_t intermediate[SHA512_DIGEST_SIZE];
 

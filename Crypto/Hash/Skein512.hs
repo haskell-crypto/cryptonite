@@ -28,7 +28,7 @@ instance HashAlgorithm Skein512_224 where
     hashInternalContextSize _ = 160
     hashInternalInit p        = c_skein512_init p 224
     hashInternalUpdate        = c_skein512_update
-    hashInternalFinalize      = c_skein512_finalize
+    hashInternalFinalize p    = c_skein512_finalize p 224
 
 -- | Skein512 (256 bits) cryptographic hash algorithm
 data Skein512_256 = Skein512_256
@@ -40,7 +40,7 @@ instance HashAlgorithm Skein512_256 where
     hashInternalContextSize _ = 160
     hashInternalInit p        = c_skein512_init p 256
     hashInternalUpdate        = c_skein512_update
-    hashInternalFinalize      = c_skein512_finalize
+    hashInternalFinalize p    = c_skein512_finalize p 256
 
 -- | Skein512 (384 bits) cryptographic hash algorithm
 data Skein512_384 = Skein512_384
@@ -52,7 +52,7 @@ instance HashAlgorithm Skein512_384 where
     hashInternalContextSize _ = 160
     hashInternalInit p        = c_skein512_init p 384
     hashInternalUpdate        = c_skein512_update
-    hashInternalFinalize      = c_skein512_finalize
+    hashInternalFinalize p    = c_skein512_finalize p 384
 
 -- | Skein512 (512 bits) cryptographic hash algorithm
 data Skein512_512 = Skein512_512
@@ -64,7 +64,7 @@ instance HashAlgorithm Skein512_512 where
     hashInternalContextSize _ = 160
     hashInternalInit p        = c_skein512_init p 512
     hashInternalUpdate        = c_skein512_update
-    hashInternalFinalize      = c_skein512_finalize
+    hashInternalFinalize p    = c_skein512_finalize p 512
 
 
 foreign import ccall unsafe "cryptonite_skein512_init"
@@ -74,4 +74,4 @@ foreign import ccall "cryptonite_skein512_update"
     c_skein512_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
 
 foreign import ccall unsafe "cryptonite_skein512_finalize"
-    c_skein512_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()
+    c_skein512_finalize :: Ptr (Context a) -> Word32 -> Ptr (Digest a) -> IO ()

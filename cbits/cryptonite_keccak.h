@@ -40,6 +40,6 @@ struct keccak_ctx
 
 void cryptonite_keccak_init(struct keccak_ctx *ctx, uint32_t hashlen);
 void cryptonite_keccak_update(struct keccak_ctx *ctx, uint8_t *data, uint32_t len);
-void cryptonite_keccak_finalize(struct keccak_ctx *ctx, uint8_t *out);
+void cryptonite_keccak_finalize(struct keccak_ctx *ctx, uint32_t hashlen, uint8_t *out);
 
 #endif

@@ -58,8 +58,8 @@ void cryptonite_sha512_update(struct sha512_ctx *ctx, const uint8_t *data, uint3
 void cryptonite_sha512_finalize(struct sha512_ctx *ctx, uint8_t *out);
 
 /* only multiples of 8 are supported as valid t values */
-void cryptonite_sha512t_init(struct sha512t_ctx *ctx, int t);
+void cryptonite_sha512t_init(struct sha512t_ctx *ctx, uint32_t hashlen);
 void cryptonite_sha512t_update(struct sha512t_ctx *ctx, const uint8_t *data, uint32_t len);
-void cryptonite_sha512t_finalize(struct sha512t_ctx *ctx, uint8_t *out);
+void cryptonite_sha512t_finalize(struct sha512t_ctx *ctx, uint32_t hashlen, uint8_t *out);
 
 #endif

@@ -28,7 +28,7 @@ instance HashAlgorithm SHA512t_224 where
     hashInternalContextSize _ = 264
     hashInternalInit p        = c_sha512t_init p 224
     hashInternalUpdate        = c_sha512t_update
-    hashInternalFinalize      = c_sha512t_finalize
+    hashInternalFinalize p    = c_sha512t_finalize p 224
 
 -- | SHA512t (256 bits) cryptographic hash algorithm
 data SHA512t_256 = SHA512t_256
@@ -40,7 +40,7 @@ instance HashAlgorithm SHA512t_256 where
     hashInternalContextSize _ = 264
     hashInternalInit p        = c_sha512t_init p 256
     hashInternalUpdate        = c_sha512t_update
-    hashInternalFinalize      = c_sha512t_finalize
+    hashInternalFinalize p    = c_sha512t_finalize p 256
 
 
 foreign import ccall unsafe "cryptonite_sha512t_init"
@@ -50,4 +50,4 @@ foreign import ccall "cryptonite_sha512t_update"
     c_sha512t_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
 
 foreign import ccall unsafe "cryptonite_sha512t_finalize"
-    c_sha512t_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()
+    c_sha512t_finalize :: Ptr (Context a) -> Word32 -> Ptr (Digest a) -> IO ()

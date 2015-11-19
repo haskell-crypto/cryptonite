@@ -28,7 +28,7 @@ instance HashAlgorithm SHA3_224 where
     hashInternalContextSize _ = 360
     hashInternalInit p        = c_sha3_init p 224
     hashInternalUpdate        = c_sha3_update
-    hashInternalFinalize      = c_sha3_finalize
+    hashInternalFinalize p    = c_sha3_finalize p 224
 
 -- | SHA3 (256 bits) cryptographic hash algorithm
 data SHA3_256 = SHA3_256
@@ -40,7 +40,7 @@ instance HashAlgorithm SHA3_256 where
     hashInternalContextSize _ = 360
     hashInternalInit p        = c_sha3_init p 256
     hashInternalUpdate        = c_sha3_update
-    hashInternalFinalize      = c_sha3_finalize
+    hashInternalFinalize p    = c_sha3_finalize p 256
 
 -- | SHA3 (384 bits) cryptographic hash algorithm
 data SHA3_384 = SHA3_384
@@ -52,7 +52,7 @@ instance HashAlgorithm SHA3_384 where
     hashInternalContextSize _ = 360
     hashInternalInit p        = c_sha3_init p 384
     hashInternalUpdate        = c_sha3_update
-    hashInternalFinalize      = c_sha3_finalize
+    hashInternalFinalize p    = c_sha3_finalize p 384
 
 -- | SHA3 (512 bits) cryptographic hash algorithm
 data SHA3_512 = SHA3_512
@@ -64,7 +64,7 @@ instance HashAlgorithm SHA3_512 where
     hashInternalContextSize _ = 360
     hashInternalInit p        = c_sha3_init p 512
     hashInternalUpdate        = c_sha3_update
-    hashInternalFinalize      = c_sha3_finalize
+    hashInternalFinalize p    = c_sha3_finalize p 512
 
 
 foreign import ccall unsafe "cryptonite_sha3_init"
@@ -74,4 +74,4 @@ foreign import ccall "cryptonite_sha3_update"
     c_sha3_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
 
 foreign import ccall unsafe "cryptonite_sha3_finalize"
-    c_sha3_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()
+    c_sha3_finalize :: Ptr (Context a) -> Word32 -> Ptr (Digest a) -> IO ()
