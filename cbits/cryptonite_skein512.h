@@ -28,12 +28,11 @@
 
 struct skein512_ctx
 {
-	uint32_t hashlen; /* in bytes, typically 384/8, 512/8 */
-	uint32_t bufindex;
 	uint8_t  buf[64];
 	uint64_t h[8];
 	uint64_t t0;
 	uint64_t t1;
+	uint32_t bufindex;
 };
 
 #define SKEIN512_CTX_SIZE		sizeof(struct skein512_ctx)

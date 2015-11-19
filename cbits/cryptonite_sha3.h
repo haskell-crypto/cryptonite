@@ -28,11 +28,9 @@
 
 struct sha3_ctx
 {
-	uint32_t hashlen; /* in bytes */
 	uint32_t bufindex;
-	uint64_t state[25];
 	uint32_t bufsz;
-	uint32_t _padding;
+	uint64_t state[25];
 	uint8_t  buf[144]; /* minimum SHA3-224, otherwise buffer need increases */
 };
 

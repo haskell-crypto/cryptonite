@@ -100,8 +100,7 @@ static inline void keccak_do_chunk(uint64_t state[25], uint64_t buf[], int bufsz
 void cryptonite_keccak_init(struct keccak_ctx *ctx, uint32_t hashlen)
 {
 	memset(ctx, 0, sizeof(*ctx));
-	ctx->hashlen = hashlen / 8;
-	ctx->bufsz = 200 - 2 * ctx->hashlen;
+	ctx->bufsz = 200 - 2 * (hashlen / 8);
 }
 
 void cryptonite_keccak_update(struct keccak_ctx *ctx, uint8_t *data, uint32_t len)
@@ -155,5 +154,5 @@ void cryptonite_keccak_finalize(struct keccak_ctx *ctx, uint32_t hashlen, uint8_
 
 	/* output */
 	cpu_to_le64_array(w, ctx->state, 25);
-	memcpy(out, w, ctx->hashlen);
+	memcpy(out, w, hashlen / 8);
 }

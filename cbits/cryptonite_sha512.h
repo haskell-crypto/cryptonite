@@ -33,12 +33,6 @@ struct sha512_ctx
 	uint64_t h[8];
 };
 
-struct sha512t_ctx
-{
-	struct sha512_ctx ctx;
-	uint64_t t; /* the custom t (e.g. 224 for SHA512/224) */
-};
-
 #define sha384_ctx sha512_ctx
 
 #define SHA384_DIGEST_SIZE	64
@@ -46,8 +40,6 @@ struct sha512t_ctx
 
 #define SHA512_DIGEST_SIZE	64
 #define SHA512_CTX_SIZE		sizeof(struct sha512_ctx)
-
-#define SHA512t_CTX_SIZE	sizeof(struct sha512t_ctx)
 
 void cryptonite_sha384_init(struct sha384_ctx *ctx);
 void cryptonite_sha384_update(struct sha384_ctx *ctx, const uint8_t *data, uint32_t len);
@@ -58,8 +50,8 @@ void cryptonite_sha512_update(struct sha512_ctx *ctx, const uint8_t *data, uint3
 void cryptonite_sha512_finalize(struct sha512_ctx *ctx, uint8_t *out);
 
 /* only multiples of 8 are supported as valid t values */
-void cryptonite_sha512t_init(struct sha512t_ctx *ctx, uint32_t hashlen);
-void cryptonite_sha512t_update(struct sha512t_ctx *ctx, const uint8_t *data, uint32_t len);
-void cryptonite_sha512t_finalize(struct sha512t_ctx *ctx, uint32_t hashlen, uint8_t *out);
+void cryptonite_sha512t_init(struct sha512_ctx *ctx, uint32_t hashlen);
+void cryptonite_sha512t_update(struct sha512_ctx *ctx, const uint8_t *data, uint32_t len);
+void cryptonite_sha512t_finalize(struct sha512_ctx *ctx, uint32_t hashlen, uint8_t *out);
 
 #endif

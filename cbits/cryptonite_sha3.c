@@ -100,8 +100,7 @@ static inline void sha3_do_chunk(uint64_t state[25], uint64_t buf[], int bufsz)
 void cryptonite_sha3_init(struct sha3_ctx *ctx, uint32_t hashlen)
 {
 	memset(ctx, 0, sizeof(*ctx));
-	ctx->hashlen = hashlen / 8;
-	ctx->bufsz = 200 - 2 * ctx->hashlen;
+	ctx->bufsz = 200 - 2 * (hashlen / 8);
 }
 
 void cryptonite_sha3_update(struct sha3_ctx *ctx, const uint8_t *data, uint32_t len)

@@ -25,7 +25,7 @@ data SHA512t_224 = SHA512t_224
 instance HashAlgorithm SHA512t_224 where
     hashBlockSize  _          = 128
     hashDigestSize _          = 28
-    hashInternalContextSize _ = 264
+    hashInternalContextSize _ = 256
     hashInternalInit p        = c_sha512t_init p 224
     hashInternalUpdate        = c_sha512t_update
     hashInternalFinalize p    = c_sha512t_finalize p 224
@@ -37,7 +37,7 @@ data SHA512t_256 = SHA512t_256
 instance HashAlgorithm SHA512t_256 where
     hashBlockSize  _          = 128
     hashDigestSize _          = 32
-    hashInternalContextSize _ = 264
+    hashInternalContextSize _ = 256
     hashInternalInit p        = c_sha512t_init p 256
     hashInternalUpdate        = c_sha512t_update
     hashInternalFinalize p    = c_sha512t_finalize p 256
