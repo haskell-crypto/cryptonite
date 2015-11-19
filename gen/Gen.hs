@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Main where
 
 import System.FilePath
@@ -9,25 +10,45 @@ import Template
 readTemplate templateFile = parseTemplate <$> readFile templateFile
 writeTemplate file vars multi template = writeFile file (renderTemplate template vars multi)
 
-{-
+-- print a loud error if the conversion is losing information
+divSafe :: Int -> Int -> Int
+divSafe a b
+    | r == 0    = d
+    | otherwise = error ("cannot safely convert values: trying to divide " ++ show a ++ " by " ++ show b ++ " remainder: " ++ show r)
+  where
+    (d,r) = a `divMod` b
+
 newtype Bits = Bits Int
     deriving (Show,Eq,Num)
 newtype Bytes = Bytes Int
     deriving (Show,Eq,Num)
--}
+
+class SizedNum a where
+    showBytes :: a -> String
+    showBits  :: a -> String
+    showW64   :: a -> String
+
+instance SizedNum Bytes where
+    showBits (Bytes b)  = show (b * 8)
+    showBytes (Bytes b) = show b
+    showW64 (Bytes b)   = show (b `divSafe` 8)
+instance SizedNum Bits where
+    showBits (Bits b)  = show b
+    showBytes (Bits b) = show (b `divSafe` 8)
+    showW64 (Bits b)  = show (b `divSafe` 64)
 
 data GenHashModule = GenHashModule
     { ghmModuleName   :: String
     , ghmHeaderFile   :: String
     , ghmHashName     :: String
-    , ghmContextSize  :: Int -- in bytes
+    , ghmContextSize  :: Bytes
     , ghmCustomizable :: HashCustom
     } deriving (Show,Eq)
 
 data HashCustom =
-      HashSimple Int -- digest size in bits
-                 Int -- block length in bytes
-    | HashMulti [(Int, Int)] -- list of (digest output size in *bits*, block size in bytes)
+      HashSimple Bits -- digest size in bits
+                 Bytes -- block length in bytes
+    | HashMulti [(Bits, Bytes)] -- list of (digest output size in *bits*, block size in bytes)
     deriving (Show,Eq)
 
 hashModules =
@@ -62,8 +83,8 @@ renderHashModules genOpts = do
         let baseVars = [ ("MODULENAME"       , ghmModuleName ghm)
                        , ("HEADER_FILE"      , ghmHeaderFile ghm)
                        , ("HASHNAME"         , ghmHashName ghm)
-                       , ("CTX_SIZE_BYTES"   , show (ghmContextSize ghm))
-                       , ("CTX_SIZE_WORD64"  , show (ghmContextSize ghm `div` 8))
+                       , ("CTX_SIZE_BYTES"   , showBytes (ghmContextSize ghm))
+                       , ("CTX_SIZE_WORD64"  , showW64 (ghmContextSize ghm))
                        ] :: Attrs
         let mainDir      = "Crypto/Hash"
             mainName     = mainDir </> (ghmModuleName ghm ++ ".hs")
@@ -74,19 +95,19 @@ renderHashModules genOpts = do
                 case ghmCustomizable ghm of
                     HashSimple digestSize blockLength ->
                         (hashTemplate,
-                            [ ("DIGEST_SIZE_BITS" , show digestSize)
-                            , ("DIGEST_SIZE_BYTES", show (digestSize`div` 8))
-                            , ("BLOCK_SIZE_BYTES" , show blockLength)
+                            [ ("DIGEST_SIZE_BITS" , showBits digestSize)
+                            , ("DIGEST_SIZE_BYTES", showBytes digestSize)
+                            , ("BLOCK_SIZE_BYTES" , showBytes blockLength)
                             ]
                         , []
                         )
                     HashMulti customSizes ->
                         (hashLenTemplate, [],
                             [ ("CUSTOMIZABLE", map (\(outputSizeBits, customBlockSize) ->
-                                [ ("CUSTOM_BITSIZE", show outputSizeBits)
-                                , ("CUSTOM_DIGEST_SIZE_BITS", show outputSizeBits)
-                                , ("CUSTOM_DIGEST_SIZE_BYTES", show (outputSizeBits `div` 8))
-                                , ("CUSTOM_BLOCK_SIZE_BYTES", show customBlockSize)
+                                [ ("CUSTOM_BITSIZE", showBits outputSizeBits)
+                                , ("CUSTOM_DIGEST_SIZE_BITS", showBits outputSizeBits)
+                                , ("CUSTOM_DIGEST_SIZE_BYTES", showBytes outputSizeBits)
+                                , ("CUSTOM_BLOCK_SIZE_BYTES", showBytes customBlockSize)
                                 ]) customSizes
                               )
                             ]
