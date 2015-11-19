@@ -10,10 +10,10 @@
 module Crypto.Hash.Algorithms
     ( HashAlgorithm
     -- * hash algorithms
-    , BLAKE2s_256(..)
-    , BLAKE2sp_256(..)
-    , BLAKE2b_512(..)
-    , BLAKE2bp_512(..)
+    , Blake2s_256(..)
+    , Blake2sp_256(..)
+    , Blake2b_512(..)
+    , Blake2bp_512(..)
     , MD2(..)
     , MD4(..)
     , MD5(..)
@@ -44,10 +44,10 @@ module Crypto.Hash.Algorithms
     ) where
 
 import           Crypto.Hash.Types (HashAlgorithm)
-import           Crypto.Hash.BLAKE2s
-import           Crypto.Hash.BLAKE2sp
-import           Crypto.Hash.BLAKE2b
-import           Crypto.Hash.BLAKE2bp
+import           Crypto.Hash.Blake2s
+import           Crypto.Hash.Blake2sp
+import           Crypto.Hash.Blake2b
+import           Crypto.Hash.Blake2bp
 import           Crypto.Hash.MD2
 import           Crypto.Hash.MD4
 import           Crypto.Hash.MD5

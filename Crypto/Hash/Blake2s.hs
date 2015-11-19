@@ -1,16 +1,16 @@
 -- |
--- Module      : Crypto.Hash.BLAKE2s
+-- Module      : Crypto.Hash.Blake2s
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : experimental
 -- Portability : unknown
 --
 -- module containing the binding functions to work with the
--- BLAKE2s cryptographic hash.
+-- Blake2s cryptographic hash.
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
-module Crypto.Hash.BLAKE2s
-    (  BLAKE2s_256 (..)
+module Crypto.Hash.Blake2s
+    (  Blake2s_256 (..)
     ) where
 
 import           Crypto.Hash.Types
@@ -18,11 +18,11 @@ import           Foreign.Ptr (Ptr)
 import           Data.Word (Word8, Word32)
 
 
--- | BLAKE2s (256 bits) cryptographic hash algorithm
-data BLAKE2s_256 = BLAKE2s_256
+-- | Blake2s (256 bits) cryptographic hash algorithm
+data Blake2s_256 = Blake2s_256
     deriving (Show)
 
-instance HashAlgorithm BLAKE2s_256 where
+instance HashAlgorithm Blake2s_256 where
     hashBlockSize  _          = 64
     hashDigestSize _          = 32
     hashInternalContextSize _ = 185

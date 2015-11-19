@@ -149,10 +149,10 @@ Library
                      Crypto.Hash.MD2
                      Crypto.Hash.MD4
                      Crypto.Hash.MD5
-                     Crypto.Hash.BLAKE2s
-                     Crypto.Hash.BLAKE2sp
-                     Crypto.Hash.BLAKE2b
-                     Crypto.Hash.BLAKE2bp
+                     Crypto.Hash.Blake2s
+                     Crypto.Hash.Blake2sp
+                     Crypto.Hash.Blake2b
+                     Crypto.Hash.Blake2bp
                      Crypto.Hash.RIPEMD160
                      Crypto.Hash.Skein256
                      Crypto.Hash.Skein512
