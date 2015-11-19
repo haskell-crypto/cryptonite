@@ -60,7 +60,7 @@ expected =
     , ("$2a$06$.rCVZVOThsIa97pEDOxvGuRRgzG64bvtJ0938xuqzv18d3ZpQhstC", "abcdefghijklmnopqrstuvwxyz")
     ]
 
-makeKATs expected = concatMap maketest (zip3 is passwords hashes)
+makeKATs = concatMap maketest (zip3 is passwords hashes)
   where
     is :: [Int]
     is = [1..]
@@ -73,5 +73,5 @@ makeKATs expected = concatMap maketest (zip3 is passwords hashes)
         ]
 
 tests = testGroup "bcrypt"
-    [ testGroup "KATs" (makeKATs expected)
+    [ testGroup "KATs" makeKATs
     ]
