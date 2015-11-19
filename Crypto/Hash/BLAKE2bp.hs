@@ -9,29 +9,33 @@
 -- BLAKE2bp cryptographic hash.
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
-module Crypto.Hash.BLAKE2bp ( BLAKE2bp (..) ) where
+module Crypto.Hash.BLAKE2bp
+    (  BLAKE2bp_512 (..)
+    ) where
 
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
 import           Data.Word (Word8, Word32)
 
--- | BLAKE2bp cryptographic hash algorithm
-data BLAKE2bp = BLAKE2bp
+
+-- | BLAKE2bp (512 bits) cryptographic hash algorithm
+data BLAKE2bp_512 = BLAKE2bp_512
     deriving (Show)
 
-instance HashAlgorithm BLAKE2bp where
+instance HashAlgorithm BLAKE2bp_512 where
     hashBlockSize  _          = 128
     hashDigestSize _          = 64
     hashInternalContextSize _ = 2325
-    hashInternalInit          = c_blake2sp_init
+    hashInternalInit p        = c_blake2sp_init p 512
     hashInternalUpdate        = c_blake2sp_update
-    hashInternalFinalize      = c_blake2sp_finalize
+    hashInternalFinalize p    = c_blake2sp_finalize p 512
+
 
 foreign import ccall unsafe "cryptonite_blake2sp_init"
-    c_blake2sp_init :: Ptr (Context a)-> IO ()
+    c_blake2sp_init :: Ptr (Context a) -> Word32 -> IO ()
 
 foreign import ccall "cryptonite_blake2sp_update"
     c_blake2sp_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
 
 foreign import ccall unsafe "cryptonite_blake2sp_finalize"
-    c_blake2sp_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()
+    c_blake2sp_finalize :: Ptr (Context a) -> Word32 -> Ptr (Digest a) -> IO ()

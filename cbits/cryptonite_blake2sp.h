@@ -5,8 +5,8 @@
 
 typedef blake2sp_state blake2sp_ctx;
 
-void cryptonite_blake2sp_init(blake2sp_ctx *ctx);
+void cryptonite_blake2sp_init(blake2sp_ctx *ctx, uint32_t hashlen);
 void cryptonite_blake2sp_update(blake2sp_ctx *ctx, const uint8_t *data, uint32_t len);
-void cryptonite_blake2sp_finalize(blake2sp_ctx *ctx, uint8_t *out);
+void cryptonite_blake2sp_finalize(blake2sp_ctx *ctx, uint32_t hashlen, uint8_t *out);
 
 #endif
