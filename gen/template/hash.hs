@@ -20,9 +20,9 @@ data %%MODULENAME%% = %%MODULENAME%%
     deriving (Show)
 
 instance HashAlgorithm %%MODULENAME%% where
-    hashBlockSize  _          = %%BLOCKLEN%%
-    hashDigestSize _          = %%DIGESTSIZE%%
-    hashInternalContextSize _ = %%SIZECTX%%
+    hashBlockSize  _          = %%BLOCK_SIZE_BYTES%%
+    hashDigestSize _          = %%DIGEST_SIZE_BYTES%%
+    hashInternalContextSize _ = %%CTX_SIZE_BYTES%%
     hashInternalInit          = c_%%HASHNAME%%_init
     hashInternalUpdate        = c_%%HASHNAME%%_update
     hashInternalFinalize      = c_%%HASHNAME%%_finalize
