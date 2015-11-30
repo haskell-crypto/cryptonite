@@ -1,3 +1,7 @@
+## 0.10
+
+* Add support_blake2 flag
+
 ## 0.9
 
 * Quiet down unused module imports
