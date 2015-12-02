@@ -63,6 +63,11 @@ Flag support_pclmuldq
   Default:           False
   Manual:            True
 
+Flag support_blake2
+  Description:       Allow compilation of Blake2 hash algorithms
+  Default:           True
+  Manual:            True
+
 Flag integer-gmp
   Description:       Whether or not to use GMP for some functions
   Default:           True
@@ -149,10 +154,6 @@ Library
                      Crypto.Hash.MD2
                      Crypto.Hash.MD4
                      Crypto.Hash.MD5
-                     Crypto.Hash.Blake2s
-                     Crypto.Hash.Blake2sp
-                     Crypto.Hash.Blake2b
-                     Crypto.Hash.Blake2bp
                      Crypto.Hash.RIPEMD160
                      Crypto.Hash.Skein256
                      Crypto.Hash.Skein512
@@ -199,10 +200,6 @@ Library
                    , cbits/cryptonite_md2.c
                    , cbits/cryptonite_md4.c
                    , cbits/cryptonite_md5.c
-                   , cbits/cryptonite_blake2s.c
-                   , cbits/cryptonite_blake2sp.c
-                   , cbits/cryptonite_blake2b.c
-                   , cbits/cryptonite_blake2bp.c
                    , cbits/cryptonite_ripemd.c
                    , cbits/cryptonite_skein256.c
                    , cbits/cryptonite_skein512.c
@@ -210,10 +207,6 @@ Library
                    , cbits/cryptonite_whirlpool.c
                    , cbits/cryptonite_scrypt.c
                    , cbits/cryptonite_sysrand.c
-                   , cbits/blake2/blake2s.c
-                   , cbits/blake2/blake2sp.c
-                   , cbits/blake2/blake2b.c
-                   , cbits/blake2/blake2bp.c
   include-dirs:  cbits cbits/ed25519 cbits/blake2
 
   -- FIXME armel or mispel is also little endian.
@@ -236,6 +229,21 @@ Library
     if flag(support_pclmuldq)
        CC-options:  -msse4.1 -mpclmul -DWITH_PCLMUL
     C-sources:      cbits/aes/x86ni.c
+
+  if flag(support_blake2)
+    CPP-options:    -DSUPPORT_BLAKE2
+    C-sources:      cbits/cryptonite_blake2s.c
+                  , cbits/cryptonite_blake2sp.c
+                  , cbits/cryptonite_blake2b.c
+                  , cbits/cryptonite_blake2bp.c
+                  , cbits/blake2/blake2s.c
+                  , cbits/blake2/blake2sp.c
+                  , cbits/blake2/blake2b.c
+                  , cbits/blake2/blake2bp.c
+    Other-modules:  Crypto.Hash.Blake2s
+                    Crypto.Hash.Blake2sp
+                    Crypto.Hash.Blake2b
+                    Crypto.Hash.Blake2bp
 
   if os(windows)
     cpp-options:    -DWINDOWS
