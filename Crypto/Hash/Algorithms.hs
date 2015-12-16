@@ -11,12 +11,10 @@
 module Crypto.Hash.Algorithms
     ( HashAlgorithm
     -- * hash algorithms
-#ifdef SUPPORT_BLAKE2
     , Blake2s_256(..)
     , Blake2sp_256(..)
     , Blake2b_512(..)
     , Blake2bp_512(..)
-#endif
     , MD2(..)
     , MD4(..)
     , MD5(..)
@@ -47,12 +45,10 @@ module Crypto.Hash.Algorithms
     ) where
 
 import           Crypto.Hash.Types (HashAlgorithm)
-#ifdef SUPPORT_BLAKE2
 import           Crypto.Hash.Blake2s
 import           Crypto.Hash.Blake2sp
 import           Crypto.Hash.Blake2b
 import           Crypto.Hash.Blake2bp
-#endif
 import           Crypto.Hash.MD2
 import           Crypto.Hash.MD4
 import           Crypto.Hash.MD5
