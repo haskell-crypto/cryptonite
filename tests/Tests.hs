@@ -14,6 +14,7 @@ import qualified KAT_HMAC
 import qualified KAT_PBKDF2
 import qualified KAT_Curve25519
 import qualified KAT_Ed25519
+import qualified KAT_OTP
 import qualified KAT_PubKey
 import qualified KAT_Scrypt
 -- symmetric cipher --------------------
@@ -38,6 +39,7 @@ tests = testGroup "cryptonite"
     , KAT_Curve25519.tests
     , KAT_Ed25519.tests
     , KAT_PubKey.tests
+    , KAT_OTP.tests
     , testGroup "KDF"
         [ KAT_PBKDF2.tests
         , KAT_Scrypt.tests

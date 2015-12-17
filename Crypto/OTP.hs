@@ -1,0 +1,55 @@
+
+module Crypto.OTP where
+
+import           Data.Bits (shiftL, shiftR, (.&.), (.|.))
+import           Data.Word
+import           Foreign.Storable (pokeByteOff)
+import           Crypto.Hash (SHA1)
+import           Crypto.MAC.HMAC
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, Bytes)
+import qualified Crypto.Internal.ByteArray as B
+
+-- | The strength of the calculated HOTP value, namely
+-- the number of digits (between 4 and 9) in the extracted value.
+data OTPDigits = OTP4 | OTP5 | OTP6 | OTP7 | OTP8 | OTP9
+
+hotp :: ByteArrayAccess key
+    => OTPDigits
+    -- ^ Number of digits in the HOTP value extracted from the calculated HMAC
+    -> key
+    -- ^ Shared secret between the client and server
+    -> Word64
+    -- ^ Counter value synchronized between the client and server
+    -> Word32
+    -- ^ The HOTP value
+hotp d k c = dt `mod` digitsPower d
+  where
+    mac = hmac k (fromW64BE c :: Bytes) :: HMAC SHA1
+    offset = fromIntegral (B.index mac (B.length mac - 1) .&. 0xf)
+    dt = (fromIntegral (B.index mac offset       .&. 0x7f) `shiftL` 24) .|.
+         (fromIntegral (B.index mac (offset + 1) .&. 0xff) `shiftL` 16) .|.
+         (fromIntegral (B.index mac (offset + 2) .&. 0xff) `shiftL`  8) .|.
+         fromIntegral  (B.index mac (offset + 3) .&. 0xff)
+
+
+digitsPower :: OTPDigits -> Word32
+digitsPower OTP4 = 10000
+digitsPower OTP5 = 100000
+digitsPower OTP6 = 1000000
+digitsPower OTP7 = 10000000
+digitsPower OTP8 = 100000000
+digitsPower OTP9 = 1000000000
+
+totp = undefined
+
+-- TODO: Put this in memory package
+fromW64BE :: (ByteArray ba) => Word64 -> ba
+fromW64BE n = B.allocAndFreeze 8 $ \p -> do
+    pokeByteOff p 0 (fromIntegral (shiftR n 56) :: Word8)
+    pokeByteOff p 1 (fromIntegral (shiftR n 48) :: Word8)
+    pokeByteOff p 2 (fromIntegral (shiftR n 40) :: Word8)
+    pokeByteOff p 3 (fromIntegral (shiftR n 32) :: Word8)
+    pokeByteOff p 4 (fromIntegral (shiftR n 24) :: Word8)
+    pokeByteOff p 5 (fromIntegral (shiftR n 16) :: Word8)
+    pokeByteOff p 6 (fromIntegral (shiftR n  8) :: Word8)
+    pokeByteOff p 7 (fromIntegral n             :: Word8)

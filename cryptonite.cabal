@@ -107,6 +107,7 @@ Library
                      Crypto.Hash
                      Crypto.Hash.IO
                      Crypto.Hash.Algorithms
+                     Crypto.OTP
                      Crypto.PubKey.Curve25519
                      Crypto.PubKey.MaskGenFunction
                      Crypto.PubKey.DH
@@ -283,6 +284,7 @@ Test-Suite test-cryptonite
                      KAT_Ed25519
                      KAT_HMAC
                      KAT_PBKDF2
+                     KAT_OTP
                      KAT_PubKey.DSA
                      KAT_PubKey.ECC
                      KAT_PubKey.ECDSA
