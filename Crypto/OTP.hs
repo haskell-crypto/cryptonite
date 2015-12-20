@@ -2,6 +2,7 @@
 module Crypto.OTP where
 
 import           Data.Bits (shiftL, shiftR, (.&.), (.|.))
+import           Data.List (elemIndex)
 import           Data.Word
 import           Foreign.Storable (pokeByteOff)
 import           Crypto.Hash (SHA1)
@@ -31,6 +32,34 @@ hotp d k c = dt `mod` digitsPower d
          (fromIntegral (B.index mac (offset + 2) .&. 0xff) `shiftL`  8) .|.
          fromIntegral  (B.index mac (offset + 3) .&. 0xff)
 
+-- | Attempt to resynchronize the server's counter value
+-- with the client, given a sequence of HOTP values
+resynchronize :: ByteArrayAccess key
+    => OTPDigits
+    -> Word32
+    -- ^ The look-ahead window parameter. Up to this many values will
+    -- be calculated and checked against the value(s) submitted by the client
+    -> key
+    -- ^ The shared secret
+    -> Word64
+    -- ^ The current server counter value
+    -> Word32
+    -- ^ The first OTP submitted by the client
+    -> [Word32]
+    -- ^ Additional sequential OTPs (may be empty)
+    -> Maybe Word64
+    -- ^ The new counter value, synchronized with the client's current counter
+    -- or Nothing if the submitted OTP values didn't match
+resynchronize d s k c p1 extras = do
+    offBy <- fmap fromIntegral (elemIndex p1 range)
+    checkExtraOtps (c + offBy + 1) extras
+  where
+    checkExtraOtps ctr [] = Just ctr
+    checkExtraOtps ctr (p:ps)
+        | hotp d k ctr /= p = Nothing
+        | otherwise         = checkExtraOtps (ctr + 1) ps
+
+    range = map (hotp d k)[c..c + fromIntegral s]
 
 digitsPower :: OTPDigits -> Word32
 digitsPower OTP4 = 10000

@@ -7,6 +7,7 @@ module KAT_OTP
 where
 
 import Crypto.OTP
+import Data.ByteString (ByteString)
 import Imports
 
 -- | Test values from Appendix D of http://tools.ietf.org/html/rfc4226
@@ -36,6 +37,16 @@ makeKATs = concatMap makeTest (zip3 is counts hotps)
         [ testCase (show i) (assertEqual "" password (hotp OTP6 hotpKey count))
         ]
 
+-- resynching with the expected value should just return the current counter + 1
+prop_resyncExpected ctr window = resynchronize OTP6 window key ctr otp [] == Just (ctr + 1)
+  where
+    key = "1234" :: ByteString
+    otp = hotp OTP6 key ctr
+
+
 tests = testGroup "OTP"
     [ testGroup "KATs" makeKATs
+    , testGroup "properties"
+        [ testProperty "resync-expected" prop_resyncExpected
+        ]
     ]
