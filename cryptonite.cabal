@@ -240,7 +240,7 @@ Library
        CC-options:  -msse4.1 -mpclmul -DWITH_PCLMUL
     C-sources:      cbits/aes/x86ni.c
 
-  if flag(support_blake2_sse)
+  if arch(x86_64) || flag(support_blake2_sse)
     C-sources:      cbits/blake2/sse/blake2s.c
                   , cbits/blake2/sse/blake2sp.c
                   , cbits/blake2/sse/blake2b.c
