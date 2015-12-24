@@ -1,6 +1,7 @@
 ## 0.10
 
-* Add support_blake2 flag
+* Add reference implementation of blake2 for non-SSE2 platform
+* Add support\_blake2\_sse flag
 
 ## 0.9
 
