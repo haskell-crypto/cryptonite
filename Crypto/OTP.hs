@@ -1,11 +1,18 @@
 
-module Crypto.OTP where
+module Crypto.OTP
+    ( hotp
+    , OTPDigits (..)
+    , resynchronize
+    , totp
+    )
+where
 
 import           Data.Bits (shiftL, shiftR, (.&.), (.|.))
+import           Data.Time.Clock.POSIX
 import           Data.List (elemIndex)
 import           Data.Word
 import           Foreign.Storable (pokeByteOff)
-import           Crypto.Hash (SHA1)
+import           Crypto.Hash (HashAlgorithm, SHA1)
 import           Crypto.MAC.HMAC
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, Bytes)
 import qualified Crypto.Internal.ByteArray as B
@@ -68,7 +75,25 @@ digitsPower OTP7 = 10000000
 digitsPower OTP8 = 100000000
 digitsPower OTP9 = 1000000000
 
-totp = undefined
+
+totp :: (HashAlgorithm hash, ByteArrayAccess key)
+    => hash
+    -> Word32
+    -- ^ The time step parameter X
+    -> Word64
+    -- ^ The T0 parameter in seconds. This is the Unix time from which to start
+    -- counting steps (usually zero)
+    -> OTPDigits
+    -> key
+    -- ^ The shared secret
+    -> POSIXTime
+    -- ^ The time for which the OTP should be calculated.
+    -- This is usually the current time as returned by @Data.Time.Clock.POSIX.getPOSIXTime@
+    -> Word32
+    -- ^ The OTP value
+totp h x t0 d k now = hotp d k t
+  where
+    t = floor ((now - fromIntegral t0) / fromIntegral x)
 
 -- TODO: Put this in memory package
 fromW64BE :: (ByteArray ba) => Word64 -> ba
