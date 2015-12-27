@@ -33,7 +33,7 @@ hotp d k c = dt `mod` digitsPower d
          fromIntegral  (B.index mac (offset + 3) .&. 0xff)
 
 -- | Attempt to resynchronize the server's counter value
--- with the client, given a sequence of HOTP values
+-- with the client, given a sequence of HOTP values.
 resynchronize :: ByteArrayAccess key
     => OTPDigits
     -> Word32
@@ -43,14 +43,13 @@ resynchronize :: ByteArrayAccess key
     -- ^ The shared secret
     -> Word64
     -- ^ The current server counter value
-    -> Word32
-    -- ^ The first OTP submitted by the client
-    -> [Word32]
-    -- ^ Additional sequential OTPs (may be empty)
+    -> (Word32, [Word32])
+    -- ^ The first OTP submitted by the client and a list of additional
+    -- sequential OTPs (which may be empty)
     -> Maybe Word64
     -- ^ The new counter value, synchronized with the client's current counter
-    -- or Nothing if the submitted OTP values didn't match
-resynchronize d s k c p1 extras = do
+    -- or Nothing if the submitted OTP values didn't match anywhere within the window
+resynchronize d s k c (p1, extras) = do
     offBy <- fmap fromIntegral (elemIndex p1 range)
     checkExtraOtps (c + offBy + 1) extras
   where

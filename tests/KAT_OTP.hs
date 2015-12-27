@@ -38,7 +38,7 @@ makeKATs = concatMap makeTest (zip3 is counts hotps)
         ]
 
 -- resynching with the expected value should just return the current counter + 1
-prop_resyncExpected ctr window = resynchronize OTP6 window key ctr otp [] == Just (ctr + 1)
+prop_resyncExpected ctr window = resynchronize OTP6 window key ctr (otp, []) == Just (ctr + 1)
   where
     key = "1234" :: ByteString
     otp = hotp OTP6 key ctr
