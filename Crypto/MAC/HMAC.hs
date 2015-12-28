@@ -40,7 +40,7 @@ instance Eq (HMAC a) where
     (HMAC b1) == (HMAC b2) = B.constEq b1 b2
 
 -- | compute a MAC using the supplied hashing function
-hmac :: (ByteArrayAccess key, ByteArray message, HashAlgorithm a)
+hmac :: (ByteArrayAccess key, ByteArrayAccess message, HashAlgorithm a)
      => key     -- ^ Secret key
      -> message -- ^ Message to MAC
      -> HMAC a

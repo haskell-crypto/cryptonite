@@ -11,6 +11,7 @@ import qualified Salsa
 import qualified ChaCha
 import qualified ChaChaPoly1305
 import qualified KAT_HMAC
+import qualified KAT_HKDF
 import qualified KAT_PBKDF2
 import qualified KAT_Curve25519
 import qualified KAT_Ed25519
@@ -42,6 +43,7 @@ tests = testGroup "cryptonite"
         [ KAT_PBKDF2.tests
         , KAT_Scrypt.tests
         , BCrypt.tests
+        , KAT_HKDF.tests
         ]
     , testGroup "block-cipher"
         [ KAT_AES.tests

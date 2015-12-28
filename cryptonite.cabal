@@ -12,7 +12,7 @@ Description:
     .
     * Assymmetric crypto: DSA, RSA, DH, ECDH, ECDSA, ECC, Curve25519, Ed25519
     .
-    * Key Derivation Function: PBKDF2, Scrypt
+    * Key Derivation Function: PBKDF2, Scrypt, HKDF
     .
     * Cryptographic Random generation: System Entropy, Deterministic Random Generator
     .
@@ -106,6 +106,7 @@ Library
                      Crypto.KDF.PBKDF2
                      Crypto.KDF.Scrypt
                      Crypto.KDF.BCrypt
+                     Crypto.KDF.HKDF
                      Crypto.Hash
                      Crypto.Hash.IO
                      Crypto.Hash.Algorithms
