@@ -1,9 +1,23 @@
 
+-- | One-time password implementation as defined by the
+-- <http://tools.ietf.org/html/rfc4226 HOTP> and <http://tools.ietf.org/html/rfc6238 TOTP>
+-- specifications.
+--
+-- Both implementations use a shared key between the client and the server. HOTP passwords
+-- are based on a synchronized counter. TOTP passwords use the same approach but calculate
+-- the counter as a number of time steps from the Unix epoch to the current time, thus
+-- requiring that both client and server have synchronized clocks.
+--
+-- Probably the best-known use of TOTP is in Google's 2-factor authentication.
+--
+
 module Crypto.OTP
     ( hotp
     , OTPDigits (..)
     , resynchronize
     , totp
+    , defaultTOTPParams
+    , mkTOTPParams
     )
 where
 
@@ -12,7 +26,8 @@ import           Data.Time.Clock.POSIX
 import           Data.List (elemIndex)
 import           Data.Word
 import           Foreign.Storable (pokeByteOff)
-import           Crypto.Hash (HashAlgorithm, SHA1)
+import           Control.Monad (unless)
+import           Crypto.Hash (HashAlgorithm, SHA1(..))
 import           Crypto.MAC.HMAC
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, Bytes)
 import qualified Crypto.Internal.ByteArray as B
@@ -76,14 +91,28 @@ digitsPower OTP8 = 100000000
 digitsPower OTP9 = 1000000000
 
 
-totp :: (HashAlgorithm hash, ByteArrayAccess key)
+data TOTPParams h = TP !h !Word64 !Word32 !OTPDigits
+
+defaultTOTPParams :: TOTPParams SHA1
+defaultTOTPParams = TP SHA1 0 30 OTP6
+
+mkTOTPParams :: (HashAlgorithm hash)
     => hash
-    -> Word32
-    -- ^ The time step parameter X
     -> Word64
     -- ^ The T0 parameter in seconds. This is the Unix time from which to start
-    -- counting steps (usually zero)
+    -- counting steps (default 0). Must be before the current time.
+    -> Word32
+    -- ^ The time step parameter X in seconds (default 30)
     -> OTPDigits
+    -- ^ Number of required digits in the OTP (default 6)
+    -> Either String (TOTPParams hash)
+mkTOTPParams h t0 x d = do
+    unless (x > 0) (Left "Time step must be greater than zero")
+    unless (x <= 300) (Left "Time step cannot be greater than 300 seconds")
+    return (TP h t0 x d)
+
+totp :: (HashAlgorithm hash, ByteArrayAccess key)
+    => TOTPParams hash
     -> key
     -- ^ The shared secret
     -> POSIXTime
@@ -91,9 +120,10 @@ totp :: (HashAlgorithm hash, ByteArrayAccess key)
     -- This is usually the current time as returned by @Data.Time.Clock.POSIX.getPOSIXTime@
     -> Word32
     -- ^ The OTP value
-totp h x t0 d k now = hotp d k t
+totp (TP h t0 x d) k now = hotp d k t
   where
     t = floor ((now - fromIntegral t0) / fromIntegral x)
+
 
 -- TODO: Put this in memory package
 fromW64BE :: (ByteArray ba) => Word64 -> ba

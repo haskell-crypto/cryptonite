@@ -56,9 +56,10 @@ makeTOTPKATs = concatMap makeTest (zip3 is times otps)
 
     times = map fst totpExpected
     otps  = map snd totpExpected
+    Right params = mkTOTPParams SHA1 0 30 OTP8
 
     makeTest (i, now, password) =
-        [ testCase (show i) (assertEqual "" password (totp SHA1 30 0 OTP8 otpKey (fromIntegral now)))
+        [ testCase (show i) (assertEqual "" password (totp params otpKey (fromIntegral now)))
         ]
 
 -- resynching with the expected value should just return the current counter + 1
