@@ -46,7 +46,7 @@ makeHOTPKATs = concatMap makeTest (zip3 is counts hotps)
     hotps  = map snd hotpExpected
 
     makeTest (i, count, password) =
-        [ testCase (show i) (assertEqual "" password (hotp OTP6 otpKey count))
+        [ testCase (show i) (assertEqual "" password (hotp SHA1 OTP6 otpKey count))
         ]
 
 makeTOTPKATs = concatMap makeTest (zip3 is times otps)
@@ -63,10 +63,10 @@ makeTOTPKATs = concatMap makeTest (zip3 is times otps)
         ]
 
 -- resynching with the expected value should just return the current counter + 1
-prop_resyncExpected ctr window = resynchronize OTP6 window key ctr (otp, []) == Just (ctr + 1)
+prop_resyncExpected ctr window = resynchronize SHA1 OTP6 window key ctr (otp, []) == Just (ctr + 1)
   where
     key = "1234" :: ByteString
-    otp = hotp OTP6 key ctr
+    otp = hotp SHA1 OTP6 key ctr
 
 
 tests = testGroup "OTP"

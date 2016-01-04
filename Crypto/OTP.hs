@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -- | One-time password implementation as defined by the
 -- <http://tools.ietf.org/html/rfc4226 HOTP> and <http://tools.ietf.org/html/rfc6238 TOTP>
@@ -36,8 +37,9 @@ import qualified Crypto.Internal.ByteArray as B
 -- the number of digits (between 4 and 9) in the extracted value.
 data OTPDigits = OTP4 | OTP5 | OTP6 | OTP7 | OTP8 | OTP9
 
-hotp :: ByteArrayAccess key
-    => OTPDigits
+hotp :: forall hash key. (HashAlgorithm hash, ByteArrayAccess key)
+    => hash
+    -> OTPDigits
     -- ^ Number of digits in the HOTP value extracted from the calculated HMAC
     -> key
     -- ^ Shared secret between the client and server
@@ -45,9 +47,9 @@ hotp :: ByteArrayAccess key
     -- ^ Counter value synchronized between the client and server
     -> Word32
     -- ^ The HOTP value
-hotp d k c = dt `mod` digitsPower d
+hotp _ d k c = dt `mod` digitsPower d
   where
-    mac = hmac k (fromW64BE c :: Bytes) :: HMAC SHA1
+    mac = hmac k (fromW64BE c :: Bytes) :: HMAC hash
     offset = fromIntegral (B.index mac (B.length mac - 1) .&. 0xf)
     dt = (fromIntegral (B.index mac offset       .&. 0x7f) `shiftL` 24) .|.
          (fromIntegral (B.index mac (offset + 1) .&. 0xff) `shiftL` 16) .|.
@@ -56,8 +58,9 @@ hotp d k c = dt `mod` digitsPower d
 
 -- | Attempt to resynchronize the server's counter value
 -- with the client, given a sequence of HOTP values.
-resynchronize :: ByteArrayAccess key
-    => OTPDigits
+resynchronize :: (HashAlgorithm hash, ByteArrayAccess key)
+    => hash
+    -> OTPDigits
     -> Word32
     -- ^ The look-ahead window parameter. Up to this many values will
     -- be calculated and checked against the value(s) submitted by the client
@@ -71,16 +74,16 @@ resynchronize :: ByteArrayAccess key
     -> Maybe Word64
     -- ^ The new counter value, synchronized with the client's current counter
     -- or Nothing if the submitted OTP values didn't match anywhere within the window
-resynchronize d s k c (p1, extras) = do
+resynchronize h d s k c (p1, extras) = do
     offBy <- fmap fromIntegral (elemIndex p1 range)
     checkExtraOtps (c + offBy + 1) extras
   where
     checkExtraOtps ctr [] = Just ctr
     checkExtraOtps ctr (p:ps)
-        | hotp d k ctr /= p = Nothing
-        | otherwise         = checkExtraOtps (ctr + 1) ps
+        | hotp h d k ctr /= p = Nothing
+        | otherwise           = checkExtraOtps (ctr + 1) ps
 
-    range = map (hotp d k)[c..c + fromIntegral s]
+    range = map (hotp h d k)[c..c + fromIntegral s]
 
 digitsPower :: OTPDigits -> Word32
 digitsPower OTP4 = 10000
@@ -120,7 +123,7 @@ totp :: (HashAlgorithm hash, ByteArrayAccess key)
     -- This is usually the current time as returned by @Data.Time.Clock.POSIX.getPOSIXTime@
     -> Word32
     -- ^ The OTP value
-totp (TP h t0 x d) k now = hotp d k t
+totp (TP h t0 x d) k now = hotp h d k t
   where
     t = floor ((now - fromIntegral t0) / fromIntegral x)
 
