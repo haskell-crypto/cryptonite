@@ -6,7 +6,7 @@ module KAT_OTP
     )
 where
 
-import Crypto.Hash.Algorithms (SHA1(..))
+import Crypto.Hash.Algorithms (SHA1(..), SHA256(..), SHA512(..))
 import Crypto.OTP
 import Data.ByteString (ByteString)
 import Imports
@@ -25,8 +25,11 @@ hotpExpected =
     , (9, 520489)
     ]
 
-totpExpected :: [(Word64, Word32)]
-totpExpected =
+-- | Test data from Appendix B of http://tools.ietf.org/html/rfc6238
+-- Note that the shared keys for the non SHA-1 values are actually
+-- different (see the errata, or the Java example code).
+totpSHA1Expected :: [(Word64, Word32)]
+totpSHA1Expected =
     [ (59        , 94287082)
     , (1111111109, 07081804)
     , (1111111111, 14050471)
@@ -35,32 +38,45 @@ totpExpected =
     , (20000000000, 65353130)
     ]
 
+totpSHA256Expected :: [(Word64, Word32)]
+totpSHA256Expected =
+    [ (59        , 46119246)
+    , (1111111109, 68084774)
+    , (1111111111, 67062674)
+    , (1234567890, 91819424)
+    , (2000000000, 90698825)
+    , (20000000000, 77737706)
+    ]
+
+totpSHA512Expected :: [(Word64, Word32)]
+totpSHA512Expected =
+    [ (59        , 90693936)
+    , (1111111109, 25091201)
+    , (1111111111, 99943326)
+    , (1234567890, 93441116)
+    , (2000000000, 38618901)
+    , (20000000000, 47863826)
+    ]
+
 otpKey = "12345678901234567890" :: ByteString
+totpSHA256Key = "12345678901234567890123456789012" :: ByteString
+totpSHA512Key = "1234567890123456789012345678901234567890123456789012345678901234" :: ByteString
 
-makeHOTPKATs = concatMap makeTest (zip3 is counts hotps)
+makeKATs otp expected = concatMap (makeTest otp) (zip3 is counts otps)
   where
     is :: [Int]
     is = [1..]
 
-    counts = map fst hotpExpected
-    hotps  = map snd hotpExpected
+    counts = map fst expected
+    otps  = map snd expected
 
-    makeTest (i, count, password) =
-        [ testCase (show i) (assertEqual "" password (hotp SHA1 OTP6 otpKey count))
-        ]
+makeTest otp (i, count, password) =
+    [ testCase (show i) (assertEqual "" password (otp count))
+    ]
 
-makeTOTPKATs = concatMap makeTest (zip3 is times otps)
-  where
-    is :: [Int]
-    is = [1..]
-
-    times = map fst totpExpected
-    otps  = map snd totpExpected
-    Right params = mkTOTPParams SHA1 0 30 OTP8
-
-    makeTest (i, now, password) =
-        [ testCase (show i) (assertEqual "" password (totp params otpKey (fromIntegral now)))
-        ]
+Right totpSHA1Params = mkTOTPParams SHA1 0 30 OTP8
+Right totpSHA256Params = mkTOTPParams SHA256 0 30 OTP8
+Right totpSHA512Params = mkTOTPParams SHA512 0 30 OTP8
 
 -- resynching with the expected value should just return the current counter + 1
 prop_resyncExpected ctr window = resynchronize SHA1 OTP6 window key ctr (otp, []) == Just (ctr + 1)
@@ -71,12 +87,16 @@ prop_resyncExpected ctr window = resynchronize SHA1 OTP6 window key ctr (otp, []
 
 tests = testGroup "OTP"
     [ testGroup "HOTP"
-        [ testGroup "KATs" makeHOTPKATs
+        [ testGroup "KATs" (makeKATs (hotp SHA1 OTP6 otpKey) hotpExpected)
         , testGroup "properties"
             [ testProperty "resync-expected" prop_resyncExpected
             ]
         ]
     , testGroup "TOTP"
-        [ testGroup "KATs" makeTOTPKATs
+        [ testGroup "KATs"
+            [ testGroup "SHA1" (makeKATs (totp totpSHA1Params otpKey . fromIntegral) totpSHA1Expected)
+            , testGroup "SHA256" (makeKATs (totp totpSHA256Params totpSHA256Key . fromIntegral) totpSHA256Expected)
+            , testGroup "SHA512" (makeKATs (totp totpSHA512Params totpSHA512Key . fromIntegral) totpSHA512Expected)
+            ]
         ]
     ]
