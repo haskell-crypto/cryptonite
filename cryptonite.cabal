@@ -191,9 +191,6 @@ Library
                    , cbits/cryptonite_salsa.c
                    , cbits/cryptonite_rc4.c
                    , cbits/cryptonite_cpu.c
-                   , cbits/aes/generic.c
-                   , cbits/aes/gf.c
-                   , cbits/cryptonite_aes.c
                    , cbits/curve25519/curve25519-donna.c
                    , cbits/ed25519/ed25519.c
                    , cbits/p256/p256.c
@@ -239,7 +236,14 @@ Library
     CC-options:     -mssse3 -maes -DWITH_AESNI
     if flag(support_pclmuldq)
        CC-options:  -msse4.1 -mpclmul -DWITH_PCLMUL
-    C-sources:      cbits/aes/x86ni.c
+    C-sources:       cbits/aes/x86ni.c
+                   , cbits/aes/generic.c
+                   , cbits/aes/gf.c
+                   , cbits/cryptonite_aes.c
+  else
+    C-sources:       cbits/aes/generic.c
+                   , cbits/aes/gf.c
+                   , cbits/cryptonite_aes.c
 
   if arch(x86_64) || flag(support_blake2_sse)
     C-sources:      cbits/blake2/sse/blake2s.c
