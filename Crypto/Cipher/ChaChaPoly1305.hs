@@ -5,7 +5,8 @@
 -- Stability   : stable
 -- Portability : good
 --
--- A simple AEAD scheme using ChaCha20 and Poly1305. See RFC7539.
+-- A simple AEAD scheme using ChaCha20 and Poly1305. See
+-- <https://tools.ietf.org/html/rfc7539 RFC 7539>.
 --
 -- The State is not modified in place, so each function changing the State,
 -- returns a new State.
@@ -15,12 +16,24 @@
 --
 -- Once 'finalizeAAD' has been called, no further 'appendAAD' call should be make.
 --
--- > encrypt nonce key hdr inp =
--- >    let st1        = ChaChaPoly1305.initialize key nonce
--- >        st2        = ChaChaPoly1305.finalizeAAD $ ChaChaPoly1305.appendAAD hdr st1
--- >        (out, st3) = ChaChaPoly1305.encrypt inp st2
--- >        auth       = ChaChaPoly1305.finalize st3
--- >     in out `B.append` Data.ByteArray.convert auth
+-- >import Data.ByteString.Char8 as B
+-- >import Data.ByteArray
+-- >import Crypto.Error
+-- >import Crypto.Cipher.ChaChaPoly1305 as C
+-- >
+-- >encrypt
+-- >    :: ByteString -- nonce (12 random bytes)
+-- >    -> ByteString -- symmetric key
+-- >    -> ByteString -- optional associated data (won't be encrypted)
+-- >    -> ByteString -- input plaintext to be encrypted
+-- >    -> CryptoFailable ByteString -- ciphertext with a 128-bit tag attached
+-- >encrypt nonce key header plaintext = do
+-- >    st1 <- C.nonce12 nonce >>= C.initialize key
+-- >    let
+-- >        st2 = C.finalizeAAD $ C.appendAAD header st1
+-- >        (out, st3) = C.encrypt plaintext st2
+-- >        auth = C.finalize st3
+-- >    return $ out `B.append` Data.ByteArray.convert auth
 --
 module Crypto.Cipher.ChaChaPoly1305
     ( State
