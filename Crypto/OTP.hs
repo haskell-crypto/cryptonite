@@ -17,6 +17,9 @@ module Crypto.OTP
     , OTPDigits (..)
     , resynchronize
     , totp
+    , totpVerify
+    , TOTPParams
+    , ClockSkew (..)
     , defaultTOTPParams
     , mkTOTPParams
     )
@@ -61,7 +64,7 @@ hotp _ d k c = dt `mod` digitsPower d
 resynchronize :: (HashAlgorithm hash, ByteArrayAccess key)
     => hash
     -> OTPDigits
-    -> Word32
+    -> Word16
     -- ^ The look-ahead window parameter. Up to this many values will
     -- be calculated and checked against the value(s) submitted by the client
     -> key
@@ -94,26 +97,35 @@ digitsPower OTP8 = 100000000
 digitsPower OTP9 = 1000000000
 
 
-data TOTPParams h = TP !h !Word64 !Word32 !OTPDigits
+data TOTPParams h = TP !h !Word64 !Word16 !OTPDigits !ClockSkew
 
+data ClockSkew = NoSkew | OneStep | TwoSteps | ThreeSteps | FourSteps deriving (Enum)
+
+-- | The default TOTP configuration.
 defaultTOTPParams :: TOTPParams SHA1
-defaultTOTPParams = TP SHA1 0 30 OTP6
+defaultTOTPParams = TP SHA1 0 30 OTP6 TwoSteps
 
+-- | Create a TOTP configuration with customized parameters.
 mkTOTPParams :: (HashAlgorithm hash)
     => hash
     -> Word64
     -- ^ The T0 parameter in seconds. This is the Unix time from which to start
     -- counting steps (default 0). Must be before the current time.
-    -> Word32
-    -- ^ The time step parameter X in seconds (default 30)
+    -> Word16
+    -- ^ The time step parameter X in seconds (default 30, maximum allowed 300)
     -> OTPDigits
     -- ^ Number of required digits in the OTP (default 6)
+    -> ClockSkew
+    -- ^ The number of time steps to check either side of the current value
+    -- to allow for clock skew between client and server and or delay in
+    -- submitting the value. The default is two time steps.
     -> Either String (TOTPParams hash)
-mkTOTPParams h t0 x d = do
+mkTOTPParams h t0 x d skew = do
     unless (x > 0) (Left "Time step must be greater than zero")
     unless (x <= 300) (Left "Time step cannot be greater than 300 seconds")
-    return (TP h t0 x d)
+    return (TP h t0 x d skew)
 
+-- | Calculate a totp value for the given time.
 totp :: (HashAlgorithm hash, ByteArrayAccess key)
     => TOTPParams hash
     -> key
@@ -123,10 +135,25 @@ totp :: (HashAlgorithm hash, ByteArrayAccess key)
     -- This is usually the current time as returned by @Data.Time.Clock.POSIX.getPOSIXTime@
     -> Word32
     -- ^ The OTP value
-totp (TP h t0 x d) k now = hotp h d k t
-  where
-    t = floor ((now - fromIntegral t0) / fromIntegral x)
+totp (TP h t0 x d _) k now = hotp h d k (timeToCounter now t0 x)
 
+-- | Check a supplied TOTP value is valid for the given time,
+-- within the window defined by the skew parameter.
+totpVerify :: (HashAlgorithm hash, ByteArrayAccess key)
+    => TOTPParams hash
+    -> key
+    -> POSIXTime
+    -> Word32
+    -> Bool
+totpVerify (TP h t0 x d skew) k now otp = otp `elem` map (hotp h d k) (range window [])
+  where
+    t = timeToCounter now t0 x
+    window = fromIntegral (fromEnum skew)
+    range 0 acc = t : acc
+    range n acc = range (n-1) ((t-n) : (t+n) : acc)
+
+timeToCounter :: POSIXTime -> Word64 -> Word16 -> Word64
+timeToCounter now t0 x = floor ((now - fromIntegral t0) / fromIntegral x)
 
 -- TODO: Put this in memory package
 fromW64BE :: (ByteArray ba) => Word64 -> ba

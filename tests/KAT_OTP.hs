@@ -74,9 +74,9 @@ makeTest otp (i, count, password) =
     [ testCase (show i) (assertEqual "" password (otp count))
     ]
 
-Right totpSHA1Params = mkTOTPParams SHA1 0 30 OTP8
-Right totpSHA256Params = mkTOTPParams SHA256 0 30 OTP8
-Right totpSHA512Params = mkTOTPParams SHA512 0 30 OTP8
+Right totpSHA1Params = mkTOTPParams SHA1 0 30 OTP8 TwoSteps
+Right totpSHA256Params = mkTOTPParams SHA256 0 30 OTP8 TwoSteps
+Right totpSHA512Params = mkTOTPParams SHA512 0 30 OTP8 TwoSteps
 
 -- resynching with the expected value should just return the current counter + 1
 prop_resyncExpected ctr window = resynchronize SHA1 OTP6 window key ctr (otp, []) == Just (ctr + 1)
