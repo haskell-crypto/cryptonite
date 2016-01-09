@@ -10,13 +10,25 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 module Crypto.Hash.Blake2sp
-    (  Blake2sp_256 (..)
+    (  Blake2sp_224 (..), Blake2sp_256 (..)
     ) where
 
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
 import           Data.Word (Word8, Word32)
 
+
+-- | Blake2sp (224 bits) cryptographic hash algorithm
+data Blake2sp_224 = Blake2sp_224
+    deriving (Show)
+
+instance HashAlgorithm Blake2sp_224 where
+    hashBlockSize  _          = 64
+    hashDigestSize _          = 28
+    hashInternalContextSize _ = 2185
+    hashInternalInit p        = c_blake2sp_init p 224
+    hashInternalUpdate        = c_blake2sp_update
+    hashInternalFinalize p    = c_blake2sp_finalize p 224
 
 -- | Blake2sp (256 bits) cryptographic hash algorithm
 data Blake2sp_256 = Blake2sp_256

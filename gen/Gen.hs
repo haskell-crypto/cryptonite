@@ -53,8 +53,8 @@ data HashCustom =
 
 hashModules =
     --              module      header        hash        ctx dg blk
-    [ GenHashModule "Blake2s"   "blake2.h"    "blake2s"   185  (HashMulti [(256,64)])
-    , GenHashModule "Blake2sp"  "blake2.h"    "blake2sp"  2185 (HashMulti [(256,64)])
+    [ GenHashModule "Blake2s"   "blake2.h"    "blake2s"   185  (HashMulti [(224,64), (256,64)])
+    , GenHashModule "Blake2sp"  "blake2.h"    "blake2sp"  2185 (HashMulti [(224,64), (256,64)])
     , GenHashModule "Blake2b"   "blake2.h"    "blake2b"   361  (HashMulti [(512,128)])
     , GenHashModule "Blake2bp"  "blake2.h"    "blake2sp"  2325 (HashMulti [(512,128)])
     , GenHashModule "MD2"       "md2.h"       "md2"       96   (HashSimple 128 16)
