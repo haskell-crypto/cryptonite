@@ -33,6 +33,14 @@
 #include <sys/time.h>
 #include "cryptonite_sha512.h"
 
+#if 0
+/* Meant to initialize random buffer with somewhat
+ * randomized values, without an actual source of entropy.
+ * commented until this is actually useful for anything
+ *
+ * real entropy is supposed to be xored to a sysrand_init'ed
+ * buffer.
+ */
 void cryptonite_sysrand_init(uint8_t *buf, uint32_t sz)
 {
 	struct timeval tv;
@@ -44,3 +52,4 @@ void cryptonite_sysrand_init(uint8_t *buf, uint32_t sz)
 	cryptonite_sha512_update(&ctx, (uint8_t *) &tv, sizeof(tv));
 	cryptonite_sha512_finalize(&ctx, out);
 }
+#endif
