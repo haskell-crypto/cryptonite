@@ -71,7 +71,7 @@ gmpLog2 _ = GmpUnsupported
 -- time wise through GMP
 gmpPowModSecInteger :: Integer -> Integer -> Integer -> GmpSupported Integer
 #if MIN_VERSION_integer_gmp(1,0,0)
-gmpPowModSecInteger b e m = GmpUnsupported
+gmpPowModSecInteger _ _ _ = GmpUnsupported
 #elif MIN_VERSION_integer_gmp(0,5,1)
 gmpPowModSecInteger b e m = GmpSupported (powModSecInteger b e m)
 #else
