@@ -188,6 +188,8 @@ static inline void array_copy64(uint64_t *d, uint64_t *s, uint32_t nb)
 #elif defined( __QNXNTO__ ) && defined( __BIGENDIAN__ )
   # define BIG_ENDIAN 1234
   # define BYTE_ORDER    BIG_ENDIAN
+#elif defined( _AIX )
+  # include <sys/machine.h>
 #else
   # include <endian.h>
 #endif
