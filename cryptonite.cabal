@@ -80,6 +80,11 @@ Flag support_deepseq
   Default:           True
   Manual:            True
 
+Flag old_toolchain_inliner
+  Description:       use -fgnu89-inline to workaround an old compiler / linker / glibc issue.
+  Default:           False
+  Manual:            True
+
 Library
   Exposed-modules:   Crypto.Cipher.AES
                      Crypto.Cipher.Blowfish
@@ -187,6 +192,8 @@ Library
   ghc-options:       -Wall -fwarn-tabs -optc-O3 -fno-warn-unused-imports
   default-language:  Haskell2010
   cc-options:        -std=gnu99
+  if flag(old_toolchain_inliner)
+    cc-options:      -fgnu89-inline
   C-sources:         cbits/cryptonite_chacha.c
                    , cbits/cryptonite_salsa.c
                    , cbits/cryptonite_rc4.c
