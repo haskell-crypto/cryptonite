@@ -1,3 +1,14 @@
+## 0.11
+
+* Truncate hashing correctly for DSA
+* Add support for HKDF (RFC 5869)
+* Add support for Ed448
+* Extends support for Blake2s to 224 bits version.
+* Compilation workaround for old distribution (RHEL 4.1)
+* Compilation fix for AIX
+* Compilation fix with AESNI and ghci compiling C source in a weird order.
+* Fix example compilation, typo, and warning
+
 ## 0.10
 
 * Add reference implementation of blake2 for non-SSE2 platform
