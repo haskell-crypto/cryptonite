@@ -30,7 +30,7 @@ Author:              Vincent Hanquez <vincent@snarc.org>
 Maintainer:          vincent@snarc.org
 Category:            Cryptography
 Stability:           experimental
-Build-Type:          Simple
+Build-Type:          Custom
 Homepage:            https://github.com/haskell-crypto/cryptonite
 Bug-reports:         https://github.com/haskell-crypto/cryptonite/issues
 Cabal-Version:       >=1.10
@@ -241,18 +241,18 @@ Library
     Other-modules:  Crypto.Random.Entropy.RDRand
     c-sources:      cbits/cryptonite_rdrand.c
 
-  if flag(support_aesni) && (os(linux) || os(freebsd) || os(osx)) && (arch(i386) || arch(x86_64))
-    CC-options:     -mssse3 -maes -DWITH_AESNI
-    if flag(support_pclmuldq)
-       CC-options:  -msse4.1 -mpclmul -DWITH_PCLMUL
+  --if flag(support_aesni) && (os(linux) || os(freebsd) || os(osx)) && (arch(i386) || arch(x86_64))
+  --  CC-options:     -mssse3 -maes -DWITH_AESNI
+  --  if flag(support_pclmuldq)
+  --     CC-options:  -msse4.1 -mpclmul -DWITH_PCLMUL
     C-sources:       cbits/aes/x86ni.c
                    , cbits/aes/generic.c
                    , cbits/aes/gf.c
                    , cbits/cryptonite_aes.c
-  else
-    C-sources:       cbits/aes/generic.c
-                   , cbits/aes/gf.c
-                   , cbits/cryptonite_aes.c
+  --else
+  --  C-sources:       cbits/aes/generic.c
+  --                 , cbits/aes/gf.c
+  --                 , cbits/cryptonite_aes.c
 
   if arch(x86_64) || flag(support_blake2_sse)
     C-sources:      cbits/blake2/sse/blake2s.c

@@ -140,7 +140,7 @@ typedef void (*gcm_crypt_f)(uint8_t *output, aes_gcm *gcm, aes_key *key, uint8_t
 typedef void (*ocb_crypt_f)(uint8_t *output, aes_ocb *ocb, aes_key *key, uint8_t *input, uint32_t length);
 typedef void (*block_f)(aes_block *output, aes_key *key, aes_block *input);
 
-#ifdef WITH_AESNI
+#ifdef HAVE_AESNI_INTRINSICS
 #define GET_INIT(strength) \
 	((init_f) (cryptonite_aes_branch_table[INIT_128 + strength]))
 #define GET_ECB_ENCRYPT(strength) \
@@ -186,7 +186,7 @@ typedef void (*block_f)(aes_block *output, aes_key *key, aes_block *input);
 #define cryptonite_aes_decrypt_block(o,k,i) cryptonite_aes_generic_decrypt_block(o,k,i)
 #endif
 
-#if defined(ARCH_X86) && defined(WITH_AESNI)
+#if defined(ARCH_X86) && defined(HAVE_AESNI_INTRINSICS)
 static void initialize_table_ni(int aesni, int pclmul)
 {
 	if (!aesni)
@@ -232,7 +232,7 @@ void cryptonite_aes_initkey(aes_key *key, uint8_t *origkey, uint8_t size)
 	case 24: key->nbr = 12; key->strength = 1; break;
 	case 32: key->nbr = 14; key->strength = 2; break;
 	}
-#if defined(ARCH_X86) && defined(WITH_AESNI)
+#if defined(ARCH_X86) && defined(HAVE_AESNI_INTRINSICS)
 	cryptonite_aesni_initialize_hw(initialize_table_ni);
 #endif
 	init_f _init = GET_INIT(key->strength);

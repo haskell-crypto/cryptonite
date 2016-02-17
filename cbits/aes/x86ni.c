@@ -28,7 +28,7 @@
  * SUCH DAMAGE.
  */
 
-#ifdef WITH_AESNI
+#ifdef HAVE_AESNI_INTRINSICS
 
 #include <wmmintrin.h>
 #include <tmmintrin.h>
