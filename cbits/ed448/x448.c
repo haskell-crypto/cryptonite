@@ -11,7 +11,12 @@
 #include <stdint.h>
 #include "x448.h"
 
-#define WBITS 64 /* TODO */
+#ifdef ARCH_X86_64
+#define WBITS 64
+#else
+#define WBITS 32
+#endif
+
 #define LBITS (WBITS * 7 / 8)
 #define X448_LIMBS (448/LBITS)
 
