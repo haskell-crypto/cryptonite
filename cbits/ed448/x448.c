@@ -11,7 +11,12 @@
 #include <stdint.h>
 #include "x448.h"
 
+#ifdef HAVE_INT128_SUPPORT
 #define WBITS 64 /* TODO */
+#else
+#define WBITS 32
+#endif
+
 #define LBITS (WBITS * 7 / 8)
 #define X448_LIMBS (448/LBITS)
 

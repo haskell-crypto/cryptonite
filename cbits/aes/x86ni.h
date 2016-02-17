@@ -31,7 +31,7 @@
 #ifndef AES_X86NI_H
 #define AES_X86NI_H
 
-#ifdef WITH_AESNI
+#ifdef HAVE_AESNI_INTRINSICS
 
 #if defined(__i386__) || defined(__x86_64__)
 
