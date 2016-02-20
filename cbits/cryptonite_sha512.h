@@ -35,7 +35,7 @@ struct sha512_ctx
 
 #define sha384_ctx sha512_ctx
 
-#define SHA384_DIGEST_SIZE	64
+#define SHA384_DIGEST_SIZE	48
 #define SHA384_CTX_SIZE		sizeof(struct sha384_ctx)
 
 #define SHA512_DIGEST_SIZE	64
