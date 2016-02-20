@@ -1,3 +1,7 @@
+## 0.12
+
+* Fix compilation issue with Ed448 on 32 bits machine.
+
 ## 0.11
 
 * Truncate hashing correctly for DSA
