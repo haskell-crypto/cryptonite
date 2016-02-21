@@ -1,3 +1,9 @@
+## 0.13
+
+* *SECURITY* Fix buffer overflow issue in SHA384, copying 16 extra bytes from
+  the SHA512 context to the destination memory pointer leading to memory
+  corruption, segfault. (Mikael Bung)
+
 ## 0.12
 
 * Fix compilation issue with Ed448 on 32 bits machine.
