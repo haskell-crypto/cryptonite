@@ -57,7 +57,7 @@ Flag support_aesni
   Manual:            True
 
 Flag support_rdrand
-  Description:       allow compilation with AESNI on system and architecture that supports it
+  Description:       allow compilation with RDRAND on system and architecture that supports it
   Default:           True
   Manual:            True
 
