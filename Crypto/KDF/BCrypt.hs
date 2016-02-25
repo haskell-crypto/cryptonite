@@ -1,7 +1,7 @@
 
 -- | Password encoding and validation using bcrypt.
 --
--- Example usasge:
+-- Example usage:
 --
 -- >>> import Crypto.KDF.BCrypt (hashPassword, validatePassword)
 -- >>> import qualified Data.ByteString.Char8 as B
@@ -78,6 +78,8 @@ hashPassword cost password = do
     return $ bcrypt cost (salt :: Bytes) password
 
 -- | Create a bcrypt hash for a password with a provided cost value and salt.
+--
+-- Cost value under 4 will be automatically adjusted back to 10 for safety reason.
 bcrypt :: (ByteArray salt, ByteArray password, ByteArray output)
        => Int
        -- ^ The cost parameter. Should be between 4 and 31 (inclusive).
