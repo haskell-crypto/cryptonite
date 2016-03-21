@@ -63,7 +63,12 @@ class EllipticCurve curve where
     curveGenerateKeyPair :: MonadRandom randomly => randomly (KeyPair curve)
 
 class EllipticCurve curve => EllipticCurveDH curve where
-    -- | Generate a Diffie hellman secret
+    -- | Generate a Diffie hellman secret value.
+    --
+    -- This is generally just the .x coordinate of the resulting point, that
+    -- is not hashed.
+    --
+    -- use `pointSmul` to keep the result in Point format.
     ecdh :: Scalar curve -> Point curve -> SharedSecret
 
 class EllipticCurve curve => EllipticCurveArith curve where
