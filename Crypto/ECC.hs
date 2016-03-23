@@ -23,6 +23,7 @@ import qualified Crypto.PubKey.ECC.P256 as P256
 import qualified Crypto.PubKey.ECC.Types as H
 import qualified Crypto.PubKey.ECC.Prim as H
 import           Crypto.Random
+import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ScrubbedBytes)
 import           Data.Function (on)
 
