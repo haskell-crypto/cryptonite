@@ -79,6 +79,9 @@ class EllipticCurve curve => EllipticCurveArith curve where
     -- | Scalar Multiplication on a curve
     pointSmul :: Scalar curve -> Point curve -> Point curve
 
+--   -- | Scalar Inverse
+--   scalarInverse :: Scalar curve -> Scalar curve
+
 -- | P256 Curve
 --
 -- also known as P256
