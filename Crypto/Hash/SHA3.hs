@@ -25,7 +25,7 @@ data SHA3_224 = SHA3_224
 instance HashAlgorithm SHA3_224 where
     hashBlockSize  _          = 144
     hashDigestSize _          = 28
-    hashInternalContextSize _ = 360
+    hashInternalContextSize _ = 352
     hashInternalInit p        = c_sha3_init p 224
     hashInternalUpdate        = c_sha3_update
     hashInternalFinalize p    = c_sha3_finalize p 224
@@ -37,7 +37,7 @@ data SHA3_256 = SHA3_256
 instance HashAlgorithm SHA3_256 where
     hashBlockSize  _          = 136
     hashDigestSize _          = 32
-    hashInternalContextSize _ = 360
+    hashInternalContextSize _ = 344
     hashInternalInit p        = c_sha3_init p 256
     hashInternalUpdate        = c_sha3_update
     hashInternalFinalize p    = c_sha3_finalize p 256
@@ -49,7 +49,7 @@ data SHA3_384 = SHA3_384
 instance HashAlgorithm SHA3_384 where
     hashBlockSize  _          = 104
     hashDigestSize _          = 48
-    hashInternalContextSize _ = 360
+    hashInternalContextSize _ = 312
     hashInternalInit p        = c_sha3_init p 384
     hashInternalUpdate        = c_sha3_update
     hashInternalFinalize p    = c_sha3_finalize p 384
@@ -61,7 +61,7 @@ data SHA3_512 = SHA3_512
 instance HashAlgorithm SHA3_512 where
     hashBlockSize  _          = 72
     hashDigestSize _          = 64
-    hashInternalContextSize _ = 360
+    hashInternalContextSize _ = 280
     hashInternalInit p        = c_sha3_init p 512
     hashInternalUpdate        = c_sha3_update
     hashInternalFinalize p    = c_sha3_finalize p 512

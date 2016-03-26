@@ -31,7 +31,7 @@ struct sha3_ctx
 	uint32_t bufindex;
 	uint32_t bufsz;
 	uint64_t state[25];
-	uint8_t  buf[144]; /* minimum SHA3-224, otherwise buffer need increases */
+	uint8_t  buf[0]; /* maximum SHA3-224 is 144 bytes, otherwise buffer can be decreases */
 };
 
 #define SHA3_CTX_SIZE		sizeof(struct sha3_ctx)

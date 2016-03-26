@@ -23,6 +23,9 @@ newtype Bits = Bits Int
 newtype Bytes = Bytes Int
     deriving (Show,Eq,Num)
 
+bitsToBytes :: Bits -> Bytes
+bitsToBytes (Bits b) = Bytes (b `divSafe` 8)
+
 class SizedNum a where
     showBytes :: a -> String
     showBits  :: a -> String
@@ -43,20 +46,22 @@ data GenHashModule = GenHashModule
     , ghmHashName     :: String
     , ghmContextSize  :: Bytes
     , ghmCustomizable :: HashCustom
-    } deriving (Show,Eq)
+    }
+
+data Prop =
+      VarCtx (Bits -> Bytes)
 
 data HashCustom =
       HashSimple Bits -- digest size in bits
                  Bytes -- block length in bytes
-    | HashMulti [(Bits, Bytes)] -- list of (digest output size in *bits*, block size in bytes)
-    deriving (Show,Eq)
+    | HashMulti [Prop] [(Bits, Bytes)] -- list of (digest output size in *bits*, block size in bytes)
 
 hashModules =
     --              module      header        hash        ctx dg blk
-    [ GenHashModule "Blake2s"   "blake2.h"    "blake2s"   185  (HashMulti [(224,64), (256,64)])
-    , GenHashModule "Blake2sp"  "blake2.h"    "blake2sp"  2185 (HashMulti [(224,64), (256,64)])
-    , GenHashModule "Blake2b"   "blake2.h"    "blake2b"   361  (HashMulti [(512,128)])
-    , GenHashModule "Blake2bp"  "blake2.h"    "blake2sp"  2325 (HashMulti [(512,128)])
+    [ GenHashModule "Blake2s"   "blake2.h"    "blake2s"   185  (HashMulti [] [(224,64), (256,64)])
+    , GenHashModule "Blake2sp"  "blake2.h"    "blake2sp"  2185 (HashMulti [] [(224,64), (256,64)])
+    , GenHashModule "Blake2b"   "blake2.h"    "blake2b"   361  (HashMulti [] [(512,128)])
+    , GenHashModule "Blake2bp"  "blake2.h"    "blake2sp"  2325 (HashMulti [] [(512,128)])
     , GenHashModule "MD2"       "md2.h"       "md2"       96   (HashSimple 128 16)
     , GenHashModule "MD4"       "md4.h"       "md4"       96   (HashSimple 128 64)
     , GenHashModule "MD5"       "md5.h"       "md5"       96   (HashSimple 128 64)
@@ -65,15 +70,22 @@ hashModules =
     , GenHashModule "SHA256"    "sha256.h"    "sha256"    192  (HashSimple 256 64)
     , GenHashModule "SHA384"    "sha512.h"    "sha384"    256  (HashSimple 384 128)
     , GenHashModule "SHA512"    "sha512.h"    "sha512"    256  (HashSimple 512 128)
-    , GenHashModule "SHA512t"   "sha512.h"    "sha512t"   256  (HashMulti [(224,128),(256,128)])
-    , GenHashModule "Keccak"    "keccak.h"    "keccak"    352  (HashMulti [(224,144),(256,136),(384,104),(512,72)])
-    , GenHashModule "SHA3"      "sha3.h"      "sha3"      352  (HashMulti [(224,144),(256,136),(384,104),(512,72)])
+    , GenHashModule "SHA512t"   "sha512.h"    "sha512t"   256  (HashMulti [] [(224,128),(256,128)])
+    , GenHashModule "Keccak"    "keccak.h"    "keccak"    352  (HashMulti [VarCtx sha3CtxSize] [(224,144),(256,136),(384,104),(512,72)])
+    , GenHashModule "SHA3"      "sha3.h"      "sha3"      352  (HashMulti [VarCtx sha3CtxSize] [(224,144),(256,136),(384,104),(512,72)])
     , GenHashModule "RIPEMD160" "ripemd.h"    "ripemd160" 128  (HashSimple 160 64)
-    , GenHashModule "Skein256"  "skein256.h"  "skein256"  96   (HashMulti [(224,32),(256,32)])
-    , GenHashModule "Skein512"  "skein512.h"  "skein512"  160  (HashMulti [(224,64),(256,64),(384,64),(512,64)])
+    , GenHashModule "Skein256"  "skein256.h"  "skein256"  96   (HashMulti [] [(224,32),(256,32)])
+    , GenHashModule "Skein512"  "skein512.h"  "skein512"  160  (HashMulti [] [(224,64),(256,64),(384,64),(512,64)])
     , GenHashModule "Tiger"     "tiger.h"     "tiger"     96   (HashSimple 192 64)
     , GenHashModule "Whirlpool" "whirlpool.h" "whirlpool" 168  (HashSimple 512 64)
     ]
+
+sha3CtxSize :: Bits -> Bytes
+sha3CtxSize bitLen = 4 + 4 + 8 * 25 -- generic context
+                   + sha3BlockSize bitLen -- variable buffer
+
+sha3BlockSize :: Bits -> Bytes
+sha3BlockSize bitLen = 200 - 2 * bitsToBytes bitLen
 
 renderHashModules genOpts = do
     hashTemplate            <- readTemplate "template/hash.hs"
@@ -101,17 +113,29 @@ renderHashModules genOpts = do
                             ]
                         , []
                         )
-                    HashMulti customSizes ->
-                        (hashLenTemplate, [],
+                    HashMulti props customSizes ->
+                        let customCtxSize =
+                                let getVarCtx _ (VarCtx p) = Just p
+                                    getVarCtx x _          = x
+                                 in case foldl getVarCtx Nothing props of
+                                        Nothing   -> \_ ->
+                                            [ ("CUSTOM_CTX_SIZE_BYTES"   , showBytes (ghmContextSize ghm))
+                                            , ("CUSTOM_CTX_SIZE_WORD64"  , showW64 (ghmContextSize ghm))
+                                            ]
+                                        Just prop -> \outputSize ->
+                                            [ ("CUSTOM_CTX_SIZE_BYTES"   , showBytes $ prop outputSize)
+                                            , ("CUSTOM_CTX_SIZE_WORD64"  , showW64 $ prop outputSize)
+                                            ]
+                         in (hashLenTemplate, [],
                             [ ("CUSTOMIZABLE", map (\(outputSizeBits, customBlockSize) ->
                                 [ ("CUSTOM_BITSIZE", showBits outputSizeBits)
                                 , ("CUSTOM_DIGEST_SIZE_BITS", showBits outputSizeBits)
                                 , ("CUSTOM_DIGEST_SIZE_BYTES", showBytes outputSizeBits)
                                 , ("CUSTOM_BLOCK_SIZE_BYTES", showBytes customBlockSize)
-                                ]) customSizes
+                                ] ++ customCtxSize outputSizeBits) customSizes
                               )
                             ]
-                        )
+                            )
 
         writeTemplate mainName (baseVars ++ addVars) multiVars tpl
 

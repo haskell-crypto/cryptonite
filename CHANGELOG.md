@@ -1,3 +1,8 @@
+## 0.14
+
+* Reduce size of SHA3 context instead of allocating all-size fit memory. save
+  up to 72 bytes of memory per context for SHA3-512.
+
 ## 0.13
 
 * *SECURITY* Fix buffer overflow issue in SHA384, copying 16 extra bytes from

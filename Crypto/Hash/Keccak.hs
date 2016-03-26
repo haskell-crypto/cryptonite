@@ -25,7 +25,7 @@ data Keccak_224 = Keccak_224
 instance HashAlgorithm Keccak_224 where
     hashBlockSize  _          = 144
     hashDigestSize _          = 28
-    hashInternalContextSize _ = 360
+    hashInternalContextSize _ = 352
     hashInternalInit p        = c_keccak_init p 224
     hashInternalUpdate        = c_keccak_update
     hashInternalFinalize p    = c_keccak_finalize p 224
@@ -37,7 +37,7 @@ data Keccak_256 = Keccak_256
 instance HashAlgorithm Keccak_256 where
     hashBlockSize  _          = 136
     hashDigestSize _          = 32
-    hashInternalContextSize _ = 360
+    hashInternalContextSize _ = 344
     hashInternalInit p        = c_keccak_init p 256
     hashInternalUpdate        = c_keccak_update
     hashInternalFinalize p    = c_keccak_finalize p 256
@@ -49,7 +49,7 @@ data Keccak_384 = Keccak_384
 instance HashAlgorithm Keccak_384 where
     hashBlockSize  _          = 104
     hashDigestSize _          = 48
-    hashInternalContextSize _ = 360
+    hashInternalContextSize _ = 312
     hashInternalInit p        = c_keccak_init p 384
     hashInternalUpdate        = c_keccak_update
     hashInternalFinalize p    = c_keccak_finalize p 384
@@ -61,7 +61,7 @@ data Keccak_512 = Keccak_512
 instance HashAlgorithm Keccak_512 where
     hashBlockSize  _          = 72
     hashDigestSize _          = 64
-    hashInternalContextSize _ = 360
+    hashInternalContextSize _ = 280
     hashInternalInit p        = c_keccak_init p 512
     hashInternalUpdate        = c_keccak_update
     hashInternalFinalize p    = c_keccak_finalize p 512

@@ -25,7 +25,7 @@ data %%MODULENAME%%_%%CUSTOM_BITSIZE%% = %%MODULENAME%%_%%CUSTOM_BITSIZE%%
 instance HashAlgorithm %%MODULENAME%%_%%CUSTOM_BITSIZE%% where
     hashBlockSize  _          = %%CUSTOM_BLOCK_SIZE_BYTES%%
     hashDigestSize _          = %%CUSTOM_DIGEST_SIZE_BYTES%%
-    hashInternalContextSize _ = %%CTX_SIZE_BYTES%%
+    hashInternalContextSize _ = %%CUSTOM_CTX_SIZE_BYTES%%
     hashInternalInit p        = c_%%HASHNAME%%_init p %%CUSTOM_BITSIZE%%
     hashInternalUpdate        = c_%%HASHNAME%%_update
     hashInternalFinalize p    = c_%%HASHNAME%%_finalize p %%CUSTOM_BITSIZE%%
