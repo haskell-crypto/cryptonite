@@ -7,10 +7,9 @@
 --
 -- Key Derivation Function based on HMAC
 --
--- See rfc5869
+-- See RFC5869
 --
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Crypto.KDF.HKDF
     ( PRK
     , extract
@@ -35,7 +34,10 @@ extract :: (HashAlgorithm a, ByteArrayAccess salt, ByteArrayAccess ikm)
         -> PRK a -- ^ Pseudo random key
 extract salt ikm = PRK $ hmac salt ikm
 
--- | Create a PRK directly from the input key material, skipping any hmacing
+-- | Create a PRK directly from the input key material.
+--
+-- Only use when guaranteed to have a good quality and random data to use directly as key.
+-- This effectively skip a HMAC with key=salt and data=key.
 extractSkip :: (HashAlgorithm a, ByteArrayAccess ikm)
             => ikm
             -> PRK a
@@ -74,4 +76,3 @@ expand prkAt infoAt outputLength =
                 r       = n - hashLen
              in (if n >= hashLen then ti else B.take n ti)
               : loop hF ti r (i+1)
-
