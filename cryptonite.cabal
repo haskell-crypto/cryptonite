@@ -100,6 +100,7 @@ Library
                      Crypto.Data.AFIS
                      Crypto.Data.Padding
                      Crypto.Error
+                     Crypto.MAC.CMAC
                      Crypto.MAC.Poly1305
                      Crypto.MAC.HMAC
                      Crypto.Number.Basic
