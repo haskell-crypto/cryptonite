@@ -304,6 +304,7 @@ Test-Suite test-cryptonite
                      KAT_Curve25519
                      KAT_DES
                      KAT_Ed25519
+                     KAT_CMAC
                      KAT_HMAC
                      KAT_PBKDF2
                      KAT_PubKey.DSA
