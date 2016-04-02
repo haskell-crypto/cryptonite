@@ -97,6 +97,7 @@ Library
                      Crypto.Cipher.Salsa
                      Crypto.Cipher.TripleDES
                      Crypto.Cipher.Types
+                     Crypto.ConstructHash.MiyaguchiPreneel
                      Crypto.Data.AFIS
                      Crypto.Data.Padding
                      Crypto.Error
