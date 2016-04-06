@@ -11,6 +11,7 @@ import           Imports
 
 import           Data.Char (digitToInt)
 import qualified Data.ByteString as BS
+import qualified Data.ByteArray as B
 
 
 hxs :: String -> ByteString
@@ -59,6 +60,9 @@ msg64 = BS.take 8 msg512
 msg0 :: ByteString
 msg0 = BS.empty
 
+bsCMAC :: BlockCipher k => k -> ByteString -> ByteString
+bsCMAC k = B.convert . CMAC.cmacGetBytes . CMAC.cmac k
+
 gAES128 :: TestTree
 gAES128 =
     igroup "aes128"
@@ -66,13 +70,13 @@ gAES128 =
     , aes128k1 @?=        hxs "fbeed618 35713366 7c85e08f 7236a8de"
     , aes128k2 @?=        hxs "f7ddac30 6ae266cc f90bc11e e46d513b"
 
-    , CMAC.cmac aes128key msg0
+    , bsCMAC aes128key msg0
       @?=                 hxs "bb1d6929 e9593728 7fa37d12 9b756746"
-    , CMAC.cmac aes128key msg128
+    , bsCMAC aes128key msg128
       @?=                 hxs "070a16b4 6b4d4144 f79bdd9d d04a287c"
-    , CMAC.cmac aes128key msg320
+    , bsCMAC aes128key msg320
       @?=                 hxs "dfa66747 de9ae630 30ca3261 1497c827"
-    , CMAC.cmac aes128key msg512
+    , bsCMAC aes128key msg512
       @?=                 hxs "51f0bebf 7e3b9d92 fc497417 79363cfe"
     ]
   where
@@ -92,13 +96,13 @@ gAES192 =
     , aes192k1 @?=        hxs "448a5b1c 93514b27 3ee6439d d4daa296"
     , aes192k2 @?=        hxs "8914b639 26a2964e 7dcc873b a9b5452c"
 
-    , CMAC.cmac aes192key msg0
+    , bsCMAC aes192key msg0
       @?=                 hxs "d17ddf46 adaacde5 31cac483 de7a9367"
-    , CMAC.cmac aes192key msg128
+    , bsCMAC aes192key msg128
       @?=                 hxs "9e99a7bf 31e71090 0662f65e 617c5184"
-    , CMAC.cmac aes192key msg320
+    , bsCMAC aes192key msg320
       @?=                 hxs "8a1de5be 2eb31aad 089a82e6 ee908b0e"
-    , CMAC.cmac aes192key msg512
+    , bsCMAC aes192key msg512
       @?=                 hxs "a1d5df0e ed790f79 4d775896 59f39a11"
     ]
   where
@@ -118,13 +122,13 @@ gAES256 =
     , aes256k1 @?=        hxs "cad1ed03 299eedac 2e9a9980 8621502f"
     , aes256k2 @?=        hxs "95a3da06 533ddb58 5d353301 0c42a0d9"
 
-    , CMAC.cmac aes256key msg0
+    , bsCMAC aes256key msg0
       @?=                 hxs "028962f6 1b7bf89e fc6b551f 4667d983"
-    , CMAC.cmac aes256key msg128
+    , bsCMAC aes256key msg128
       @?=                 hxs "28a7023f 452e8f82 bd4bf28d 8c37c35c"
-    , CMAC.cmac aes256key msg320
+    , bsCMAC aes256key msg320
       @?=                 hxs "aaf3d8f1 de5640c2 32f5b169 b9c911e6"
-    , CMAC.cmac aes256key msg512
+    , bsCMAC aes256key msg512
       @?=                 hxs "e1992190 549f6ed5 696a2c05 6c315410"
     ]
   where
@@ -144,13 +148,13 @@ gTDEA3 =
     , tdea3k1 @?=        hxs "9198e9d3 14e6535f"
     , tdea3k2 @?=        hxs "2331d3a6 29cca6a5"
 
-    , CMAC.cmac tdea3key msg0
+    , bsCMAC tdea3key msg0
       @?=                hxs "b7a688e1 22ffaf95"
-    , CMAC.cmac tdea3key msg64
+    , bsCMAC tdea3key msg64
       @?=                hxs "8e8f2931 36283797"
-    , CMAC.cmac tdea3key msg160
+    , bsCMAC tdea3key msg160
       @?=                hxs "743ddbe0 ce2dc2ed"
-    , CMAC.cmac tdea3key msg256
+    , bsCMAC tdea3key msg256
       @?=                hxs "33e6b109 2400eae5"
     ]
   where
@@ -171,13 +175,13 @@ gTDEA2 =
     , tdea2k1 @?=        hxs "8ecf373e d71afaef"
     , tdea2k2 @?=        hxs "1d9e6e7d ae35f5c5"
 
-    , CMAC.cmac tdea2key msg0
+    , bsCMAC tdea2key msg0
       @?=                hxs "bd2ebf9a 3ba00361"
-    , CMAC.cmac tdea2key msg64
+    , bsCMAC tdea2key msg64
       @?=                hxs "4ff2ab81 3c53ce83"
-    , CMAC.cmac tdea2key msg160
+    , bsCMAC tdea2key msg160
       @?=                hxs "62dd1b47 1902bd4e"
-    , CMAC.cmac tdea2key msg256
+    , bsCMAC tdea2key msg256
       @?=                hxs "31b1e431 dabc4eb8"
     ]
   where

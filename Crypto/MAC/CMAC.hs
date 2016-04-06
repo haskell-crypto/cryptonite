@@ -9,8 +9,10 @@
 -- <http://en.wikipedia.org/wiki/CMAC>
 -- <http://csrc.nist.gov/publications/nistpubs/800-38B/SP_800-38B.pdf>
 --
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Crypto.MAC.CMAC
     ( cmac
+    , CMAC(..)
     , subKeys
     ) where
 
@@ -23,13 +25,19 @@ import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, Bytes)
 import qualified Crypto.Internal.ByteArray as B
 
 
+newtype CMAC a = CMAC { cmacGetBytes :: Bytes }
+    deriving ByteArrayAccess
+
+instance Eq (CMAC a) where
+  CMAC b1 == CMAC b2  =  B.constEq b1 b2
+
 -- | compute a MAC using the supplied cipher
-cmac :: (ByteArrayAccess bin, ByteArray bout, BlockCipher cipher)
-     => cipher  -- ^ key to compute CMAC with
-     -> bin     -- ^ input message
-     -> bout    -- ^ output tag
+cmac :: (ByteArrayAccess bin, BlockCipher cipher)
+     => cipher      -- ^ key to compute CMAC with
+     -> bin         -- ^ input message
+     -> CMAC cipher -- ^ output tag
 cmac k msg =
-    B.convert $ foldl' (\c m -> ecbEncrypt k $ bxor c m) zeroV ms
+    CMAC $ foldl' (\c m -> ecbEncrypt k $ bxor c m) zeroV ms
   where
     bytes = blockSize k
     zeroV = B.replicate bytes 0 :: Bytes
