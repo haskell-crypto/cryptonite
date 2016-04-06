@@ -96,6 +96,13 @@ bxor = B.xor
 cipherIPT :: BlockCipher k => k -> [Word8]
 cipherIPT = expandIPT . blockSize   where
 
+-- Data type which represents the smallest irreducibule binary polynomial
+-- against specified degree.
+--
+-- Maximum degree bit and degree 0 bit are omitted.
+-- For example, The value /Q 7 2 1/ corresponds to the degree /128/.
+-- It represents that the smallest irreducible binary polynomial of degree 128
+-- is x^128 + x^7 + x^2 + x^1 + 1.
 data IPolynomial
   = Q Int Int Int
 ---  | T Int
