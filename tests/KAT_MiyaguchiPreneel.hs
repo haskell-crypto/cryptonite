@@ -1,11 +1,7 @@
 
 module KAT_MiyaguchiPreneel (tests) where
 
-import qualified Crypto.MAC.CMAC as CMAC
-import           Crypto.Cipher.Types (Cipher, cipherInit, BlockCipher, ecbEncrypt, blockSize)
-import           Crypto.Error (eitherCryptoError)
-import           Crypto.Cipher.AES (AES128, AES192, AES256)
-import           Crypto.Cipher.TripleDES (DES_EDE3, DES_EDE2)
+import           Crypto.Cipher.AES (AES128)
 import           Crypto.ConstructHash.MiyaguchiPreneel
 
 import           Imports
