@@ -14,7 +14,7 @@ import           Data.List (foldl')
 
 import           Crypto.Cipher.Types
 import           Crypto.Error (eitherCryptoError)
-import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray)
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, Bytes)
 import qualified Crypto.Internal.ByteArray as B
 
 
@@ -24,11 +24,11 @@ mp :: (ByteArrayAccess bin, ByteArray bout, ByteArray ba, BlockCipher cipher)
    => (ba -> cipher) -- ^ key build function to compute Miyaguchi-Preneel
    -> bin            -- ^ input message
    -> bout           -- ^ output tag
-mp g = B.convert . foldl' (step g) (B.replicate bsz 0) . chunks . B.convert
+mp g = B.convert . foldl' (step $ g . B.convert) (B.replicate bsz 0) . chunks . B.convert
   where
     bsz = blockSize ( g B.empty {- dummy to get block size -} )
     chunks msg
-      | B.null tl  =  [hd]
+      | B.null tl  =  [hd :: Bytes]
       | otherwise  =   hd : chunks tl
       where
         (hd, tl) = B.splitAt bsz msg
