@@ -10,7 +10,7 @@
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Crypto.ConstructHash.MiyaguchiPreneel
-       ( mp
+       ( mp, mp'
        , MiyaguchiPreneel(..)
        , cipherInit'
        ) where
@@ -31,12 +31,11 @@ instance Eq (MiyaguchiPreneel a) where
 
 
 -- | Compute Miyaguchi-Preneel one way compress using the supplied block cipher.
---   Simple usage /mp (cipherInit' :: ByteString -> AES128) msg/
-mp :: (ByteArrayAccess bin, ByteArray ba, BlockCipher cipher)
-   => (ba -> cipher)          -- ^ key build function to compute Miyaguchi-Preneel
-   -> bin                     -- ^ input message
-   -> MiyaguchiPreneel cipher -- ^ output tag
-mp g = MP . foldl' (step $ g . B.convert) (B.replicate bsz 0) . chunks . B.convert
+mp' :: (ByteArrayAccess bin, BlockCipher cipher)
+    => (Bytes -> cipher)       -- ^ key build function to compute Miyaguchi-Preneel. care about block-size and key-size
+    -> bin                     -- ^ input message
+    -> MiyaguchiPreneel cipher -- ^ output tag
+mp' g = MP . foldl' (step $ g) (B.replicate bsz 0) . chunks . B.convert
   where
     bsz = blockSize ( g B.empty {- dummy to get block size -} )
     chunks msg
@@ -48,6 +47,15 @@ mp g = MP . foldl' (step $ g . B.convert) (B.replicate bsz 0) . chunks . B.conve
 -- | Simple key build function, which may raise size error.
 cipherInit' :: (ByteArray ba, Cipher k) => ba -> k
 cipherInit' = either (error . show) id . eitherCryptoError . cipherInit
+
+-- | Compute Miyaguchi-Preneel one way compress using the infered block cipher.
+--   Only safe when KEY-SIZE equals to BLOCK-SIZE.
+--
+--   Simple usage /mp' msg :: MiyaguchiPreneel AES128/
+mp :: (ByteArrayAccess bin, BlockCipher cipher)
+   => bin                     -- ^ input message
+   -> MiyaguchiPreneel cipher -- ^ output tag
+mp = mp' cipherInit'
 
 -- | computation step of Miyaguchi-Preneel
 step :: (ByteArray ba, BlockCipher k)

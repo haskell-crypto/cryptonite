@@ -12,7 +12,7 @@ import qualified Data.ByteArray as B
 
 
 runMP128 :: ByteString -> ByteString
-runMP128 s = B.convert $ mp (cipherInit' :: ByteString -> AES128) s
+runMP128 s = B.convert (mp s :: MiyaguchiPreneel AES128)
 
 hxs :: String -> ByteString
 hxs = BS.pack . rec' where
