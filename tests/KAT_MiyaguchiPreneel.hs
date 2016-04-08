@@ -8,10 +8,11 @@ import           Imports
 
 import           Data.Char (digitToInt)
 import qualified Data.ByteString as BS
+import qualified Data.ByteArray as B
 
 
 runMP128 :: ByteString -> ByteString
-runMP128 = mp (cipherInit' :: ByteString -> AES128)
+runMP128 s = B.convert $ mp (cipherInit' :: ByteString -> AES128) s
 
 hxs :: String -> ByteString
 hxs = BS.pack . rec' where

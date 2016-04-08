@@ -8,7 +8,12 @@
 -- provide the hash function construction method from block cipher
 -- <https://en.wikipedia.org/wiki/One-way_compression_function>
 --
-module Crypto.ConstructHash.MiyaguchiPreneel ( mp, cipherInit' ) where
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+module Crypto.ConstructHash.MiyaguchiPreneel
+       ( mp
+       , MiyaguchiPreneel(..)
+       , cipherInit'
+       ) where
 
 import           Data.List (foldl')
 
@@ -18,13 +23,20 @@ import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, Bytes)
 import qualified Crypto.Internal.ByteArray as B
 
 
+newtype MiyaguchiPreneel a = MP { chashGetBytes :: Bytes }
+    deriving ByteArrayAccess
+
+instance Eq (MiyaguchiPreneel a) where
+    MP b1 == MP b2  =  B.constEq b1 b2
+
+
 -- | Compute Miyaguchi-Preneel one way compress using the supplied block cipher.
 --   Simple usage /mp (cipherInit' :: ByteString -> AES128) msg/
-mp :: (ByteArrayAccess bin, ByteArray bout, ByteArray ba, BlockCipher cipher)
-   => (ba -> cipher) -- ^ key build function to compute Miyaguchi-Preneel
-   -> bin            -- ^ input message
-   -> bout           -- ^ output tag
-mp g = B.convert . foldl' (step $ g . B.convert) (B.replicate bsz 0) . chunks . B.convert
+mp :: (ByteArrayAccess bin, ByteArray ba, BlockCipher cipher)
+   => (ba -> cipher)          -- ^ key build function to compute Miyaguchi-Preneel
+   -> bin                     -- ^ input message
+   -> MiyaguchiPreneel cipher -- ^ output tag
+mp g = MP . foldl' (step $ g . B.convert) (B.replicate bsz 0) . chunks . B.convert
   where
     bsz = blockSize ( g B.empty {- dummy to get block size -} )
     chunks msg
