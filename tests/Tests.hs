@@ -10,6 +10,7 @@ import qualified Poly1305
 import qualified Salsa
 import qualified ChaCha
 import qualified ChaChaPoly1305
+import qualified KAT_CMAC
 import qualified KAT_HMAC
 import qualified KAT_HKDF
 import qualified KAT_PBKDF2
@@ -35,6 +36,7 @@ tests = testGroup "cryptonite"
     , Padding.tests
     , testGroup "MAC"
         [ Poly1305.tests
+        , KAT_CMAC.tests
         , KAT_HMAC.tests
         ]
     , KAT_Curve25519.tests
