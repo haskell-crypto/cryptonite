@@ -23,7 +23,9 @@ import Crypto.Internal.Imports
 import Crypto.Number.ModArithmetic (expSafe)
 import Crypto.Number.Prime (generateSafePrime)
 import Crypto.Number.Generate (generateMax)
+import Crypto.Number.Serialize (i2ospOf_)
 import Crypto.Random.Types
+import Data.ByteArray (ByteArrayAccess, ScrubbedBytes)
 import Data.Data
 
 -- | Represent Diffie Hellman parameters namely P (prime), and G (generator).
@@ -42,8 +44,8 @@ newtype PrivateNumber = PrivateNumber Integer
     deriving (Show,Read,Eq,Enum,Real,Num,Ord)
 
 -- | Represent Diffie Hellman shared secret.
-newtype SharedKey = SharedKey Integer
-    deriving (Show,Read,Eq,Enum,Real,Num,Ord)
+newtype SharedKey = SharedKey ScrubbedBytes
+    deriving (Show,Eq,ByteArrayAccess)
 
 -- | generate params from a specific generator (2 or 5 are common values)
 -- we generate a safe prime (a prime number of the form 2p+1 where p is also prime)
@@ -74,4 +76,4 @@ generatePublic = calculatePublic
 
 -- | generate a shared key using our private number and the other party public number
 getShared :: Params -> PrivateNumber -> PublicNumber -> SharedKey
-getShared (Params p _ bits) (PrivateNumber x) (PublicNumber y) = SharedKey $ expSafe y x p
+getShared (Params p _ bits) (PrivateNumber x) (PublicNumber y) = SharedKey $ i2ospOf_ (bits + 7 `div` 8) $ expSafe y x p

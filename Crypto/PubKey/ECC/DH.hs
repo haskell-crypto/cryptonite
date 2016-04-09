@@ -19,10 +19,11 @@ module Crypto.PubKey.ECC.DH
     ) where
 
 import Crypto.Number.Generate (generateMax)
+import Crypto.Number.Serialize (i2ospOf_)
 import Crypto.PubKey.ECC.Prim (pointMul)
 import Crypto.Random.Types
 import Crypto.PubKey.DH (SharedKey(..))
-import Crypto.PubKey.ECC.Types (PublicPoint, PrivateNumber, Curve, Point(..))
+import Crypto.PubKey.ECC.Types (PublicPoint, PrivateNumber, Curve, Point(..), curveSizeBits)
 import Crypto.PubKey.ECC.Types (ecc_n, ecc_g, common_curve)
 
 -- | Generating a private number d.
@@ -41,6 +42,7 @@ calculatePublic curve d = q
 -- | Generating a shared key using our private number and
 --   the other party public point.
 getShared :: Curve -> PrivateNumber -> PublicPoint -> SharedKey
-getShared curve db qa = SharedKey x
+getShared curve db qa = SharedKey $ i2ospOf_ (nbBits + 7 `div` 8) x
   where
     Point x _ = pointMul curve db qa
+    nbBits    = curveSizeBits curve

@@ -5,6 +5,9 @@
 * Add a Seed capability to the main DRG, to be able to debug/reproduce randomized program
   where you would want to disable the randomness.
 * Add support for Cipher-based Message Authentication Code (CMAC) (Kei Hibino)
+* *CHANGE* Change the `SharedKey` for `Crypto.PubKey.DH` and `Crypto.PubKey.ECC.DH`,
+  from an Integer newtype to a ScrubbedBytes newtype. Prevent mistake where the
+  bytes representation is generated without the right padding (when needed).
 * *CHANGE* Keep The field size in bits, in the `Params` in `Crypto.PubKey.DH`,
   moving from 2 elements to 3 elements in the structure.
 
