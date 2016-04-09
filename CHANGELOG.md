@@ -2,6 +2,9 @@
 
 * Reduce size of SHA3 context instead of allocating all-size fit memory. save
   up to 72 bytes of memory per context for SHA3-512.
+* Add a Seed capability to the main DRG, to be able to debug/reproduce randomized program
+  where you would want to disable the randomness.
+* Add support for Cipher-based Message Authentication Code (CMAC) (Kei Hibino)
 
 ## 0.13
 
