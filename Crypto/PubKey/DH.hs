@@ -30,6 +30,7 @@ import Data.Data
 data Params = Params
     { params_p :: Integer
     , params_g :: Integer
+    , params_bits :: Int
     } deriving (Show,Read,Eq,Data,Typeable)
 
 -- | Represent Diffie Hellman public number Y.
@@ -51,17 +52,17 @@ generateParams :: MonadRandom m =>
                -> Integer               -- ^ generator
                -> m Params
 generateParams bits generator =
-    (\p -> Params p generator) <$> generateSafePrime bits
+    (\p -> Params p generator bits) <$> generateSafePrime bits
 
 -- | generate a private number with no specific property
 -- this number is usually called X in DH text.
 generatePrivate :: MonadRandom m => Params -> m PrivateNumber
-generatePrivate (Params p _) = PrivateNumber <$> generateMax p
+generatePrivate (Params p _ _) = PrivateNumber <$> generateMax p
 
 -- | calculate the public number from the parameters and the private key
 -- this number is usually called Y in DH text.
 calculatePublic :: Params -> PrivateNumber -> PublicNumber
-calculatePublic (Params p g) (PrivateNumber x) = PublicNumber $ expSafe g x p
+calculatePublic (Params p g _) (PrivateNumber x) = PublicNumber $ expSafe g x p
 
 -- | calculate the public number from the parameters and the private key
 -- this number is usually called Y in DH text.
@@ -73,4 +74,4 @@ generatePublic = calculatePublic
 
 -- | generate a shared key using our private number and the other party public number
 getShared :: Params -> PrivateNumber -> PublicNumber -> SharedKey
-getShared (Params p _) (PrivateNumber x) (PublicNumber y) = SharedKey $ expSafe y x p
+getShared (Params p _ bits) (PrivateNumber x) (PublicNumber y) = SharedKey $ expSafe y x p

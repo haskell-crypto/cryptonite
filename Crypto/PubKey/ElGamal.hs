@@ -68,12 +68,12 @@ generateEphemeral q = toEphemeral <$> generatePrivate q
 -- | generate a public number that is for the other party benefits.
 -- this number is usually called h=g^a
 generatePublic :: Params -> PrivateNumber -> PublicNumber
-generatePublic (Params p g) (PrivateNumber a) = PublicNumber $ expSafe g a p
+generatePublic (Params p g _) (PrivateNumber a) = PublicNumber $ expSafe g a p
 
 -- | encrypt with a specified ephemeral key
 -- do not reuse ephemeral key.
 encryptWith :: EphemeralKey -> Params -> PublicNumber -> Integer -> (Integer,Integer)
-encryptWith (EphemeralKey b) (Params p g) (PublicNumber h) m = (c1,c2)
+encryptWith (EphemeralKey b) (Params p g _) (PublicNumber h) m = (c1,c2)
     where s  = expSafe h b p
           c1 = expSafe g b p
           c2 = (s * m) `mod` p
@@ -81,12 +81,12 @@ encryptWith (EphemeralKey b) (Params p g) (PublicNumber h) m = (c1,c2)
 -- | encrypt a message using params and public keys
 -- will generate b (called the ephemeral key)
 encrypt :: MonadRandom m => Params -> PublicNumber -> Integer -> m (Integer,Integer)
-encrypt params@(Params p _) public m = (\b -> encryptWith b params public m) <$> generateEphemeral q
+encrypt params@(Params p _ _) public m = (\b -> encryptWith b params public m) <$> generateEphemeral q
     where q = p-1 -- p is prime, hence order of the group is p-1
 
 -- | decrypt message
 decrypt :: Params -> PrivateNumber -> (Integer, Integer) -> Integer
-decrypt (Params p _) (PrivateNumber a) (c1,c2) = (c2 * sm1) `mod` p
+decrypt (Params p _ _) (PrivateNumber a) (c1,c2) = (c2 * sm1) `mod` p
     where s   = expSafe c1 a p
           sm1 = fromJust $ inverse s p -- always inversible in Zp
 
@@ -104,7 +104,7 @@ signWith :: (ByteArrayAccess msg, HashAlgorithm hash)
          -> hash            -- ^ collision resistant hash algorithm
          -> msg             -- ^ message to sign
          -> Maybe Signature
-signWith k (Params p g) (PrivateNumber x) hashAlg msg
+signWith k (Params p g _) (PrivateNumber x) hashAlg msg
     | k >= p-1 || d > 1 = Nothing -- gcd(k,p-1) is not 1
     | s == 0            = Nothing
     | otherwise         = Just $ Signature (r,s)
@@ -125,7 +125,7 @@ sign :: (ByteArrayAccess msg, HashAlgorithm hash, MonadRandom m)
      -> hash           -- ^ collision resistant hash algorithm
      -> msg            -- ^ message to sign
      -> m Signature
-sign params@(Params p _) priv hashAlg msg = do
+sign params@(Params p _ _) priv hashAlg msg = do
     k <- generateMax (p-1)
     case signWith k params priv hashAlg msg of
         Nothing  -> sign params priv hashAlg msg
@@ -139,7 +139,7 @@ verify :: (ByteArrayAccess msg, HashAlgorithm hash)
        -> msg
        -> Signature
        -> Bool
-verify (Params p g) (PublicNumber y) hashAlg msg (Signature (r,s))
+verify (Params p g _) (PublicNumber y) hashAlg msg (Signature (r,s))
     | or [r <= 0,r >= p,s <= 0,s >= (p-1)] = False
     | otherwise                            = lhs == rhs
     where h   = os2ip $ hashWith hashAlg msg
