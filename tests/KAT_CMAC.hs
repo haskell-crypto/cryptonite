@@ -61,7 +61,7 @@ msg0 :: ByteString
 msg0 = BS.empty
 
 bsCMAC :: BlockCipher k => k -> ByteString -> ByteString
-bsCMAC k = B.convert . CMAC.cmacGetBytes . CMAC.cmac k
+bsCMAC k = B.convert . CMAC.cmac k
 
 gAES128 :: TestTree
 gAES128 =

@@ -12,7 +12,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Crypto.MAC.CMAC
     ( cmac
-    , CMAC(..)
+    , CMAC
     , subKeys
     ) where
 
@@ -24,9 +24,9 @@ import           Crypto.Cipher.Types
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, Bytes)
 import qualified Crypto.Internal.ByteArray as B
 
-
-newtype CMAC a = CMAC { cmacGetBytes :: Bytes }
-    deriving ByteArrayAccess
+-- | Authentication code
+newtype CMAC a = CMAC Bytes
+    deriving (ByteArrayAccess)
 
 instance Eq (CMAC a) where
   CMAC b1 == CMAC b2  =  B.constEq b1 b2
