@@ -42,7 +42,7 @@ calculatePublic curve d = q
 -- | Generating a shared key using our private number and
 --   the other party public point.
 getShared :: Curve -> PrivateNumber -> PublicPoint -> SharedKey
-getShared curve db qa = SharedKey $ i2ospOf_ (nbBits + 7 `div` 8) x
+getShared curve db qa = SharedKey $ i2ospOf_ ((nbBits + 7) `div` 8) x
   where
     Point x _ = pointMul curve db qa
     nbBits    = curveSizeBits curve

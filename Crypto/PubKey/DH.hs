@@ -76,4 +76,4 @@ generatePublic = calculatePublic
 
 -- | generate a shared key using our private number and the other party public number
 getShared :: Params -> PrivateNumber -> PublicNumber -> SharedKey
-getShared (Params p _ bits) (PrivateNumber x) (PublicNumber y) = SharedKey $ i2ospOf_ (bits + 7 `div` 8) $ expSafe y x p
+getShared (Params p _ bits) (PrivateNumber x) (PublicNumber y) = SharedKey $ i2ospOf_ ((bits + 7) `div` 8) $ expSafe y x p

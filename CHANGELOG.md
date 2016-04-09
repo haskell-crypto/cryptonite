@@ -1,3 +1,7 @@
+## 0.15
+
+* Fix serialization of DH and ECDH
+
 ## 0.14
 
 * Reduce size of SHA3 context instead of allocating all-size fit memory. save
