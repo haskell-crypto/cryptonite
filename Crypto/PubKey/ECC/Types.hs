@@ -121,7 +121,7 @@ data CurveName =
     | SEC_t409r1
     | SEC_t571k1
     | SEC_t571r1
-    deriving (Show,Read,Eq,Ord,Enum,Data,Typeable)
+    deriving (Show,Read,Eq,Ord,Enum,Bounded,Data,Typeable)
 
 {-
 curvesOIDs :: [ (CurveName, [Integer]) ]
