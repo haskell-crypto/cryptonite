@@ -11,10 +11,27 @@
 --
 -- Probably the best-known use of TOTP is in Google's 2-factor authentication.
 --
+-- The TOTP API doesn't depend on any particular time package, so the user needs to supply
+-- the current @OTPTime@ value, based on the system time. For example, using the @hourglass@
+-- package, you could create a @getOTPTime@ function:
+--
+-- >>> import Time.System
+-- >>> import Time.Types
+-- >>>
+-- >>> let getOTPTime = timeCurrent >>= \(Elapsed t) -> return (fromIntegral t :: OTPTime)
+--
+-- Or if you prefer, the @time@ package could be used:
+--
+-- >>> import Data.Time.Clock.POSIX
+-- >>>
+-- >>> let getOTPTime = getPOSIXTime >>= \t -> return (floor t :: OTPTime)
+--
 
 module Crypto.OTP
-    ( hotp
+    ( OTP
     , OTPDigits (..)
+    , OTPTime
+    , hotp
     , resynchronize
     , totp
     , totpVerify
@@ -26,19 +43,26 @@ module Crypto.OTP
 where
 
 import           Data.Bits (shiftL, shiftR, (.&.), (.|.))
-import           Data.Time.Clock.POSIX
+import           Data.ByteArray.Mapping (fromW64BE)
 import           Data.List (elemIndex)
 import           Data.Word
-import           Foreign.Storable (pokeByteOff)
+import           Foreign.Storable (poke)
 import           Control.Monad (unless)
 import           Crypto.Hash (HashAlgorithm, SHA1(..))
 import           Crypto.MAC.HMAC
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, Bytes)
 import qualified Crypto.Internal.ByteArray as B
 
+
+-- | A one-time password which is a sequence of 4 to 9 digits.
+type OTP = Word32
+
 -- | The strength of the calculated HOTP value, namely
 -- the number of digits (between 4 and 9) in the extracted value.
-data OTPDigits = OTP4 | OTP5 | OTP6 | OTP7 | OTP8 | OTP9
+data OTPDigits = OTP4 | OTP5 | OTP6 | OTP7 | OTP8 | OTP9 deriving (Show)
+
+-- | An integral time value in seconds.
+type OTPTime = Word64
 
 hotp :: forall hash key. (HashAlgorithm hash, ByteArrayAccess key)
     => hash
@@ -48,7 +72,7 @@ hotp :: forall hash key. (HashAlgorithm hash, ByteArrayAccess key)
     -- ^ Shared secret between the client and server
     -> Word64
     -- ^ Counter value synchronized between the client and server
-    -> Word32
+    -> OTP
     -- ^ The HOTP value
 hotp _ d k c = dt `mod` digitsPower d
   where
@@ -71,7 +95,7 @@ resynchronize :: (HashAlgorithm hash, ByteArrayAccess key)
     -- ^ The shared secret
     -> Word64
     -- ^ The current server counter value
-    -> (Word32, [Word32])
+    -> (OTP, [OTP])
     -- ^ The first OTP submitted by the client and a list of additional
     -- sequential OTPs (which may be empty)
     -> Maybe Word64
@@ -97,9 +121,9 @@ digitsPower OTP8 = 100000000
 digitsPower OTP9 = 1000000000
 
 
-data TOTPParams h = TP !h !Word64 !Word16 !OTPDigits !ClockSkew
+data TOTPParams h = TP !h !OTPTime !Word16 !OTPDigits !ClockSkew deriving (Show)
 
-data ClockSkew = NoSkew | OneStep | TwoSteps | ThreeSteps | FourSteps deriving (Enum)
+data ClockSkew = NoSkew | OneStep | TwoSteps | ThreeSteps | FourSteps deriving (Enum, Show)
 
 -- | The default TOTP configuration.
 defaultTOTPParams :: TOTPParams SHA1
@@ -108,7 +132,7 @@ defaultTOTPParams = TP SHA1 0 30 OTP6 TwoSteps
 -- | Create a TOTP configuration with customized parameters.
 mkTOTPParams :: (HashAlgorithm hash)
     => hash
-    -> Word64
+    -> OTPTime
     -- ^ The T0 parameter in seconds. This is the Unix time from which to start
     -- counting steps (default 0). Must be before the current time.
     -> Word16
@@ -130,11 +154,10 @@ totp :: (HashAlgorithm hash, ByteArrayAccess key)
     => TOTPParams hash
     -> key
     -- ^ The shared secret
-    -> POSIXTime
+    -> OTPTime
     -- ^ The time for which the OTP should be calculated.
     -- This is usually the current time as returned by @Data.Time.Clock.POSIX.getPOSIXTime@
-    -> Word32
-    -- ^ The OTP value
+    -> OTP
 totp (TP h t0 x d _) k now = hotp h d k (timeToCounter now t0 x)
 
 -- | Check a supplied TOTP value is valid for the given time,
@@ -142,8 +165,8 @@ totp (TP h t0 x d _) k now = hotp h d k (timeToCounter now t0 x)
 totpVerify :: (HashAlgorithm hash, ByteArrayAccess key)
     => TOTPParams hash
     -> key
-    -> POSIXTime
-    -> Word32
+    -> OTPTime
+    -> OTP
     -> Bool
 totpVerify (TP h t0 x d skew) k now otp = otp `elem` map (hotp h d k) (range window [])
   where
@@ -152,17 +175,5 @@ totpVerify (TP h t0 x d skew) k now otp = otp `elem` map (hotp h d k) (range win
     range 0 acc = t : acc
     range n acc = range (n-1) ((t-n) : (t+n) : acc)
 
-timeToCounter :: POSIXTime -> Word64 -> Word16 -> Word64
-timeToCounter now t0 x = floor ((now - fromIntegral t0) / fromIntegral x)
-
--- TODO: Put this in memory package
-fromW64BE :: (ByteArray ba) => Word64 -> ba
-fromW64BE n = B.allocAndFreeze 8 $ \p -> do
-    pokeByteOff p 0 (fromIntegral (shiftR n 56) :: Word8)
-    pokeByteOff p 1 (fromIntegral (shiftR n 48) :: Word8)
-    pokeByteOff p 2 (fromIntegral (shiftR n 40) :: Word8)
-    pokeByteOff p 3 (fromIntegral (shiftR n 32) :: Word8)
-    pokeByteOff p 4 (fromIntegral (shiftR n 24) :: Word8)
-    pokeByteOff p 5 (fromIntegral (shiftR n 16) :: Word8)
-    pokeByteOff p 6 (fromIntegral (shiftR n  8) :: Word8)
-    pokeByteOff p 7 (fromIntegral n             :: Word8)
+timeToCounter :: Word64 -> Word64 -> Word16 -> Word64
+timeToCounter now t0 x = (now - t0) `div` fromIntegral x
