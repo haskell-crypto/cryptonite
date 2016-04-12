@@ -23,8 +23,8 @@ import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, Bytes)
 import qualified Crypto.Internal.ByteArray as B
 
 
-newtype MiyaguchiPreneel a = MP { chashGetBytes :: Bytes }
-    deriving ByteArrayAccess
+newtype MiyaguchiPreneel a = MP Bytes
+    deriving (ByteArrayAccess)
 
 instance Eq (MiyaguchiPreneel a) where
     MP b1 == MP b2  =  B.constEq b1 b2
