@@ -11,7 +11,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Crypto.ConstructHash.MiyaguchiPreneel
        ( mp, mp'
-       , MiyaguchiPreneel(..)
+       , MiyaguchiPreneel
        , cipherInit'
        ) where
 
