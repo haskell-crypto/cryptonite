@@ -103,14 +103,4 @@ hashInitWith _ = hashInit
 hashWith :: (ByteArrayAccess ba, HashAlgorithm alg) => alg -> ba -> Digest alg
 hashWith _ = hash
 
--- | Try to transform a bytearray into a Digest of specific algorithm.
---
--- If the digest is not the right size for the algorithm specified, then
--- Nothing is returned.
-digestFromByteString :: (HashAlgorithm a, ByteArrayAccess ba) => ba -> Maybe (Digest a)
-digestFromByteString = from undefined
-  where
-        from :: (HashAlgorithm a, ByteArrayAccess ba) => a -> ba -> Maybe (Digest a)
-        from alg bs
-            | B.length bs == (hashDigestSize alg) = (Just $ Digest $ B.convert bs)
-            | otherwise                           = Nothing
+

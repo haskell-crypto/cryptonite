@@ -8,16 +8,19 @@
 -- Crypto hash types definitions
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Crypto.Hash.Types
     ( HashAlgorithm(..)
     , Context(..)
     , Digest(..)
+    , digestFromByteString
     ) where
 
 import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArrayAccess, Bytes)
 import qualified Crypto.Internal.ByteArray as B
 import           Foreign.Ptr (Ptr)
+import          qualified Data.ByteString.Char8 as C
 
 -- | Class representing hashing algorithms.
 --
@@ -51,8 +54,26 @@ newtype Context a = Context Bytes
 
 -- | Represent a digest for a given hash algorithm.
 newtype Digest a = Digest Bytes
-    deriving (Eq,Ord,ByteArrayAccess,NFData, Monoid)
+    deriving (Eq,Ord,ByteArrayAccess,NFData,Monoid)
 
 instance Show (Digest a) where
-    show (Digest bs) = map (toEnum . fromIntegral)
-                     $ B.unpack (B.convertToBase B.Base16 bs :: Bytes)
+    show (Digest bs) = C.unpack $ B.convertToBase B.Base16 bs
+
+instance HashAlgorithm a => Read (Digest a) where
+    readsPrec _ x = case B.convertFromBase B.Base16 . C.pack $ x of
+        Left _ -> [] -- failed conversion
+        Right (y :: B.Bytes) -> case digestFromByteString y of 
+            Nothing -> [] -- wrong length
+            Just z -> [(z,"")]
+
+-- | Try to transform a bytearray into a Digest of specific algorithm.
+--
+-- If the digest is not the right size for the algorithm specified, then
+-- Nothing is returned.
+digestFromByteString :: (HashAlgorithm a, ByteArrayAccess ba) => ba -> Maybe (Digest a)
+digestFromByteString = from undefined
+  where
+        from :: (HashAlgorithm a, ByteArrayAccess ba) => a -> ba -> Maybe (Digest a)
+        from alg bs
+            | B.length bs == (hashDigestSize alg) = (Just $ Digest $ B.convert bs)
+            | otherwise                           = Nothing
