@@ -21,6 +21,7 @@ import           Crypto.Internal.ByteArray (ByteArrayAccess, Bytes)
 import qualified Crypto.Internal.ByteArray as B
 import           Foreign.Ptr (Ptr)
 import          qualified Data.ByteString.Char8 as C
+import Data.Monoid
 
 -- | Class representing hashing algorithms.
 --
