@@ -104,8 +104,4 @@ hashInitWith _ = hashInit
 hashWith :: (ByteArrayAccess ba, HashAlgorithm alg) => alg -> ba -> Digest alg
 hashWith _ = hash
 
-instance HashAlgorithm a => Monoid (Digest a) where
-    mempty = hashFinalize hashInit
-    mappend x y = hashFinalize $ foldl' hashUpdate hashInit [x,y]
-
 
