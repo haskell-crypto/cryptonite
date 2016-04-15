@@ -46,6 +46,7 @@ import           Foreign.Ptr (Ptr)
 import           Crypto.Internal.ByteArray (ByteArrayAccess)
 import qualified Crypto.Internal.ByteArray as B
 import qualified Data.ByteString.Lazy as L
+import Data.List (foldl')
 
 -- | Hash a strict bytestring into a digest.
 hash :: (ByteArrayAccess ba, HashAlgorithm a) => ba -> Digest a
@@ -102,5 +103,9 @@ hashInitWith _ = hashInit
 -- | Run the 'hash' function but takes an explicit hash algorithm parameter
 hashWith :: (ByteArrayAccess ba, HashAlgorithm alg) => alg -> ba -> Digest alg
 hashWith _ = hash
+
+instance HashAlgorithm a => Monoid (Digest a) where
+    mempty = hashFinalize hashInit
+    mappend x y = hashFinalize $ foldl' hashUpdate hashInit [x,y]
 
 

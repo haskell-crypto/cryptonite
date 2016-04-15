@@ -55,7 +55,7 @@ newtype Context a = Context Bytes
 
 -- | Represent a digest for a given hash algorithm.
 newtype Digest a = Digest Bytes
-    deriving (Eq,Ord,ByteArrayAccess,NFData,Monoid)
+    deriving (Eq,Ord,ByteArrayAccess,NFData)
 
 instance Show (Digest a) where
     show (Digest bs) = C.unpack $ B.convertToBase B.Base16 bs
