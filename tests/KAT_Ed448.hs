@@ -16,6 +16,8 @@ katTests :: [TestTree]
 katTests =
     [ testCase "0" (aliceMultBob @=? B.convert (Ed448.dh alicePublic bobPrivate))
     , testCase "1" (aliceMultBob @=? B.convert (Ed448.dh bobPublic alicePrivate))
+    , testCase "2" (alicePublic  @=? Ed448.toPublic alicePrivate)
+    , testCase "3" (bobPublic    @=? Ed448.toPublic bobPrivate)
     ]
 
 tests = testGroup "Ed448"
