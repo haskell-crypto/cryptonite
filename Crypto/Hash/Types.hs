@@ -20,8 +20,8 @@ import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArrayAccess, Bytes)
 import qualified Crypto.Internal.ByteArray as B
 import           Foreign.Ptr (Ptr)
-import          qualified Data.ByteString.Char8 as C
-import Data.Monoid
+import qualified Data.ByteString.Char8 as C
+import           Data.Maybe (maybeToList)
 
 -- | Class representing hashing algorithms.
 --
@@ -60,12 +60,19 @@ newtype Digest a = Digest Bytes
 instance Show (Digest a) where
     show (Digest bs) = C.unpack $ B.convertToBase B.Base16 bs
 
+strongSplitAt :: Int -> [a] -> Maybe ([a],[a])
+strongSplitAt 0 xs = Just ([],xs)
+strongSplitAt _ [] = Nothing
+strongSplitAt n (x:xs) = (\(ys,zs) -> (x :ys,zs)) `fmap` strongSplitAt (n - 1) xs
+
+eitherToMaybe :: Either a b -> Maybe b
+eitherToMaybe =  either (const Nothing) Just 
+
 instance HashAlgorithm a => Read (Digest a) where
-    readsPrec _ x = case B.convertFromBase B.Base16 . C.pack $ x of
-        Left _ -> [] -- failed conversion
-        Right (y :: B.Bytes) -> case digestFromByteString y of 
-            Nothing -> [] -- wrong length
-            Just z -> [(z,"")]
+    readsPrec _ x = maybeToList $ do
+        (ts,ls) <- strongSplitAt (hashDigestSize (undefined :: a) * 2) x
+        y :: B.Bytes <- eitherToMaybe $ B.convertFromBase B.Base16 . C.pack $ ts 
+        flip (,) ls `fmap` digestFromByteString y 
 
 -- | Try to transform a bytearray into a Digest of specific algorithm.
 --
