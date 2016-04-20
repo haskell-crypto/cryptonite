@@ -199,7 +199,6 @@ Library
                    , cbits/cryptonite_salsa.c
                    , cbits/cryptonite_rc4.c
                    , cbits/cryptonite_cpu.c
-                   , cbits/curve25519/curve25519-donna.c
                    , cbits/ed25519/ed25519.c
                    , cbits/ed448/x448.c
                    , cbits/p256/p256.c
@@ -224,6 +223,11 @@ Library
                    , cbits/cryptonite_whirlpool.c
                    , cbits/cryptonite_scrypt.c
   include-dirs:  cbits cbits/ed25519
+
+  if arch(x86_64)
+    C-sources: cbits/curve25519/curve25519-donna-c64.c
+  else
+    C-sources: cbits/curve25519/curve25519-donna.c
 
   -- FIXME armel or mispel is also little endian.
   -- might be a good idea to also add a runtime autodetect mode.
