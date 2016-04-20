@@ -1,3 +1,7 @@
+## 0.16
+
+* Fix basepoint for Ed448
+
 ## 0.15
 
 * Fix serialization of DH and ECDH
