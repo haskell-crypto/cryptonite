@@ -7,22 +7,20 @@ cryptonite
 [![Haskell](http://b.repl.ca/v1/language-haskell-lightgrey.png)](http://haskell.org)
 
 Cryptonite is a haskell repository of cryptographic primitives. Each crypto
-algorithm have specificities, that are hard to wrap in common APIs and types,
-so instead of trying to provide a common ground for algorithms that wouldn't
-allow to provide all different usage or a really complicated system, this just
-provide a non-consistant low-level API.
+algorithm has specificities that are hard to wrap in common APIs and types,
+so instead of trying to provide a common ground for algorithms, this package
+provides a non-consistent low-level API.
 
-If you have no idea what're you doing, please do not use this directly, rely on
-higher level protocols or higher level implementation.
+If you have no idea what you're doing, please do not use this directly.
+Instead, rely on higher level protocols or implementations.
 
 Documentation: [cryptonite on hackage](http://hackage.haskell.org/package/cryptonite)
 
 Versioning
 ----------
 
-Development versions are an incremental number prefixed by 0.
-No specific meaning is associated with the versions, specially
-no API stability.
+Development versions are an incremental number prefixed by 0. There is no
+API stability between development versions.
 
 Production versions : TBD
 
@@ -35,7 +33,7 @@ The coding style of this project mostly follows:
 Support
 -------
 
-cryptonite supports the following platform:
+cryptonite supports the following platforms:
 
 * Windows >= 8
 * OSX >= 10.8
@@ -55,21 +53,22 @@ On the following haskell versions:
 * GHC 7.8.x
 * GHC 7.10.x
 
-Further platforms and architectures probably works too, but until maintainer(s) don't have regular
-access to them, we can't commit for further support
+Further platforms and architectures probably work too, but since the
+maintainer(s) don't have regular access to them, we can't commit to
+further support.
 
 Known Building Issues
 ---------------------
 
-on OSX <= 10.7, the system compiler doesn't understand the '-maes' option, and
+On OSX <= 10.7, the system compiler doesn't understand the '-maes' option, and
 with the lack of autodetection feature builtin in .cabal file, it is left on
 the user to disable the aesni. See the [Disabling AESNI] section
 
 Disabling AESNI
 ---------------
 
-It may be useful to disable AESNI (for building, testing or runtime purpose), and one can do that with the
-*support_aesni* flag.
+It may be useful to disable AESNI for building, testing or runtime purposes.
+This is achieved with the *support_aesni* flag.
 
 As part of configure of cryptonite:
 
