@@ -10,7 +10,7 @@ Description:
     .
     * MAC: HMAC, Poly1305
     .
-    * Assymmetric crypto: DSA, RSA, DH, ECDH, ECDSA, ECC, Curve25519, Ed25519
+    * Asymmetric crypto: DSA, RSA, DH, ECDH, ECDSA, ECC, Curve25519, Ed25519, Ed448
     .
     * Key Derivation Function: PBKDF2, Scrypt, HKDF
     .
