@@ -2,6 +2,8 @@
 
 * Fix basepoint for Ed448
 
+* Enable 64-bit Curve25519 implementation
+
 ## 0.15
 
 * Fix serialization of DH and ECDH
