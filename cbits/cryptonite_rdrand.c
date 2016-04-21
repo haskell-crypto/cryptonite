@@ -37,22 +37,14 @@
 int cryptonite_cpu_has_rdrand()
 {
 	uint32_t ax,bx,cx,dx,func=1;
+#if defined(__PIC__) && defined(__i386__)
+	__asm__ volatile ("mov %%ebx, %%edi;" "cpuid;" "xchgl %%ebx, %%edi;"
+		: "=a" (ax), "=D" (bx), "=c" (cx), "=d" (dx) : "a" (func));
+#else
 	__asm__ volatile ("cpuid": "=a" (ax), "=b" (bx), "=c" (cx), "=d" (dx) : "a" (func));
+#endif
 	return (cx & 0x40000000);
 }
-
-/* sadly many people are still using an old binutils,
- * leading to report that instruction is not recognized.
- */
-#if 0
-/* Returns 1 on success */
-static inline int crypto_random_rdrand64_step(uint64_t *buffer)
-{
-	unsigned char err;
-	asm volatile ("rdrand %0; setc %1" : "=r" (*buffer), "=qm" (err));
-	return (int) err;
-}
-#endif
 
 /* inline encoding of 'rdrand %rax' to cover old binutils
  * - no inputs
@@ -65,17 +57,51 @@ static inline int crypto_random_rdrand64_step(uint64_t *buffer)
 	   : \
 	   : "cc")
 
+/* inline encoding of 'rdrand %eax' to cover old binutils
+ * - no inputs
+ * - 'cc' to the clobber list as we modify condition code.
+ * - output of rdrand in eax and have a 8 bit error condition
+ */
+#define inline_rdrand_eax(val, err) \
+	asm(".byte 0x0f,0xc7,0xf0; setc %1" \
+	   : "=a" (val), "=q" (err) \
+	   : \
+	   : "cc")
+
+#ifdef __x86_64__
+# define RDRAND_SZ 8
+# define RDRAND_T  uint64_t
+#define inline_rdrand(val, err) err = cryptonite_rdrand_step(&val)
+#else
+# define RDRAND_SZ 4
+# define RDRAND_T  uint32_t
+#define inline_rdrand(val, err) err = cryptonite_rdrand_step(&val)
+#endif
+
+/* sadly many people are still using an old binutils,
+ * leading to report that instruction is not recognized.
+ */
+#if 1
+/* Returns 1 on success */
+static inline int cryptonite_rdrand_step(RDRAND_T *buffer)
+{
+	unsigned char err;
+	asm volatile ("rdrand %0; setc %1" : "=r" (*buffer), "=qm" (err));
+	return (int) err;
+}
+#endif
+
 /* Returns the number of bytes succesfully generated */
 int cryptonite_get_rand_bytes(uint8_t *buffer, size_t len)
 {
-	uint64_t tmp;
-	int aligned = (intptr_t) buffer % 8;
+	RDRAND_T tmp;
+	int aligned = (intptr_t) buffer % RDRAND_SZ;
 	int orig_len = len;
-	int to_alignment = 8 - aligned;
+	int to_alignment = RDRAND_SZ - aligned;
 	uint8_t ok;
 
 	if (aligned != 0) {
-		inline_rdrand_rax(tmp, ok);
+		inline_rdrand(tmp, ok);
 		if (!ok)
 			return 0;
 		memcpy(buffer, (uint8_t *) &tmp, to_alignment);
@@ -83,15 +109,15 @@ int cryptonite_get_rand_bytes(uint8_t *buffer, size_t len)
 		len -= to_alignment;
 	}
 
-	for (; len >= 8; buffer += 8, len -= 8) {
-		inline_rdrand_rax(tmp, ok);
+	for (; len >= RDRAND_SZ; buffer += RDRAND_SZ, len -= RDRAND_SZ) {
+		inline_rdrand(tmp, ok);
 		if (!ok)
 			return (orig_len - len);
-		*((uint64_t *) buffer) = tmp;
+		*((RDRAND_T *) buffer) = tmp;
 	}
 
 	if (len > 0) {
-		inline_rdrand_rax(tmp, ok);
+		inline_rdrand(tmp, ok);
 		if (!ok)
 			return (orig_len - len);
 		memcpy(buffer, (uint8_t *) &tmp, len);
