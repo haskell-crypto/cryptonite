@@ -21,8 +21,8 @@ import           Data.Maybe (catMaybes)
 import           Foreign.Marshal.Utils (copyBytes)
 import           Foreign.Ptr (plusPtr, Ptr)
 
--- | Pool of Entropy. contains a self mutating pool of entropy,
--- that is always guarantee to contains data.
+-- | Pool of Entropy. Contains a self-mutating pool of entropy,
+-- that is always guaranteed to contain data.
 data EntropyPool = EntropyPool [EntropyBackend] (MVar Int) ScrubbedBytes
 
 -- size of entropy pool by default
@@ -31,7 +31,8 @@ defaultPoolSize = 4096
 
 -- | Create a new entropy pool of a specific size
 --
--- While you can create as many entropy pool as you want, the pool can be shared between multiples RNGs.
+-- While you can create as many entropy pools as you want,
+-- the pool can be shared between multiples RNGs.
 createEntropyPoolWith :: Int -> [EntropyBackend] -> IO EntropyPool
 createEntropyPoolWith poolSize backends = do
     m  <- newMVar 0
@@ -40,7 +41,8 @@ createEntropyPoolWith poolSize backends = do
 
 -- | Create a new entropy pool with a default size.
 --
--- While you can create as many entropy pool as you want, the pool can be shared between multiples RNGs.
+-- While you can create as many entropy pools as you want,
+-- the pool can be shared between multiples RNGs.
 createEntropyPool :: IO EntropyPool
 createEntropyPool = do
     backends <- catMaybes `fmap` sequence supportedBackends
