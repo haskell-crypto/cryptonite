@@ -12,13 +12,12 @@
 module Crypto.ConstructHash.MiyaguchiPreneel
        ( mp, mp'
        , MiyaguchiPreneel
-       , cipherInit'
        ) where
 
 import           Data.List (foldl')
 
 import           Crypto.Cipher.Types
-import           Crypto.Error (eitherCryptoError)
+import           Crypto.Error (throwCryptoError)
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, Bytes)
 import qualified Crypto.Internal.ByteArray as B
 
@@ -44,10 +43,6 @@ mp' g = MP . foldl' (step $ g) (B.replicate bsz 0) . chunks . B.convert
       where
         (hd, tl) = B.splitAt bsz msg
 
--- | Simple key build function, which may raise size error.
-cipherInit' :: (ByteArray ba, Cipher k) => ba -> k
-cipherInit' = either (error . show) id . eitherCryptoError . cipherInit
-
 -- | Compute Miyaguchi-Preneel one way compress using the infered block cipher.
 --   Only safe when KEY-SIZE equals to BLOCK-SIZE.
 --
@@ -55,7 +50,7 @@ cipherInit' = either (error . show) id . eitherCryptoError . cipherInit
 mp :: (ByteArrayAccess bin, BlockCipher cipher)
    => bin                     -- ^ input message
    -> MiyaguchiPreneel cipher -- ^ output tag
-mp = mp' cipherInit'
+mp = mp' $ throwCryptoError . cipherInit
 
 -- | computation step of Miyaguchi-Preneel
 step :: (ByteArray ba, BlockCipher k)
