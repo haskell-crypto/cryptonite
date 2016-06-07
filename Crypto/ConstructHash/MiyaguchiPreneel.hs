@@ -10,7 +10,7 @@
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Crypto.ConstructHash.MiyaguchiPreneel
-       ( mp, mp'
+       ( compute, compute'
        , MiyaguchiPreneel
        ) where
 
@@ -30,11 +30,11 @@ instance Eq (MiyaguchiPreneel a) where
 
 
 -- | Compute Miyaguchi-Preneel one way compress using the supplied block cipher.
-mp' :: (ByteArrayAccess bin, BlockCipher cipher)
-    => (Bytes -> cipher)       -- ^ key build function to compute Miyaguchi-Preneel. care about block-size and key-size
-    -> bin                     -- ^ input message
-    -> MiyaguchiPreneel cipher -- ^ output tag
-mp' g = MP . foldl' (step $ g) (B.replicate bsz 0) . chunks . B.convert
+compute' :: (ByteArrayAccess bin, BlockCipher cipher)
+         => (Bytes -> cipher)       -- ^ key build function to compute Miyaguchi-Preneel. care about block-size and key-size
+         -> bin                     -- ^ input message
+         -> MiyaguchiPreneel cipher -- ^ output tag
+compute' g = MP . foldl' (step $ g) (B.replicate bsz 0) . chunks . B.convert
   where
     bsz = blockSize ( g B.empty {- dummy to get block size -} )
     chunks msg
@@ -47,10 +47,10 @@ mp' g = MP . foldl' (step $ g) (B.replicate bsz 0) . chunks . B.convert
 --   Only safe when KEY-SIZE equals to BLOCK-SIZE.
 --
 --   Simple usage /mp' msg :: MiyaguchiPreneel AES128/
-mp :: (ByteArrayAccess bin, BlockCipher cipher)
-   => bin                     -- ^ input message
-   -> MiyaguchiPreneel cipher -- ^ output tag
-mp = mp' $ throwCryptoError . cipherInit
+compute :: (ByteArrayAccess bin, BlockCipher cipher)
+        => bin                     -- ^ input message
+        -> MiyaguchiPreneel cipher -- ^ output tag
+compute = compute' $ throwCryptoError . cipherInit
 
 -- | computation step of Miyaguchi-Preneel
 step :: (ByteArray ba, BlockCipher k)

@@ -2,7 +2,7 @@
 module KAT_MiyaguchiPreneel (tests) where
 
 import           Crypto.Cipher.AES (AES128)
-import           Crypto.ConstructHash.MiyaguchiPreneel
+import           Crypto.ConstructHash.MiyaguchiPreneel as MiyaguchiPreneel
 
 import           Imports
 
@@ -13,7 +13,7 @@ import Data.ByteArray.Encoding (Base (Base16), convertFromBase)
 
 
 runMP128 :: ByteString -> ByteString
-runMP128 s = B.convert (mp s :: MiyaguchiPreneel AES128)
+runMP128 s = B.convert (MiyaguchiPreneel.compute s :: MiyaguchiPreneel AES128)
 
 hxs :: String -> ByteString
 hxs = either (error . ("hxs:" ++)) id . convertFromBase Base16
