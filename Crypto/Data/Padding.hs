@@ -56,4 +56,10 @@ unpad (PKCS7 sz) bin
     paddingSz   = fromIntegral paddingByte
     (content, padding) = B.splitAt (len - paddingSz) bin
     paddingWitness     = B.replicate paddingSz paddingByte :: Bytes
-unpad (ZERO sz)  bin = Nothing
+unpad (ZERO sz)  bin
+    | len == 0                           = Nothing
+    | (len `mod` sz) /= 0                = Nothing
+    | B.index bin (len - 1) /= 0         = Just bin
+    | otherwise                          = Nothing
+  where
+    len         = B.length bin
