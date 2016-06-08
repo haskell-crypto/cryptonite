@@ -16,6 +16,7 @@ module Crypto.ConstructHash.MiyaguchiPreneel
 
 import           Data.List (foldl')
 
+import           Crypto.Data.Padding (pad, Format (ZERO))
 import           Crypto.Cipher.Types
 import           Crypto.Error (throwCryptoError)
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, Bytes)
@@ -34,12 +35,12 @@ compute' :: (ByteArrayAccess bin, BlockCipher cipher)
          => (Bytes -> cipher)       -- ^ key build function to compute Miyaguchi-Preneel. care about block-size and key-size
          -> bin                     -- ^ input message
          -> MiyaguchiPreneel cipher -- ^ output tag
-compute' g = MP . foldl' (step $ g) (B.replicate bsz 0) . chunks . B.convert
+compute' g = MP . foldl' (step $ g) (B.replicate bsz 0) . chunks . pad (ZERO bsz) . B.convert
   where
     bsz = blockSize ( g B.empty {- dummy to get block size -} )
     chunks msg
-      | B.null tl  =  [hd :: Bytes]
-      | otherwise  =   hd : chunks tl
+      | B.null msg  =  []
+      | otherwise  =   (hd :: Bytes) : chunks tl
       where
         (hd, tl) = B.splitAt bsz msg
 
@@ -59,13 +60,9 @@ step :: (ByteArray ba, BlockCipher k)
      -> ba
      -> ba
 step g iv msg =
-    ecbEncrypt k pmsg `bxor` iv `bxor` pmsg
+    ecbEncrypt k msg `bxor` iv `bxor` msg
   where
     k = g iv
-    pmsg = pad0 k msg
-
-pad0 :: (ByteArray ba, BlockCipher k) => k -> ba -> ba
-pad0 k s = s `B.append` B.replicate (blockSize k - B.length s) 0
 
 bxor :: ByteArray ba => ba -> ba -> ba
 bxor = B.xor
