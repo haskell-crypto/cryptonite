@@ -21,6 +21,7 @@ import qualified Data.ByteArray as B
 data Format =
       PKCS5     -- ^ PKCS5: PKCS7 with hardcoded size of 8
     | PKCS7 Int -- ^ PKCS7 with padding size between 1 and 255
+    | ZERO Int  -- ^ zero padding with block size
     deriving (Show, Eq)
 
 -- | Apply some pad to a bytearray
@@ -30,6 +31,15 @@ pad (PKCS7 sz) bin = bin `B.append` paddingString
   where
     paddingString = B.replicate paddingByte (fromIntegral paddingByte)
     paddingByte   = sz - (B.length bin `mod` sz)
+pad (ZERO sz)  bin = bin `B.append` paddingString
+  where
+    paddingString = B.replicate paddingSz 0
+    paddingSz
+      | len == 0   =  sz
+      | m == 0     =  0
+      | otherwise  =  sz - m
+    m = len `mod` sz
+    len = B.length bin
 
 -- | Try to remove some padding from a bytearray.
 unpad :: ByteArray byteArray => Format -> byteArray -> Maybe byteArray
@@ -46,3 +56,4 @@ unpad (PKCS7 sz) bin
     paddingSz   = fromIntegral paddingByte
     (content, padding) = B.splitAt (len - paddingSz) bin
     paddingWitness     = B.replicate paddingSz paddingByte :: Bytes
+unpad (ZERO sz)  bin = Nothing
