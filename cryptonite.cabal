@@ -95,6 +95,7 @@ Library
                      Crypto.Cipher.Salsa
                      Crypto.Cipher.TripleDES
                      Crypto.Cipher.Types
+                     Crypto.ConstructHash.MiyaguchiPreneel
                      Crypto.Data.AFIS
                      Crypto.Data.Padding
                      Crypto.Error
@@ -310,6 +311,7 @@ Test-Suite test-cryptonite
                      KAT_Ed25519
                      KAT_CMAC
                      KAT_HMAC
+                     KAT_MiyaguchiPreneel
                      KAT_PBKDF2
                      KAT_PubKey.DSA
                      KAT_PubKey.ECC
