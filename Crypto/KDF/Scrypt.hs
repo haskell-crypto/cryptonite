@@ -53,7 +53,7 @@ generate params password salt
         let b = PBKDF2.generate prf (PBKDF2.Parameters 1 intLen) password salt :: B.Bytes
         newSalt <- B.copy b $ \bPtr ->
             allocaBytesAligned (128*(fromIntegral $ n params)*(r params)) 8 $ \v ->
-            allocaBytesAligned (256*r params) 8 $ \xy -> do
+            allocaBytesAligned (256*r params + 64) 8 $ \xy -> do
                 forM_ [0..(p params-1)] $ \i ->
                     ccryptonite_scrypt_smix (bPtr `plusPtr` (i * 128 * (r params)))
                                             (fromIntegral $ r params) (n params) v xy
