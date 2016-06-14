@@ -37,7 +37,12 @@
 int cryptonite_cpu_has_rdrand()
 {
 	uint32_t ax,bx,cx,dx,func=1;
+#if defined(__PIC__) && defined(__i386__)
+	__asm__ volatile ("mov %%ebx, %%edi;" "cpuid;" "xchgl %%ebx, %%edi;"
+		: "=a" (ax), "=D" (bx), "=c" (cx), "=d" (dx) : "a" (func));
+#else
 	__asm__ volatile ("cpuid": "=a" (ax), "=b" (bx), "=c" (cx), "=d" (dx) : "a" (func));
+#endif
 	return (cx & 0x40000000);
 }
 
