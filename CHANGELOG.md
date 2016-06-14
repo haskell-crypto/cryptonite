@@ -1,3 +1,9 @@
+## 0.17
+
+* Add Miyaguchi-Preneel construction (Kei Hibino)
+* Fix buffer length in scrypt (Luke Taylor)
+* build fixes for i686 and arm related to rdrand
+
 ## 0.16
 
 * Fix basepoint for Ed448
