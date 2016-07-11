@@ -46,19 +46,6 @@ int cryptonite_cpu_has_rdrand()
 	return (cx & 0x40000000);
 }
 
-/* sadly many people are still using an old binutils,
- * leading to report that instruction is not recognized.
- */
-#if 0
-/* Returns 1 on success */
-static inline int crypto_random_rdrand64_step(uint64_t *buffer)
-{
-	unsigned char err;
-	asm volatile ("rdrand %0; setc %1" : "=r" (*buffer), "=qm" (err));
-	return (int) err;
-}
-#endif
-
 /* inline encoding of 'rdrand %rax' to cover old binutils
  * - no inputs
  * - 'cc' to the clobber list as we modify condition code.
@@ -84,11 +71,24 @@ static inline int crypto_random_rdrand64_step(uint64_t *buffer)
 #ifdef __x86_64__
 # define RDRAND_SZ 8
 # define RDRAND_T  uint64_t
-#define inline_rdrand(val, err) inline_rdrand_rax(val, err)
+#define inline_rdrand(val, err) err = cryptonite_rdrand_step(&val)
 #else
 # define RDRAND_SZ 4
 # define RDRAND_T  uint32_t
-#define inline_rdrand(val, err) inline_rdrand_eax(val, err)
+#define inline_rdrand(val, err) err = cryptonite_rdrand_step(&val)
+#endif
+
+/* sadly many people are still using an old binutils,
+ * leading to report that instruction is not recognized.
+ */
+#if 1
+/* Returns 1 on success */
+static inline int cryptonite_rdrand_step(RDRAND_T *buffer)
+{
+	unsigned char err;
+	asm volatile ("rdrand %0; setc %1" : "=r" (*buffer), "=qm" (err));
+	return (int) err;
+}
 #endif
 
 /* Returns the number of bytes succesfully generated */
@@ -113,7 +113,7 @@ int cryptonite_get_rand_bytes(uint8_t *buffer, size_t len)
 		inline_rdrand(tmp, ok);
 		if (!ok)
 			return (orig_len - len);
-		*((uint64_t *) buffer) = tmp;
+		*((RDRAND_T *) buffer) = tmp;
 	}
 
 	if (len > 0) {
