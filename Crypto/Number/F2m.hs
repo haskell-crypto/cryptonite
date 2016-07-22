@@ -13,6 +13,7 @@ module Crypto.Number.F2m
     ( BinaryPolynomial
     , addF2m
     , mulF2m
+    , squareF2m'
     , squareF2m
     , modF2m
     , invF2m
@@ -64,11 +65,11 @@ mulF2m fx n1 n2 = modF2m fx
 -- Multiplication table? C?
 squareF2m :: BinaryPolynomial  -- ^ Irreducible binary polynomial
           -> Integer -> Integer
-squareF2m fx = modF2m fx . square
+squareF2m fx = modF2m fx . squareF2m'
 {-# INLINE squareF2m #-}
 
-square :: Integer -> Integer
-square n1 = go n1 ln1
+squareF2m' :: Integer -> Integer
+squareF2m' n1 = go n1 ln1
   where
     ln1 = log2 n1
     go n s | s == 0 = n
@@ -76,7 +77,7 @@ square n1 = go n1 ln1
       where
         x = shift (shift n (2 * (s - ln1) - 1)) (2 * (ln1 - s) + 2)
         y = n .&. (shift 1 (2 * (ln1 - s) + 1) - 1)
-{-# INLINE square #-}
+{-# INLINE squareF2m' #-}
 
 -- | Inversion of @n over F₂m using extended Euclidean algorithm.
 --
