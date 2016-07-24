@@ -26,6 +26,13 @@ scalarGenerate curve = generateBetween 1 (n - 1)
 
 --TODO: Extract helper function for `fromMaybe PointO...`
 
+-- | Elliptic Curve point negation:
+-- @pointNegate c p@ returns point @q@ such that @pointAdd c p q == PointO@.
+pointNegate :: Curve -> Point -> Point
+pointNegate _           PointO     = PointO
+pointNegate CurveFP{}  (Point x y) = Point x (-y)
+pointNegate CurveF2m{} (Point x y) = Point x (x `addF2m` y)
+
 -- | Elliptic Curve point addition.
 --
 -- /WARNING:/ Vulnerable to timing attacks.
@@ -33,22 +40,21 @@ pointAdd :: Curve -> Point -> Point -> Point
 pointAdd _ PointO PointO = PointO
 pointAdd _ PointO q = q
 pointAdd _ p PointO = p
-pointAdd c@(CurveFP (CurvePrime pr _)) p@(Point xp yp) q@(Point xq yq)
-    | p == Point xq (-yq) = PointO
-    | p == q = pointDouble c p
-    | otherwise = fromMaybe PointO $ do
-                      s <- divmod (yp - yq) (xp - xq) pr
-                      let xr = (s ^ (2::Int) - xp - xq) `mod` pr
-                          yr = (s * (xp - xr) - yp) `mod` pr
-                      return $ Point xr yr
-pointAdd c@(CurveF2m (CurveBinary fx cc)) p@(Point xp yp) q@(Point xq yq)
-    | p == Point xq (xq `addF2m` yq) = PointO
-    | p == q = pointDouble c p
-    | otherwise = fromMaybe PointO $ do
-                     s <- divF2m fx (yp `addF2m` yq) (xp `addF2m` xq)
-                     let xr = mulF2m fx s s `addF2m` s `addF2m` xp `addF2m` xq `addF2m` a
-                         yr = mulF2m fx s (xp `addF2m` xr) `addF2m` xr `addF2m` yp
-                     return $ Point xr yr
+pointAdd c p q
+  | p == q = pointDouble c p
+  | p == pointNegate c q = PointO
+pointAdd (CurveFP (CurvePrime pr _)) (Point xp yp) (Point xq yq)
+    = fromMaybe PointO $ do
+        s <- divmod (yp - yq) (xp - xq) pr
+        let xr = (s ^ (2::Int) - xp - xq) `mod` pr
+            yr = (s * (xp - xr) - yp) `mod` pr
+        return $ Point xr yr
+pointAdd (CurveF2m (CurveBinary fx cc)) (Point xp yp) (Point xq yq)
+    = fromMaybe PointO $ do
+        s <- divF2m fx (yp `addF2m` yq) (xp `addF2m` xq)
+        let xr = mulF2m fx s s `addF2m` s `addF2m` xp `addF2m` xq `addF2m` a
+            yr = mulF2m fx s (xp `addF2m` xr) `addF2m` xr `addF2m` yp
+        return $ Point xr yr
   where a = ecc_a cc
 
 -- | Elliptic Curve point doubling.
@@ -95,8 +101,8 @@ pointBaseMul c n = pointMul c n (ecc_g $ common_curve c)
 -- /WARNING:/ Vulnerable to timing attacks.
 pointMul :: Curve -> Integer -> Point -> Point
 pointMul _ _ PointO = PointO
-pointMul c n p@(Point xp yp)
-    | n <  0 = pointMul c (-n) (Point xp (-yp))
+pointMul c n p
+    | n <  0 = pointMul c (-n) (pointNegate c p)
     | n == 0 = PointO
     | n == 1 = p
     | odd n = pointAdd c p (pointMul c (n - 1) p)
