@@ -21,7 +21,8 @@ module Crypto.Number.F2m
     , divF2m
     ) where
 
-import Data.Bits ((.&.),(.|.),xor,shift,testBit)
+import Data.Bits (xor, shift, testBit, setBit)
+import Data.List
 import Crypto.Number.Basic
 
 -- | Binary Polynomial represented by an integer
@@ -79,32 +80,24 @@ mulF2m fx n1 n2
 --
 -- This function is undefined for negative arguments, because their bit
 -- representation is platform-dependent. Zero modulus is also prohibited.
---
--- TODO: This is still slower than @mulF2m@.
---
--- Multiplication table? C?
 squareF2m :: BinaryPolynomial -- ^ Modulus
           -> Integer
           -> Integer
 squareF2m fx = modF2m fx . squareF2m'
 {-# INLINE squareF2m #-}
 
--- | Squaring over F₂m.
+-- | Squaring over F₂m without reduction by modulo.
+--
+-- The implementation utilizes the fact that for binary polynomial S(x) we have
+-- S(x)^2 = S(x^2). In other words, insert a zero bit between every bits of argument: 1101 -> 1010001.
 --
 -- This function is undefined for negative arguments, because their bit
 -- representation is platform-dependent.
 squareF2m' :: Integer
            -> Integer
-squareF2m' n1
-    | n1 < 0    = error "mulF2m: negative number represent no binary binary polynomial"
-    | otherwise = go n1 ln1
-      where
-        ln1 = log2 n1
-        go n s | s == 0 = n
-               | otherwise = go (x .|. y) (s - 1)
-                  where
-                    x = shift (shift n (2 * (s - ln1) - 1)) (2 * (ln1 - s) + 2)
-                    y = n .&. (shift 1 (2 * (ln1 - s) + 1) - 1)
+squareF2m' n
+    | n < 0     = error "mulF2m: negative number represent no binary binary polynomial"
+    | otherwise = foldl' (\acc s -> if testBit n s then setBit acc (2 * s) else acc) 0 [0 .. log2 n]
 {-# INLINE squareF2m' #-}
 
 -- | Extended GCD algorithm for polynomials. For @a@ and @b@ returns @(g, u, v)@ such that @a * u + b * v == g@.
