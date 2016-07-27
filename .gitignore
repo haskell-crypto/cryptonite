@@ -2,6 +2,7 @@
 *.hi
 *.tix
 *.mix
+.stack-work
 gen/Gen
 gen/Crypto/*
 dist
