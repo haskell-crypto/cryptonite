@@ -79,7 +79,9 @@ initBlowfish key
 -- Cost must be between 4 and 31 inclusive
 -- See <https://www.usenix.org/conference/1999-usenix-annual-technical-conference/future-adaptable-password-scheme>
 eksBlowfish :: (ByteArrayAccess salt, ByteArrayAccess password) => Int -> salt -> password -> Context
-eksBlowfish cost salt key = makeKeySchedule key (Just (salt, cost))
+eksBlowfish cost salt key
+    | B.length salt /= 16 = error "bcrypt salt must be 16 bytes"
+    | otherwise           = makeKeySchedule key (Just (salt, cost))
 
 coreCrypto :: Context -> Word64 -> Word64
 coreCrypto (BF p s0 s1 s2 s3) input = doRound input 0
