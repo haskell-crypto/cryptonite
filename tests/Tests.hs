@@ -4,6 +4,7 @@ module Main where
 import Imports
 
 import qualified Number
+import qualified Number.F2m
 import qualified BCrypt
 import qualified Hash
 import qualified Poly1305
@@ -33,6 +34,7 @@ import qualified Padding
 
 tests = testGroup "cryptonite"
     [ Number.tests
+    , Number.F2m.tests
     , Hash.tests
     , Padding.tests
     , testGroup "ConstructHash"

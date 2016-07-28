@@ -308,8 +308,10 @@ Test-Suite test-cryptonite
                      KAT_Camellia
                      KAT_Curve25519
                      KAT_DES
+                     KAT_Ed448
                      KAT_Ed25519
                      KAT_CMAC
+                     KAT_HKDF
                      KAT_HMAC
                      KAT_MiyaguchiPreneel
                      KAT_PBKDF2
@@ -323,6 +325,10 @@ Test-Suite test-cryptonite
                      KAT_RC4
                      KAT_Scrypt
                      KAT_TripleDES
+                     ChaChaPoly1305
+                     Number
+                     Number.F2m
+                     Padding
                      Poly1305
                      Salsa
                      Utils
