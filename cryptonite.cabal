@@ -23,6 +23,8 @@ Description:
     cryptographic kitchen sink that provides cryptography for everyone.
     .
     Evaluate the security related to your requirements before using.
+    .
+    Read "Crypto.Tutorial" for a quick start guide.
 License:             BSD3
 License-file:        LICENSE
 Copyright:           Vincent Hanquez <vincent@snarc.org>
@@ -139,6 +141,7 @@ Library
                      Crypto.Random.Entropy
                      Crypto.Random.EntropyPool
                      Crypto.Random.Entropy.Unsafe
+                     Crypto.Tutorial
   Other-modules:     Crypto.Cipher.AES.Primitive
                      Crypto.Cipher.Blowfish.Box
                      Crypto.Cipher.Blowfish.Primitive
