@@ -1,3 +1,8 @@
+## 0.18
+
+* Re-used standard rdrand instructions instead of bytedump of rdrand instruction
+* Improvement to F2m, including lots of tests (Andrew Lelechenko)
+
 ## 0.17
 
 * Add Miyaguchi-Preneel construction (Kei Hibino)
