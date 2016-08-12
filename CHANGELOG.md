@@ -1,9 +1,12 @@
+## 0.19
+
+* Add tutorial (Yann Esposito)
+* Derive Show instance for better interaction with Show pretty printer (Eric Mertens)
+
 ## 0.18
 
 * Re-used standard rdrand instructions instead of bytedump of rdrand instruction
 * Improvement to F2m, including lots of tests (Andrew Lelechenko)
-* Add tutorial (Yann Esposito)
-* Derive Show instance for better interaction with Show pretty printer (Eric Mertens)
 
 ## 0.17
 
