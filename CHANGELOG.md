@@ -7,6 +7,7 @@
 
 * Re-used standard rdrand instructions instead of bytedump of rdrand instruction
 * Improvement to F2m, including lots of tests (Andrew Lelechenko)
+* Add error check on salt length in bcrypt
 
 ## 0.17
 
