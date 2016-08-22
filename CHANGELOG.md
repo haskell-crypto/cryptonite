@@ -1,3 +1,10 @@
+## 0.15.1
+
+* Add error check on salt length in bcrypt
+* Fix buffer length in scrypt (Luke Taylor)
+* build fixes for i686 and arm related to rdrand
+* Fix basepoint for Ed448
+
 ## 0.15
 
 * Fix serialization of DH and ECDH
