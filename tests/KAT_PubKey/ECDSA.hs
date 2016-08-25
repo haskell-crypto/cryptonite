@@ -77,16 +77,16 @@ vectorToPrivate vector = ECDSA.PrivateKey (curve vector) (d vector)
 vectorToPublic :: VectorECDSA -> ECDSA.PublicKey
 vectorToPublic vector = ECDSA.PublicKey (curve vector) (q vector)
 
-doSignatureTest (i, vector) = testCase (show i) (expected @=? actual)
+doSignatureTest hashAlg (i, vector) = testCase (show i) (expected @=? actual)
   where expected = Just $ ECDSA.Signature (r vector) (s vector)
-        actual   = ECDSA.signWith (k vector) (vectorToPrivate vector) SHA1 (msg vector)
+        actual   = ECDSA.signWith (k vector) (vectorToPrivate vector) hashAlg (msg vector)
 
-doVerifyTest (i, vector) = testCase (show i) (True @=? actual)
-  where actual = ECDSA.verify SHA1 (vectorToPublic vector) (ECDSA.Signature (r vector) (s vector)) (msg vector)
+doVerifyTest hashAlg (i, vector) = testCase (show i) (True @=? actual)
+  where actual = ECDSA.verify hashAlg (vectorToPublic vector) (ECDSA.Signature (r vector) (s vector)) (msg vector)
 
 ecdsaTests = testGroup "ECDSA"
     [ testGroup "SHA1"
-        [ testGroup "signature" $ map doSignatureTest (zip [katZero..] vectorsSHA1)
-        , testGroup "verify" $ map doVerifyTest (zip [katZero..] vectorsSHA1)
+        [ testGroup "signature" $ map (doSignatureTest SHA1) (zip [katZero..] vectorsSHA1)
+        , testGroup "verify" $ map (doVerifyTest SHA1) (zip [katZero..] vectorsSHA1)
         ]
     ]
