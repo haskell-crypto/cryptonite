@@ -138,10 +138,16 @@ vectorsPoint =
 
 doPointValidTest (i, vector) = testCase (show i) (valid vector @=? ECC.isPointValid (curve vector) (ECC.Point (x vector) (y vector)))
 
+arbitraryPoint :: ECC.Curve -> Gen ECC.Point
+arbitraryPoint aCurve =
+    frequency [(5, return ECC.PointO), (95, pointGen)]
+  where
+    n = ECC.ecc_n (ECC.common_curve aCurve)
+    pointGen = ECC.pointBaseMul aCurve <$> choose (1, n - 1)
 
 eccTests = testGroup "ECC"
     [ testGroup "valid-point" $ map doPointValidTest (zip [katZero..] vectorsPoint)
-    , testGroup "property" $
+    , testGroup "property"
         [ testProperty "point-add" $ \aCurve (QAInteger r1) (QAInteger r2) ->
             let curveN   = ECC.ecc_n . ECC.common_curve $ aCurve
                 curveGen = ECC.ecc_g . ECC.common_curve $ aCurve
@@ -149,6 +155,17 @@ eccTests = testGroup "ECC"
                 p2       = ECC.pointMul aCurve r2 curveGen
                 pR       = ECC.pointMul aCurve ((r1 + r2) `mod` curveN) curveGen
              in pR `propertyEq` ECC.pointAdd aCurve p1 p2
+        , testProperty "point-mul-mul" $ \aCurve (QAInteger n1) (QAInteger n2) -> do
+            p <- arbitraryPoint aCurve
+            let pRes = ECC.pointMul aCurve (n1 * n2) p
+            let pDef = ECC.pointMul aCurve n1 (ECC.pointMul aCurve n2 p)
+            return $ pRes `propertyEq` pDef
+        , testProperty "double-scalar-mult" $ \aCurve (QAInteger n1) (QAInteger n2) -> do
+            p1 <- arbitraryPoint aCurve
+            p2 <- arbitraryPoint aCurve
+            let pRes = ECC.pointAddTwoMuls aCurve n1 p1 n2 p2
+            let pDef = ECC.pointAdd aCurve (ECC.pointMul aCurve n1 p1) (ECC.pointMul aCurve n2 p2)
+            return $ pRes `propertyEq` pDef
         ]
     ]
 
