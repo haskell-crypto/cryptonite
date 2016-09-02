@@ -20,12 +20,14 @@ import Crypto.Random.Types
 import Data.Bits (shiftR)
 import Crypto.Internal.ByteArray (ByteArrayAccess)
 import Data.Data
+import Crypto.Number.Basic (numBits)
 import Crypto.Number.ModArithmetic (inverse)
 import Crypto.Number.Serialize
 import Crypto.Number.Generate
 import Crypto.PubKey.ECC.Types
 import Crypto.PubKey.ECC.Prim
 import Crypto.Hash
+import Crypto.Hash.Types (hashDigestSize)
 
 -- | Represent a ECDSA signature namely R and S.
 data Signature = Signature
@@ -117,5 +119,4 @@ tHash hashAlg m n
     | d > 0 = shiftR e d
     | otherwise = e
   where e = os2ip $ hashWith hashAlg m
-        d = log2 e - log2 n
-        log2 = ceiling . logBase (2 :: Double) . fromIntegral
+        d = hashDigestSize hashAlg * 8 - numBits n
