@@ -191,6 +191,7 @@ Library
                      Crypto.Internal.Words
                      Crypto.Internal.WordArray
   Build-depends:     base >= 4.3 && < 5
+                   , byteable
                    , bytestring
                    , memory >= 0.8
                    , ghc-prim
