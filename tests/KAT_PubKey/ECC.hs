@@ -155,12 +155,14 @@ eccTests = testGroup "ECC"
                 p2       = ECC.pointMul aCurve r2 curveGen
                 pR       = ECC.pointMul aCurve ((r1 + r2) `mod` curveN) curveGen
              in pR `propertyEq` ECC.pointAdd aCurve p1 p2
-        , testProperty "point-mul-mul" $ \aCurve (QAInteger n1) (QAInteger n2) -> do
+        , localOption (QuickCheckTests 20) $
+          testProperty "point-mul-mul" $ \aCurve (QAInteger n1) (QAInteger n2) -> do
             p <- arbitraryPoint aCurve
             let pRes = ECC.pointMul aCurve (n1 * n2) p
             let pDef = ECC.pointMul aCurve n1 (ECC.pointMul aCurve n2 p)
             return $ pRes `propertyEq` pDef
-        , testProperty "double-scalar-mult" $ \aCurve (QAInteger n1) (QAInteger n2) -> do
+        , localOption (QuickCheckTests 20) $
+          testProperty "double-scalar-mult" $ \aCurve (QAInteger n1) (QAInteger n2) -> do
             p1 <- arbitraryPoint aCurve
             p2 <- arbitraryPoint aCurve
             let pRes = ECC.pointAddTwoMuls aCurve n1 p1 n2 p2
