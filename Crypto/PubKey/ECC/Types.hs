@@ -164,7 +164,8 @@ curvesOIDs =
 
 -- | get the size of the curve in bits
 curveSizeBits :: Curve -> Int
-curveSizeBits = numBits . ecc_n . common_curve
+curveSizeBits (CurveFP  c) = numBits (ecc_p  c)
+curveSizeBits (CurveF2m c) = numBits (ecc_fx c) - 1
 
 -- | Get the curve definition associated with a recommended known curve name.
 getCurveByName :: CurveName -> Curve
