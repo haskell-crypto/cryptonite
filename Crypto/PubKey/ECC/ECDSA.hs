@@ -102,10 +102,7 @@ verify hashAlg pk@(PublicKey curve q) (Signature r s) msg
         let z  = tHash hashAlg msg n
             u1 = z * w `mod` n
             u2 = r * w `mod` n
-            -- TODO: Use Shamir's trick
-            g' = pointMul curve u1 g
-            q' = pointMul curve u2 q
-            x  = pointAdd curve g' q'
+            x  = pointAddTwoMuls curve u1 g u2 q
         case x of
              PointO     -> Nothing
              Point x1 _ -> return $ x1 `mod` n

@@ -7,6 +7,7 @@ module Crypto.PubKey.ECC.Prim
     , pointDouble
     , pointBaseMul
     , pointMul
+    , pointAddTwoMuls
     , isPointAtInfinity
     , isPointValid
     ) where
@@ -107,6 +108,33 @@ pointMul c n p
     | n == 1 = p
     | odd n = pointAdd c p (pointMul c (n - 1) p)
     | otherwise = pointMul c (n `div` 2) (pointDouble c p)
+
+-- | Elliptic curve double-scalar multiplication (uses Shamir's trick).
+--
+-- > pointAddTwoMuls c n1 p1 n2 p2 == pointAdd c (pointMul c n1 p1)
+-- >                                             (pointMul c n2 p2)
+--
+-- /WARNING:/ Vulnerable to timing attacks.
+pointAddTwoMuls :: Curve -> Integer -> Point -> Integer -> Point -> Point
+pointAddTwoMuls _ _  PointO _  PointO = PointO
+pointAddTwoMuls c _  PointO n2 p2     = pointMul c n2 p2
+pointAddTwoMuls c n1 p1     _  PointO = pointMul c n1 p1
+pointAddTwoMuls c n1 p1     n2 p2
+    | n1 < 0    = pointAddTwoMuls c (-n1) (pointNegate c p1) n2 p2
+    | n2 < 0    = pointAddTwoMuls c n1 p1 (-n2) (pointNegate c p2)
+    | otherwise = go (n1, n2)
+
+  where
+    p0 = pointAdd c p1 p2
+
+    go (0,  0 ) = PointO
+    go (k1, k2) =
+        let q = pointDouble c $ go (k1 `div` 2, k2 `div` 2)
+        in case (odd k1, odd k2) of
+            (True  , True  ) -> pointAdd c p0 q
+            (True  , False ) -> pointAdd c p1 q
+            (False , True  ) -> pointAdd c p2 q
+            (False , False ) -> q
 
 -- | Check if a point is the point at infinity.
 isPointAtInfinity :: Point -> Bool

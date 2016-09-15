@@ -7,16 +7,17 @@ import Criterion.Main
 import "cryptonite" Crypto.Hash
 import "cryptonite" Crypto.Error
 import "cryptonite" Crypto.Cipher.DES
-import "cryptonite" Crypto.Cipher.Camellia
 import "cryptonite" Crypto.Cipher.AES
 import "cryptonite" Crypto.Cipher.Blowfish
 import "cryptonite" Crypto.Cipher.Types
 import qualified "cryptonite" Crypto.Cipher.ChaChaPoly1305 as CP
 
-import "cryptonite" Crypto.Hash (SHA512(..))
 import qualified "cryptonite" Crypto.KDF.PBKDF2 as PBKDF2
 
-import Data.ByteArray (ByteArray, Bytes)
+import qualified "cryptonite" Crypto.PubKey.ECC.Types as ECC
+import qualified "cryptonite" Crypto.PubKey.ECC.Prim as ECC
+
+import Data.ByteArray (ByteArray)
 
 import qualified Data.ByteString as B
 
@@ -103,9 +104,27 @@ benchAE =
 
         key32 = B.replicate 32 0
 
+benchECC =
+    [ bench "pointAddTwoMuls-baseline"  $ nf run_b (n1, p1, n2, p2)
+    , bench "pointAddTwoMuls-optimized" $ nf run_o (n1, p1, n2, p2)
+    ]
+  where run_b (n, p, k, q) = ECC.pointAdd c (ECC.pointMul c n p)
+                                            (ECC.pointMul c k q)
+
+        run_o (n, p, k, q) = ECC.pointAddTwoMuls c n p k q
+
+        c  = ECC.getCurveByName ECC.SEC_p256r1
+        r1 = 7
+        r2 = 11
+        p1 = ECC.pointBaseMul c r1
+        p2 = ECC.pointBaseMul c r2
+        n1 = 0x2ba9daf2363b2819e69b34a39cf496c2458a9b2a21505ea9e7b7cbca42dc7435
+        n2 = 0xf054a7f60d10b8c2cf847ee90e9e029f8b0e971b09ca5f55c4d49921a11fadc1
+
 main = defaultMain
     [ bgroup "hash" benchHash
     , bgroup "block-cipher" benchBlockCipher
     , bgroup "AE" benchAE
     , bgroup "pbkdf2" benchPBKDF2
+    , bgroup "ECC" benchECC
     ]
