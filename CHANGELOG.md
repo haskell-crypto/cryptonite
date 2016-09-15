@@ -1,3 +1,10 @@
+## 0.20
+
+* Fixed hash truncation used in ECDSA signature & verification (Olivier Chéron)
+* Fix ECDH when scalar and coordinate bit sizes differ (Olivier Chéron)
+* Speed up ECDSA verification using Shamir's trick (Olivier Chéron)
+* Fix rdrand on windows
+
 ## 0.19
 
 * Add tutorial (Yann Esposito)
