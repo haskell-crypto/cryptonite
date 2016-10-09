@@ -94,6 +94,7 @@ Links
 * [Salsa](http://cr.yp.to/snuffle.html)
 * [Salsa128-test-vectors](https://github.com/alexwebr/salsa20/blob/master/test_vectors.128)
 * [Salsa256-test-vectors](https://github.com/alexwebr/salsa20/blob/master/test_vectors.256)
+* [XSalsa](https://cr.yp.to/snuffle/xsalsa-20081128.pdf)
 * [PBKDF2](http://tools.ietf.org/html/rfc2898)
 * [PBKDF2-test-vectors](http://www.ietf.org/rfc/rfc6070.txt)
 * [Scrypt](http://www.tarsnap.com/scrypt.html)
@@ -101,7 +102,3 @@ Links
 * [Ed25519](http://ed25519.cr.yp.to/papers.html)
 * [AFIS](http://clemens.endorphin.org/cryptography)
 
-TODO
-----
-
-* add support for XSalsa

@@ -9,6 +9,7 @@ import qualified BCrypt
 import qualified Hash
 import qualified Poly1305
 import qualified Salsa
+import qualified XSalsa
 import qualified ChaCha
 import qualified ChaChaPoly1305
 import qualified KAT_MiyaguchiPreneel
@@ -67,6 +68,7 @@ tests = testGroup "cryptonite"
         , ChaCha.tests
         , ChaChaPoly1305.tests
         , Salsa.tests
+        , XSalsa.tests
         ]
     , KAT_AFIS.tests
     ]
