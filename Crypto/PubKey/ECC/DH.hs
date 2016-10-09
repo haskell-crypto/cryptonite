@@ -9,26 +9,30 @@
 --
 module Crypto.PubKey.ECC.DH
     (
-      Scalar
-    , Point
-    , KeyPair(..)
+      Curve(..)
+    , EllipticCurve(..)
+    , Curve_P256R1(..)
+    , Curve_P521R1(..)
+    , CurveKeyPair(..)
     , SharedSecret(..)
     , generateKeyPair
+    , setPublicKey
     , getShared
     ) where
 
 import Crypto.ECC
+import Crypto.Number.Serialize (i2ospOf_)
 import Crypto.Random.Types
-
--- | Generating a pair of private key (scalar d) and public key (point Q).
-generateKeyPair :: (MonadRandom m, EllipticCurveDH curve)
-                => m (KeyPair curve)
-generateKeyPair = curveGenerateKeyPair
 
 --- | Generating a shared key using our private key and
 ---   the public key of the other party.
-getShared :: EllipticCurveDH curve
-          => Scalar curve -- ^ The private key of the receiver
-          -> Point curve  -- ^ The public key of the sender
+getShared :: CurveKeyPair -- ^ The private key of the receiver and
+                          --   the public key of the sender
           -> SharedSecret
-getShared = ecdh
+getShared (CurveKeyPair kp) = shared
+  where
+    s = keypairPrivate kp
+    p = keypairPublic kp
+    (x, _) = curvePointToIntegers $ curvePointSmul s p
+    nbBits = curveNbBits (curveOfScalar s)
+    shared = SharedSecret $ i2ospOf_ ((nbBits + 7) `div` 8) x
