@@ -11,7 +11,7 @@ module Crypto.Cipher.Salsa
     ( initialize
     , combine
     , generate
-    , State
+    , State(..)
     ) where
 
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, ScrubbedBytes)
