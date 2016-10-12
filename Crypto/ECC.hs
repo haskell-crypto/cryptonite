@@ -20,7 +20,7 @@ module Crypto.ECC (
     , KeyPair(..)
     , CurveKeyPair(..)
     , generateKeyPair
-    , setPublicKey
+    , curveBytes
     , SharedSecret(..)
     ) where
 
@@ -177,12 +177,10 @@ generateKeyPair (Curve curve) = do
     let p = curveScalarToPoint s
     return $ CurveKeyPair (KeyPair p s)
 
-setPublicKey :: CurveKeyPair -> Integer -> Integer -> CurveKeyPair
-setPublicKey (CurveKeyPair kp) x y = CurveKeyPair kp'
-  where
-    curve = curveOfScalar $ keypairPrivate kp
-    p = curveIntegersToPoint curve x y
-    kp' = kp { keypairPublic = p }
+----------------------------------------------------------------
+
+curveBytes :: EllipticCurve c => c -> Int
+curveBytes c = (curveNbBits c + 7) `div` 8
 
 ----------------------------------------------------------------
 

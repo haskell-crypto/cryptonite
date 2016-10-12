@@ -13,11 +13,12 @@ module Crypto.PubKey.ECC.DH
     , EllipticCurve(..)
     , Curve_P256R1(..)
     , Curve_P521R1(..)
+    , KeyPair(..)
     , CurveKeyPair(..)
     , SharedSecret(..)
     , generateKeyPair
-    , setPublicKey
     , getShared
+    , curveBytes
     ) where
 
 import Crypto.ECC
@@ -26,13 +27,14 @@ import Crypto.Random.Types
 
 --- | Generating a shared key using our private key and
 ---   the public key of the other party.
-getShared :: CurveKeyPair -- ^ The private key of the receiver and
-                          --   the public key of the sender
+getShared :: (Integer, Integer) -- ^ The public key of the sender
+          -> CurveKeyPair       -- ^ The private key of the receiver
           -> SharedSecret
-getShared (CurveKeyPair kp) = shared
+getShared (x,y) (CurveKeyPair kp) = shared
   where
     s = keypairPrivate kp
-    p = keypairPublic kp
-    (x, _) = curvePointToIntegers $ curvePointSmul s p
-    nbBits = curveNbBits (curveOfScalar s)
-    shared = SharedSecret $ i2ospOf_ ((nbBits + 7) `div` 8) x
+    curve = curveOfScalar s
+    p = curveIntegersToPoint curve x y
+    (x', _) = curvePointToIntegers $ curvePointSmul s p
+    len = curveBytes $ curveOfScalar s
+    shared = SharedSecret $ i2ospOf_ len x'
