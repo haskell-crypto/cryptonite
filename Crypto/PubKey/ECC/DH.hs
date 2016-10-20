@@ -12,6 +12,7 @@ module Crypto.PubKey.ECC.DH
       Curve(..)
     , EllipticCurve(..)
     , Curve_P256R1(..)
+    , Curve_P384R1(..)
     , Curve_P521R1(..)
     , KeyPair(..)
     , CurveKeyPair(..)
