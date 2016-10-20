@@ -129,6 +129,30 @@ instance EllipticCurve Curve_P256R1 where
 
 ----------------------------------------------------------------
 
+data Curve_P384R1 = Curve_P384R1 deriving (Eq, Show)
+
+instance EllipticCurve Curve_P384R1 where
+    newtype Point Curve_P384R1 = P384Point { unP384Point :: H.Point }
+    newtype Scalar Curve_P384R1 = P384Scalar { unP384Scalar :: H.PrivateNumber }
+    curveName _ = "P384R1"
+    curveGetOrder _ = H.ecc_n $ H.common_curve $ H.getCurveByName H.SEC_p384r1
+    curveGetBasePoint = P384Point $ H.ecc_g $ H.common_curve $ H.getCurveByName H.SEC_p384r1
+    curveOfScalar _ = Curve_P384R1
+    curveOfPoint _ = Curve_P384R1
+    curveIsPointValid p = H.isPointValid (H.getCurveByName H.SEC_p384r1) (unP384Point p)
+    curveGenerateScalar _ = P384Scalar <$> H.scalarGenerate (H.getCurveByName H.SEC_p384r1)
+    curveScalarToInteger s = unP384Scalar s
+    curveScalarToPoint s = P384Point $ H.pointBaseMul (H.getCurveByName H.SEC_p384r1) (unP384Scalar s)
+    curvePointToIntegers p = (x, y)
+      where
+        H.Point x y = unP384Point p
+    curveIntegersToPoint _ x y = P384Point $ H.Point x y
+    curvePointAdd a b = P384Point $ (H.pointAdd (H.getCurveByName H.SEC_p384r1) `on` unP384Point) a b
+    curvePointSmul s p = P384Point (H.pointMul (H.getCurveByName H.SEC_p384r1) (unP384Scalar s) (unP384Point p))
+    curveNbBits _ = 384
+
+----------------------------------------------------------------
+
 data Curve_P521R1 = Curve_P521R1 deriving (Eq, Show)
 
 instance EllipticCurve Curve_P521R1 where
