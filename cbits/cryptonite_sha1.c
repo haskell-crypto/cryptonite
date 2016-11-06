@@ -53,11 +53,11 @@ void cryptonite_sha1_init(struct sha1_ctx *ctx)
 #define M(i)  (w[i & 0x0f] = rol32(w[i & 0x0f] ^ w[(i - 14) & 0x0f] \
               ^ w[(i - 8) & 0x0f] ^ w[(i - 3) & 0x0f], 1))
 
-static inline void sha1_do_chunk(struct sha1_ctx *ctx, uint32_t *buf)
+static inline void sha1_do_chunk(struct sha1_ctx *ctx, const uint8_t *buf)
 {
 	uint32_t a, b, c, d, e;
 	uint32_t w[16];
-#define CPY(i)	w[i] = be32_to_cpu(buf[i])
+#define CPY(i)	w[i] = load_be32(buf+4*i)
 	CPY(0); CPY(1); CPY(2); CPY(3); CPY(4); CPY(5); CPY(6); CPY(7);
 	CPY(8); CPY(9); CPY(10); CPY(11); CPY(12); CPY(13); CPY(14); CPY(15);
 #undef CPY
@@ -167,7 +167,7 @@ void cryptonite_sha1_update(struct sha1_ctx *ctx, const uint8_t *data, uint32_t 
 	/* process partial buffer if there's enough data to make a block */
 	if (index && len >= to_fill) {
 		memcpy(ctx->buf + index, data, to_fill);
-		sha1_do_chunk(ctx, (uint32_t *) ctx->buf);
+		sha1_do_chunk(ctx, ctx->buf);
 		len -= to_fill;
 		data += to_fill;
 		index = 0;
@@ -175,7 +175,7 @@ void cryptonite_sha1_update(struct sha1_ctx *ctx, const uint8_t *data, uint32_t 
 
 	/* process as much 64-block as possible */
 	for (; len >= 64; len -= 64, data += 64)
-		sha1_do_chunk(ctx, (uint32_t *) data);
+		sha1_do_chunk(ctx, data);
 
 	/* append data into buf */
 	if (len)
@@ -187,7 +187,6 @@ void cryptonite_sha1_finalize(struct sha1_ctx *ctx, uint8_t *out)
 	static uint8_t padding[64] = { 0x80, };
 	uint64_t bits;
 	uint32_t index, padlen;
-	uint32_t *p = (uint32_t *) out;
 
 	/* add padding and update data with it */
 	bits = cpu_to_be64(ctx->sz << 3);
@@ -201,9 +200,9 @@ void cryptonite_sha1_finalize(struct sha1_ctx *ctx, uint8_t *out)
 	cryptonite_sha1_update(ctx, (uint8_t *) &bits, sizeof(bits));
 
 	/* output hash */
-	p[0] = cpu_to_be32(ctx->h[0]);
-	p[1] = cpu_to_be32(ctx->h[1]);
-	p[2] = cpu_to_be32(ctx->h[2]);
-	p[3] = cpu_to_be32(ctx->h[3]);
-	p[4] = cpu_to_be32(ctx->h[4]);
+	store_be32(out   , ctx->h[0]);
+	store_be32(out+ 4, ctx->h[1]);
+	store_be32(out+ 8, ctx->h[2]);
+	store_be32(out+12, ctx->h[3]);
+	store_be32(out+16, ctx->h[4]);
 }

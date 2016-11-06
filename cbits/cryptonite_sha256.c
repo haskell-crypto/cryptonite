@@ -74,13 +74,16 @@ static const uint32_t k[] = {
 #define s0(x)       (ror32(x, 7) ^ ror32(x,18) ^ (x >> 3))
 #define s1(x)       (ror32(x,17) ^ ror32(x,19) ^ (x >> 10))
 
-static void sha256_do_chunk(struct sha256_ctx *ctx, uint32_t buf[])
+static void sha256_do_chunk(struct sha256_ctx *ctx, const uint8_t *buf)
 {
 	uint32_t a, b, c, d, e, f, g, h, t1, t2;
 	int i;
 	uint32_t w[64];
 
-	cpu_to_be32_array(w, buf, 16);
+#define CPY(i)	w[i] = load_be32(buf+4*i)
+	CPY(0); CPY(1); CPY(2); CPY(3); CPY(4); CPY(5); CPY(6); CPY(7);
+	CPY(8); CPY(9); CPY(10); CPY(11); CPY(12); CPY(13); CPY(14); CPY(15);
+#undef CPY
 	for (i = 16; i < 64; i++)
 		w[i] = s1(w[i - 2]) + w[i - 7] + s0(w[i - 15]) + w[i - 16];
 
@@ -128,7 +131,7 @@ void cryptonite_sha256_update(struct sha256_ctx *ctx, const uint8_t *data, uint3
 	/* process partial buffer if there's enough data to make a block */
 	if (index && len >= to_fill) {
 		memcpy(ctx->buf + index, data, to_fill);
-		sha256_do_chunk(ctx, (uint32_t *) ctx->buf);
+		sha256_do_chunk(ctx, ctx->buf);
 		len -= to_fill;
 		data += to_fill;
 		index = 0;
@@ -136,7 +139,7 @@ void cryptonite_sha256_update(struct sha256_ctx *ctx, const uint8_t *data, uint3
 
 	/* process as much 64-block as possible */
 	for (; len >= 64; len -= 64, data += 64)
-		sha256_do_chunk(ctx, (uint32_t *) data);
+		sha256_do_chunk(ctx, data);
 
 	/* append data into buf */
 	if (len)
@@ -156,7 +159,6 @@ void cryptonite_sha256_finalize(struct sha256_ctx *ctx, uint8_t *out)
 	static uint8_t padding[64] = { 0x80, };
 	uint64_t bits;
 	uint32_t i, index, padlen;
-	uint32_t *p = (uint32_t *) out;
 
 	/* cpu -> big endian */
 	bits = cpu_to_be64(ctx->sz << 3);
@@ -171,5 +173,5 @@ void cryptonite_sha256_finalize(struct sha256_ctx *ctx, uint8_t *out)
 
 	/* store to digest */
 	for (i = 0; i < 8; i++)
-		p[i] = cpu_to_be32(ctx->h[i]);
+		store_be32(out+4*i, ctx->h[i]);
 }
