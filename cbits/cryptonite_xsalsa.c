@@ -57,7 +57,7 @@ void cryptonite_xsalsa_init(cryptonite_salsa_context *ctx, uint8_t nb_rounds,
   /* Compute (z0, z1, . . . , z15) = doubleround ^(r/2) (x0, x1, . . . , x15) */
   block hSalsa;
   memset(&hSalsa, 0, sizeof(block));
-  cryptonite_salsa_core_xor(20, &hSalsa, &ctx->st);
+  cryptonite_salsa_core_xor(nb_rounds, &hSalsa, &ctx->st);
  
   /* Build a new 512-bit input block (x′0, x′1, . . . , x′15):
        (x′0, x′5, x′10, x′15) is the Salsa20 constant
