@@ -25,6 +25,7 @@ import qualified Crypto.PubKey.ECC.Prim as H
 import           Crypto.Random
 import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ScrubbedBytes)
+import           Crypto.Number.Serialize (i2ospOf_)
 import           Data.Function (on)
 
 -- | An elliptic curve key pair composed of the private part (a scalar), and
@@ -97,11 +98,17 @@ instance EllipticCurve Curve_P256R1 where
     curveGenerateScalar = P256Scalar <$> P256.scalarGenerate
     curveGenerateKeyPair = toKeyPair <$> P256.scalarGenerate
       where toKeyPair scalar = KeyPair (P256Point $ P256.toPoint scalar) (P256Scalar scalar)
+
 instance EllipticCurveArith Curve_P256R1 where
     pointAdd  a b = P256Point $ (P256.pointAdd `on` unP256Point) a b
     pointSmul s p = P256Point $ P256.pointMul (unP256Scalar s) (unP256Point p)
+
 instance EllipticCurveDH Curve_P256R1 where
-    ecdh s p = undefined
+    ecdh s p = shared
+      where
+        (x, _) = P256.pointToIntegers $ unP256Point $ pointSmul s p
+        len = (256 + 7) `div` 8
+        shared = SharedSecret $ i2ospOf_ len x
 
 data Curve_P521R1 = Curve_P521R1
 
@@ -115,7 +122,14 @@ instance EllipticCurve Curve_P521R1 where
     curveGenerateScalar = P521Scalar <$> H.scalarGenerate (H.getCurveByName H.SEC_p521r1)
     curveGenerateKeyPair = toKeyPair <$> H.scalarGenerate (H.getCurveByName H.SEC_p521r1)
       where toKeyPair scalar = KeyPair (P521Point $ H.pointBaseMul (H.getCurveByName H.SEC_p521r1) scalar) (P521Scalar scalar)
+
 instance EllipticCurveArith Curve_P521R1 where
     pointAdd a b = P521Point $ (H.pointAdd (H.getCurveByName H.SEC_p521r1) `on` unP521Point) a b
     pointSmul s p = P521Point (H.pointMul (H.getCurveByName H.SEC_p521r1) (unP521Scalar s) (unP521Point p))
 
+instance EllipticCurveDH Curve_P521R1 where
+    ecdh s p = shared
+      where
+        H.Point x _ = unP521Point $ pointSmul s p
+        len = (521 + 7) `div` 8
+        shared = SharedSecret $ i2ospOf_ len x
