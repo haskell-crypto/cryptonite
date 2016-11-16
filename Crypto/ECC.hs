@@ -13,6 +13,7 @@ module Crypto.ECC
     ( Curve_P256R1(..)
     , Curve_P384R1(..)
     , Curve_P521R1(..)
+    , Curve_X25519(..)
     , EllipticCurve(..)
     , EllipticCurveDH(..)
     , EllipticCurveArith(..)
@@ -27,7 +28,9 @@ import           Crypto.Random
 import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ScrubbedBytes)
 import           Crypto.Number.Serialize (i2ospOf_)
+import qualified Crypto.PubKey.Curve25519 as X25519
 import           Data.Function (on)
+import           Data.ByteArray (convert)
 
 -- | An elliptic curve key pair composed of the private part (a scalar), and
 -- the associated point.
@@ -158,3 +161,27 @@ instance EllipticCurveDH Curve_P521R1 where
         H.Point x _ = unP521Point $ pointSmul s p
         len = (521 + 7) `div` 8
         shared = SharedSecret $ i2ospOf_ len x
+
+data Curve_X25519 = Curve_X25519
+
+instance EllipticCurve Curve_X25519 where
+    newtype Point Curve_X25519 = X25519Point X25519.PublicKey
+    newtype Scalar Curve_X25519 = X25519Scalar X25519.SecretKey
+    curveGetOrder     _ = undefined
+    curveGetBasePoint = undefined
+    curveOfScalar _ = Curve_X25519
+    curveOfPoint _ = Curve_X25519
+    curveGenerateScalar = X25519Scalar <$> X25519.generateSecretKey
+    curveGenerateKeyPair = do
+        s <- X25519.generateSecretKey
+        let p = X25519.toPublic s
+        return $ KeyPair (X25519Point p) (X25519Scalar s)
+
+instance EllipticCurveArith Curve_X25519 where
+    pointAdd  = undefined
+    pointSmul = undefined
+
+instance EllipticCurveDH Curve_X25519 where
+    ecdh (X25519Scalar s) (X25519Point p) = SharedSecret $ convert secret
+      where
+        secret = X25519.dh p s
