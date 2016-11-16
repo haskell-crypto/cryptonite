@@ -68,6 +68,18 @@ class EllipticCurve curve where
     -- | Generate a new random keypair
     curveGenerateKeyPair :: MonadRandom randomly => randomly (KeyPair curve)
 
+instance {-# OVERLAPPABLE #-} Show (Point a) where
+    show _ = undefined
+
+instance {-# OVERLAPPABLE #-} Eq (Point a) where
+    _ == _ = undefined
+
+instance {-# OVERLAPPABLE #-} Show (Scalar a) where
+    show _ = undefined
+
+instance {-# OVERLAPPABLE #-} Eq (Scalar a) where
+    _ == _ = undefined
+
 class EllipticCurve curve => EllipticCurveDH curve where
     -- | Generate a Diffie hellman secret value.
     --
@@ -93,8 +105,8 @@ class EllipticCurve curve => EllipticCurveArith curve where
 data Curve_P256R1 = Curve_P256R1
 
 instance EllipticCurve Curve_P256R1 where
-    newtype Point Curve_P256R1 = P256Point { unP256Point :: P256.Point }
-    newtype Scalar Curve_P256R1 = P256Scalar { unP256Scalar :: P256.Scalar }
+    newtype Point Curve_P256R1 = P256Point { unP256Point :: P256.Point } deriving (Eq,Show)
+    newtype Scalar Curve_P256R1 = P256Scalar { unP256Scalar :: P256.Scalar } deriving (Eq,Show)
     curveGetOrder     _ = 0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
     curveGetBasePoint = P256Point P256.pointBase
     curveOfScalar _ = Curve_P256R1
@@ -117,8 +129,8 @@ instance EllipticCurveDH Curve_P256R1 where
 data Curve_P384R1 = Curve_P384R1
 
 instance EllipticCurve Curve_P384R1 where
-    newtype Point Curve_P384R1 = P384Point { unP384Point :: H.Point }
-    newtype Scalar Curve_P384R1 = P384Scalar { unP384Scalar :: H.PrivateNumber }
+    newtype Point Curve_P384R1 = P384Point { unP384Point :: H.Point } deriving (Eq,Show)
+    newtype Scalar Curve_P384R1 = P384Scalar { unP384Scalar :: H.PrivateNumber } deriving (Eq,Show)
     curveGetOrder _ = H.ecc_n $ H.common_curve $ H.getCurveByName H.SEC_p384r1
     curveGetBasePoint = P384Point $ H.ecc_g $ H.common_curve $ H.getCurveByName H.SEC_p384r1
     curveOfScalar _ = Curve_P384R1
@@ -141,8 +153,8 @@ instance EllipticCurveDH Curve_P384R1 where
 data Curve_P521R1 = Curve_P521R1
 
 instance EllipticCurve Curve_P521R1 where
-    newtype Point Curve_P521R1 = P521Point { unP521Point :: H.Point }
-    newtype Scalar Curve_P521R1 = P521Scalar { unP521Scalar :: H.PrivateNumber }
+    newtype Point Curve_P521R1 = P521Point { unP521Point :: H.Point } deriving (Eq,Show)
+    newtype Scalar Curve_P521R1 = P521Scalar { unP521Scalar :: H.PrivateNumber } deriving (Eq,Show)
     curveGetOrder _ = H.ecc_n $ H.common_curve $ H.getCurveByName H.SEC_p521r1
     curveGetBasePoint = P521Point $ H.ecc_g $ H.common_curve $ H.getCurveByName H.SEC_p521r1
     curveOfScalar _ = Curve_P521R1
@@ -165,8 +177,8 @@ instance EllipticCurveDH Curve_P521R1 where
 data Curve_X25519 = Curve_X25519
 
 instance EllipticCurve Curve_X25519 where
-    newtype Point Curve_X25519 = X25519Point X25519.PublicKey
-    newtype Scalar Curve_X25519 = X25519Scalar X25519.SecretKey
+    newtype Point Curve_X25519 = X25519Point X25519.PublicKey deriving (Eq,Show)
+    newtype Scalar Curve_X25519 = X25519Scalar X25519.SecretKey deriving (Eq,Show)
     curveGetOrder     _ = undefined
     curveGetBasePoint = undefined
     curveOfScalar _ = Curve_X25519

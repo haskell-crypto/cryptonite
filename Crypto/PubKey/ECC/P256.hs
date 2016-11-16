@@ -56,7 +56,7 @@ import qualified Crypto.Number.Serialize as S (os2ip, i2ospOf)
 
 -- | A P256 scalar
 newtype Scalar = Scalar ScrubbedBytes
-    deriving (Eq,ByteArrayAccess)
+    deriving (Show,Eq,ByteArrayAccess)
 
 -- | A P256 point
 newtype Point = Point Bytes
