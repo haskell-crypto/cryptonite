@@ -11,6 +11,7 @@
 {-# LANGUAGE TypeFamilies #-}
 module Crypto.ECC
     ( Curve_P256R1(..)
+    , Curve_P384R1(..)
     , Curve_P521R1(..)
     , EllipticCurve(..)
     , EllipticCurveDH(..)
@@ -108,6 +109,30 @@ instance EllipticCurveDH Curve_P256R1 where
       where
         (x, _) = P256.pointToIntegers $ unP256Point $ pointSmul s p
         len = (256 + 7) `div` 8
+        shared = SharedSecret $ i2ospOf_ len x
+
+data Curve_P384R1 = Curve_P384R1
+
+instance EllipticCurve Curve_P384R1 where
+    newtype Point Curve_P384R1 = P384Point { unP384Point :: H.Point }
+    newtype Scalar Curve_P384R1 = P384Scalar { unP384Scalar :: H.PrivateNumber }
+    curveGetOrder _ = H.ecc_n $ H.common_curve $ H.getCurveByName H.SEC_p384r1
+    curveGetBasePoint = P384Point $ H.ecc_g $ H.common_curve $ H.getCurveByName H.SEC_p384r1
+    curveOfScalar _ = Curve_P384R1
+    curveOfPoint _ = Curve_P384R1
+    curveGenerateScalar = P384Scalar <$> H.scalarGenerate (H.getCurveByName H.SEC_p384r1)
+    curveGenerateKeyPair = toKeyPair <$> H.scalarGenerate (H.getCurveByName H.SEC_p384r1)
+      where toKeyPair scalar = KeyPair (P384Point $ H.pointBaseMul (H.getCurveByName H.SEC_p384r1) scalar) (P384Scalar scalar)
+
+instance EllipticCurveArith Curve_P384R1 where
+    pointAdd a b = P384Point $ (H.pointAdd (H.getCurveByName H.SEC_p384r1) `on` unP384Point) a b
+    pointSmul s p = P384Point (H.pointMul (H.getCurveByName H.SEC_p384r1) (unP384Scalar s) (unP384Point p))
+
+instance EllipticCurveDH Curve_P384R1 where
+    ecdh s p = shared
+      where
+        H.Point x _ = unP384Point $ pointSmul s p
+        len = (384 + 7) `div` 8
         shared = SharedSecret $ i2ospOf_ len x
 
 data Curve_P521R1 = Curve_P521R1
