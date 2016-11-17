@@ -18,6 +18,8 @@ module Crypto.PubKey.Curve25519
     , dhSecret
     , publicKey
     , secretKey
+    , toPublicKey
+    , fromPublicKey
     -- * methods
     , dh
     , toPublic
@@ -128,3 +130,11 @@ generateSecretKey = return $ unsafeDoIO $ do
         pokeByteOff inp 31 ((e31 .&. 0x7f) .|. 0x40)
     let CryptoPassed s = secretKey bs
     return s
+
+toPublicKey :: ByteString -> PublicKey
+toPublicKey bs = pub
+  where
+    CryptoPassed pub = publicKey bs
+
+fromPublicKey :: PublicKey -> ByteString
+fromPublicKey (PublicKey b) = B.convert b
