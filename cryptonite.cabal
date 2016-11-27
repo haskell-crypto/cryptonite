@@ -406,6 +406,7 @@ Test-Suite test-cryptonite
                      KAT_PubKey.OAEP
                      KAT_PubKey.PSS
                      KAT_PubKey.P256
+                     KAT_PubKey.RSA
                      KAT_PubKey
                      KAT_RC4
                      KAT_Scrypt
