@@ -30,10 +30,6 @@ import qualified Data.ByteString as BS
 data PRK a = PRK (HMAC a) | PRK_NoExpand ScrubbedBytes
     deriving (Eq)
 
-instance Show (PRK a) where
-    show (PRK hm) = show (hmacGetDigest hm)
-    show (PRK_NoExpand sb) = show sb
-
 toByteString :: PRK a -> BS.ByteString
 toByteString (PRK hm)          = B.convert hm
 toByteString (PRK_NoExpand sb) = B.convert sb
