@@ -122,14 +122,13 @@ foreign import ccall "cryptonite_curve25519_donna"
 
 generateSecretKey :: MonadRandom m => m SecretKey
 generateSecretKey = return $ unsafeDoIO $ do
-    bs :: ByteString <- getRandomBytes 32
-    withByteArray bs $ \inp -> do
+    sb <- getRandomBytes 32
+    withByteArray sb $ \inp -> do
         e0 :: Word8 <- peek inp
         poke inp (e0 .&. 0xf8)
         e31 :: Word8 <- peekByteOff inp 31
         pokeByteOff inp 31 ((e31 .&. 0x7f) .|. 0x40)
-    let CryptoPassed s = secretKey bs
-    return s
+    return $ SecretKey sb
 
 toPublicKey :: ByteString -> PublicKey
 toPublicKey bs = pub
