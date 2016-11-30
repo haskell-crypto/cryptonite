@@ -27,7 +27,6 @@ module Crypto.PubKey.Curve25519
     ) where
 
 import           Data.Bits
-import           Data.ByteString (ByteString)
 import           Data.Word
 import           Foreign.Ptr
 import           Foreign.Storable
@@ -36,7 +35,7 @@ import           GHC.Ptr
 import           Crypto.Error
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
-import           Crypto.Internal.ByteArray (ByteArrayAccess, ScrubbedBytes, Bytes, withByteArray)
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, ScrubbedBytes, Bytes, withByteArray)
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Error (CryptoFailable(..))
 import           Crypto.Random
@@ -120,6 +119,7 @@ foreign import ccall "cryptonite_curve25519_donna"
                            -> Ptr Word8 -- ^ basepoint
                            -> IO ()
 
+-- | Generate a secret key.
 generateSecretKey :: MonadRandom m => m SecretKey
 generateSecretKey = return $ unsafeDoIO $ do
     sb <- getRandomBytes 32
@@ -130,10 +130,12 @@ generateSecretKey = return $ unsafeDoIO $ do
         pokeByteOff inp 31 ((e31 .&. 0x7f) .|. 0x40)
     return $ SecretKey sb
 
-toPublicKey :: ByteString -> PublicKey
+-- | Create a public key.
+toPublicKey :: ByteArrayAccess bs => bs -> PublicKey
 toPublicKey bs = pub
   where
     CryptoPassed pub = publicKey bs
 
-fromPublicKey :: PublicKey -> ByteString
+-- | Convert a public key.
+fromPublicKey :: ByteArray bs => PublicKey -> bs
 fromPublicKey (PublicKey b) = B.convert b
