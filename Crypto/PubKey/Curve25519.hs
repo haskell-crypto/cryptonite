@@ -9,6 +9,7 @@
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MagicHash #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Crypto.PubKey.Curve25519
     ( SecretKey
     , PublicKey
@@ -17,20 +18,27 @@ module Crypto.PubKey.Curve25519
     , dhSecret
     , publicKey
     , secretKey
+    , toPublicKey
+    , fromPublicKey
     -- * methods
     , dh
     , toPublic
+    , generateSecretKey
     ) where
 
+import           Data.Bits
 import           Data.Word
 import           Foreign.Ptr
+import           Foreign.Storable
 import           GHC.Ptr
 
 import           Crypto.Error
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
-import           Crypto.Internal.ByteArray (ByteArrayAccess, ScrubbedBytes, Bytes, withByteArray)
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, ScrubbedBytes, Bytes, withByteArray)
 import qualified Crypto.Internal.ByteArray as B
+import           Crypto.Error (CryptoFailable(..))
+import           Crypto.Random
 
 -- | A Curve25519 Secret key
 newtype SecretKey = SecretKey ScrubbedBytes
@@ -110,3 +118,24 @@ foreign import ccall "cryptonite_curve25519_donna"
                            -> Ptr Word8 -- ^ secret
                            -> Ptr Word8 -- ^ basepoint
                            -> IO ()
+
+-- | Generate a secret key.
+generateSecretKey :: MonadRandom m => m SecretKey
+generateSecretKey = return $ unsafeDoIO $ do
+    sb <- getRandomBytes 32
+    withByteArray sb $ \inp -> do
+        e0 :: Word8 <- peek inp
+        poke inp (e0 .&. 0xf8)
+        e31 :: Word8 <- peekByteOff inp 31
+        pokeByteOff inp 31 ((e31 .&. 0x7f) .|. 0x40)
+    return $ SecretKey sb
+
+-- | Create a public key.
+toPublicKey :: ByteArrayAccess bs => bs -> PublicKey
+toPublicKey bs = pub
+  where
+    CryptoPassed pub = publicKey bs
+
+-- | Convert a public key.
+fromPublicKey :: ByteArray bs => PublicKey -> bs
+fromPublicKey (PublicKey b) = B.convert b

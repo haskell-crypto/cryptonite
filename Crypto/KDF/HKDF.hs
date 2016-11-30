@@ -18,14 +18,20 @@ module Crypto.KDF.HKDF
     ) where
 
 import           Data.Word
-import           Crypto.Hash 
+import           Crypto.Hash
 import           Crypto.MAC.HMAC
-import           Crypto.Internal.ByteArray (ScrubbedBytes, Bytes, ByteArray, ByteArrayAccess)
+import           Crypto.Internal.ByteArray (ScrubbedBytes, ByteArray, ByteArrayAccess)
 import qualified Crypto.Internal.ByteArray as B
 
 -- | Pseudo Random Key
 data PRK a = PRK (HMAC a) | PRK_NoExpand ScrubbedBytes
     deriving (Eq)
+
+instance ByteArrayAccess (PRK a) where
+    length (PRK hm)          = B.length hm
+    length (PRK_NoExpand sb) = B.length sb
+    withByteArray (PRK hm)          = B.withByteArray hm
+    withByteArray (PRK_NoExpand sb) = B.withByteArray sb
 
 -- | Extract a Pseudo Random Key using the parameter and the underlaying hash mechanism
 extract :: (HashAlgorithm a, ByteArrayAccess salt, ByteArrayAccess ikm)
@@ -38,7 +44,7 @@ extract salt ikm = PRK $ hmac salt ikm
 --
 -- Only use when guaranteed to have a good quality and random data to use directly as key.
 -- This effectively skip a HMAC with key=salt and data=key.
-extractSkip :: (HashAlgorithm a, ByteArrayAccess ikm)
+extractSkip :: ByteArrayAccess ikm
             => ikm
             -> PRK a
 extractSkip ikm = PRK_NoExpand $ B.convert ikm

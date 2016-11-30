@@ -101,6 +101,7 @@ Library
                      Crypto.ConstructHash.MiyaguchiPreneel
                      Crypto.Data.AFIS
                      Crypto.Data.Padding
+                     Crypto.ECC
                      Crypto.Error
                      Crypto.MAC.CMAC
                      Crypto.MAC.Poly1305
@@ -129,6 +130,7 @@ Library
                      Crypto.PubKey.ECC.ECDSA
                      Crypto.PubKey.ECC.P256
                      Crypto.PubKey.ECC.Types
+                     Crypto.PubKey.ECIES
                      Crypto.PubKey.Ed25519
                      Crypto.PubKey.Ed448
                      Crypto.PubKey.RSA
