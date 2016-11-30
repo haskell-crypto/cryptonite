@@ -20,9 +20,9 @@ module Crypto.KDF.HKDF
     ) where
 
 import           Data.Word
-import           Crypto.Hash 
+import           Crypto.Hash
 import           Crypto.MAC.HMAC
-import           Crypto.Internal.ByteArray (ScrubbedBytes, Bytes, ByteArray, ByteArrayAccess)
+import           Crypto.Internal.ByteArray (ScrubbedBytes, ByteArray, ByteArrayAccess)
 import qualified Crypto.Internal.ByteArray as B
 import qualified Data.ByteString as BS
 
