@@ -15,8 +15,6 @@ module Crypto.KDF.HKDF
     , extract
     , extractSkip
     , expand
-    , fromPRK
-    , toPRK
     ) where
 
 import           Data.Word
@@ -29,12 +27,11 @@ import qualified Crypto.Internal.ByteArray as B
 data PRK a = PRK (HMAC a) | PRK_NoExpand ScrubbedBytes
     deriving (Eq)
 
-fromPRK :: ByteArray b => PRK a -> b
-fromPRK (PRK hm)          = B.convert hm
-fromPRK (PRK_NoExpand sb) = B.convert sb
-
-toPRK :: ByteArrayAccess b => b -> PRK a
-toPRK = extractSkip
+instance ByteArrayAccess (PRK a) where
+    length (PRK hm)          = B.length hm
+    length (PRK_NoExpand sb) = B.length sb
+    withByteArray (PRK hm)          = B.withByteArray hm
+    withByteArray (PRK_NoExpand sb) = B.withByteArray sb
 
 -- | Extract a Pseudo Random Key using the parameter and the underlaying hash mechanism
 extract :: (HashAlgorithm a, ByteArrayAccess salt, ByteArrayAccess ikm)
