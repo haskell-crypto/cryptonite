@@ -209,10 +209,6 @@ instance EllipticCurve Curve_X25519 where
     encodePoint (X25519Point p) = B.convert p
     decodePoint bs = X25519Point <$> X25519.publicKey bs
 
-instance EllipticCurveArith Curve_X25519 where
-    pointAdd  = undefined
-    pointSmul = undefined
-
 instance EllipticCurveDH Curve_X25519 where
     ecdh (X25519Scalar s) (X25519Point p) = SharedSecret $ convert secret
       where
