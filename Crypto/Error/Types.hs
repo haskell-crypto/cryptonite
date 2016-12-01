@@ -34,6 +34,10 @@ data CryptoError =
     | CryptoError_SecretKeyStructureInvalid
     | CryptoError_PublicKeySizeInvalid
     | CryptoError_SharedSecretSizeInvalid
+    -- elliptic cryptography error
+    | CryptoError_PointSizeInvalid
+    | CryptoError_PointFormatInvalid
+    | CryptoError_PointFormatUnsupported
     -- Message authentification error
     | CryptoError_MacKeyInvalid
     | CryptoError_AuthenticationTagSizeInvalid
