@@ -26,6 +26,7 @@ import qualified Crypto.PubKey.ECC.P256 as P256
 import qualified Crypto.PubKey.ECC.Types as H
 import qualified Crypto.PubKey.ECC.Prim as H
 import           Crypto.Random
+import           Crypto.Error
 import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArray, ByteArrayAccess, ScrubbedBytes)
 import qualified Crypto.Internal.ByteArray as B
@@ -71,7 +72,7 @@ class EllipticCurve curve where
     curveGenerateKeyPair :: MonadRandom randomly => randomly (KeyPair curve)
 
     encodePoint :: ByteArray bs => Point curve -> bs
-    decodePoint :: ByteArray bs => bs -> Point curve
+    decodePoint :: ByteArray bs => bs -> CryptoFailable (Point curve)
 
 instance {-# OVERLAPPABLE #-} Show (Point a) where
     show _ = undefined
@@ -122,7 +123,9 @@ instance EllipticCurve Curve_P256R1 where
     encodePoint (P256Point p) = encodeECPoint x y 32
       where
         (x,y) = P256.pointToIntegers p
-    decodePoint bs = P256Point $ P256.pointFromIntegers $ decodeECPoint bs
+    decodePoint bs = fromPoint <$> decodeECPoint bs
+      where fromPoint (H.Point x y) = P256Point $ P256.pointFromIntegers (x,y)
+            fromPoint H.PointO      = error "impossible happened: fromPoint is infinite"
 
 instance EllipticCurveArith Curve_P256R1 where
     pointAdd  a b = P256Point $ (P256.pointAdd `on` unP256Point) a b
@@ -149,9 +152,7 @@ instance EllipticCurve Curve_P384R1 where
       where toKeyPair scalar = KeyPair (P384Point $ H.pointBaseMul (H.getCurveByName H.SEC_p384r1) scalar) (P384Scalar scalar)
     encodePoint (P384Point (H.Point x y)) = encodeECPoint x y 48
     encodePoint (P384Point _)             = error "encodePoint P384"
-    decodePoint bs = P384Point $ H.Point x y
-      where
-        (x,y) = decodeECPoint bs
+    decodePoint bs = P384Point <$> decodeECPoint bs
 
 instance EllipticCurveArith Curve_P384R1 where
     pointAdd a b = P384Point $ (H.pointAdd (H.getCurveByName H.SEC_p384r1) `on` unP384Point) a b
@@ -178,9 +179,7 @@ instance EllipticCurve Curve_P521R1 where
       where toKeyPair scalar = KeyPair (P521Point $ H.pointBaseMul (H.getCurveByName H.SEC_p521r1) scalar) (P521Scalar scalar)
     encodePoint (P521Point (H.Point x y)) = encodeECPoint x y 66
     encodePoint (P521Point _)             = error "encodePoint P521"
-    decodePoint bs = P521Point $ H.Point x y
-      where
-        (x,y) = decodeECPoint bs
+    decodePoint bs = P521Point <$> decodeECPoint bs
 
 instance EllipticCurveArith Curve_P521R1 where
     pointAdd a b = P521Point $ (H.pointAdd (H.getCurveByName H.SEC_p521r1) `on` unP521Point) a b
@@ -207,8 +206,8 @@ instance EllipticCurve Curve_X25519 where
         s <- X25519.generateSecretKey
         let p = X25519.toPublic s
         return $ KeyPair (X25519Point p) (X25519Scalar s)
-    encodePoint (X25519Point p) = X25519.fromPublicKey p
-    decodePoint bs = X25519Point $ X25519.toPublicKey bs
+    encodePoint (X25519Point p) = B.convert p
+    decodePoint bs = X25519Point <$> X25519.publicKey bs
 
 instance EllipticCurveArith Curve_X25519 where
     pointAdd  = undefined
@@ -227,14 +226,15 @@ encodeECPoint x y siz = B.concat [uncompressed,xb,yb]
     xb = i2ospOf_ siz x
     yb = i2ospOf_ siz y
 
-decodeECPoint :: ByteArray bs => bs -> (Integer,Integer)
+decodeECPoint :: ByteArray bs => bs -> CryptoFailable H.Point
 decodeECPoint mxy = case B.uncons mxy of
-  Nothing     -> error "decodeECPoint"
-  Just (m,xy)
-    -- uncompressed
-    | m == 4  -> let siz = B.length xy `div` 2
-                     (xb,yb) = B.splitAt siz xy
-                     x = os2ip xb
-                     y = os2ip yb
-                 in (x,y)
-   | otherwise -> error $ "decodeECPoint: unknown " ++ show m
+    Nothing     -> CryptoFailed $ CryptoError_PointSizeInvalid
+    Just (m,xy)
+        -- uncompressed
+        | m == 4 ->
+            let siz = B.length xy `div` 2
+                (xb,yb) = B.splitAt siz xy
+                x = os2ip xb
+                y = os2ip yb
+             in CryptoPassed $ H.Point x y
+        | otherwise -> CryptoFailed $ CryptoError_PointFormatInvalid
