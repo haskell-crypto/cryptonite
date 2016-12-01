@@ -111,19 +111,20 @@ toPublic (SecretKey sec) = PublicKey <$>
         basePoint = Ptr "\x09\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"#
 {-# NOINLINE toPublic #-}
 
+-- | Generate a secret key.
+generateSecretKey :: MonadRandom m => m SecretKey
+generateSecretKey = tweakToSecretKey <$> getRandomBytes 32
+  where
+    tweakToSecretKey :: ScrubbedBytes -> SecretKey
+    tweakToSecretKey bin = SecretKey $ B.copyAndFreeze bin $ \inp -> do
+        modifyByte inp 0 (\e0 -> e0 .&. 0xf8)
+        modifyByte inp 31 (\e31 -> (e31 .&. 0x7f) .|. 0x40)
+
+    modifyByte :: Ptr Word8 -> Int -> (Word8 -> Word8) -> IO ()
+    modifyByte p n f = peekByteOff p n >>= pokeByteOff p n . f
+
 foreign import ccall "cryptonite_curve25519_donna"
     ccryptonite_curve25519 :: Ptr Word8 -- ^ public
                            -> Ptr Word8 -- ^ secret
                            -> Ptr Word8 -- ^ basepoint
                            -> IO ()
-
--- | Generate a secret key.
-generateSecretKey :: MonadRandom m => m SecretKey
-generateSecretKey = return $ unsafeDoIO $ do
-    sb <- getRandomBytes 32
-    withByteArray sb $ \inp -> do
-        e0 :: Word8 <- peek inp
-        poke inp (e0 .&. 0xf8)
-        e31 :: Word8 <- peekByteOff inp 31
-        pokeByteOff inp 31 ((e31 .&. 0x7f) .|. 0x40)
-    return $ SecretKey sb
