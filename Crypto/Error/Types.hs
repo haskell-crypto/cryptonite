@@ -35,6 +35,7 @@ data CryptoError =
     | CryptoError_PublicKeySizeInvalid
     | CryptoError_SharedSecretSizeInvalid
     -- elliptic cryptography error
+    | CryptoError_EcScalarOutOfBounds
     | CryptoError_PointSizeInvalid
     | CryptoError_PointFormatInvalid
     | CryptoError_PointFormatUnsupported

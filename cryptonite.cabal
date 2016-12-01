@@ -186,6 +186,8 @@ Library
                      Crypto.Random.Probabilistic
                      Crypto.PubKey.Internal
                      Crypto.PubKey.ElGamal
+                     Crypto.ECC.Simple.Types
+                     Crypto.ECC.Simple.Prim
                      Crypto.Internal.ByteArray
                      Crypto.Internal.Compat
                      Crypto.Internal.CompatPrim
