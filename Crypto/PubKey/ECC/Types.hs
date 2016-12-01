@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 -- |
--- Module      : Crypto.PubKey.ECC.types
+-- Module      : Crypto.PubKey.ECC.Types
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : Experimental
