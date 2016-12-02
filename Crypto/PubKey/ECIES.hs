@@ -14,20 +14,23 @@ module Crypto.PubKey.ECIES
 
 import           Crypto.ECC
 import           Crypto.Random
+import           Crypto.Internal.Proxy
 
 -- | Generate random a new Shared secret and the associated point
 -- to do a ECIES style encryption
 deriveEncrypt :: (MonadRandom randomly, EllipticCurveDH curve)
-              => Point curve -- ^ the public key of the receiver
+              => proxy curve -- ^ representation of the curve
+              -> Point curve -- ^ the public key of the receiver
               -> randomly (Point curve, SharedSecret)
-deriveEncrypt pub = do
-    (KeyPair rPoint rScalar) <- curveGenerateKeyPair
-    return (rPoint, ecdh rScalar pub)
+deriveEncrypt proxy pub = do
+    (KeyPair rPoint rScalar) <- curveGenerateKeyPair proxy
+    return (rPoint, ecdh proxy rScalar pub)
 
 -- | Derive the shared secret with the receiver key
 -- and the R point of the scheme.
 deriveDecrypt :: EllipticCurveDH curve
-              => Point curve  -- ^ The received R (supposedly, randomly generate on the encrypt side)
+              => proxy curve  -- ^ representation of the curve
+              -> Point curve  -- ^ The received R (supposedly, randomly generated on the encrypt side)
               -> Scalar curve -- ^ The secret key of the receiver
               -> SharedSecret
-deriveDecrypt point secret = ecdh secret point
+deriveDecrypt proxy point secret = ecdh proxy secret point
