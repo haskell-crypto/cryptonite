@@ -100,13 +100,8 @@ instance EllipticCurve Curve_P256R1 where
     curveGenerateScalar _ = P256.scalarGenerate
     curveGenerateKeyPair _ = toKeyPair <$> P256.scalarGenerate
       where toKeyPair scalar = KeyPair (P256.toPoint scalar) scalar
-    encodePoint _ p = encodeECPoint (Simple.Point x y :: Simple.Point Simple.SEC_p256r1)
-      where
-        (x,y) = P256.pointToIntegers p
-    decodePoint _ bs = fromSimplePoint <$> decodeECPoint bs
-      where fromSimplePoint :: Simple.Point Simple.SEC_p256r1 -> P256.Point
-            fromSimplePoint (Simple.Point x y) = P256.pointFromIntegers (x,y)
-            fromSimplePoint Simple.PointO      = error "impossible happened: fromPoint is infinite"
+    encodePoint _ p = P256.pointToBinary p
+    decodePoint _ bs = P256.pointFromBinary bs
 
 instance EllipticCurveArith Curve_P256R1 where
     pointAdd  _ a b = P256.pointAdd a b
