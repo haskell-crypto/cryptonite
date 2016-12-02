@@ -18,6 +18,7 @@ module Crypto.ECC.Simple.Types
     , CurveBinaryParam(..)
     , CurvePrimeParam(..)
     , curveSizeBits
+    , curveSizeBytes
     , CurveParameters(..)
     -- * specific curves definition
     , SEC_p112r1(..)
@@ -69,6 +70,10 @@ curveSizeBits proxy =
     case curveType proxy of
         CurvePrime (CurvePrimeParam p)   -> numBits p
         CurveBinary (CurveBinaryParam c) -> numBits c - 1
+
+-- | get the size of the curve in bytes
+curveSizeBytes :: Curve curve => proxy curve -> Int
+curveSizeBytes proxy = (curveSizeBits proxy + 7) `div` 8
 
 -- | Define common parameters in a curve definition
 -- of the form: y^2 = x^3 + ax + b.
