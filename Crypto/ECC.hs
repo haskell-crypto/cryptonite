@@ -108,11 +108,7 @@ instance EllipticCurveArith Curve_P256R1 where
     pointSmul _ s p = P256.pointMul s p
 
 instance EllipticCurveDH Curve_P256R1 where
-    ecdh proxy s p = shared
-      where
-        (x, _) = P256.pointToIntegers $ pointSmul proxy s p
-        len = 32 -- (256 + 7) `div` 8
-        shared = SharedSecret $ i2ospOf_ len x
+    ecdh _ s p = SharedSecret $ P256.pointDh s p
 
 data Curve_P384R1 = Curve_P384R1
 

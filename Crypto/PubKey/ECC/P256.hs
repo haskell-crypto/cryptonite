@@ -18,6 +18,7 @@ module Crypto.PubKey.ECC.P256
     , pointBase
     , pointAdd
     , pointMul
+    , pointDh
     , pointsMulVarTime
     , pointIsValid
     , toPoint
@@ -48,7 +49,7 @@ import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray
 import qualified Crypto.Internal.ByteArray as B
-import           Data.Memory.PtrMethods (memSet)
+import           Data.Memory.PtrMethods (memSet, memCopy)
 import           Crypto.Error
 import           Crypto.Random
 import           Crypto.Number.Serialize.Internal (os2ip, i2ospOf)
@@ -111,6 +112,14 @@ pointMul :: Scalar -> Point -> Point
 pointMul scalar p = withNewPoint $ \dx dy ->
     withScalar scalar $ \n -> withPoint p $ \px py -> withScalarZero $ \nzero ->
         ccryptonite_p256_points_mul_vartime nzero n px py dx dy
+
+-- | Similar to 'pointMul', serializing the x coordinate as binary
+pointDh :: ByteArray binary => Scalar -> Point -> binary
+pointDh scalar p =
+    B.unsafeCreate scalarSize $ \dst -> withTempPoint $ \dx dy -> do
+        withScalar scalar $ \n -> withPoint p $ \px py -> withScalarZero $ \nzero ->
+            ccryptonite_p256_points_mul_vartime nzero n px py dx dy
+        memCopy dst (castPtr dx) scalarSize
 
 -- | multiply the point @p with @n2 and add a lifted to curve value @n1
 --
@@ -281,6 +290,9 @@ pxToPy px = castPtr (px `plusPtr` scalarSize)
 withNewScalarFreeze :: (Ptr P256Scalar -> IO ()) -> Scalar
 withNewScalarFreeze f = Scalar $ B.allocAndFreeze scalarSize f
 {-# NOINLINE withNewScalarFreeze #-}
+
+withTempPoint :: (Ptr P256X -> Ptr P256Y -> IO a) -> IO a
+withTempPoint f = allocTempScrubbed scalarSize (\p -> let px = castPtr p in f px (pxToPy px))
 
 withTempScalar :: (Ptr P256Scalar -> IO a) -> IO a
 withTempScalar f = allocTempScrubbed scalarSize (f . castPtr)
