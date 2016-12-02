@@ -39,6 +39,7 @@ data CryptoError =
     | CryptoError_PointSizeInvalid
     | CryptoError_PointFormatInvalid
     | CryptoError_PointFormatUnsupported
+    | CryptoError_PointCoordinatesInvalid
     -- Message authentification error
     | CryptoError_MacKeyInvalid
     | CryptoError_AuthenticationTagSizeInvalid

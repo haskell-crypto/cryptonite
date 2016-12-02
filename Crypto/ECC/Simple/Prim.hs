@@ -10,6 +10,7 @@ module Crypto.ECC.Simple.Prim
     , pointBaseMul
     , pointMul
     , pointAddTwoMuls
+    , pointFromIntegers
     , isPointAtInfinity
     , isPointValid
     ) where
@@ -159,6 +160,15 @@ isPointAtInfinity :: Point curve -> Bool
 isPointAtInfinity PointO = True
 isPointAtInfinity _      = False
 
+-- | Make a point on a curve from integer (x,y) coordinate
+--
+-- if the point is not valid related to the curve then an error is
+-- returned instead of a point
+pointFromIntegers :: forall curve . Curve curve => (Integer, Integer) -> CryptoFailable (Point curve)
+pointFromIntegers (x,y)
+    | isPointValid (Proxy :: Proxy curve) x y = CryptoPassed $ Point x y
+    | otherwise                               = CryptoFailed $ CryptoError_PointCoordinatesInvalid
+
 -- | check if a point is on specific curve
 --
 -- This perform three checks:
@@ -166,9 +176,8 @@ isPointAtInfinity _      = False
 -- * x is not out of range
 -- * y is not out of range
 -- * the equation @y^2 = x^3 + a*x + b (mod p)@ holds
-isPointValid :: Curve curve => Point curve -> Bool
-isPointValid        PointO     = True
-isPointValid point@(Point x y) =
+isPointValid :: Curve curve => proxy curve -> Integer -> Integer -> Bool
+isPointValid proxy x y =
     case ty of
         CurvePrime (CurvePrimeParam p) ->
             let a  = curveEccA cc
@@ -187,8 +196,8 @@ isPointValid point@(Point x y) =
                     , ((((x `add` a) `mul` x `add` y) `mul` x) `add` b `add` (squareF2m fx y)) == 0
                     ]
   where
-    ty = curveType point
-    cc = curveParameters point
+    ty = curveType proxy
+    cc = curveParameters proxy
 
 -- | div and mod
 divmod :: Integer -> Integer -> Integer -> Maybe Integer

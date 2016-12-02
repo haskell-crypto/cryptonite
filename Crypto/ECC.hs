@@ -200,7 +200,7 @@ decodeECPoint mxy = case B.uncons mxy of
                 (xb,yb) = B.splitAt siz xy
                 x = os2ip xb
                 y = os2ip yb
-             in CryptoPassed $ Simple.Point x y
+             in Simple.pointFromIntegers (x,y)
         | otherwise -> CryptoFailed $ CryptoError_PointFormatInvalid
 
 curveSizeBytes :: EllipticCurve c => Proxy c -> Int
