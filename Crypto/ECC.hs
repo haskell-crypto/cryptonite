@@ -27,7 +27,6 @@ import qualified Crypto.ECC.Simple.Types as Simple
 import qualified Crypto.ECC.Simple.Prim as Simple
 import           Crypto.Random
 import           Crypto.Error
-import           Crypto.Internal.Compat
 import           Crypto.Internal.Proxy
 import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArray, ByteArrayAccess, ScrubbedBytes)
