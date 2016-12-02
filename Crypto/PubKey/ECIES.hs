@@ -7,6 +7,18 @@
 --
 -- IES with Elliptic curve <https://en.wikipedia.org/wiki/Integrated_Encryption_Scheme>
 --
+-- This is a simple cryptographic system between 2 parties using Elliptic Curve.
+--
+-- The sending party create a shared secret using the receiver public key, and use the shared secret
+-- to generate cryptographic material for an symmetric encryption scheme (preferably authenticated encryption).
+--
+-- The receiving party receive the temporary ephemeral public key which is combined to its secret key
+-- to create the shared secret which just like on the sending is used to generate cryptographic material.
+--
+-- This module doesn't provide any symmetric data encryption capability or any mean to derive
+-- cryptographic key material for a symmetric key from the shared secret.
+-- this is left to the user for now.
+--
 module Crypto.PubKey.ECIES
     ( deriveEncrypt
     , deriveDecrypt
