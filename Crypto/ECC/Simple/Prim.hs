@@ -42,7 +42,7 @@ scalarFromInteger n
 --TODO: Extract helper function for `fromMaybe PointO...`
 
 -- | Elliptic Curve point negation:
--- @pointNegate c p@ returns point @q@ such that @pointAdd c p q == PointO@.
+-- @pointNegate p@ returns point @q@ such that @pointAdd p q == PointO@.
 pointNegate :: Curve curve => Point curve -> Point curve
 pointNegate        PointO     = PointO
 pointNegate point@(Point x y) =
@@ -133,8 +133,8 @@ pointMul (Scalar n) p
 
 -- | Elliptic curve double-scalar multiplication (uses Shamir's trick).
 --
--- > pointAddTwoMuls c n1 p1 n2 p2 == pointAdd c (pointMul c n1 p1)
--- >                                             (pointMul c n2 p2)
+-- > pointAddTwoMuls n1 p1 n2 p2 == pointAdd (pointMul n1 p1)
+-- >                                         (pointMul n2 p2)
 --
 -- /WARNING:/ Vulnerable to timing attacks.
 pointAddTwoMuls :: Curve curve => Scalar curve -> Point curve -> Scalar curve -> Point curve -> Point curve
