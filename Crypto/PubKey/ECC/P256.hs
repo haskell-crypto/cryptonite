@@ -49,7 +49,7 @@ import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray
 import qualified Crypto.Internal.ByteArray as B
-import           Data.Memory.PtrMethods (memSet, memCopy)
+import           Data.Memory.PtrMethods (memSet)
 import           Crypto.Error
 import           Crypto.Random
 import           Crypto.Number.Serialize.Internal (os2ip, i2ospOf)
@@ -119,7 +119,7 @@ pointDh scalar p =
     B.unsafeCreate scalarSize $ \dst -> withTempPoint $ \dx dy -> do
         withScalar scalar $ \n -> withPoint p $ \px py -> withScalarZero $ \nzero ->
             ccryptonite_p256_points_mul_vartime nzero n px py dx dy
-        memCopy dst (castPtr dx) scalarSize
+        ccryptonite_p256_to_bin (castPtr dx) dst
 
 -- | multiply the point @p with @n2 and add a lifted to curve value @n1
 --
