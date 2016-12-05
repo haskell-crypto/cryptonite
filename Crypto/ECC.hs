@@ -100,8 +100,20 @@ instance EllipticCurve Curve_P256R1 where
     curveGenerateScalar _ = P256.scalarGenerate
     curveGenerateKeyPair _ = toKeyPair <$> P256.scalarGenerate
       where toKeyPair scalar = KeyPair (P256.toPoint scalar) scalar
-    encodePoint _ p = P256.pointToBinary p
-    decodePoint _ bs = P256.pointFromBinary bs
+    encodePoint _ p = mxy
+      where
+        mxy :: forall bs. ByteArray bs => bs
+        mxy = B.concat [uncompressed, xy]
+          where
+            uncompressed, xy :: bs
+            uncompressed = B.singleton 4
+            xy = P256.pointToBinary p
+    decodePoint _ mxy = case B.uncons mxy of
+        Nothing -> CryptoFailed $ CryptoError_PointSizeInvalid
+        Just (m,xy)
+            -- uncompressed
+            | m == 4 -> P256.pointFromBinary xy
+            | otherwise -> CryptoFailed $ CryptoError_PointFormatInvalid
 
 instance EllipticCurveArith Curve_P256R1 where
     pointAdd  _ a b = P256.pointAdd a b
