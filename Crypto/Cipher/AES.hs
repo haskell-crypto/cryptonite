@@ -18,6 +18,8 @@ import Crypto.Cipher.Types.Block
 import Crypto.Cipher.AES.Primitive
 import Crypto.Internal.Imports
 
+import Data.ByteArray as BA
+
 -- | AES with 128 bit key
 newtype AES128 = AES128 AES
     deriving (NFData)
@@ -33,17 +35,27 @@ newtype AES256 = AES256 AES
 instance Cipher AES128 where
     cipherName    _ = "AES128"
     cipherKeySize _ = KeySizeFixed 16
-    cipherInit k    = AES128 `fmap` initAES k
+    cipherInit k    = AES128 <$> (initAES =<< validateKeySize (undefined :: AES128) k)
 
 instance Cipher AES192 where
     cipherName    _ = "AES192"
     cipherKeySize _ = KeySizeFixed 24
-    cipherInit k    = AES192 `fmap` initAES k
+    cipherInit k    = AES192 <$> (initAES =<< validateKeySize (undefined :: AES192) k)
 
 instance Cipher AES256 where
     cipherName    _ = "AES256"
     cipherKeySize _ = KeySizeFixed 32
-    cipherInit k    = AES256 `fmap` initAES k
+    cipherInit k    = AES256 <$> (initAES =<< validateKeySize (undefined :: AES256) k)
+
+validateKeySize :: (ByteArrayAccess key, Cipher cipher) => cipher -> key -> CryptoFailable key
+validateKeySize c k = if validKeyLength
+                      then CryptoPassed k
+                      else CryptoFailed CryptoError_KeySizeInvalid
+  where keyLength = BA.length k
+        validKeyLength = case cipherKeySize c of
+          KeySizeRange low high -> keyLength >= low && keyLength <= high
+          KeySizeEnum lengths -> keyLength `elem` lengths
+          KeySizeFixed s -> keyLength == s
 
 #define INSTANCE_BLOCKCIPHER(CSTR) \
 instance BlockCipher CSTR where \
