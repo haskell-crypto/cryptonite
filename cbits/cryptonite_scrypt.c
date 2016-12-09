@@ -49,16 +49,6 @@ static inline uint64_t integerify(uint32_t *B, const uint32_t r)
 	return B[(2*r-1) * 16] | (uint64_t)B[(2*r-1) * 16 + 1] << 32;
 }
 
-static inline uint32_t load32(const uint8_t *p)
-{
-	return le32_to_cpu(*((uint32_t *) p));
-}
-
-static inline void store32(const uint8_t *p, uint32_t val)
-{
-	*((uint32_t *) p) = cpu_to_le32(val);
-}
-
 void cryptonite_scrypt_smix(uint8_t *B, const uint32_t r, const uint64_t N, uint32_t *V, uint32_t *XY)
 {
 	uint32_t *X = XY;
@@ -69,7 +59,7 @@ void cryptonite_scrypt_smix(uint8_t *B, const uint32_t r, const uint64_t N, uint
 	const int r32 = 32*r;
 
 	for (k = 0; k < r32; k++)
-		X[k] = load32(&B[4 * k]);
+		X[k] = load_le32(&B[4 * k]);
 	for (i = 0; i < N; i += 2) {
 		array_copy32(&V[i * r32], X, r32);
 		blockmix_salsa8(X, Y, Z, r);
@@ -86,5 +76,5 @@ void cryptonite_scrypt_smix(uint8_t *B, const uint32_t r, const uint64_t N, uint
 		blockmix_salsa8(Y, X, Z, r);
 	}
 	for (k = 0; k < r32; k++)
-		store32(&B[4*k], X[k]);
+		store_le32(&B[4*k], X[k]);
 }

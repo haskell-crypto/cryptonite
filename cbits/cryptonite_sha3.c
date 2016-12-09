@@ -49,14 +49,14 @@ static const int keccak_rotc[24] =
 static const int keccak_piln[24] =
 	{ 10,7,11,17,18,3,5,16,8,21,24,4,15,23,19,13,12,2,20,14,22,9,6,1 };
 
-static inline void sha3_do_chunk(uint64_t state[25], uint64_t buf[], int bufsz)
+static inline void sha3_do_chunk(uint64_t state[25], const uint8_t *buf, int bufsz)
 {
 	int i, j, r;
 	uint64_t tmp, bc[5];
 
 	/* merge buf with state */
-	for (i = 0; i < bufsz; i++)
-		state[i] ^= le64_to_cpu(buf[i]);
+	for (i = 0; i < bufsz / 8; i++)
+		state[i] ^= load_le64(buf+8*i);
 
 	/* run keccak rounds */
 	for (r = 0; r < KECCAK_NB_ROUNDS; r++) {
@@ -111,14 +111,14 @@ void cryptonite_sha3_update(struct sha3_ctx *ctx, const uint8_t *data, uint32_t 
 	to_fill = ctx->bufsz - ctx->bufindex;
 
 	if (ctx->bufindex == ctx->bufsz) {
-		sha3_do_chunk(ctx->state, (uint64_t *) ctx->buf, ctx->bufsz / 8);
+		sha3_do_chunk(ctx->state, ctx->buf, ctx->bufsz);
 		ctx->bufindex = 0;
 	}
 
 	/* process partial buffer if there's enough data to make a block */
 	if (ctx->bufindex && len >= to_fill) {
 		memcpy(ctx->buf + ctx->bufindex, data, to_fill);
-		sha3_do_chunk(ctx->state, (uint64_t *) ctx->buf, ctx->bufsz / 8);
+		sha3_do_chunk(ctx->state, ctx->buf, ctx->bufsz);
 		len -= to_fill;
 		data += to_fill;
 		ctx->bufindex = 0;
@@ -126,7 +126,7 @@ void cryptonite_sha3_update(struct sha3_ctx *ctx, const uint8_t *data, uint32_t 
 
 	/* process as much ctx->bufsz-block */
 	for (; len >= ctx->bufsz; len -= ctx->bufsz, data += ctx->bufsz)
-		sha3_do_chunk(ctx->state, (uint64_t *) data, ctx->bufsz / 8);
+		sha3_do_chunk(ctx->state, data, ctx->bufsz);
 
 	/* append data into buf */
 	if (len) {
@@ -141,7 +141,7 @@ void cryptonite_sha3_finalize(struct sha3_ctx *ctx, uint32_t hashlen, uint8_t *o
 
 	/* process full buffer if needed */
 	if (ctx->bufindex == ctx->bufsz) {
-		sha3_do_chunk(ctx->state, (uint64_t *) ctx->buf, ctx->bufsz / 8);
+		sha3_do_chunk(ctx->state, ctx->buf, ctx->bufsz);
 		ctx->bufindex = 0;
 	}
 
@@ -151,7 +151,7 @@ void cryptonite_sha3_finalize(struct sha3_ctx *ctx, uint32_t hashlen, uint8_t *o
 	ctx->buf[ctx->bufsz - 1] |= 0x80;
 
 	/* process */
-	sha3_do_chunk(ctx->state, (uint64_t *) ctx->buf, ctx->bufsz / 8);
+	sha3_do_chunk(ctx->state, ctx->buf, ctx->bufsz);
 
 	/* output */
 	cpu_to_le64_array(w, ctx->state, 25);

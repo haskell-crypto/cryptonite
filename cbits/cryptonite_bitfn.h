@@ -165,6 +165,86 @@ static inline void array_copy64(uint64_t *d, uint64_t *s, uint32_t nb)
 }
 #endif
 
+static inline uint32_t load_be32(const uint8_t *p)
+{
+	return ((uint32_t)p[0] << 24) |
+	       ((uint32_t)p[1] << 16) |
+	       ((uint32_t)p[2] <<  8) |
+	       ((uint32_t)p[3]      );
+}
+
+static inline uint64_t load_be64(const uint8_t *p)
+{
+	return ((uint64_t)p[0] << 56) |
+	       ((uint64_t)p[1] << 48) |
+	       ((uint64_t)p[2] << 40) |
+	       ((uint64_t)p[3] << 32) |
+	       ((uint64_t)p[4] << 24) |
+	       ((uint64_t)p[5] << 16) |
+	       ((uint64_t)p[6] <<  8) |
+	       ((uint64_t)p[7]      );
+}
+
+static inline void store_be32(uint8_t *p, uint32_t val)
+{
+	p[0] = (val >> 24);
+	p[1] = (val >> 16) & 0xFF;
+	p[2] = (val >>  8) & 0xFF;
+	p[3] = (val      ) & 0xFF;
+}
+
+static inline void store_be64(uint8_t *p, uint64_t val)
+{
+	p[0] = (val >> 56);
+	p[1] = (val >> 48) & 0xFF;
+	p[2] = (val >> 40) & 0xFF;
+	p[3] = (val >> 32) & 0xFF;
+	p[4] = (val >> 24) & 0xFF;
+	p[5] = (val >> 16) & 0xFF;
+	p[6] = (val >>  8) & 0xFF;
+	p[7] = (val      ) & 0xFF;
+}
+
+static inline uint32_t load_le32(const uint8_t *p)
+{
+	return ((uint32_t)p[0]      ) |
+	       ((uint32_t)p[1] <<  8) |
+	       ((uint32_t)p[2] << 16) |
+	       ((uint32_t)p[3] << 24);
+}
+
+static inline uint64_t load_le64(const uint8_t *p)
+{
+	return ((uint64_t)p[0]      ) |
+	       ((uint64_t)p[1] <<  8) |
+	       ((uint64_t)p[2] << 16) |
+	       ((uint64_t)p[3] << 24) |
+	       ((uint64_t)p[4] << 32) |
+	       ((uint64_t)p[5] << 40) |
+	       ((uint64_t)p[6] << 48) |
+	       ((uint64_t)p[7] << 56);
+}
+
+static inline void store_le32(uint8_t *p, uint32_t val)
+{
+	p[0] = (val      ) & 0xFF;
+	p[1] = (val >>  8) & 0xFF;
+	p[2] = (val >> 16) & 0xFF;
+	p[3] = (val >> 24);
+}
+
+static inline void store_le64(uint8_t *p, uint64_t val)
+{
+	p[0] = (val      ) & 0xFF;
+	p[1] = (val >>  8) & 0xFF;
+	p[2] = (val >> 16) & 0xFF;
+	p[3] = (val >> 24) & 0xFF;
+	p[4] = (val >> 32) & 0xFF;
+	p[5] = (val >> 40) & 0xFF;
+	p[6] = (val >> 48) & 0xFF;
+	p[7] = (val >> 56);
+}
+
 #ifdef __GNUC__
 #define bitfn_ntz(n) __builtin_ctz(n)
 #else
