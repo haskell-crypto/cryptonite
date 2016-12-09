@@ -86,6 +86,11 @@ Flag old_toolchain_inliner
   Default:           False
   Manual:            True
 
+Flag check_alignment
+  Description:       extra check on alignment in C layers, which cause lowlevel assert errors. for debugging only.
+  Default:           False
+  Manual:            True
+
 Library
   Exposed-modules:   Crypto.Cipher.AES
                      Crypto.Cipher.Blowfish
@@ -297,6 +302,8 @@ Library
   if flag(support_deepseq)
     CPP-options:     -DWITH_DEEPSEQ_SUPPORT
     Build-depends:   deepseq
+  if flag(check_alignment)
+    cc-options:     -DWITH_ASSERT_ALIGNMENT
 
 Test-Suite test-cryptonite
   type:              exitcode-stdio-1.0
