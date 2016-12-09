@@ -20,6 +20,7 @@ module Crypto.PubKey.Ed448
     -- * methods
     , dh
     , toPublic
+    , generateSecretKey
     ) where
 
 import           Data.Word
@@ -27,6 +28,7 @@ import           Foreign.Ptr
 import           GHC.Ptr
 
 import           Crypto.Error
+import           Crypto.Random
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ScrubbedBytes, Bytes, withByteArray)
@@ -91,6 +93,10 @@ toPublic (SecretKey sec) = PublicKey <$>
   where
         basePoint = Ptr "\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"#
 {-# NOINLINE toPublic #-}
+
+-- | Generate a secret key.
+generateSecretKey :: MonadRandom m => m SecretKey
+generateSecretKey = SecretKey <$> getRandomBytes x448_bytes
 
 x448_bytes :: Int
 x448_bytes = 448 `quot` 8

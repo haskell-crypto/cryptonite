@@ -15,6 +15,7 @@ module Crypto.ECC
     , Curve_P384R1(..)
     , Curve_P521R1(..)
     , Curve_X25519(..)
+    , Curve_X448(..)
     , EllipticCurve(..)
     , EllipticCurveDH(..)
     , EllipticCurveArith(..)
@@ -33,6 +34,7 @@ import           Crypto.Internal.ByteArray (ByteArray, ByteArrayAccess, Scrubbed
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Number.Serialize (i2ospOf_, os2ip)
 import qualified Crypto.PubKey.Curve25519 as X25519
+import qualified Crypto.PubKey.Ed448 as X448
 import           Data.Function (on)
 import           Data.ByteArray (convert)
 
@@ -182,6 +184,23 @@ instance EllipticCurve Curve_X25519 where
 instance EllipticCurveDH Curve_X25519 where
     ecdh _ s p = SharedSecret $ convert secret
       where secret = X25519.dh p s
+
+data Curve_X448 = Curve_X448
+
+instance EllipticCurve Curve_X448 where
+    type Point Curve_X448 = X448.PublicKey
+    type Scalar Curve_X448 = X448.SecretKey
+    curveSizeBits _ = 448
+    curveGenerateScalar _ = X448.generateSecretKey
+    curveGenerateKeyPair _ = do
+        s <- X448.generateSecretKey
+        return $ KeyPair (X448.toPublic s) s
+    encodePoint _ p = B.convert p
+    decodePoint _ bs = X448.publicKey bs
+
+instance EllipticCurveDH Curve_X448 where
+    ecdh _ s p = SharedSecret $ convert secret
+      where secret = X448.dh p s
 
 encodeECPoint :: forall curve bs . (Simple.Curve curve, ByteArray bs) => Simple.Point curve -> bs
 encodeECPoint Simple.PointO      = error "encodeECPoint: cannot serialize point at infinity"
