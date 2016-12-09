@@ -25,6 +25,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "cryptonite_bitfn.h"
+#include "cryptonite_align.h"
 #include "cryptonite_sha3.h"
 
 #define KECCAK_NB_ROUNDS 24
@@ -124,9 +125,19 @@ void cryptonite_sha3_update(struct sha3_ctx *ctx, const uint8_t *data, uint32_t 
 		ctx->bufindex = 0;
 	}
 
-	/* process as much ctx->bufsz-block */
-	for (; len >= ctx->bufsz; len -= ctx->bufsz, data += ctx->bufsz)
-		sha3_do_chunk(ctx->state, (uint64_t *) data, ctx->bufsz / 8);
+	if (need_alignment(data, 8)) {
+		uint64_t tramp[200 - 2 * (224 / 8)];
+		ASSERT_ALIGNMENT(tramp, 8);
+		for (; len >= ctx->bufsz; len -= ctx->bufsz, data += ctx->bufsz) {
+			memcpy(tramp, data, ctx->bufsz / 8);
+			sha3_do_chunk(ctx->state, (uint64_t *) data, ctx->bufsz / 8);
+		}
+	} else {
+		/* process as much ctx->bufsz-block */
+		for (; len >= ctx->bufsz; len -= ctx->bufsz, data += ctx->bufsz)
+			sha3_do_chunk(ctx->state, (uint64_t *) data, ctx->bufsz / 8);
+	}
+
 
 	/* append data into buf */
 	if (len) {
