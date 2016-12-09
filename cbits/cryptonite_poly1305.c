@@ -132,7 +132,7 @@ void cryptonite_poly1305_update(poly1305_ctx *ctx, uint8_t *data, uint32_t lengt
 	/* fill the remaining bytes in the partial buffer */
 	if (length) {
 		memcpy(ctx->buf + ctx->index, data, length);
-		ctx->index = length;
+		ctx->index += length;
 	}
 }
 
