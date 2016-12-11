@@ -57,6 +57,25 @@ validateKeySize c k = if validKeyLength
           KeySizeEnum lengths -> keyLength `elem` lengths
           KeySizeFixed s -> keyLength == s
 
+-- Unlike the function above, this function does not take a Cipher as parameter,
+-- just a KeySizeSpecifier.
+validateKeySize' :: (ByteArrayAccess key) => KeySizeSpecifier -> key -> CryptoFailable key
+validateKeySize' kss k = if validKeyLength
+                      then CryptoPassed k
+                      else CryptoFailed CryptoError_KeySizeInvalid
+  where keyLength = BA.length k
+        validKeyLength = case kss of
+          KeySizeRange low high -> keyLength >= low && keyLength <= high
+          KeySizeEnum lengths -> keyLength `elem` lengths
+          KeySizeFixed s -> keyLength == s
+
+-- Another alternative that just takes a key length as the first parameter and
+-- so it's really just an optimized version for the KeySizeFixed case.
+validateKeySize'' :: (ByteArrayAccess key) => Int -> key -> CryptoFailable key
+validateKeySize'' s k = if BA.length k == s
+                       then CryptoPassed k
+                       else CryptoFailed CryptoError_KeySizeInvalid
+
 #define INSTANCE_BLOCKCIPHER(CSTR) \
 instance BlockCipher CSTR where \
     { blockSize _ = 16 \
