@@ -1,3 +1,12 @@
+## 0.21
+
+* Drop automated tests with GHC 7.0, GHC 7.4, GHC 7.6. support dropped, but probably still working.
+* Improve non-aligned support in C sources, ChaCha and SHA3 now probably work on arch without support for unaligned access. not complete or tested.
+* Add another ECC framework that is more flexible, allowing different implementations to work instead of
+  the existing Pure haskell NIST implementation.
+* Add ECIES basic primitives
+* Add XSalsa20 stream cipher
+
 ## 0.20
 
 * Fixed hash truncation used in ECDSA signature & verification (Olivier Chéron)
