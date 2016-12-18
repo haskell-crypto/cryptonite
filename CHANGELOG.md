@@ -6,6 +6,7 @@
   the existing Pure haskell NIST implementation.
 * Add ECIES basic primitives
 * Add XSalsa20 stream cipher
+* Process partial buffer correctly with Poly1305
 
 ## 0.20
 
