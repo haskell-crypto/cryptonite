@@ -10,3 +10,5 @@ QA
 benchs/Bench
 benchs/Hash
 *.sublime-workspace
+.cabal-sandbox/
+cabal.sandbox.config

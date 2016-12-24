@@ -43,6 +43,8 @@ data CryptoError =
     -- Message authentification error
     | CryptoError_MacKeyInvalid
     | CryptoError_AuthenticationTagSizeInvalid
+    -- Prime generation error
+    | CryptoError_PrimeSizeInvalid
     deriving (Show,Eq,Enum,Data,Typeable)
 
 instance E.Exception CryptoError
