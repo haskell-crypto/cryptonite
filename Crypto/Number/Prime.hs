@@ -38,7 +38,8 @@ import Data.Bits
 isProbablyPrime :: Integer -> Bool
 isProbablyPrime !n
     | any (\p -> p `divides` n) (filter (< n) firstPrimes) = False
-    | primalityTestFermat 50 (n`div`2) n                   = primalityTestMillerRabin 30 n
+    | n >= 2 && n <= 2903                                  = True
+    | primalityTestFermat 50 (n `div` 2) n                 = primalityTestMillerRabin 30 n
     | otherwise                                            = False
 
 -- | generate a prime number of the required bitsize (i.e. in the range
