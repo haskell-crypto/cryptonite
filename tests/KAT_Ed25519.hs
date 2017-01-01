@@ -25,6 +25,7 @@ testVec s vec =
     [ testCase (s ++ " gen publickey") (pub @=? Ed25519.toPublic sec)
     , testCase (s ++ " gen secretkey") (Ed25519.generateSecretKey *> pure ())
     , testCase (s ++ " gen signature") (sig @=? Ed25519.sign sec pub (vecMsg vec))
+    , testCase (s ++ " verify sig") (True @=? Ed25519.verify pub (vecMsg vec) sig)
     ]
   where
         !sig = throwCryptoError $ Ed25519.signature (vecSig vec)
