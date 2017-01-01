@@ -353,7 +353,6 @@ Test-Suite test-cryptonite
   Build-Depends:     base >= 3 && < 5
                    , bytestring
                    , memory
-                   , byteable
                    , tasty
                    , tasty-quickcheck
                    , tasty-hunit
