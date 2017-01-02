@@ -101,5 +101,6 @@ Links
 * [Curve25519](http://cr.yp.to/ecdh.html)
 * [Ed25519](http://ed25519.cr.yp.to/papers.html)
 * [Ed448-Goldilocks](http://ed448goldilocks.sourceforge.net/)
+* [EdDSA-test-vectors](http://www.ietf.org/rfc/rfc8032.txt)
 * [AFIS](http://clemens.endorphin.org/cryptography)
 
