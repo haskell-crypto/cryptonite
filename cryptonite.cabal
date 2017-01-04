@@ -10,7 +10,7 @@ Description:
     .
     * MAC: HMAC, Poly1305
     .
-    * Asymmetric crypto: DSA, RSA, DH, ECDH, ECDSA, ECC, Curve25519, Ed25519, Ed448
+    * Asymmetric crypto: DSA, RSA, DH, ECDH, ECDSA, ECC, Curve25519, Curve448, Ed25519
     .
     * Key Derivation Function: PBKDF2, Scrypt, HKDF
     .
@@ -126,6 +126,7 @@ Library
                      Crypto.Hash.IO
                      Crypto.Hash.Algorithms
                      Crypto.PubKey.Curve25519
+                     Crypto.PubKey.Curve448
                      Crypto.PubKey.MaskGenFunction
                      Crypto.PubKey.DH
                      Crypto.PubKey.DSA
@@ -324,8 +325,8 @@ Test-Suite test-cryptonite
                      KAT_Blowfish
                      KAT_Camellia
                      KAT_Curve25519
+                     KAT_Curve448
                      KAT_DES
-                     KAT_Ed448
                      KAT_Ed25519
                      KAT_CMAC
                      KAT_HKDF
