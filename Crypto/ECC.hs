@@ -34,7 +34,7 @@ import           Crypto.Internal.ByteArray (ByteArray, ByteArrayAccess, Scrubbed
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Number.Serialize (i2ospOf_, os2ip)
 import qualified Crypto.PubKey.Curve25519 as X25519
-import qualified Crypto.PubKey.Ed448 as X448
+import qualified Crypto.PubKey.Curve448 as X448
 import           Data.Function (on)
 import           Data.ByteArray (convert)
 

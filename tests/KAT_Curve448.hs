@@ -2,7 +2,7 @@
 module KAT_Curve448 ( tests ) where
 
 import           Crypto.Error
-import qualified Crypto.PubKey.Ed448 as Curve448
+import qualified Crypto.PubKey.Curve448 as Curve448
 import           Data.ByteArray as B
 import           Imports
 
