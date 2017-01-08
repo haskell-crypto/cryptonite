@@ -100,5 +100,6 @@ Links
 * [Scrypt](http://www.tarsnap.com/scrypt.html)
 * [Curve25519](http://cr.yp.to/ecdh.html)
 * [Ed25519](http://ed25519.cr.yp.to/papers.html)
+* [Ed448-Goldilocks](http://ed448goldilocks.sourceforge.net/)
 * [AFIS](http://clemens.endorphin.org/cryptography)
 
