@@ -42,17 +42,19 @@ tests = testGroup "number"
          in 0 <= r && r < range
     , testProperty "generate-prime" $ \testDRG (Int0_2901 baseBits') ->
         let baseBits = baseBits' `mod` 800
-            bits  = 48 + baseBits -- no point generating lower than 48 bits ..
+            bits  = 5 + baseBits -- generating lower than 5 bits causes an error ..
             prime = withTestDRG testDRG $ generatePrime bits
-        -- with small base bits numbers, the probability that we "cross" this bit size ness
-        -- to the next is quite high, as the number generated has two highest bit set.
-        --
-         in bits == numBits prime || (if baseBits < 64 then (bits + 1) == numBits prime else False)
+         in bits == numBits prime
+    , testProperty "generate-safe-prime" $ \testDRG (Int0_2901 baseBits') ->
+        let baseBits = baseBits' `mod` 200
+            bits = 6 + baseBits
+            prime = withTestDRG testDRG $ generateSafePrime bits
+         in bits == numBits prime
     , testProperty "marshalling" $ \qaInt ->
         getQAInteger qaInt == os2ip (i2osp (getQAInteger qaInt) :: Bytes)
     , testGroup "marshalling-kat-to-bytearray" $ map toSerializationKat $ zip [katZero..] serializationVectors
     , testGroup "marshalling-kat-to-integer" $ map toSerializationKatInteger $ zip [katZero..] serializationVectors
-    ] 
+    ]
   where
     toSerializationKat (i, (sz, n, ba)) = testCase (show i) (ba @=? i2ospOf_ sz n)
     toSerializationKatInteger (i, (_, n, ba)) = testCase (show i) (n @=? os2ip ba)
