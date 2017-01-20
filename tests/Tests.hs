@@ -18,7 +18,7 @@ import qualified KAT_HMAC
 import qualified KAT_HKDF
 import qualified KAT_PBKDF2
 import qualified KAT_Curve25519
-import qualified KAT_Ed448
+import qualified KAT_Curve448
 import qualified KAT_Ed25519
 import qualified KAT_PubKey
 import qualified KAT_Scrypt
@@ -47,7 +47,7 @@ tests = testGroup "cryptonite"
         , KAT_HMAC.tests
         ]
     , KAT_Curve25519.tests
-    , KAT_Ed448.tests
+    , KAT_Curve448.tests
     , KAT_Ed25519.tests
     , KAT_PubKey.tests
     , testGroup "KDF"
