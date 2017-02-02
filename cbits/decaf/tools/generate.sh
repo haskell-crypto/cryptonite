@@ -18,6 +18,9 @@
 #
 # * substitutions are performed in order to add a cryptonite_ prefix
 #   to all external symbols
+#
+# * code related to SHAKE is replaced by cryptonite code, referenced from
+#   a custom shake.h.  As a consequence, portable_endian.h is not needed.
 
 SRC_DIR="$1/src"
 DEST_DIR="`dirname "$0"`"/..
@@ -39,14 +42,11 @@ convert() {
     -e 's/P25519_SQRT_MINUS_ONE/CRYPTONITE_P25519_SQRT_MINUS_ONE/g'
 }
 
-convert "$SRC_DIR"/shake.c  "$DEST_DIR"
 convert "$SRC_DIR"/utils.c  "$DEST_DIR"
 
 mkdir -p "$DEST_DIR"/include
 convert "$SRC_DIR"/include/constant_time.h   "$DEST_DIR"/include
 convert "$SRC_DIR"/include/field.h           "$DEST_DIR"/include
-convert "$SRC_DIR"/include/keccak_internal.h "$DEST_DIR"/include
-convert "$SRC_DIR"/include/portable_endian.h "$DEST_DIR"/include
 convert "$SRC_DIR"/include/word.h            "$DEST_DIR"/include
 
 for ARCH in $ARCHITECTURES; do
@@ -59,7 +59,6 @@ convert "$SRC_DIR"/GENERATED/include/decaf.h           "$DEST_DIR"/include
 convert "$SRC_DIR"/GENERATED/include/decaf/common.h    "$DEST_DIR"/include/decaf
 convert "$SRC_DIR"/GENERATED/include/decaf/ed448.h     "$DEST_DIR"/include/decaf
 convert "$SRC_DIR"/GENERATED/include/decaf/point_448.h "$DEST_DIR"/include/decaf
-convert "$SRC_DIR"/GENERATED/include/decaf/shake.h     "$DEST_DIR"/include/decaf
 
 for CURVE in ed448goldilocks; do
   mkdir -p "$DEST_DIR"/$CURVE
@@ -114,3 +113,7 @@ for FILE in point_255.h sha512.h; do
 /* Not needed if 448-only */
 EOF
 done
+
+cat >"$DEST_DIR"/include/portable_endian.h <<EOF
+/* portable_endian.h not used */
+EOF

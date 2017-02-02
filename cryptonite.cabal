@@ -268,14 +268,12 @@ Library
 
   if arch(x86_64)
     C-sources:         cbits/decaf/utils.c
-                     , cbits/decaf/shake.c
                      , cbits/decaf/cryptonite_p448_arch_ref64.c
 
     include-dirs:      cbits/decaf/include
                      , cbits/decaf/include/arch_ref64
   else
     C-sources:         cbits/decaf/utils.c
-                     , cbits/decaf/shake.c
                      , cbits/decaf/cryptonite_p448_arch_32.c
 
     include-dirs:      cbits/decaf/include

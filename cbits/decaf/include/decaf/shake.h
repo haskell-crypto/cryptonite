@@ -1,219 +1,96 @@
-/**
- * @file decaf/shake.h
- * @copyright
- *   Based on CC0 code by David Leon Gil, 2015 \n
- *   Copyright (c) 2015 Cryptography Research, Inc.  \n
- *   Released under the MIT License.  See LICENSE.txt for license information.
- * @author Mike Hamburg
- * @brief SHA-3-n and CRYPTONITE_DECAF_SHAKE-n instances.
+/*
+ * Copyright (C) 2006-2009 Vincent Hanquez <vincent@snarc.org>
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef CRYPTONITE_DECAF_SHAKE_H
+#define CRYPTONITE_DECAF_SHAKE_H
 
-#ifndef __CRYPTONITE_DECAF_SHAKE_H__
-#define __CRYPTONITE_DECAF_SHAKE_H__
-
-#include <stdint.h>
-#include <sys/types.h>
-#include <stdlib.h> /* for NULL */
+#include "cryptonite_sha3.h"
 
 #include <decaf/common.h>
 
-#ifdef __cplusplus
-extern "C" {
+#define CHUNK_SIZE_32 0x80000000
+
+typedef struct sha3_shake256_ctx
+{
+        struct sha3_ctx    sc[1];
+        uint8_t            filler[136];    // 200 - 2*(256/8)
+}
+cryptonite_decaf_shake256_ctx_t[1];
+
+static inline void cryptonite_decaf_shake256_init(cryptonite_decaf_shake256_ctx_t ctx)
+{
+        cryptonite_sha3_init(ctx -> sc, 256);
+}
+
+static inline void cryptonite_decaf_shake256_update(cryptonite_decaf_shake256_ctx_t ctx, const uint8_t *in, size_t inlen)
+{
+#if __SIZE_MAX__ > UINT32_MAX
+        // split data over 4 GB in 2-GB chunks
+        while (inlen > UINT32_MAX) {
+                cryptonite_sha3_update(ctx -> sc, in, CHUNK_SIZE_32);
+                inlen -= CHUNK_SIZE_32;
+                in += CHUNK_SIZE_32;
+        }
 #endif
+        cryptonite_sha3_update(ctx -> sc, in, (uint32_t) inlen);
+}
 
-#ifndef INTERNAL_SPONGE_STRUCT
-    /** Sponge container object for the various primitives. */
-    typedef struct cryptonite_decaf_keccak_sponge_s {
-        /** @cond internal */
-        uint64_t opaque[26];
-        /** @endcond */
-    } cryptonite_decaf_keccak_sponge_s;
-
-    /** Convenience GMP-style one-element array version */
-    typedef struct cryptonite_decaf_keccak_sponge_s cryptonite_decaf_keccak_sponge_t[1];
-
-    /** Parameters for sponge construction, distinguishing CRYPTONITE_DECAF_SHA3 and
-     * CRYPTONITE_DECAF_SHAKE instances.
-     */
-    struct cryptonite_decaf_kparams_s;
+static inline void cryptonite_decaf_shake256_output(cryptonite_decaf_shake256_ctx_t ctx, uint8_t *out, size_t outlen) {
+#if __SIZE_MAX__ > UINT32_MAX
+        // split data over 4 GB in 2-GB chunks
+        while (outlen > UINT32_MAX) {
+                cryptonite_sha3_output(ctx -> sc, out, CHUNK_SIZE_32);
+                outlen -= CHUNK_SIZE_32;
+                out += CHUNK_SIZE_32;
+        }
 #endif
+        cryptonite_sha3_output(ctx -> sc, out, (uint32_t) outlen);
+}
 
-/**
- * @brief Initialize a sponge context object.
- * @param [out] sponge The object to initialize.
- * @param [in] params The sponge's parameter description.
- */
-void cryptonite_decaf_sponge_init (
-    cryptonite_decaf_keccak_sponge_t sponge,
-    const struct cryptonite_decaf_kparams_s *params
-) CRYPTONITE_DECAF_API_VIS;
+static inline void cryptonite_decaf_shake256_final(cryptonite_decaf_shake256_ctx_t ctx, uint8_t *out, size_t outlen)
+{
+        cryptonite_sha3_finalize_shake(ctx -> sc);
+        cryptonite_decaf_shake256_output(ctx, out, outlen);
 
-/**
- * @brief Absorb data into a CRYPTONITE_DECAF_SHA3 or CRYPTONITE_DECAF_SHAKE hash context.
- * @param [inout] sponge The context.
- * @param [in] in The input data.
- * @param [in] len The input data's length in bytes.
- * @return CRYPTONITE_DECAF_FAILURE if the sponge has already been used for output.
- * @return CRYPTONITE_DECAF_SUCCESS otherwise.
- */
-cryptonite_decaf_error_t cryptonite_decaf_sha3_update (
-    struct cryptonite_decaf_keccak_sponge_s * __restrict__ sponge,
-    const uint8_t *in,
-    size_t len
-) CRYPTONITE_DECAF_API_VIS;
+        cryptonite_decaf_shake256_init(ctx);
+}
 
-/**
- * @brief Squeeze output data from a CRYPTONITE_DECAF_SHA3 or CRYPTONITE_DECAF_SHAKE hash context.
- * This does not destroy or re-initialize the hash context, and
- * cryptonite_decaf_sha3 output can be called more times.
- *
- * @param [inout] sponge The context.
- * @param [out] out The output data.
- * @param [in] len The requested output data length in bytes.
- * @return CRYPTONITE_DECAF_FAILURE if the sponge has exhausted its output capacity.
- * @return CRYPTONITE_DECAF_SUCCESS otherwise.
- */  
-cryptonite_decaf_error_t cryptonite_decaf_sha3_output (
-    cryptonite_decaf_keccak_sponge_t sponge,
-    uint8_t * __restrict__ out,
-    size_t len
-) CRYPTONITE_DECAF_API_VIS;
+static inline void cryptonite_decaf_shake256_destroy(cryptonite_decaf_shake256_ctx_t ctx)
+{
+        cryptonite_decaf_bzero(ctx, sizeof(*ctx));
+}
 
-/**
- * @brief Squeeze output data from a CRYPTONITE_DECAF_SHA3 or CRYPTONITE_DECAF_SHAKE hash context.
- * This re-initializes the context to its starting parameters.
- *
- * @param [inout] sponge The context.
- * @param [out] out The output data.
- * @param [in] len The requested output data length in bytes.
- */  
-cryptonite_decaf_error_t cryptonite_decaf_sha3_final (
-    cryptonite_decaf_keccak_sponge_t sponge,
-    uint8_t * __restrict__ out,
-    size_t len
-) CRYPTONITE_DECAF_API_VIS;
+static inline void cryptonite_decaf_shake256_hash(uint8_t *out, size_t outlen, const uint8_t *in, size_t inlen)
+{
+        cryptonite_decaf_shake256_ctx_t ctx;
 
-/**
- * @brief Reset the sponge to the empty string.
- *
- * @param [inout] sponge The context.
- */  
-void cryptonite_decaf_sha3_reset (
-    cryptonite_decaf_keccak_sponge_t sponge
-) CRYPTONITE_DECAF_API_VIS;
+        cryptonite_decaf_shake256_init(ctx);
+        cryptonite_decaf_shake256_update(ctx, in, inlen);
 
-/**
- * @brief Return the default output length of the sponge construction,
- * for the purpose of C++ default operators.
- *
- * Returns n/8 for CRYPTONITE_DECAF_SHA3-n and 2n/8 for CRYPTONITE_DECAF_SHAKE-n.
- */  
-size_t cryptonite_decaf_sponge_default_output_bytes (
-    const cryptonite_decaf_keccak_sponge_t sponge /**< [inout] The context. */
-) CRYPTONITE_DECAF_API_VIS;
+        cryptonite_sha3_finalize_shake(ctx -> sc);
+        cryptonite_decaf_shake256_output(ctx, out, outlen);
 
-/**
- * @brief Return the default output length of the sponge construction,
- * for the purpose of C++ default operators.
- *
- * Returns n/8 for CRYPTONITE_DECAF_SHA3-n and SIZE_MAX for CRYPTONITE_DECAF_SHAKE-n.
- */  
-size_t cryptonite_decaf_sponge_max_output_bytes (
-    const cryptonite_decaf_keccak_sponge_t sponge /**< [inout] The context. */
-) CRYPTONITE_DECAF_API_VIS;
+        cryptonite_decaf_shake256_destroy(ctx);
+}
 
-/**
- * @brief Destroy a CRYPTONITE_DECAF_SHA3 or CRYPTONITE_DECAF_SHAKE sponge context by overwriting it with 0.
- * @param [out] sponge The context.
- */  
-void cryptonite_decaf_sponge_destroy (
-    cryptonite_decaf_keccak_sponge_t sponge
-) CRYPTONITE_DECAF_API_VIS;
-
-/**
- * @brief Hash (in) to (out)
- * @param [in] in The input data.
- * @param [in] inlen The length of the input data.
- * @param [out] out A buffer for the output data.
- * @param [in] outlen The length of the output data.
- * @param [in] params The parameters of the sponge hash.
- */  
-cryptonite_decaf_error_t cryptonite_decaf_sponge_hash (
-    const uint8_t *in,
-    size_t inlen,
-    uint8_t *out,
-    size_t outlen,
-    const struct cryptonite_decaf_kparams_s *params
-) CRYPTONITE_DECAF_API_VIS;
-
-/* FUTURE: expand/doxygenate individual CRYPTONITE_DECAF_SHAKE/CRYPTONITE_DECAF_SHA3 instances? */
-
-/** @cond internal */
-#define CRYPTONITE_DECAF_DEC_SHAKE(n) \
-    extern const struct cryptonite_decaf_kparams_s CRYPTONITE_DECAF_SHAKE##n##_params_s CRYPTONITE_DECAF_API_VIS; \
-    typedef struct cryptonite_decaf_shake##n##_ctx_s { cryptonite_decaf_keccak_sponge_t s; } cryptonite_decaf_shake##n##_ctx_t[1]; \
-    static inline void CRYPTONITE_DECAF_NONNULL cryptonite_decaf_shake##n##_init(cryptonite_decaf_shake##n##_ctx_t sponge) { \
-        cryptonite_decaf_sponge_init(sponge->s, &CRYPTONITE_DECAF_SHAKE##n##_params_s); \
-    } \
-    static inline void CRYPTONITE_DECAF_NONNULL cryptonite_decaf_shake##n##_gen_init(cryptonite_decaf_keccak_sponge_t sponge) { \
-        cryptonite_decaf_sponge_init(sponge, &CRYPTONITE_DECAF_SHAKE##n##_params_s); \
-    } \
-    static inline cryptonite_decaf_error_t CRYPTONITE_DECAF_NONNULL cryptonite_decaf_shake##n##_update(cryptonite_decaf_shake##n##_ctx_t sponge, const uint8_t *in, size_t inlen ) { \
-        return cryptonite_decaf_sha3_update(sponge->s, in, inlen); \
-    } \
-    static inline void  CRYPTONITE_DECAF_NONNULL cryptonite_decaf_shake##n##_final(cryptonite_decaf_shake##n##_ctx_t sponge, uint8_t *out, size_t outlen ) { \
-        cryptonite_decaf_sha3_output(sponge->s, out, outlen); \
-        cryptonite_decaf_sponge_init(sponge->s, &CRYPTONITE_DECAF_SHAKE##n##_params_s); \
-    } \
-    static inline void  CRYPTONITE_DECAF_NONNULL cryptonite_decaf_shake##n##_output(cryptonite_decaf_shake##n##_ctx_t sponge, uint8_t *out, size_t outlen ) { \
-        cryptonite_decaf_sha3_output(sponge->s, out, outlen); \
-    } \
-    static inline void  CRYPTONITE_DECAF_NONNULL cryptonite_decaf_shake##n##_hash(uint8_t *out, size_t outlen, const uint8_t *in, size_t inlen) { \
-        cryptonite_decaf_sponge_hash(in,inlen,out,outlen,&CRYPTONITE_DECAF_SHAKE##n##_params_s); \
-    } \
-    static inline void  CRYPTONITE_DECAF_NONNULL cryptonite_decaf_shake##n##_destroy( cryptonite_decaf_shake##n##_ctx_t sponge ) { \
-        cryptonite_decaf_sponge_destroy(sponge->s); \
-    }
-
-#define CRYPTONITE_DECAF_DEC_SHA3(n) \
-    extern const struct cryptonite_decaf_kparams_s CRYPTONITE_DECAF_SHA3_##n##_params_s CRYPTONITE_DECAF_API_VIS; \
-    typedef struct cryptonite_decaf_sha3_##n##_ctx_s { cryptonite_decaf_keccak_sponge_t s; } cryptonite_decaf_sha3_##n##_ctx_t[1]; \
-    static inline void CRYPTONITE_DECAF_NONNULL cryptonite_decaf_sha3_##n##_init(cryptonite_decaf_sha3_##n##_ctx_t sponge) { \
-        cryptonite_decaf_sponge_init(sponge->s, &CRYPTONITE_DECAF_SHA3_##n##_params_s); \
-    } \
-    static inline void CRYPTONITE_DECAF_NONNULL cryptonite_decaf_sha3_##n##_gen_init(cryptonite_decaf_keccak_sponge_t sponge) { \
-        cryptonite_decaf_sponge_init(sponge, &CRYPTONITE_DECAF_SHA3_##n##_params_s); \
-    } \
-    static inline cryptonite_decaf_error_t CRYPTONITE_DECAF_NONNULL cryptonite_decaf_sha3_##n##_update(cryptonite_decaf_sha3_##n##_ctx_t sponge, const uint8_t *in, size_t inlen ) { \
-        return cryptonite_decaf_sha3_update(sponge->s, in, inlen); \
-    } \
-    static inline cryptonite_decaf_error_t CRYPTONITE_DECAF_NONNULL cryptonite_decaf_sha3_##n##_final(cryptonite_decaf_sha3_##n##_ctx_t sponge, uint8_t *out, size_t outlen ) { \
-        cryptonite_decaf_error_t ret = cryptonite_decaf_sha3_output(sponge->s, out, outlen); \
-        cryptonite_decaf_sponge_init(sponge->s, &CRYPTONITE_DECAF_SHA3_##n##_params_s); \
-        return ret; \
-    } \
-    static inline cryptonite_decaf_error_t CRYPTONITE_DECAF_NONNULL cryptonite_decaf_sha3_##n##_output(cryptonite_decaf_sha3_##n##_ctx_t sponge, uint8_t *out, size_t outlen ) { \
-        return cryptonite_decaf_sha3_output(sponge->s, out, outlen); \
-    } \
-    static inline cryptonite_decaf_error_t CRYPTONITE_DECAF_NONNULL cryptonite_decaf_sha3_##n##_hash(uint8_t *out, size_t outlen, const uint8_t *in, size_t inlen) { \
-        return cryptonite_decaf_sponge_hash(in,inlen,out,outlen,&CRYPTONITE_DECAF_SHA3_##n##_params_s); \
-    } \
-    static inline void CRYPTONITE_DECAF_NONNULL cryptonite_decaf_sha3_##n##_destroy(cryptonite_decaf_sha3_##n##_ctx_t sponge) { \
-        cryptonite_decaf_sponge_destroy(sponge->s); \
-    }
-/** @endcond */
-
-CRYPTONITE_DECAF_DEC_SHAKE(128)
-CRYPTONITE_DECAF_DEC_SHAKE(256)
-CRYPTONITE_DECAF_DEC_SHA3(224)
-CRYPTONITE_DECAF_DEC_SHA3(256)
-CRYPTONITE_DECAF_DEC_SHA3(384)
-CRYPTONITE_DECAF_DEC_SHA3(512)
-#undef CRYPTONITE_DECAF_DEC_SHAKE
-#undef CRYPTONITE_DECAF_DEC_SHA3
-
-#ifdef __cplusplus
-} /* extern "C" */
 #endif
-    
-#endif /* __CRYPTONITE_DECAF_SHAKE_H__ */
