@@ -44,12 +44,22 @@ vectors_hmac_sha256 =
 
 tests = testGroup "PBKDF2"
     [ testGroup "KATs-HMAC-SHA1" (katTests (PBKDF2.prfHMAC SHA1) vectors_hmac_sha1)
+    , testGroup "KATs-HMAC-SHA1 (fast)" (katTestFastPBKDF2_SHA1 vectors_hmac_sha1)
     , testGroup "KATs-HMAC-SHA256" (katTests (PBKDF2.prfHMAC SHA256) vectors_hmac_sha256)
+    , testGroup "KATs-HMAC-SHA256 (fast)" (katTestFastPBKDF2_SHA256 vectors_hmac_sha256)
     ]
   where katTests prf vects = map (toKatTest prf) $ zip is vects
 
         toKatTest prf (i, ((pass, salt, iter, dkLen), output)) =
             testCase (show i) (output @=? PBKDF2.generate prf (PBKDF2.Parameters iter dkLen) pass salt)
+
+        katTestFastPBKDF2_SHA1 = map toKatTestFastPBKDF2_SHA1 . zip is
+        toKatTestFastPBKDF2_SHA1 (i, ((pass, salt, iter, dkLen), output)) =
+            testCase (show i) (output @=? PBKDF2.fastPBKDF2_SHA1 (PBKDF2.Parameters iter dkLen) pass salt)
+
+        katTestFastPBKDF2_SHA256 = map toKatTestFastPBKDF2_SHA256 . zip is
+        toKatTestFastPBKDF2_SHA256 (i, ((pass, salt, iter, dkLen), output)) =
+            testCase (show i) (output @=? PBKDF2.fastPBKDF2_SHA256 (PBKDF2.Parameters iter dkLen) pass salt)
 
         is :: [Int]
         is = [1..]

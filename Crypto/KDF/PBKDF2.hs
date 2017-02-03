@@ -8,17 +8,22 @@
 -- Password Based Key Derivation Function 2
 --
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE ForeignFunctionInterface #-}
+
 module Crypto.KDF.PBKDF2
     ( PRF
     , prfHMAC
     , Parameters(..)
     , generate
+    , fastPBKDF2_SHA1
+    , fastPBKDF2_SHA256
     ) where
 
 import           Data.Word
 import           Data.Bits
 import           Foreign.Marshal.Alloc
-import           Foreign.Ptr (plusPtr)
+import           Foreign.Ptr (plusPtr, Ptr)
+import           Foreign.C.Types (CUInt(..), CInt(..), CSize(..))
 
 import           Crypto.Hash (HashAlgorithm)
 import qualified Crypto.MAC.HMAC as HMAC
@@ -100,3 +105,48 @@ generate prf params password salt =
             c = fromIntegral ((w `shiftR` 8) .&. 0xff)
             d = fromIntegral (w .&. 0xff)
 {-# NOINLINE generate #-}
+
+fastPBKDF2_SHA1 :: (ByteArrayAccess password, ByteArrayAccess salt, ByteArray out)
+                => Parameters
+                -> password
+                -> salt
+                -> out
+fastPBKDF2_SHA1 params password salt =
+    B.allocAndFreeze (outputLength params) $ \outPtr ->
+    B.withByteArray password $ \passPtr ->
+    B.withByteArray salt $ \saltPtr ->
+        c_cryptonite_fastpbkdf2_hmac_sha1
+            passPtr (fromIntegral $ B.length password)
+            saltPtr (fromIntegral $ B.length salt)
+            (fromIntegral $ iterCounts params)
+            outPtr (fromIntegral $ outputLength params)
+
+fastPBKDF2_SHA256 :: (ByteArrayAccess password, ByteArrayAccess salt, ByteArray out)
+                  => Parameters
+                  -> password
+                  -> salt
+                  -> out
+fastPBKDF2_SHA256 params password salt =
+    B.allocAndFreeze (outputLength params) $ \outPtr ->
+    B.withByteArray password $ \passPtr ->
+    B.withByteArray salt $ \saltPtr ->
+        c_cryptonite_fastpbkdf2_hmac_sha256
+            passPtr (fromIntegral $ B.length password)
+            saltPtr (fromIntegral $ B.length salt)
+            (fromIntegral $ iterCounts params)
+            outPtr (fromIntegral $ outputLength params)
+
+
+foreign import ccall unsafe "cryptonite_pbkdf2.h cryptonite_fastpbkdf2_hmac_sha1"
+    c_cryptonite_fastpbkdf2_hmac_sha1 :: Ptr Word8 -> CSize
+                                      -> Ptr Word8 -> CSize
+                                      -> CUInt
+                                      -> Ptr Word8 -> CSize
+                                      -> IO ()
+
+foreign import ccall unsafe "cryptonite_pbkdf2.h cryptonite_fastpbkdf2_hmac_sha256"
+    c_cryptonite_fastpbkdf2_hmac_sha256 :: Ptr Word8 -> CSize
+                                        -> Ptr Word8 -> CSize
+                                        -> CUInt
+                                        -> Ptr Word8 -> CSize
+                                        -> IO ()

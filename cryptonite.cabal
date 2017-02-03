@@ -240,6 +240,7 @@ Library
                    , cbits/cryptonite_tiger.c
                    , cbits/cryptonite_whirlpool.c
                    , cbits/cryptonite_scrypt.c
+                   , cbits/cryptonite_pbkdf2.c
   include-dirs:  cbits cbits/ed25519
 
   if arch(x86_64)
