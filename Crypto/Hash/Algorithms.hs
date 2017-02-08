@@ -37,6 +37,8 @@ module Crypto.Hash.Algorithms
     , SHA3_256(..)
     , SHA3_384(..)
     , SHA3_512(..)
+    , SHAKE128(..)
+    , SHAKE256(..)
     , Skein256_224(..)
     , Skein256_256(..)
     , Skein512_224(..)
