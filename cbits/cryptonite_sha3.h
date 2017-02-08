@@ -31,7 +31,7 @@ struct sha3_ctx
 	uint32_t bufindex;
 	uint32_t bufsz;
 	uint64_t state[25];
-	uint8_t  buf[0]; /* maximum SHA3-224 is 144 bytes, otherwise buffer can be decreases */
+	uint8_t  buf[0]; /* maximum SHAKE128 is 168 bytes, otherwise buffer can be decreased */
 };
 
 #define SHA3_CTX_SIZE		sizeof(struct sha3_ctx)
@@ -39,5 +39,8 @@ struct sha3_ctx
 void cryptonite_sha3_init(struct sha3_ctx *ctx, uint32_t hashlen);
 void cryptonite_sha3_update(struct sha3_ctx *ctx, const uint8_t *data, uint32_t len);
 void cryptonite_sha3_finalize(struct sha3_ctx *ctx, uint32_t hashlen, uint8_t *out);
+
+void cryptonite_sha3_finalize_shake(struct sha3_ctx *ctx);
+void cryptonite_sha3_output(struct sha3_ctx *ctx, uint8_t *out, uint32_t len);
 
 #endif

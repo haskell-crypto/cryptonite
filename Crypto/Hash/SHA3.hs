@@ -6,7 +6,7 @@
 -- Portability : unknown
 --
 -- module containing the binding functions to work with the
--- SHA3 cryptographic hash.
+-- SHA3 cryptographic hash and extendable output functions.
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
@@ -19,7 +19,6 @@ import           Foreign.Ptr (Ptr)
 import           Data.Data
 import           Data.Typeable
 import           Data.Word (Word8, Word32)
-
 
 -- | SHA3 (224 bits) cryptographic hash algorithm
 data SHA3_224 = SHA3_224
@@ -68,7 +67,6 @@ instance HashAlgorithm SHA3_512 where
     hashInternalInit p        = c_sha3_init p 512
     hashInternalUpdate        = c_sha3_update
     hashInternalFinalize p    = c_sha3_finalize p 512
-
 
 foreign import ccall unsafe "cryptonite_sha3_init"
     c_sha3_init :: Ptr (Context a) -> Word32 -> IO ()
