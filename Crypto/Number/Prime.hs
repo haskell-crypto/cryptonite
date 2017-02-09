@@ -27,6 +27,7 @@ import Crypto.Number.Basic (sqrti, gcde)
 import Crypto.Number.ModArithmetic (expSafe)
 import Crypto.Random.Types
 import Crypto.Random.Probabilistic
+import Crypto.Error
 
 import Data.Bits
 
@@ -37,25 +38,48 @@ import Data.Bits
 isProbablyPrime :: Integer -> Bool
 isProbablyPrime !n
     | any (\p -> p `divides` n) (filter (< n) firstPrimes) = False
-    | primalityTestFermat 50 (n`div`2) n                   = primalityTestMillerRabin 30 n
+    | n >= 2 && n <= 2903                                  = True
+    | primalityTestFermat 50 (n `div` 2) n                 = primalityTestMillerRabin 30 n
     | otherwise                                            = False
 
--- | generate a prime number of the required bitsize
+-- | generate a prime number of the required bitsize (i.e. in the range
+--   [2^(b-1)+2^(b-2), 2^b)).
+--
+--   May throw a CryptoError_PrimeSizeInvalid if the requested size is less
+--   than 5 bits, as the smallest prime meeting these conditions is 29.
+--   This function requires that the two highest bits are set, so that when
+--   multiplied with another prime to create a key, it is guaranteed to be of
+--   the proper size.
 generatePrime :: MonadRandom m => Int -> m Integer
 generatePrime bits = do
-    sp <- generateParams bits (Just SetTwoHighest) True
-    return $ findPrimeFrom sp
+    if bits < 5 then
+        throwCryptoError $ CryptoFailed $ CryptoError_PrimeSizeInvalid
+    else do
+        sp <- generateParams bits (Just SetTwoHighest) True
+        let prime = findPrimeFrom sp
+        if prime < 1 `shiftL` bits then
+            return $ prime
+        else generatePrime bits
 
 -- | generate a prime number of the form 2p+1 where p is also prime.
 -- it is also knowed as a Sophie Germaine prime or safe prime.
 --
 -- The number of safe prime is significantly smaller to the number of prime,
 -- as such it shouldn't be used if this number is supposed to be kept safe.
+--
+-- May throw a CryptoError_PrimeSizeInvalid if the requested size is less than
+-- 6 bits, as the smallest safe prime with the two highest bits set is 59.
 generateSafePrime :: MonadRandom m => Int -> m Integer
 generateSafePrime bits = do
-    sp <- generateParams bits (Just SetTwoHighest) True
-    let p = findPrimeFromWith (\i -> isProbablyPrime (2*i+1)) (sp `div` 2)
-    return (2*p+1)
+    if bits < 6 then
+        throwCryptoError $ CryptoFailed $ CryptoError_PrimeSizeInvalid
+    else do
+        sp <- generateParams bits (Just SetTwoHighest) True
+        let p = findPrimeFromWith (\i -> isProbablyPrime (2*i+1)) (sp `div` 2)
+        let val = 2 * p + 1
+        if val < 1 `shiftL` bits then
+            return $ val
+        else generateSafePrime bits
 
 -- | find a prime from a starting point where the property hold.
 findPrimeFromWith :: (Integer -> Bool) -> Integer -> Integer
