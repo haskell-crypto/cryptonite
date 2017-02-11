@@ -42,11 +42,30 @@ vectors_hmac_sha256 =
         )
     ]
 
+vectors_hmac_sha512 :: [ (VectParams, ByteString) ]
+vectors_hmac_sha512 =
+    [   ( ("password", "salt", 1, 32)
+        , "\x86\x7f\x70\xcf\x1a\xde\x02\xcf\xf3\x75\x25\x99\xa3\xa5\x3d\xc4\xaf\x34\xc7\xa6\x69\x81\x5a\xe5\xd5\x13\x55\x4e\x1c\x8c\xf2\x52"
+        )
+    ,   ( ("password", "salt", 2, 32)
+        ,  "\xe1\xd9\xc1\x6a\xa6\x81\x70\x8a\x45\xf5\xc7\xc4\xe2\x15\xce\xb6\x6e\x01\x1a\x2e\x9f\x00\x40\x71\x3f\x18\xae\xfd\xb8\x66\xd5\x3c"
+        )
+    ,   ( ("password", "salt", 4096, 32)
+        ,  "\xd1\x97\xb1\xb3\x3d\xb0\x14\x3e\x01\x8b\x12\xf3\xd1\xd1\x47\x9e\x6c\xde\xbd\xcc\x97\xc5\xc0\xf8\x7f\x69\x02\xe0\x72\xf4\x57\xb5"
+        )
+    ,   ( ("passwordPASSWORDpassword", "saltSALTsaltSALTsaltSALTsaltSALTsalt", 1, 72)
+        , "n\x23\xf2\x76\x38\x08\x4b\x0f\x7e\xa1\x73\x4e\x0d\x98\x41\xf5\x5d\xd2\x9e\xa6\x0a\x83\x44\x66\xf3\x39\x6b\xac\x80\x1f\xac\x1e\xeb\x63\x80\x2f\x03\xa0\xb4\xac\xd7\x60\x3e\x36\x99\xc8\xb7\x44\x37\xbe\x83\xff\x01\xad\x7f\x55\xda\xc1\xef\x60\xf4\xd5\x64\x80\xc3\x5e\xe6\x8f\xd5\x2c\x69\x36"
+        )
+    ]
+
+
 tests = testGroup "PBKDF2"
     [ testGroup "KATs-HMAC-SHA1" (katTests (PBKDF2.prfHMAC SHA1) vectors_hmac_sha1)
     , testGroup "KATs-HMAC-SHA1 (fast)" (katTestFastPBKDF2_SHA1 vectors_hmac_sha1)
     , testGroup "KATs-HMAC-SHA256" (katTests (PBKDF2.prfHMAC SHA256) vectors_hmac_sha256)
     , testGroup "KATs-HMAC-SHA256 (fast)" (katTestFastPBKDF2_SHA256 vectors_hmac_sha256)
+    , testGroup "KATs-HMAC-SHA512" (katTests (PBKDF2.prfHMAC SHA512) vectors_hmac_sha512)
+    , testGroup "KATs-HMAC-SHA512 (fast)" (katTestFastPBKDF2_SHA512 vectors_hmac_sha512)
     ]
   where katTests prf vects = map (toKatTest prf) $ zip is vects
 
@@ -60,6 +79,11 @@ tests = testGroup "PBKDF2"
         katTestFastPBKDF2_SHA256 = map toKatTestFastPBKDF2_SHA256 . zip is
         toKatTestFastPBKDF2_SHA256 (i, ((pass, salt, iter, dkLen), output)) =
             testCase (show i) (output @=? PBKDF2.fastPBKDF2_SHA256 (PBKDF2.Parameters iter dkLen) pass salt)
+
+        katTestFastPBKDF2_SHA512 = map toKatTestFastPBKDF2_SHA512 . zip is
+        toKatTestFastPBKDF2_SHA512 (i, ((pass, salt, iter, dkLen), output)) =
+            testCase (show i) (output @=? PBKDF2.fastPBKDF2_SHA512 (PBKDF2.Parameters iter dkLen) pass salt)
+
 
         is :: [Int]
         is = [1..]
