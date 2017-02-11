@@ -3,7 +3,7 @@
 -- from <http://www.ietf.org/rfc/rfc6070.txt>
 module KAT_PBKDF2 (tests) where
 
-import Crypto.Hash (SHA1(..), SHA256(..))
+import Crypto.Hash (SHA1(..), SHA256(..), SHA512(..))
 import qualified Crypto.KDF.PBKDF2 as PBKDF2
 
 import Data.ByteString (ByteString)

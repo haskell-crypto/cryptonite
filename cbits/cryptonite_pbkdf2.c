@@ -20,6 +20,7 @@
 #include "cryptonite_bitfn.h"
 #include "cryptonite_sha1.h"
 #include "cryptonite_sha256.h"
+#include "cryptonite_sha512.h"
 
 /* --- MSVC doesn't support C99 --- */
 #ifdef _MSC_VER
@@ -337,6 +338,59 @@ DECL_PBKDF2(sha256,
             sha256_extract,
             sha256_xor);
 
+static inline void sha512_extract(struct sha512_ctx *restrict ctx, uint8_t *restrict out)
+{
+  write64_be(ctx->h[0], out);
+  write64_be(ctx->h[1], out + 8);
+  write64_be(ctx->h[2], out + 16);
+  write64_be(ctx->h[3], out + 24);
+  write64_be(ctx->h[4], out + 32);
+  write64_be(ctx->h[5], out + 40);
+  write64_be(ctx->h[6], out + 48);
+  write64_be(ctx->h[7], out + 56);
+}
+
+static inline void sha512_cpy(struct sha512_ctx *restrict out, const struct sha512_ctx *restrict in)
+{
+  out->h[0] = in->h[0];
+  out->h[1] = in->h[1];
+  out->h[2] = in->h[2];
+  out->h[3] = in->h[3];
+  out->h[4] = in->h[4];
+  out->h[5] = in->h[5];
+  out->h[6] = in->h[6];
+  out->h[7] = in->h[7];
+}
+
+static inline void sha512_xor(struct sha512_ctx *restrict out, const struct sha512_ctx *restrict in)
+{
+  out->h[0] ^= in->h[0];
+  out->h[1] ^= in->h[1];
+  out->h[2] ^= in->h[2];
+  out->h[3] ^= in->h[3];
+  out->h[4] ^= in->h[4];
+  out->h[5] ^= in->h[5];
+  out->h[6] ^= in->h[6];
+  out->h[7] ^= in->h[7];
+}
+
+void cryptonite_sha512_transform(struct sha512_ctx* ctx, uint8_t block[SHA512_BLOCK_SIZE])
+{
+  cryptonite_sha512_update(ctx, block, SHA512_BLOCK_SIZE);
+}
+
+DECL_PBKDF2(sha512,
+            SHA512_BLOCK_SIZE,
+            SHA512_DIGEST_SIZE,
+            struct sha512_ctx,
+            cryptonite_sha512_init,
+            cryptonite_sha512_update,
+            cryptonite_sha512_transform,
+            cryptonite_sha512_finalize,
+            sha512_cpy,
+            sha512_extract,
+            sha512_xor);
+
 void cryptonite_fastpbkdf2_hmac_sha1( const uint8_t *pw, size_t npw
                                     , const uint8_t *salt, size_t nsalt
                                     , uint32_t iterations
@@ -353,4 +407,13 @@ void cryptonite_fastpbkdf2_hmac_sha256( const uint8_t *pw, size_t npw
                                       )
 {
   PBKDF2(sha256)(pw, npw, salt, nsalt, iterations, out, nout);
+}
+
+void cryptonite_fastpbkdf2_hmac_sha512( const uint8_t *pw, size_t npw
+                                      , const uint8_t *salt, size_t nsalt
+                                      , uint32_t iterations
+                                      , uint8_t *out, size_t nout
+                                      )
+{
+  PBKDF2(sha512)(pw, npw, salt, nsalt, iterations, out, nout);
 }
