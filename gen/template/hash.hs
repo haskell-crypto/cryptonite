@@ -9,15 +9,17 @@
 -- %%MODULENAME%% cryptographic hash.
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 module Crypto.Hash.%%MODULENAME%% ( %%MODULENAME%% (..) ) where
 
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
+import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 -- | %%MODULENAME%% cryptographic hash algorithm
 data %%MODULENAME%% = %%MODULENAME%%
-    deriving (Show)
+    deriving (Show,Typeable)
 
 instance HashAlgorithm %%MODULENAME%% where
     hashBlockSize  _          = %%BLOCK_SIZE_BYTES%%
