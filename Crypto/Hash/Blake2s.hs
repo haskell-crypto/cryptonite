@@ -11,7 +11,7 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 module Crypto.Hash.Blake2s
-    (  Blake2s_224 (..), Blake2s_256 (..)
+    (  Blake2s_160 (..), Blake2s_224 (..), Blake2s_256 (..)
     ) where
 
 import           Crypto.Hash.Types
@@ -20,6 +20,18 @@ import           Data.Data
 import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
+
+-- | Blake2s (160 bits) cryptographic hash algorithm
+data Blake2s_160 = Blake2s_160
+    deriving (Show,Data,Typeable)
+
+instance HashAlgorithm Blake2s_160 where
+    hashBlockSize  _          = 64
+    hashDigestSize _          = 20
+    hashInternalContextSize _ = 185
+    hashInternalInit p        = c_blake2s_init p 160
+    hashInternalUpdate        = c_blake2s_update
+    hashInternalFinalize p    = c_blake2s_finalize p 160
 
 -- | Blake2s (224 bits) cryptographic hash algorithm
 data Blake2s_224 = Blake2s_224

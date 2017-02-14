@@ -11,10 +11,15 @@
 module Crypto.Hash.Algorithms
     ( HashAlgorithm
     -- * hash algorithms
+    , Blake2s_160(..)
     , Blake2s_224(..)
-    , Blake2sp_224(..)
     , Blake2s_256(..)
+    , Blake2sp_224(..)
     , Blake2sp_256(..)
+    , Blake2b_160(..)
+    , Blake2b_224(..)
+    , Blake2b_256(..)
+    , Blake2b_384(..)
     , Blake2b_512(..)
     , Blake2bp_512(..)
     , MD2(..)
