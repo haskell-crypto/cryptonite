@@ -26,10 +26,12 @@
 
 #include <stdint.h>
 
+# define SHA1_BLOCK_SIZE 64
+
 struct sha1_ctx
 {
 	uint64_t sz;
-	uint8_t  buf[64];
+	uint8_t  buf[SHA1_BLOCK_SIZE];
 	uint32_t h[5];
 };
 
