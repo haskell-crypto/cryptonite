@@ -14,12 +14,13 @@ module Crypto.Hash.MD2 ( MD2 (..) ) where
 
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
+import           Data.Data
 import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 -- | MD2 cryptographic hash algorithm
 data MD2 = MD2
-    deriving (Show,Typeable)
+    deriving (Show,Data,Typeable)
 
 instance HashAlgorithm MD2 where
     hashBlockSize  _          = 16

@@ -16,13 +16,14 @@ module Crypto.Hash.%%MODULENAME%%
 
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
+import           Data.Data
 import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 %{CUSTOMIZABLE%}
 -- | %%MODULENAME%% (%%CUSTOM_BITSIZE%% bits) cryptographic hash algorithm
 data %%MODULENAME%%_%%CUSTOM_BITSIZE%% = %%MODULENAME%%_%%CUSTOM_BITSIZE%%
-    deriving (Show,Typeable)
+    deriving (Show,Data,Typeable)
 
 instance HashAlgorithm %%MODULENAME%%_%%CUSTOM_BITSIZE%% where
     hashBlockSize  _          = %%CUSTOM_BLOCK_SIZE_BYTES%%

@@ -14,12 +14,13 @@ module Crypto.Hash.SHA224 ( SHA224 (..) ) where
 
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
+import           Data.Data
 import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 -- | SHA224 cryptographic hash algorithm
 data SHA224 = SHA224
-    deriving (Show,Typeable)
+    deriving (Show,Data,Typeable)
 
 instance HashAlgorithm SHA224 where
     hashBlockSize  _          = 64
