@@ -14,12 +14,13 @@ module Crypto.Hash.RIPEMD160 ( RIPEMD160 (..) ) where
 
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
+import           Data.Data
 import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 -- | RIPEMD160 cryptographic hash algorithm
 data RIPEMD160 = RIPEMD160
-    deriving (Show,Typeable)
+    deriving (Show,Data,Typeable)
 
 instance HashAlgorithm RIPEMD160 where
     hashBlockSize  _          = 64

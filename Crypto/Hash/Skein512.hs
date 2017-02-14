@@ -16,13 +16,14 @@ module Crypto.Hash.Skein512
 
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
+import           Data.Data
 import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 
 -- | Skein512 (224 bits) cryptographic hash algorithm
 data Skein512_224 = Skein512_224
-    deriving (Show,Typeable)
+    deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Skein512_224 where
     hashBlockSize  _          = 64
@@ -34,7 +35,7 @@ instance HashAlgorithm Skein512_224 where
 
 -- | Skein512 (256 bits) cryptographic hash algorithm
 data Skein512_256 = Skein512_256
-    deriving (Show,Typeable)
+    deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Skein512_256 where
     hashBlockSize  _          = 64
@@ -46,7 +47,7 @@ instance HashAlgorithm Skein512_256 where
 
 -- | Skein512 (384 bits) cryptographic hash algorithm
 data Skein512_384 = Skein512_384
-    deriving (Show,Typeable)
+    deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Skein512_384 where
     hashBlockSize  _          = 64
@@ -58,7 +59,7 @@ instance HashAlgorithm Skein512_384 where
 
 -- | Skein512 (512 bits) cryptographic hash algorithm
 data Skein512_512 = Skein512_512
-    deriving (Show,Typeable)
+    deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Skein512_512 where
     hashBlockSize  _          = 64
