@@ -104,7 +104,8 @@ static inline void sha3_do_chunk(uint64_t state[25], uint64_t buf[], int bufsz)
  */
 void cryptonite_sha3_init(struct sha3_ctx *ctx, uint32_t hashlen)
 {
-	int bufsz = 200 - 2 * (hashlen / 8);
+	/* assert(hashlen >= SHA3_BITSIZE_MIN && hashlen <= SHA3_BITSIZE_MAX) */
+	int bufsz = SHA3_BUF_SIZE(hashlen);
 	memset(ctx, 0, sizeof(*ctx) + bufsz);
 	ctx->bufsz = bufsz;
 }
@@ -131,7 +132,7 @@ void cryptonite_sha3_update(struct sha3_ctx *ctx, const uint8_t *data, uint32_t 
 	}
 
 	if (need_alignment(data, 8)) {
-		uint64_t tramp[200 - 2 * (128 / 8)];
+		uint64_t tramp[SHA3_BUF_SIZE_MAX/8];
 		ASSERT_ALIGNMENT(tramp, 8);
 		for (; len >= ctx->bufsz; len -= ctx->bufsz, data += ctx->bufsz) {
 			memcpy(tramp, data, ctx->bufsz / 8);

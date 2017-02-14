@@ -35,6 +35,22 @@ struct sha3_ctx
 };
 
 #define SHA3_CTX_SIZE		sizeof(struct sha3_ctx)
+#define SHA3_CTX_BUF_MAX_SIZE   (SHA3_CTX_SIZE + SHA3_BUF_SIZE_MAX)
+#define SHA3_BITSIZE_MIN   	128
+#define SHA3_BITSIZE_MAX    	512
+
+#define SHA3_BUF_SIZE(bitsize)  (200 - 2 * ((bitsize) / 8))
+
+#define SHA3_BUF_SIZE_MIN       SHA3_BUF_SIZE(SHA3_BITSIZE_MAX)
+#define SHA3_BUF_SIZE_MAX       SHA3_BUF_SIZE(SHA3_BITSIZE_MIN)
+
+/*
+ * buffer size:
+ *
+ * 128 bits (shake 128 bits) => 200 - 2 * (128 / 8) = 200 - 2*16 = 200 - 32  = 168 bytes
+ * 224 bits (SHA3 224 bits)  => 200 - 2 * (224 / 8) = 200 - 2*28 = 200 - 56  = 144 bytes
+ * 512 bits (SHA3 512 bits)  => 200 - 2 * (512 / 8) = 200 - 2*64 = 200 - 128 = 72 bytes
+ */
 
 void cryptonite_sha3_init(struct sha3_ctx *ctx, uint32_t hashlen);
 void cryptonite_sha3_update(struct sha3_ctx *ctx, const uint8_t *data, uint32_t len);
