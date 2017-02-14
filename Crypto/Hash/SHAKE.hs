@@ -33,7 +33,7 @@ import           GHC.TypeLits (Nat, KnownNat, natVal)
 -- correlated (one being a prefix of the other).  Results are unrelated to
 -- 'SHAKE256' results.
 data SHAKE128 (bitlen :: Nat) = SHAKE128
-    deriving (Show)
+    deriving (Show, Typeable)
 
 instance KnownNat bitlen => HashAlgorithm (SHAKE128 bitlen) where
     hashBlockSize  _          = 168
@@ -51,7 +51,7 @@ instance KnownNat bitlen => HashAlgorithm (SHAKE128 bitlen) where
 -- correlated (one being a prefix of the other).  Results are unrelated to
 -- 'SHAKE128' results.
 data SHAKE256 (bitlen :: Nat) = SHAKE256
-    deriving (Show)
+    deriving (Show, Typeable)
 
 instance KnownNat bitlen => HashAlgorithm (SHAKE256 bitlen) where
     hashBlockSize  _          = 136
