@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE KindSignatures #-}
@@ -11,10 +12,11 @@ module Crypto.Internal.Nat
     ( type IsDivisibleBy8
     ) where
 
-import           GHC.TypeLits (Nat, KnownNat, natVal, type (+), type (-), TypeError, ErrorMessage(..))
+import           GHC.TypeLits
 
 type family IsDiv8 (bitLen :: Nat) (n :: Nat) where
     IsDiv8 bitLen 0 = 'True
+#if MIN_VERSION_base(4,9,0)
     IsDiv8 bitLen 1 = TypeError ('Text "bitLen " ':<>: 'ShowType bitLen ':<>: 'Text " is not divisible by 8")
     IsDiv8 bitLen 2 = TypeError ('Text "bitLen " ':<>: 'ShowType bitLen ':<>: 'Text " is not divisible by 8")
     IsDiv8 bitLen 3 = TypeError ('Text "bitLen " ':<>: 'ShowType bitLen ':<>: 'Text " is not divisible by 8")
@@ -22,6 +24,15 @@ type family IsDiv8 (bitLen :: Nat) (n :: Nat) where
     IsDiv8 bitLen 5 = TypeError ('Text "bitLen " ':<>: 'ShowType bitLen ':<>: 'Text " is not divisible by 8")
     IsDiv8 bitLen 6 = TypeError ('Text "bitLen " ':<>: 'ShowType bitLen ':<>: 'Text " is not divisible by 8")
     IsDiv8 bitLen 7 = TypeError ('Text "bitLen " ':<>: 'ShowType bitLen ':<>: 'Text " is not divisible by 8")
+#else
+    IsDiv8 bitLen 1 = 'False
+    IsDiv8 bitLen 2 = 'False
+    IsDiv8 bitLen 3 = 'False
+    IsDiv8 bitLen 4 = 'False
+    IsDiv8 bitLen 5 = 'False
+    IsDiv8 bitLen 6 = 'False
+    IsDiv8 bitLen 7 = 'False
+#endif
     IsDiv8 bitLen n = IsDiv8 n (Mod8 n)
 
 type family Mod8 (n :: Nat) where
