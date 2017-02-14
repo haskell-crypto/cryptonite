@@ -9,15 +9,17 @@
 -- MD5 cryptographic hash.
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 module Crypto.Hash.MD5 ( MD5 (..) ) where
 
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
+import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 -- | MD5 cryptographic hash algorithm
 data MD5 = MD5
-    deriving (Show)
+    deriving (Show,Typeable)
 
 instance HashAlgorithm MD5 where
     hashBlockSize  _          = 64
