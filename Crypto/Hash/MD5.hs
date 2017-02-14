@@ -14,12 +14,13 @@ module Crypto.Hash.MD5 ( MD5 (..) ) where
 
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
+import           Data.Data
 import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 -- | MD5 cryptographic hash algorithm
 data MD5 = MD5
-    deriving (Show,Typeable)
+    deriving (Show,Data,Typeable)
 
 instance HashAlgorithm MD5 where
     hashBlockSize  _          = 64
