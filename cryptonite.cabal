@@ -203,7 +203,7 @@ Library
                      Crypto.Internal.Imports
                      Crypto.Internal.Words
                      Crypto.Internal.WordArray
-  Build-depends:     base >= 4.3 && < 5
+  Build-depends:     base >= 4.7 && < 5
                    , bytestring
                    , memory >= 0.12
                    , ghc-prim
