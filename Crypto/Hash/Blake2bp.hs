@@ -9,18 +9,20 @@
 -- Blake2bp cryptographic hash.
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 module Crypto.Hash.Blake2bp
     (  Blake2bp_512 (..)
     ) where
 
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
+import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 
 -- | Blake2bp (512 bits) cryptographic hash algorithm
 data Blake2bp_512 = Blake2bp_512
-    deriving (Show)
+    deriving (Show,Typeable)
 
 instance HashAlgorithm Blake2bp_512 where
     hashBlockSize  _          = 128

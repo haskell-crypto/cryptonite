@@ -9,15 +9,17 @@
 -- SHA1 cryptographic hash.
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 module Crypto.Hash.SHA1 ( SHA1 (..) ) where
 
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
+import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 -- | SHA1 cryptographic hash algorithm
 data SHA1 = SHA1
-    deriving (Show)
+    deriving (Show,Typeable)
 
 instance HashAlgorithm SHA1 where
     hashBlockSize  _          = 64
