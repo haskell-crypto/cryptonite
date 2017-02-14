@@ -205,6 +205,7 @@ Library
                      Crypto.Internal.WordArray
   if impl(ghc >= 7.8)
     Other-modules:   Crypto.Hash.SHAKE
+                     Crypto.Internal.Nat
   Build-depends:     base >= 4.3 && < 5
                    , bytestring
                    , memory >= 0.12
