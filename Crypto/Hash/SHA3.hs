@@ -6,7 +6,7 @@
 -- Portability : unknown
 --
 -- module containing the binding functions to work with the
--- SHA3 cryptographic hash and extendable output functions.
+-- SHA3 cryptographic hash.
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
