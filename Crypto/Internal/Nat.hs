@@ -1,10 +1,6 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE ForeignFunctionInterface #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -103,4 +99,3 @@ type family Mod8 (n :: Nat) where
     Mod8 n = Mod8 (n - 64)
 
 type IsDivisibleBy8 bitLen = IsDiv8 bitLen bitLen ~ 'True
-
