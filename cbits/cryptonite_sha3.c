@@ -98,13 +98,19 @@ static inline void sha3_do_chunk(uint64_t state[25], uint64_t buf[], int bufsz)
 	}
 }
 
+/*
+ * Initialize a SHA-3 / SHAKE context: hashlen is the security level (and
+ * half the capacity) in bits
+ */
 void cryptonite_sha3_init(struct sha3_ctx *ctx, uint32_t hashlen)
 {
-	int bufsz = 200 - 2 * (hashlen / 8);
+	/* assert(hashlen >= SHA3_BITSIZE_MIN && hashlen <= SHA3_BITSIZE_MAX) */
+	int bufsz = SHA3_BUF_SIZE(hashlen);
 	memset(ctx, 0, sizeof(*ctx) + bufsz);
 	ctx->bufsz = bufsz;
 }
 
+/* Update a SHA-3 / SHAKE context */
 void cryptonite_sha3_update(struct sha3_ctx *ctx, const uint8_t *data, uint32_t len)
 {
 	uint32_t to_fill;
@@ -126,7 +132,7 @@ void cryptonite_sha3_update(struct sha3_ctx *ctx, const uint8_t *data, uint32_t 
 	}
 
 	if (need_alignment(data, 8)) {
-		uint64_t tramp[200 - 2 * (224 / 8)];
+		uint64_t tramp[SHA3_BUF_SIZE_MAX/8];
 		ASSERT_ALIGNMENT(tramp, 8);
 		for (; len >= ctx->bufsz; len -= ctx->bufsz, data += ctx->bufsz) {
 			memcpy(tramp, data, ctx->bufsz / 8);
@@ -146,10 +152,8 @@ void cryptonite_sha3_update(struct sha3_ctx *ctx, const uint8_t *data, uint32_t 
 	}
 }
 
-void cryptonite_sha3_finalize(struct sha3_ctx *ctx, uint32_t hashlen, uint8_t *out)
+void cryptonite_sha3_finalize_with_pad_byte(struct sha3_ctx *ctx, uint8_t pad_byte)
 {
-	uint64_t w[25];
-
 	/* process full buffer if needed */
 	if (ctx->bufindex == ctx->bufsz) {
 		sha3_do_chunk(ctx->state, (uint64_t *) ctx->buf, ctx->bufsz / 8);
@@ -157,14 +161,67 @@ void cryptonite_sha3_finalize(struct sha3_ctx *ctx, uint32_t hashlen, uint8_t *o
 	}
 
 	/* add the 10*1 padding */
-	ctx->buf[ctx->bufindex++] = 0x06;
+	ctx->buf[ctx->bufindex++] = pad_byte;
 	memset(ctx->buf + ctx->bufindex, 0, ctx->bufsz - ctx->bufindex);
 	ctx->buf[ctx->bufsz - 1] |= 0x80;
 
 	/* process */
 	sha3_do_chunk(ctx->state, (uint64_t *) ctx->buf, ctx->bufsz / 8);
+	ctx->bufindex = 0;
+}
 
-	/* output */
-	cpu_to_le64_array(w, ctx->state, 25);
-	memcpy(out, w, hashlen / 8);
+/*
+ * Extract some bytes from a finalized SHA-3 / SHAKE context.
+ * May be called multiple times.
+ */
+void cryptonite_sha3_output(struct sha3_ctx *ctx, uint8_t *out, uint32_t len)
+{
+	uint64_t w[25];
+	uint8_t *wptr = (uint8_t *) w;
+	uint32_t still_avail;
+
+	still_avail = ctx->bufsz - ctx->bufindex;
+
+	if (ctx->bufindex == ctx->bufsz) {
+		/* squeeze the sponge again, without any input */
+		sha3_do_chunk(ctx->state, NULL, 0);
+		ctx->bufindex = 0;
+	}
+
+	/* use bytes already available if this block is fully consumed */
+	if (ctx->bufindex && len >= still_avail) {
+		cpu_to_le64_array(w, ctx->state, 25);
+		memcpy(out, wptr + ctx->bufindex, still_avail);
+		sha3_do_chunk(ctx->state, NULL, 0);
+		len -= still_avail;
+		out += still_avail;
+		ctx->bufindex = 0;
+	}
+
+	/* output as much ctx->bufsz-block */
+	for (; len > ctx->bufsz; len -= ctx->bufsz, out += ctx->bufsz) {
+		cpu_to_le64_array(w, ctx->state, 25);
+		memcpy(out, w, ctx->bufsz);
+		sha3_do_chunk(ctx->state, NULL, 0);
+	}
+
+	/* output from partial buffer */
+	if (len) {
+		cpu_to_le64_array(w, ctx->state, 25);
+		memcpy(out, wptr + ctx->bufindex, len);
+		ctx->bufindex += len;
+	}
+}
+
+/* Finalize a SHA-3 context and return the digest value */
+void cryptonite_sha3_finalize(struct sha3_ctx *ctx, uint32_t hashlen, uint8_t *out)
+{
+	cryptonite_sha3_finalize_with_pad_byte(ctx, 0x06);
+	cryptonite_sha3_output(ctx, out, hashlen / 8);
+}
+
+/* Finalize a SHAKE context. Output is read using cryptonite_sha3_output. */
+void cryptonite_sha3_finalize_shake(struct sha3_ctx *ctx)
+{
+	cryptonite_sha3_finalize_with_pad_byte(ctx, 0x1F);
 }
