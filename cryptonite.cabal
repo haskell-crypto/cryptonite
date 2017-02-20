@@ -44,6 +44,8 @@ extra-source-files:  cbits/*.h
                      cbits/p256/*.h
                      cbits/blake2/ref/*.h
                      cbits/blake2/sse/*.h
+                     cbits/argon2/*.h
+                     cbits/argon2/*.c
                      cbits/aes/x86ni_impl.c
                      tests/*.hs
 
@@ -63,6 +65,11 @@ Flag support_rdrand
 
 Flag support_pclmuldq
   Description:       Allow compilation with pclmuldq on architecture that supports it
+  Default:           False
+  Manual:            True
+
+Flag support_sse
+  Description:       Use SSE optimized version when existing (BLAKE2, ARGON2)
   Default:           False
   Manual:            True
 
@@ -293,6 +300,12 @@ Library
                   , cbits/blake2/ref/blake2b-ref.c
                   , cbits/blake2/ref/blake2bp-ref.c
     include-dirs: cbits/blake2/ref
+
+  if arch(x86_64) || flag(support_sse)
+    CPP-options:    -DSUPPORT_SSE
+
+  C-sources:      cbits/argon2/argon2.c
+  include-dirs:   cbits/argon2
 
   if os(windows)
     cpp-options:    -DWINDOWS
