@@ -18,6 +18,7 @@
 
 #include "cryptonite_pbkdf2.h"
 #include "cryptonite_bitfn.h"
+#include "cryptonite_align.h"
 #include "cryptonite_sha1.h"
 #include "cryptonite_sha256.h"
 #include "cryptonite_sha512.h"
@@ -31,35 +32,6 @@
 /* --- Common useful things --- */
 #define MIN(a, b) ((a) > (b)) ? (b) : (a)
 
-static inline void write32_be(uint32_t n, uint8_t out[4])
-{
-#if defined(__GNUC__) && __GNUC__ >= 4 && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  *(uint32_t *)(out) = __builtin_bswap32(n);
-#else
-  out[0] = (n >> 24) & 0xff;
-  out[1] = (n >> 16) & 0xff;
-  out[2] = (n >> 8) & 0xff;
-  out[3] = n & 0xff;
-#endif
-}
-
-static inline void write64_be(uint64_t n, uint8_t out[8])
-{
-#if defined(__GNUC__) &&  __GNUC__ >= 4 && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  *(uint64_t *)(out) = __builtin_bswap64(n);
-#else
-  write32_be((n >> 32) & 0xffffffff, out);
-  write32_be(n & 0xffffffff, out + 4);
-#endif
-}
-
-/* --- Optional OpenMP parallelisation of consecutive blocks --- */
-#ifdef WITH_OPENMP
-# define OPENMP_PARALLEL_FOR _Pragma("omp parallel for")
-#else
-# define OPENMP_PARALLEL_FOR
-#endif
-
 /* Prepare block (of blocksz bytes) to contain md padding denoting a msg-size
  * message (in bytes).  block has a prefix of used bytes.
  *
@@ -69,7 +41,7 @@ static inline void md_pad(uint8_t *block, size_t blocksz, size_t used, size_t ms
   memset(block + used, 0, blocksz - used - 4);
   block[used] = 0x80;
   block += blocksz - 4;
-  write32_be((uint32_t) (msg * 8), block);
+  store_be32(block, (uint32_t) (msg * 8));
 }
 
 /* Internal function/type names for hash-specific things. */
@@ -179,7 +151,7 @@ static inline void md_pad(uint8_t *block, size_t blocksz, size_t used, size_t ms
                                      uint8_t *out)                            \
   {                                                                           \
     uint8_t countbuf[4];                                                      \
-    write32_be(counter, countbuf);                                            \
+    store_be32(countbuf, counter);                                            \
                                                                               \
     /* Prepare loop-invariant padding block. */                               \
     uint8_t Ublock[_blocksz];                                                 \
@@ -229,7 +201,6 @@ static inline void md_pad(uint8_t *block, size_t blocksz, size_t used, size_t ms
     /* How many blocks do we need? */                                         \
     uint32_t blocks_needed = (uint32_t)(nout + _hashsz - 1) / _hashsz;        \
                                                                               \
-    OPENMP_PARALLEL_FOR                                                       \
     for (uint32_t counter = 1; counter <= blocks_needed; counter++)           \
     {                                                                         \
       uint8_t block[_hashsz];                                                 \
@@ -243,11 +214,11 @@ static inline void md_pad(uint8_t *block, size_t blocksz, size_t used, size_t ms
 
 static inline void sha1_extract(struct sha1_ctx *restrict ctx, uint8_t *restrict out)
 {
-  write32_be(ctx->h[0], out);
-  write32_be(ctx->h[1], out + 4);
-  write32_be(ctx->h[2], out + 8);
-  write32_be(ctx->h[3], out + 12);
-  write32_be(ctx->h[4], out + 16);
+	store_be32(out   , ctx->h[0]);
+	store_be32(out+4 , ctx->h[1]);
+	store_be32(out+8 , ctx->h[2]);
+	store_be32(out+12, ctx->h[3]);
+	store_be32(out+16, ctx->h[4]);
 }
 
 static inline void sha1_cpy(struct sha1_ctx *restrict out, const struct sha1_ctx *restrict in)
@@ -287,38 +258,38 @@ DECL_PBKDF2(sha1,
 
 static inline void sha256_extract(struct sha256_ctx *restrict ctx, uint8_t *restrict out)
 {
-  write32_be(ctx->h[0], out);
-  write32_be(ctx->h[1], out + 4);
-  write32_be(ctx->h[2], out + 8);
-  write32_be(ctx->h[3], out + 12);
-  write32_be(ctx->h[4], out + 16);
-  write32_be(ctx->h[5], out + 20);
-  write32_be(ctx->h[6], out + 24);
-  write32_be(ctx->h[7], out + 28);
+	store_be32(out   , ctx->h[0]);
+	store_be32(out+4 , ctx->h[1]);
+	store_be32(out+8 , ctx->h[2]);
+	store_be32(out+12, ctx->h[3]);
+	store_be32(out+16, ctx->h[4]);
+	store_be32(out+20, ctx->h[5]);
+	store_be32(out+24, ctx->h[6]);
+	store_be32(out+28, ctx->h[7]);
 }
 
 static inline void sha256_cpy(struct sha256_ctx *restrict out, const struct sha256_ctx *restrict in)
 {
-  out->h[0] = in->h[0];
-  out->h[1] = in->h[1];
-  out->h[2] = in->h[2];
-  out->h[3] = in->h[3];
-  out->h[4] = in->h[4];
-  out->h[5] = in->h[5];
-  out->h[6] = in->h[6];
-  out->h[7] = in->h[7];
+	out->h[0] = in->h[0];
+	out->h[1] = in->h[1];
+	out->h[2] = in->h[2];
+	out->h[3] = in->h[3];
+	out->h[4] = in->h[4];
+	out->h[5] = in->h[5];
+	out->h[6] = in->h[6];
+	out->h[7] = in->h[7];
 }
 
 static inline void sha256_xor(struct sha256_ctx *restrict out, const struct sha256_ctx *restrict in)
 {
-  out->h[0] ^= in->h[0];
-  out->h[1] ^= in->h[1];
-  out->h[2] ^= in->h[2];
-  out->h[3] ^= in->h[3];
-  out->h[4] ^= in->h[4];
-  out->h[5] ^= in->h[5];
-  out->h[6] ^= in->h[6];
-  out->h[7] ^= in->h[7];
+	out->h[0] ^= in->h[0];
+	out->h[1] ^= in->h[1];
+	out->h[2] ^= in->h[2];
+	out->h[3] ^= in->h[3];
+	out->h[4] ^= in->h[4];
+	out->h[5] ^= in->h[5];
+	out->h[6] ^= in->h[6];
+	out->h[7] ^= in->h[7];
 }
 
 void cryptonite_sha256_transform(struct sha256_ctx* ctx, uint8_t block[SHA256_BLOCK_SIZE])
@@ -340,43 +311,43 @@ DECL_PBKDF2(sha256,
 
 static inline void sha512_extract(struct sha512_ctx *restrict ctx, uint8_t *restrict out)
 {
-  write64_be(ctx->h[0], out);
-  write64_be(ctx->h[1], out + 8);
-  write64_be(ctx->h[2], out + 16);
-  write64_be(ctx->h[3], out + 24);
-  write64_be(ctx->h[4], out + 32);
-  write64_be(ctx->h[5], out + 40);
-  write64_be(ctx->h[6], out + 48);
-  write64_be(ctx->h[7], out + 56);
+	store_be64(out   , ctx->h[0]);
+	store_be64(out+8 , ctx->h[1]);
+	store_be64(out+16, ctx->h[2]);
+	store_be64(out+24, ctx->h[3]);
+	store_be64(out+32, ctx->h[4]);
+	store_be64(out+40, ctx->h[5]);
+	store_be64(out+48, ctx->h[6]);
+	store_be64(out+56, ctx->h[7]);
 }
 
 static inline void sha512_cpy(struct sha512_ctx *restrict out, const struct sha512_ctx *restrict in)
 {
-  out->h[0] = in->h[0];
-  out->h[1] = in->h[1];
-  out->h[2] = in->h[2];
-  out->h[3] = in->h[3];
-  out->h[4] = in->h[4];
-  out->h[5] = in->h[5];
-  out->h[6] = in->h[6];
-  out->h[7] = in->h[7];
+	out->h[0] = in->h[0];
+	out->h[1] = in->h[1];
+	out->h[2] = in->h[2];
+	out->h[3] = in->h[3];
+	out->h[4] = in->h[4];
+	out->h[5] = in->h[5];
+	out->h[6] = in->h[6];
+	out->h[7] = in->h[7];
 }
 
 static inline void sha512_xor(struct sha512_ctx *restrict out, const struct sha512_ctx *restrict in)
 {
-  out->h[0] ^= in->h[0];
-  out->h[1] ^= in->h[1];
-  out->h[2] ^= in->h[2];
-  out->h[3] ^= in->h[3];
-  out->h[4] ^= in->h[4];
-  out->h[5] ^= in->h[5];
-  out->h[6] ^= in->h[6];
-  out->h[7] ^= in->h[7];
+	out->h[0] ^= in->h[0];
+	out->h[1] ^= in->h[1];
+	out->h[2] ^= in->h[2];
+	out->h[3] ^= in->h[3];
+	out->h[4] ^= in->h[4];
+	out->h[5] ^= in->h[5];
+	out->h[6] ^= in->h[6];
+	out->h[7] ^= in->h[7];
 }
 
 void cryptonite_sha512_transform(struct sha512_ctx* ctx, uint8_t block[SHA512_BLOCK_SIZE])
 {
-  cryptonite_sha512_update(ctx, block, SHA512_BLOCK_SIZE);
+	cryptonite_sha512_update(ctx, block, SHA512_BLOCK_SIZE);
 }
 
 DECL_PBKDF2(sha512,

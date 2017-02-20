@@ -39,12 +39,70 @@ static inline uint32_t load_le32_aligned(const uint8_t *p)
 	return le32_to_cpu(*((uint32_t *) p));		
 }
 
+static inline void store_le32_aligned(uint8_t *dst, const uint32_t v)
+{
+	*((uint32_t *) dst) = cpu_to_le32(v);
+}
+
+static inline void store_be32_aligned(uint8_t *dst, const uint32_t v)
+{
+	*((uint32_t *) dst) = cpu_to_be32(v);
+}
+
+static inline void store_le64_aligned(uint8_t *dst, const uint64_t v)
+{
+	*((uint64_t *) dst) = cpu_to_le64(v);
+}
+
+static inline void store_be64_aligned(uint8_t *dst, const uint64_t v)
+{
+	*((uint64_t *) dst) = cpu_to_be64(v);
+}
+
 #ifdef UNALIGNED_ACCESS_OK
 #define load_le32(a) load_le32_aligned(a)
 #else
 static inline uint32_t load_le32(const uint8_t *p)
 {
 	return ((uint32_t)p[0]) | ((uint32_t)p[1] <<  8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
+}
+#endif
+
+#ifdef UNALIGNED_ACCESS_OK
+#define store_le32(a, b) store_le32_aligned(a, b)
+#else
+static inline void store_le32(uint8_t *dst, const uint32_t v)
+{
+	dst[0] = v; dst[1] = v >> 8; dst[2] = v >> 16; dst[3] = v >> 24;
+}
+#endif
+
+#ifdef UNALIGNED_ACCESS_OK
+#define store_be32(a, b) store_be32_aligned(a, b)
+#else
+static inline void store_be32(uint8_t *dst, const uint32_t v)
+{
+	dst[3] = v; dst[2] = v >> 8; dst[1] = v >> 16; dst[0] = v >> 24;
+}
+#endif
+
+#ifdef UNALIGNED_ACCESS_OK
+#define store_le64(a, b) store_le64_aligned(a, b)
+#else
+static inline void store_le64(uint8_t *dst, const uint64_t v)
+{
+	dst[0] = v      ; dst[1] = v >> 8 ; dst[2] = v >> 16; dst[3] = v >> 24;
+	dst[4] = v >> 32; dst[5] = v >> 40; dst[6] = v >> 48; dst[7] = v >> 56;
+}
+#endif
+
+#ifdef UNALIGNED_ACCESS_OK
+#define store_be64(a, b) store_be64_aligned(a, b)
+#else
+static inline void store_be64(uint8_t *dst, const uint64_t v)
+{
+	dst[7] = v      ; dst[6] = v >> 8 ; dst[5] = v >> 16; dst[4] = v >> 24;
+	dst[3] = v >> 32; dst[2] = v >> 40; dst[1] = v >> 48; dst[0] = v >> 56;
 }
 #endif
 
