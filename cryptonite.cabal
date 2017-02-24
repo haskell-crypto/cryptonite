@@ -233,7 +233,6 @@ Library
                    , cbits/cryptonite_sha256.c
                    , cbits/cryptonite_sha512.c
                    , cbits/cryptonite_sha3.c
-                   , cbits/cryptonite_keccak.c
                    , cbits/cryptonite_md2.c
                    , cbits/cryptonite_md4.c
                    , cbits/cryptonite_md5.c
