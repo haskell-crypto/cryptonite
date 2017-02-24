@@ -30,7 +30,6 @@ import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Error
 import           Control.Monad (when)
 import           Data.Word
-import           Data.Typeable
 import           Foreign.C
 import           Foreign.Ptr
 
@@ -48,11 +47,11 @@ data Variant =
                -- of data-depending and data-independent memory accesses, which gives
                -- some of Argon2i's resistance to side-channel cache timing attacks
                -- and much of Argon2d's resistance to GPU cracking attacks
-    deriving (Eq,Ord,Read,Show,Enum,Bounded,Typeable)
+    deriving (Eq,Ord,Read,Show,Enum,Bounded)
 
 -- | Which version of Argon2 to use
 data Version = Version10 | Version13
-    deriving (Eq,Ord,Read,Show,Enum,Bounded,Typeable)
+    deriving (Eq,Ord,Read,Show,Enum,Bounded)
 
 -- | The time cost, which defines the amount of computation realized and therefore the execution time, given in number of iterations.
 --
@@ -78,7 +77,7 @@ data Options = Options
     , variant     :: !Variant     -- ^ Which variant of Argon2 to use.
     , version     :: !Version     -- ^ Which version of Argon2 to use.
     }
-    deriving (Eq,Ord,Read,Show,Typeable)
+    deriving (Eq,Ord,Read,Show)
 
 saltMinLength :: Int
 saltMinLength = 8
