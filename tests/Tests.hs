@@ -16,6 +16,7 @@ import qualified KAT_MiyaguchiPreneel
 import qualified KAT_CMAC
 import qualified KAT_HMAC
 import qualified KAT_HKDF
+import qualified KAT_Argon2
 import qualified KAT_PBKDF2
 import qualified KAT_Curve25519
 import qualified KAT_Curve448
@@ -57,6 +58,7 @@ tests = testGroup "cryptonite"
         , KAT_Scrypt.tests
         , BCrypt.tests
         , KAT_HKDF.tests
+        , KAT_Argon2.tests
         ]
     , testGroup "block-cipher"
         [ KAT_AES.tests

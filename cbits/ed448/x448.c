@@ -36,7 +36,7 @@ typedef int64_t decaf_sdword_t;
 
 typedef struct { decaf_word_t limb[X448_LIMBS]; } gf_s, gf[1];
 
-const unsigned char X448_BASE_POINT[X448_BYTES] = {5};
+static const unsigned char X448_BASE_POINT[X448_BYTES] = {5};
 
 static const gf ZERO = {{{0}}}, ONE = {{{1}}};
 
