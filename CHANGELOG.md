@@ -1,3 +1,13 @@
+## 0.22
+
+* Add Argon2 (Password Hashing Competition winner) hash function
+* Update blake2 to latest upstream version
+* Add faster PBKDF2 functions for SHA1/SHA256/SHA512
+* Add SHAKE128 and SHAKE256
+* Cleanup prime generation, and add tests
+* Add Time-based One Time Password (TOTP) and HMAC-based One Time Password (HOTP)
+* Rename Ed448 module name to Curve448, old module name still valid for now
+
 ## 0.21
 
 * Drop automated tests with GHC 7.0, GHC 7.4, GHC 7.6. support dropped, but probably still working.
