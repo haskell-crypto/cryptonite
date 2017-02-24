@@ -2,6 +2,7 @@
 
 * Add Argon2 (Password Hashing Competition winner) hash function
 * Update blake2 to latest upstream version
+* Add extra blake2 hashing size
 * Add faster PBKDF2 functions for SHA1/SHA256/SHA512
 * Add SHAKE128 and SHAKE256
 * Cleanup prime generation, and add tests
