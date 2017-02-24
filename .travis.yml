@@ -22,6 +22,7 @@ addons:
          - cabal-install-1.22
          - cabal-install-1.24
          - cabal-install-head
+         - ghc-7.6.3
          - ghc-7.8.4
          - ghc-7.10.3
          - ghc-8.0.2
