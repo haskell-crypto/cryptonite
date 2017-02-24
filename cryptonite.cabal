@@ -35,7 +35,7 @@ Stability:           experimental
 Build-Type:          Simple
 Homepage:            https://github.com/haskell-crypto/cryptonite
 Bug-reports:         https://github.com/haskell-crypto/cryptonite/issues
-Cabal-Version:       >=1.10
+Cabal-Version:       >=1.18
 extra-doc-files:     README.md CHANGELOG.md
 extra-source-files:  cbits/*.h
                      cbits/aes/*.h
