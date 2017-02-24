@@ -225,3 +225,19 @@ void cryptonite_sha3_finalize_shake(struct sha3_ctx *ctx)
 {
 	cryptonite_sha3_finalize_with_pad_byte(ctx, 0x1F);
 }
+
+void cryptonite_keccak_init(struct sha3_ctx *ctx, uint32_t hashlen)
+{
+	cryptonite_sha3_init(ctx, hashlen);
+}
+
+void cryptonite_keccak_update(struct sha3_ctx *ctx, uint8_t *data, uint32_t len)
+{
+	cryptonite_sha3_update(ctx, data, len);
+}
+
+void cryptonite_keccak_finalize(struct sha3_ctx *ctx, uint32_t hashlen, uint8_t *out)
+{
+	cryptonite_sha3_finalize_with_pad_byte(ctx, 1);
+	cryptonite_sha3_output(ctx, out, hashlen / 8);
+}
