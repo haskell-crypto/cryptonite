@@ -125,6 +125,7 @@ Library
                      Crypto.Number.Prime
                      Crypto.Number.Serialize
                      Crypto.Number.Serialize.Internal
+                     Crypto.KDF.Argon2
                      Crypto.KDF.PBKDF2
                      Crypto.KDF.Scrypt
                      Crypto.KDF.BCrypt
@@ -340,6 +341,7 @@ Test-Suite test-cryptonite
                      KAT_AES.KATXTS
                      KAT_AES
                      KAT_AFIS
+                     KAT_Argon2
                      KAT_Blowfish
                      KAT_Camellia
                      KAT_Curve25519

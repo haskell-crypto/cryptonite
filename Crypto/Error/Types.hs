@@ -45,6 +45,10 @@ data CryptoError =
     | CryptoError_AuthenticationTagSizeInvalid
     -- Prime generation error
     | CryptoError_PrimeSizeInvalid
+    -- Parameter errors
+    | CryptoError_SaltTooSmall
+    | CryptoError_OutputLengthTooSmall
+    | CryptoError_OutputLengthTooBig
     deriving (Show,Eq,Enum,Data,Typeable)
 
 instance E.Exception CryptoError
