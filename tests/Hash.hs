@@ -1,8 +1,8 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
-#if MIN_VERSION_base(4,7,0)
 {-# LANGUAGE ExistentialQuantification #-}
+#if MIN_VERSION_base(4,7,0)
 {-# LANGUAGE DataKinds #-}
 #endif
 module Hash
