@@ -73,10 +73,7 @@ shakeFinalizeOutput :: (IsDivisibleBy8 bitLen, KnownNat bitLen)
                     -> IO ()
 shakeFinalizeOutput d ctx dig = do
     c_sha3_finalize_shake ctx
-    c_sha3_output ctx dig (fromInteger (natVal d `div` 8))
-
-byteLen :: (KnownNat bitlen, IsDivisibleBy8 bitlen, Num a) => proxy bitlen -> a
-byteLen d = fromInteger (natVal d `div` 8)
+    c_sha3_output ctx dig (byteLen d)
 
 foreign import ccall unsafe "cryptonite_sha3_init"
     c_sha3_init :: Ptr (Context a) -> Word32 -> IO ()

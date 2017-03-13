@@ -6,9 +6,17 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Crypto.Internal.Nat
     ( type IsDivisibleBy8
+    , byteLen
+    , integralNatVal
     ) where
 
 import           GHC.TypeLits
+
+byteLen :: (KnownNat bitlen, IsDivisibleBy8 bitlen, Num a) => proxy bitlen -> a
+byteLen d = fromInteger (natVal d `div` 8)
+
+integralNatVal :: (KnownNat bitlen, Num a) => proxy bitlen -> a
+integralNatVal = fromInteger . natVal
 
 type family IsDiv8 (bitLen :: Nat) (n :: Nat) where
     IsDiv8 bitLen 0 = 'True
