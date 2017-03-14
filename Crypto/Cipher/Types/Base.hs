@@ -18,6 +18,7 @@ module Crypto.Cipher.Types.Base
     ) where
 
 import           Data.Word
+import           Data.Proxy
 import           Crypto.Internal.ByteArray (Bytes, ByteArrayAccess, ByteArray)
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Error
@@ -56,4 +57,4 @@ class Cipher cipher where
     cipherName    :: cipher -> String
     -- | return the size of the key required for this cipher.
     -- Some cipher accept any size for key
-    cipherKeySize :: cipher -> KeySizeSpecifier
+    cipherKeySize :: Proxy cipher -> KeySizeSpecifier

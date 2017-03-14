@@ -14,6 +14,7 @@ module BlockCipher
 
 import           Imports
 import           Data.Maybe
+import           Data.Proxy
 import           Crypto.Error
 import           Crypto.Cipher.Types
 import           Data.ByteArray as B hiding (pack, null)
@@ -286,7 +287,7 @@ generateKey :: Cipher a => Gen (Key a)
 generateKey = keyFromCipher undefined
   where keyFromCipher :: Cipher a => a -> Gen (Key a)
         keyFromCipher cipher = do
-            sz <- case cipherKeySize cipher of
+            sz <- case cipherKeySize (pure cipher) of
                          KeySizeRange low high -> choose (low, high)
                          KeySizeFixed v -> return v
                          KeySizeEnum l  -> elements l
