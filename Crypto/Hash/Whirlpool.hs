@@ -9,15 +9,18 @@
 -- Whirlpool cryptographic hash.
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 module Crypto.Hash.Whirlpool ( Whirlpool (..) ) where
 
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
+import           Data.Data
+import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 -- | Whirlpool cryptographic hash algorithm
 data Whirlpool = Whirlpool
-    deriving (Show)
+    deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Whirlpool where
     hashBlockSize  _          = 64

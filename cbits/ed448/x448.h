@@ -2,7 +2,7 @@
 #define X448_BYTES (448/8)
 
 /* The base point (5) */
-extern const unsigned char X448_BASE_POINT[X448_BYTES];
+//extern const unsigned char X448_BASE_POINT[X448_BYTES];
 
 /* Returns 0 on success, -1 on failure */
 int __attribute__((visibility("default")))

@@ -27,6 +27,8 @@
 
 #include <stdint.h>
 
+#define SHA256_BLOCK_SIZE 64
+
 struct sha256_ctx
 {
 	uint64_t sz;

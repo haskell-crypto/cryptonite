@@ -26,10 +26,12 @@
 
 #include <stdint.h>
 
+# define SHA512_BLOCK_SIZE 128
+
 struct sha512_ctx
 {
 	uint64_t sz[2];
-	uint8_t  buf[128];
+	uint8_t  buf[SHA512_BLOCK_SIZE];
 	uint64_t h[8];
 };
 

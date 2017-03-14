@@ -11,10 +11,15 @@
 module Crypto.Hash.Algorithms
     ( HashAlgorithm
     -- * hash algorithms
+    , Blake2s_160(..)
     , Blake2s_224(..)
-    , Blake2sp_224(..)
     , Blake2s_256(..)
+    , Blake2sp_224(..)
     , Blake2sp_256(..)
+    , Blake2b_160(..)
+    , Blake2b_224(..)
+    , Blake2b_256(..)
+    , Blake2b_384(..)
     , Blake2b_512(..)
     , Blake2bp_512(..)
     , MD2(..)
@@ -37,6 +42,10 @@ module Crypto.Hash.Algorithms
     , SHA3_256(..)
     , SHA3_384(..)
     , SHA3_512(..)
+#if MIN_VERSION_base(4,7,0)
+    , SHAKE128(..)
+    , SHAKE256(..)
+#endif
     , Skein256_224(..)
     , Skein256_256(..)
     , Skein512_224(..)
@@ -67,3 +76,6 @@ import           Crypto.Hash.Tiger
 import           Crypto.Hash.Skein256
 import           Crypto.Hash.Skein512
 import           Crypto.Hash.Whirlpool
+#if MIN_VERSION_base(4,7,0)
+import           Crypto.Hash.SHAKE
+#endif

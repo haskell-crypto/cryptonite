@@ -9,15 +9,18 @@
 -- Tiger cryptographic hash.
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 module Crypto.Hash.Tiger ( Tiger (..) ) where
 
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
+import           Data.Data
+import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 -- | Tiger cryptographic hash algorithm
 data Tiger = Tiger
-    deriving (Show)
+    deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Tiger where
     hashBlockSize  _          = 64

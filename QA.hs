@@ -1,7 +1,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Main where
 
-import Language.Haskell.Exts
+import           Language.Haskell.Exts      hiding (ModuleName)
+import qualified Language.Haskell.Exts as E
 import Language.Haskell.Exts.Pretty
 import Data.List
 import Data.IORef
@@ -17,10 +18,16 @@ import Control.Exception
 
 import System.Console.ANSI
 
+newtype ModuleName = ModuleName String
+    deriving (Show,Eq)
+
 allowedExtensions =
-    [ ScopedTypeVariables, BangPatterns, ForeignFunctionInterface, DeriveDataTypeable, ViewPatterns, GeneralizedNewtypeDeriving, ExistentialQuantification, EmptyDataDecls ]
+    [ ScopedTypeVariables, BangPatterns, ForeignFunctionInterface, DeriveDataTypeable, ViewPatterns, GeneralizedNewtypeDeriving, ExistentialQuantification, EmptyDataDecls
+    , TypeFamilies, KindSignatures ]
 perModuleAllowedExtensions =
     [ ("Crypto/Hash/Utils.hs", [MagicHash])
+    , ("Crypto/Hash/Algorithms.hs", [CPP])
+    , ("Crypto/Hash/SHAKE.hs", [UndecidableInstances,TypeOperators,ConstraintKinds,DataKinds,KindSignatures])
     , ("Crypto/Internal/ByteArray.hs", [MagicHash, UnboxedTuples])
     , ("Crypto/Internal/Memory.hs", [MagicHash, UnboxedTuples])
     , ("Crypto/Internal/Compat.hs", [CPP])
@@ -50,6 +57,7 @@ disallowedModules =
     , (ModuleName "Control.Applicative", ModuleName "Crypto.Internal.Imports")
     ]
 
+perModuleAllowedModules :: [(FilePath, [ModuleName])]
 perModuleAllowedModules =
     [ ("Crypto/Internal/Imports.hs",
             [ ModuleName "Control.Applicative"
@@ -200,7 +208,7 @@ main = do
                         unless allowed' $ recordIssue st (Issue_Extension $ show ext)
 
                     -- check for disallowed modules
-                    forM_ (map importModule $ getModulesImports mod) $ \impMod ->
+                    forM_ (map (flattenModuleName . importModule) $ getModulesImports mod) $ \impMod ->
                         case lookup impMod disallowedModules of
                             Nothing                                   -> return ()
                             Just newMod | file == moduleToFile impMod -> return ()
@@ -242,7 +250,9 @@ recordIssue st s =
 
 recordInfo st n f = return ()
 
-getModulesImports (Module _ _ _ _ _ imports _) = imports
+getModulesImports (Module _ _ _ imports _) = imports
+
+flattenModuleName (E.ModuleName _ mn) = ModuleName mn
 
 getEnabledExts = foldl doAcc []
   where doAcc acc (EnableExtension e) = e : acc

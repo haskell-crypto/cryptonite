@@ -1,3 +1,24 @@
+## 0.22
+
+* Add Argon2 (Password Hashing Competition winner) hash function
+* Update blake2 to latest upstream version
+* Add extra blake2 hashing size
+* Add faster PBKDF2 functions for SHA1/SHA256/SHA512
+* Add SHAKE128 and SHAKE256
+* Cleanup prime generation, and add tests
+* Add Time-based One Time Password (TOTP) and HMAC-based One Time Password (HOTP)
+* Rename Ed448 module name to Curve448, old module name still valid for now
+
+## 0.21
+
+* Drop automated tests with GHC 7.0, GHC 7.4, GHC 7.6. support dropped, but probably still working.
+* Improve non-aligned support in C sources, ChaCha and SHA3 now probably work on arch without support for unaligned access. not complete or tested.
+* Add another ECC framework that is more flexible, allowing different implementations to work instead of
+  the existing Pure haskell NIST implementation.
+* Add ECIES basic primitives
+* Add XSalsa20 stream cipher
+* Process partial buffer correctly with Poly1305
+
 ## 0.20
 
 * Fixed hash truncation used in ECDSA signature & verification (Olivier Chéron)
