@@ -21,7 +21,7 @@ import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 
--- | Blake2sp (224 bits) cryptographic hash algorithm
+-- | Blake2sp, 8-way parallel (224 bits) cryptographic hash algorithm
 data Blake2sp_224 = Blake2sp_224
     deriving (Show,Data,Typeable)
 
@@ -33,7 +33,7 @@ instance HashAlgorithm Blake2sp_224 where
     hashInternalUpdate        = c_blake2sp_update
     hashInternalFinalize p    = c_blake2sp_finalize p 224
 
--- | Blake2sp (256 bits) cryptographic hash algorithm
+-- | Blake2sp, 8-way parallel (256 bits) cryptographic hash algorithm
 data Blake2sp_256 = Blake2sp_256
     deriving (Show,Data,Typeable)
 
