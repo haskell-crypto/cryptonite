@@ -6,9 +6,48 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Crypto.Internal.Nat
     ( type IsDivisibleBy8
+    , type IsAtMost, type IsAtLeast
+    , byteLen
+    , integralNatVal
     ) where
 
 import           GHC.TypeLits
+
+byteLen :: (KnownNat bitlen, IsDivisibleBy8 bitlen, Num a) => proxy bitlen -> a
+byteLen d = fromInteger (natVal d `div` 8)
+
+integralNatVal :: (KnownNat bitlen, Num a) => proxy bitlen -> a
+integralNatVal = fromInteger . natVal
+
+type family IsLE (bitlen :: Nat) (n :: Nat) (c :: Bool) where
+    IsLE bitlen n 'True  = 'True
+#if MIN_VERSION_base(4,9,0)
+    IsLE bitlen n 'False = TypeError
+      (     ('Text "bitlen " ':<>: 'ShowType bitlen ':<>: 'Text " is greater than " ':<>: 'ShowType n)
+      ':$$: ('Text "You have tried to use an invalid Digest size. Please, refer to the documentation.")
+      )
+#else
+    IsLE bitlen n 'False = 'False
+#endif
+
+-- | ensure the given `bitlen` is lesser or equal to `n`
+--
+type IsAtMost  (bitlen :: Nat) (n :: Nat) = IsLE bitlen n (bitlen <=? n) ~ 'True
+
+type family IsGE (bitlen :: Nat) (n :: Nat) (c :: Bool) where
+    IsGE bitlen n 'True  = 'True
+#if MIN_VERSION_base(4,9,0)
+    IsGE bitlen n 'False = TypeError
+      (     ('Text "bitlen " ':<>: 'ShowType bitlen ':<>: 'Text " is lesser than " ':<>: 'ShowType n)
+      ':$$: ('Text "You have tried to use an invalid Digest size. Please, refer to the documentation.")
+      )
+#else
+    IsGE bitlen n 'False = 'False
+#endif
+
+-- | ensure the given `bitlen` is greater or equal to `n`
+--
+type IsAtLeast (bitlen :: Nat) (n :: Nat) = IsGE bitlen n (n <=? bitlen) ~ 'True
 
 type family IsDiv8 (bitLen :: Nat) (n :: Nat) where
     IsDiv8 bitLen 0 = 'True

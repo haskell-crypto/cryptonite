@@ -45,6 +45,8 @@ module Crypto.Hash.Algorithms
 #if MIN_VERSION_base(4,7,0)
     , SHAKE128(..)
     , SHAKE256(..)
+    , Blake2b(..), Blake2bp(..)
+    , Blake2s(..), Blake2sp(..)
 #endif
     , Skein256_224(..)
     , Skein256_256(..)
@@ -78,4 +80,5 @@ import           Crypto.Hash.Skein512
 import           Crypto.Hash.Whirlpool
 #if MIN_VERSION_base(4,7,0)
 import           Crypto.Hash.SHAKE
+import           Crypto.Hash.Blake2
 #endif
