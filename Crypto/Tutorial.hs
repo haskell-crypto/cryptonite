@@ -55,4 +55,4 @@
 
 |-}
 
-module Crypto.Tutorial.General where
+module Crypto.Tutorial where
