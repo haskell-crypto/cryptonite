@@ -1,9 +1,10 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE GADTs #-}
 
 {- How to use @cryptonite@ with symmetric block ciphers
 
+> {-# LANGUAGE OverloadedStrings #-}
+> {-# LANGUAGE ScopedTypeVariables #-}
+> {-# LANGUAGE GADTs #-}
+> 
 > import           Crypto.Cipher.AES (AES256)
 > import           Crypto.Cipher.Types (BlockCipher(..), Cipher(..), nullIV, KeySizeSpecifier(..))
 > import           Crypto.Error (CryptoFailable(..), CryptoError(..))
