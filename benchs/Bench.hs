@@ -4,22 +4,21 @@ module Main where
 
 import Criterion.Main
 
-import "cryptonite" Crypto.Hash
-import "cryptonite" Crypto.Error
-import "cryptonite" Crypto.Cipher.DES
-import "cryptonite" Crypto.Cipher.AES
-import "cryptonite" Crypto.Cipher.Blowfish
-import "cryptonite" Crypto.Cipher.Types
-import qualified "cryptonite" Crypto.Cipher.ChaChaPoly1305 as CP
+import           Crypto.Cipher.AES
+import           Crypto.Cipher.Blowfish
+import qualified Crypto.Cipher.ChaChaPoly1305 as CP
+import           Crypto.Cipher.DES
+import           Crypto.Cipher.Types
+import           Crypto.Error
+import           Crypto.Hash
+import qualified Crypto.KDF.PBKDF2 as PBKDF2
+import qualified Crypto.PubKey.ECC.Types as ECC
+import qualified Crypto.PubKey.ECC.Prim as ECC
 
-import qualified "cryptonite" Crypto.KDF.PBKDF2 as PBKDF2
-
-import qualified "cryptonite" Crypto.PubKey.ECC.Types as ECC
-import qualified "cryptonite" Crypto.PubKey.ECC.Prim as ECC
-
-import Data.ByteArray (ByteArray)
-
+import           Data.ByteArray (ByteArray)
 import qualified Data.ByteString as B
+
+import Number.F2m
 
 benchHash =
     [ 
@@ -127,4 +126,5 @@ main = defaultMain
     , bgroup "AE" benchAE
     , bgroup "pbkdf2" benchPBKDF2
     , bgroup "ECC" benchECC
+    , bgroup "F2m" benchF2m
     ]
