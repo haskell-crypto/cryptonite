@@ -31,6 +31,7 @@ import qualified KAT_Camellia
 import qualified KAT_DES
 import qualified KAT_RC4
 import qualified KAT_TripleDES
+import qualified KAT_Twofish
 -- misc --------------------------------
 import qualified KAT_AFIS
 import qualified Padding
@@ -66,6 +67,7 @@ tests = testGroup "cryptonite"
         , KAT_Camellia.tests
         , KAT_DES.tests
         , KAT_TripleDES.tests
+        , KAT_Twofish.tests
         ]
     , testGroup "stream-cipher"
         [ KAT_RC4.tests

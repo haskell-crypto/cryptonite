@@ -108,6 +108,7 @@ Library
                      Crypto.Cipher.RC4
                      Crypto.Cipher.Salsa
                      Crypto.Cipher.TripleDES
+                     Crypto.Cipher.Twofish
                      Crypto.Cipher.Types
                      Crypto.Cipher.XSalsa
                      Crypto.ConstructHash.MiyaguchiPreneel
@@ -165,6 +166,7 @@ Library
                      Crypto.Cipher.Blowfish.Primitive
                      Crypto.Cipher.Camellia.Primitive
                      Crypto.Cipher.DES.Primitive
+                     Crypto.Cipher.Twofish.Primitive
                      Crypto.Cipher.Types.AEAD
                      Crypto.Cipher.Types.Base
                      Crypto.Cipher.Types.Block
