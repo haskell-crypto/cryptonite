@@ -46,10 +46,7 @@ extra-source-files:  cbits/*.h
                      cbits/decaf/include/arch_ref64/*.h
                      cbits/decaf/p448/arch_32/*.h
                      cbits/decaf/p448/arch_ref64/*.h
-                     cbits/decaf/ed448goldilocks/*.c
-                     cbits/decaf/p448/*.c
-                     cbits/decaf/p448/arch_32/*.c
-                     cbits/decaf/p448/arch_ref64/*.c
+                     cbits/decaf/p448/*.h
                      cbits/p256/*.h
                      cbits/blake2/ref/*.h
                      cbits/blake2/sse/*.h
@@ -264,20 +261,28 @@ Library
                    , cbits/cryptonite_whirlpool.c
                    , cbits/cryptonite_scrypt.c
                    , cbits/cryptonite_pbkdf2.c
-  include-dirs:  cbits cbits/ed25519
+                   , cbits/decaf/utils.c
+                   , cbits/decaf/ed448goldilocks/decaf.c
+                   , cbits/decaf/ed448goldilocks/decaf_tables.c
+                   , cbits/decaf/ed448goldilocks/eddsa.c
+                   , cbits/decaf/ed448goldilocks/scalar.c
+                   , cbits/decaf/p448/f_arithmetic.c
+                   , cbits/decaf/p448/f_generic.c
+  include-dirs:      cbits
+                   , cbits/ed25519
+                   , cbits/decaf/include
+                   , cbits/decaf/p448
 
   if arch(x86_64)
-    C-sources:         cbits/decaf/utils.c
-                     , cbits/decaf/cryptonite_p448_arch_ref64.c
+    C-sources:         cbits/decaf/p448/arch_ref64/f_impl.c
 
-    include-dirs:      cbits/decaf/include
-                     , cbits/decaf/include/arch_ref64
+    include-dirs:      cbits/decaf/include/arch_ref64
+                     , cbits/decaf/p448/arch_ref64
   else
-    C-sources:         cbits/decaf/utils.c
-                     , cbits/decaf/cryptonite_p448_arch_32.c
+    C-sources:         cbits/decaf/p448/arch_32/f_impl.c
 
-    include-dirs:      cbits/decaf/include
-                     , cbits/decaf/include/arch_32
+    include-dirs:      cbits/decaf/include/arch_32
+                     , cbits/decaf/p448/arch_32
 
   if arch(x86_64)
     C-sources: cbits/curve25519/curve25519-donna-c64.c

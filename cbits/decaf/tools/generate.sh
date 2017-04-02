@@ -69,42 +69,15 @@ for CURVE in ed448goldilocks; do
 done
 
 for FIELD in p448; do
-  if [ $FIELD = p25519 ]; then
-    CURVE=curve25519
-  elif [ $FIELD = p448 ]; then
-    CURVE=ed448goldilocks
-  else
-    echo "Invalid field: $FIELD" && exit 1
-  fi
-
   mkdir -p "$DEST_DIR"/$FIELD
   convert "$SRC_DIR"/$FIELD/f_arithmetic.c          "$DEST_DIR"/$FIELD
   convert "$SRC_DIR"/GENERATED/c/$FIELD/f_generic.c "$DEST_DIR"/$FIELD
+  convert "$SRC_DIR"/GENERATED/c/$FIELD/f_field.h   "$DEST_DIR"/$FIELD
 
   for ARCH in $ARCHITECTURES; do
     mkdir -p "$DEST_DIR"/$FIELD/$ARCH
-    convert "$SRC_DIR"/include/field.h              "$DEST_DIR"/$FIELD/$ARCH
-    convert "$SRC_DIR"/GENERATED/c/$FIELD/f_field.h "$DEST_DIR"/$FIELD/$ARCH
     convert "$SRC_DIR"/$FIELD/$ARCH/f_impl.h        "$DEST_DIR"/$FIELD/$ARCH
     convert "$SRC_DIR"/$FIELD/$ARCH/f_impl.c        "$DEST_DIR"/$FIELD/$ARCH
-
-    cat > "$DEST_DIR"/cryptonite_$FIELD\_$ARCH.c <<EOF
-/*
-  The Makefile in the original project uses variable include directories
-  for each field, but Cabal does not support this.  The following trick
-  preloads the field-dependent headers "f_field.h" and "f_impl.h" so that
-  further includes of "field.h" have nothing to do later.
-*/
-#include "$FIELD/$ARCH/field.h"
-#include "$FIELD/$ARCH/f_impl.c"
-
-#include "$CURVE/decaf.c"
-#include "$CURVE/decaf_tables.c"
-#include "$CURVE/eddsa.c"
-#include "$CURVE/scalar.c"
-#include "$FIELD/f_arithmetic.c"
-#include "$FIELD/f_generic.c"
-EOF
   done
 done
 
