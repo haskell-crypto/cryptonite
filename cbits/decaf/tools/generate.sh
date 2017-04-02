@@ -21,6 +21,11 @@
 #
 # * code related to SHAKE is replaced by cryptonite code, referenced from
 #   a custom shake.h.  As a consequence, portable_endian.h is not needed.
+#
+# * aligned(32) attributes used for stack alignment are replaced by
+#   aligned(16).  This removes warnings on OpenBSD with GCC 4.2.1, and makes
+#   sure we get at least 16-byte alignment.  32-byte alignment is necessary
+#   only for AVX2 and arch_x86_64, which we don't have.
 
 SRC_DIR="$1/src"
 DEST_DIR="`dirname "$0"`"/..
@@ -33,7 +38,16 @@ fi
 
 convert() {
   local FILE_NAME="`basename "$1"`"
+  local REPL
+
+  if [ "$FILE_NAME" = word.h ]; then
+    REPL='__attribute__((aligned(32)))'
+  else
+    REPL='__attribute__((aligned(16)))'
+  fi
+
   sed <"$1" >"$2/$FILE_NAME" \
+    -e "s/__attribute__((aligned(32)))/$REPL/g" \
     -e 's/decaf_/cryptonite_decaf_/g' \
     -e 's/DECAF_/CRYPTONITE_DECAF_/g' \
     -e 's/gf_/cryptonite_gf_/g' \
