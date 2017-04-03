@@ -42,7 +42,7 @@ import           Crypto.Random
 
 -- | An Ed25519 Secret key
 newtype SecretKey = SecretKey ScrubbedBytes
-    deriving (Eq,ByteArrayAccess,NFData)
+    deriving (Show,Eq,ByteArrayAccess,NFData)
 
 -- | An Ed25519 public key
 newtype PublicKey = PublicKey Bytes
