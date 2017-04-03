@@ -26,6 +26,13 @@
 #   aligned(16).  This removes warnings on OpenBSD with GCC 4.2.1, and makes
 #   sure we get at least 16-byte alignment.  32-byte alignment is necessary
 #   only for AVX2 and arch_x86_64, which we don't have.
+#
+# * visibility("hidden") attributes are removed, as this is not supported
+#   on Windows/MinGW, and we have name mangling instead
+#
+# * function posix_memalign is defined in order to avoid a warning on
+#   Windows/MinGW.  Hopefully it is not called.  This definition is put
+#   inside portable_endian.h because this file is already included.
 
 SRC_DIR="$1/src"
 DEST_DIR="`dirname "$0"`"/..
@@ -47,6 +54,9 @@ convert() {
   fi
 
   sed <"$1" >"$2/$FILE_NAME" \
+    -e 's/ __attribute((visibility("hidden")))//g' \
+    -e 's/ __attribute__((visibility("hidden")))//g' \
+    -e 's/ __attribute__ ((visibility ("hidden")))//g' \
     -e "s/__attribute__((aligned(32)))/$REPL/g" \
     -e 's/decaf_/cryptonite_decaf_/g' \
     -e 's/DECAF_/CRYPTONITE_DECAF_/g' \
@@ -103,4 +113,9 @@ done
 
 cat >"$DEST_DIR"/include/portable_endian.h <<EOF
 /* portable_endian.h not used */
+
+#if defined(__MINGW32__)
+// does not exist on MinGW, but unused anyway
+extern int posix_memalign(void **, size_t, size_t);
+#endif
 EOF
