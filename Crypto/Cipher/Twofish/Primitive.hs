@@ -1,6 +1,7 @@
 {-# LANGUAGE MagicHash #-}
+{-# LANGUAGE BangPatterns #-}
 module Crypto.Cipher.Twofish.Primitive
-    ( Twofish (..)
+    ( Twofish
     , initTwofish
     , encrypt
     , decrypt
@@ -32,7 +33,6 @@ rsPolynomial = 0x14d  -- x^8 + x^6 + x^3 + x^2 + 1, see [TWOFISH] 4.3
 data Twofish = Twofish { s :: (Array32, Array32, Array32, Array32)
                        , k :: Array32 }
 
--- CONFIRMED
 -- | Initialize a 128-bit key
 --
 -- Return the initialized key or a error message if the given
@@ -68,11 +68,11 @@ encryptBlock Twofish { s = (s1, s2, s3, s4), k = ks } message = store32ls ts
           b' = b `xor` arrayRead32 ks 1
           c' = c `xor` arrayRead32 ks 2
           d' = d `xor` arrayRead32 ks 3
-          (a'', b'', c'', d'') = foldl' shuffle (a', b', c', d') [0..7]
+          (!a'', !b'', !c'', !d'') = foldl' shuffle (a', b', c', d') [0..7]
           ts = (c'' `xor` arrayRead32 ks 4, d'' `xor` arrayRead32 ks 5, a'' `xor` arrayRead32 ks 6, b'' `xor` arrayRead32 ks 7)
 
           shuffle :: (Word32, Word32, Word32, Word32) -> Int -> (Word32, Word32, Word32, Word32)
-          shuffle (retA, retB, retC, retD) ind = (retA', retB', retC', retD')
+          shuffle (!retA, !retB, !retC, !retD) ind = (retA', retB', retC', retD')
             where [k0, k1, k2, k3] = fmap (\offset -> arrayRead32 ks $ (8 + 4 * ind) + offset) [0..3]
                   t2 = byteIndex s2 retB `xor` byteIndex s3 (shiftR retB 8) `xor` byteIndex s4 (shiftR retB 16) `xor` byteIndex s1 (shiftR retB 24)
                   t1 = (byteIndex s1 retA `xor` byteIndex s2 (shiftR retA 8) `xor` byteIndex s3 (shiftR retA 16) `xor` byteIndex s4 (shiftR retA 24)) + t2
@@ -84,9 +84,9 @@ encryptBlock Twofish { s = (s1, s2, s3, s4), k = ks } message = store32ls ts
                   retB' = rotateL retB 1 `xor` (t1' + t2' + k3)
 
 -- Unsafe, no bounds checking
-byteIndex :: Integral a => Array32 -> a -> Word32
+byteIndex :: Array32 -> Word32 -> Word32
 byteIndex xs ind  = arrayRead32 xs $ fromIntegral byte
-    where byte = fromIntegral ind :: Word8
+    where byte = ind `mod` 256
 
 -- | Decrypts the given ByteString using the given Key
 decrypt :: ByteArray ba
@@ -99,12 +99,15 @@ decrypt cipher = mapBlocks (decryptBlock cipher)
 decryptBlock :: ByteArray ba => Twofish -> ba -> ba
 decryptBlock Twofish { s = (s1, s2, s3, s4), k = ks } message = store32ls ixs
     where (a, b, c, d) = load32ls message
-          (a', b', c', d') = (c `xor` arrayRead32 ks 6, d `xor` arrayRead32 ks 7, a `xor` arrayRead32 ks 4, b `xor` arrayRead32 ks 5)
-          (a'', b'', c'', d'') = foldl' unshuffle (a', b', c', d') [8, 7..1]
+          a' = c `xor` arrayRead32 ks 6
+          b' = d `xor` arrayRead32 ks 7
+          c' = a `xor` arrayRead32 ks 4
+          d' = b `xor` arrayRead32 ks 5
+          (!a'', !b'', !c'', !d'') = foldl' unshuffle (a', b', c', d') [8, 7..1]
           ixs = (a'' `xor` arrayRead32 ks 0, b'' `xor` arrayRead32 ks 1, c'' `xor` arrayRead32 ks 2, d'' `xor` arrayRead32 ks 3)
 
           unshuffle :: (Word32, Word32, Word32, Word32) -> Int -> (Word32, Word32, Word32, Word32)
-          unshuffle (retA, retB, retC, retD) ind = (retA', retB', retC', retD')
+          unshuffle (!retA, !retB, !retC, !retD) ind = (retA', retB', retC', retD')
             where [k0, k1, k2, k3] = fmap (\offset -> arrayRead32 ks $ (4 + 4 * ind) + offset) [0..3]
                   t2 = byteIndex s2 retD `xor` byteIndex s3 (shiftR retD 8) `xor` byteIndex s4 (shiftR retD 16) `xor` byteIndex s1 (shiftR retD 24)
                   t1 = (byteIndex s1 retC `xor` byteIndex s2 (shiftR retC 8) `xor` byteIndex s3 (shiftR retC 16) `xor` byteIndex s4 (shiftR retC 24)) + t2
@@ -170,7 +173,7 @@ load32ls message = (intify q1, intify q2, intify q3, intify q4)
           (q3, q4) = B.splitAt 4 half2
 
           intify :: ByteArray ba => ba -> Word32
-          intify bytes = foldl' (\int (word, ind) -> int .|. shiftL (fromIntegral word) (ind * 8) ) 0 (zip (B.unpack bytes) [0..])
+          intify bytes = foldl' (\int (!word, !ind) -> int .|. shiftL (fromIntegral word) (ind * 8) ) 0 (zip (B.unpack bytes) [0..])
 
 store32ls :: ByteArray ba => (Word32, Word32, Word32, Word32) -> ba
 store32ls (a, b, c, d) = B.pack $ concatMap splitWordl [a, b, c, d]
@@ -184,7 +187,7 @@ sWords key = sWord
     where word64Count = B.length key `div` 2
           sWord = concatMap (\wordIndex ->
                         map (\rsRow ->
-                            foldl' (\acc (rsVal, colIndex) ->
+                            foldl' (\acc (!rsVal, !colIndex) ->
                                 acc `xor` gfMult rsPolynomial (B.index key $ 8 * wordIndex + colIndex) rsVal
                                 ) 0 (zip rsRow [0..])
                             ) rs
@@ -197,34 +200,32 @@ genSboxes :: [Word8] -> (Array32, Array32, Array32, Array32)
 genSboxes ws = (mkArray b0, mkArray b1, mkArray b2, mkArray b3)
     where range = [0..255]
           mkArray = array32 256
+          [w0, w1, w2, w3, w4, w5, w6, w7] = take 8 ws
           b0 = fmap mapper range
                 where mapper :: Int -> Word32
-                      mapper byte = mdsColumnMult ((sbox1 . fromIntegral) ((sbox0 . fromIntegral $ sbox0 byte `xor` head ws) `xor` ws !! 4)) Zero
+                      mapper byte = mdsColumnMult ((sbox1 . fromIntegral) ((sbox0 . fromIntegral $ sbox0 byte `xor` w0) `xor` w4)) Zero
           b1 = fmap mapper range
-                where mapper byte = mdsColumnMult ((sbox0 . fromIntegral) ((sbox0 . fromIntegral $ sbox1 byte `xor` ws !! 1) `xor` ws !! 5)) One
+                where mapper byte = mdsColumnMult ((sbox0 . fromIntegral) ((sbox0 . fromIntegral $ sbox1 byte `xor` w1) `xor` w5)) One
           b2 = fmap mapper range
-                where mapper byte = mdsColumnMult ((sbox1 . fromIntegral) ((sbox1 . fromIntegral $ sbox0 byte `xor` ws !! 2) `xor` ws !! 6)) Two
+                where mapper byte = mdsColumnMult ((sbox1 . fromIntegral) ((sbox1 . fromIntegral $ sbox0 byte `xor` w2) `xor` w6)) Two
           b3 = fmap mapper range
-                where mapper byte = mdsColumnMult ((sbox0 . fromIntegral) ((sbox1 . fromIntegral $ sbox1 byte `xor` ws !! 3) `xor` ws !! 7)) Three
+                where mapper byte = mdsColumnMult ((sbox0 . fromIntegral) ((sbox1 . fromIntegral $ sbox1 byte `xor` w3) `xor` w7)) Three
 
 genK :: (ByteArray ba) => ba -> [Word32]
-genK key = concatMap (tupToList . makeTuple) [0..19]
-    where makeTuple :: Word8 -> (Word32, Word32)
-          makeTuple idx = (a + b', rotateL (2 * b' + a) 9)
+genK key = concatMap makeTuple [0..19]
+    where makeTuple :: Word8 -> [Word32]
+          makeTuple idx = [a + b', rotateL (2 * b' + a) 9]
             where tmp1 = replicate 4 $ 2 * idx
                   tmp2 = fmap (+1) tmp1
-                  a = h (B.pack tmp1 :: Bytes) key 0
-                  b = h (B.pack tmp2 :: Bytes) key 1
+                  a = h tmp1 key 0
+                  b = h tmp2 key 1
                   b' = rotateL b 8
-
-          tupToList :: (a, a) -> [a]
-          tupToList (a, b) = [a, b]
 
 
 -- ONLY implemented for 128-bit key (so far)
-h :: (Show ba1, ByteArray ba1, ByteArray ba2) => ba1 -> ba2 -> Int -> Word32
+h :: (ByteArray ba) => [Word8] -> ba -> Int -> Word32
 h input key offset =  foldl' xorMdsColMult 0 $ zip [y0', y1', y2', y3'] $ enumFrom Zero
-    where [y0, y1, y2, y3] = B.unpack $  B.take 4 input
+    where [y0, y1, y2, y3] = take 4 input
           y0' = sbox1 . fromIntegral $ (sbox0 . fromIntegral $ (sbox0 (fromIntegral y0) `xor` B.index key (4 * (2 + offset) + 0))) `xor` B.index key (4 * (0 + offset) + 0) :: Word8
           y1' = sbox0 . fromIntegral $ (sbox0 . fromIntegral $ (sbox1 (fromIntegral y1) `xor` B.index key (4 * (2 + offset) + 1))) `xor` B.index key (4 * (0 + offset) + 1)
           y2' = sbox1 . fromIntegral $ (sbox1 . fromIntegral $ (sbox0 (fromIntegral y2) `xor` B.index key (4 * (2 + offset) + 2))) `xor` B.index key (4 * (0 + offset) + 2)
@@ -234,7 +235,7 @@ h input key offset =  foldl' xorMdsColMult 0 $ zip [y0', y1', y2', y3'] $ enumFr
           xorMdsColMult acc wordAndIndex = acc `xor` uncurry mdsColumnMult wordAndIndex
 
 mdsColumnMult :: Word8 -> Column -> Word32
-mdsColumnMult byte col =
+mdsColumnMult !byte !col =
     case col of Zero  -> input .|. rotateL mul5B 8 .|. rotateL mulEF 16 .|. rotateL mulEF 24
                 One   -> mulEF .|. rotateL mulEF 8 .|. rotateL mul5B 16 .|. rotateL input 24
                 Two   -> mul5B .|. rotateL mulEF 8 .|. rotateL input 16 .|. rotateL mulEF 24

@@ -365,6 +365,7 @@ Test-Suite test-cryptonite
                      KAT_RC4
                      KAT_Scrypt
                      KAT_TripleDES
+                     KAT_Twofish
                      ChaChaPoly1305
                      Number
                      Number.F2m

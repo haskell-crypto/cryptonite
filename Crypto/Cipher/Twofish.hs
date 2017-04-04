@@ -1,5 +1,5 @@
 module Crypto.Cipher.Twofish
-    ( Twofish128 (..)
+    ( Twofish128
     ) where
 
 import Crypto.Cipher.Twofish.Primitive
@@ -10,7 +10,7 @@ newtype Twofish128 = Twofish128 Twofish
 instance Cipher Twofish128 where
     cipherName    _ = "Twofish128"
     cipherKeySize _ = KeySizeFixed 16
-    cipherInit k    = Twofish128 `fmap` initTwofish k
+    cipherInit key    = Twofish128 `fmap` initTwofish key
 
 instance BlockCipher Twofish128 where
     blockSize     _ = 16
