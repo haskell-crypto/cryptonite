@@ -1,18 +1,18 @@
 {-# LANGUAGE PackageImports #-}
 
-module Main where
+module Number.F2m (benchF2m) where
 
 import Criterion.Main
 import System.Random
 
-import "cryptonite" Crypto.Number.Basic (log2)
-import "cryptonite" Crypto.Number.F2m
+import Crypto.Number.Basic (log2)
+import Crypto.Number.F2m
 
 genInteger :: Int -> Int -> Integer
 genInteger salt bits
     = head
     . dropWhile ((< bits) . log2)
-    . scanl (\a r -> a * 2^31 + abs r) 0
+    . scanl (\a r -> a * 2^(31 :: Int) + abs r) 0
     . randoms
     . mkStdGen
     $ salt + bits
@@ -45,7 +45,7 @@ benchInv bits = bench (show bits) $ nf (invF2m m) a
 bitsList :: [Int]
 bitsList = [64, 128, 256, 512, 1024, 2048]
 
-main = defaultMain
+benchF2m =
     [ bgroup    "modF2m" $ map benchMod    bitsList
     , bgroup    "mulF2m" $ map benchMul    bitsList
     , bgroup "squareF2m" $ map benchSquare bitsList

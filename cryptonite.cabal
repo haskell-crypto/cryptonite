@@ -382,3 +382,17 @@ Test-Suite test-cryptonite
                    , cryptonite
   ghc-options:       -Wall -fno-warn-orphans -fno-warn-missing-signatures -fno-warn-unused-imports -rtsopts
   default-language:  Haskell2010
+
+Benchmark bench-cryptonite
+  type:              exitcode-stdio-1.0
+  hs-source-dirs:    benchs
+  Main-is:           Bench.hs
+  Other-modules:     Number.F2m
+  Build-Depends:     base >= 3 && < 5
+                   , bytestring
+                   , memory
+                   , criterion
+                   , random
+                   , cryptonite
+  ghc-options:       -Wall -fno-warn-missing-signatures
+  default-language:  Haskell2010

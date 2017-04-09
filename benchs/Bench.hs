@@ -1,29 +1,83 @@
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ExistentialQuantification #-}
 module Main where
 
 import Criterion.Main
 
-import "cryptonite" Crypto.Hash
-import "cryptonite" Crypto.Error
-import "cryptonite" Crypto.Cipher.DES
-import "cryptonite" Crypto.Cipher.AES
-import "cryptonite" Crypto.Cipher.Blowfish
-import "cryptonite" Crypto.Cipher.Types
-import qualified "cryptonite" Crypto.Cipher.ChaChaPoly1305 as CP
+import           Crypto.Cipher.AES
+import           Crypto.Cipher.Blowfish
+import qualified Crypto.Cipher.ChaChaPoly1305 as CP
+import           Crypto.Cipher.DES
+import           Crypto.Cipher.Types
+import           Crypto.Error
+import           Crypto.Hash
+import qualified Crypto.KDF.PBKDF2 as PBKDF2
+import qualified Crypto.PubKey.ECC.Types as ECC
+import qualified Crypto.PubKey.ECC.Prim as ECC
+import           Crypto.Random
 
-import qualified "cryptonite" Crypto.KDF.PBKDF2 as PBKDF2
-
-import qualified "cryptonite" Crypto.PubKey.ECC.Types as ECC
-import qualified "cryptonite" Crypto.PubKey.ECC.Prim as ECC
-
-import Data.ByteArray (ByteArray)
-
+import           Data.ByteArray (ByteArray, Bytes)
 import qualified Data.ByteString as B
 
+import           System.IO.Unsafe (unsafePerformIO)
+
+import Number.F2m
+
+data HashAlg = forall alg . HashAlgorithm alg => HashAlg alg
+
 benchHash =
-    [ 
+    [ bgroup "1KB" $ map (doHashBench oneKB) hashAlgs
+    , bgroup "1MB" $ map (doHashBench oneMB) hashAlgs
     ]
+  where
+    doHashBench b (name, HashAlg alg) = bench name $ nf (hashWith alg) b
+
+    oneKB :: Bytes
+    oneKB = unsafePerformIO (getRandomBytes 1024)
+    {-# NOINLINE oneKB #-}
+
+    oneMB :: Bytes
+    oneMB = unsafePerformIO (getRandomBytes $ 1024 * 1024)
+    {-# NOINLINE oneMB #-}
+
+    hashAlgs =
+        [ ("MD2", HashAlg MD2)
+        , ("MD4", HashAlg MD4)
+        , ("MD5", HashAlg MD5)
+        , ("SHA1", HashAlg SHA1)
+        , ("SHA224", HashAlg SHA224)
+        , ("SHA256", HashAlg SHA256)
+        , ("SHA384", HashAlg SHA384)
+        , ("SHA512", HashAlg SHA512)
+        , ("SHA512t_224", HashAlg SHA512t_224)
+        , ("SHA512t_256", HashAlg SHA512t_256)
+        , ("RIPEMD160", HashAlg RIPEMD160)
+        , ("Tiger", HashAlg Tiger)
+        --, ("Skein256-160", HashAlg Skein256_160)
+        , ("Skein256-256", HashAlg Skein256_256)
+        --, ("Skein512-160", HashAlg Skein512_160)
+        , ("Skein512-384", HashAlg Skein512_384)
+        , ("Skein512-512", HashAlg Skein512_512)
+        --, ("Skein512-896", HashAlg Skein512_896)
+        , ("Whirlpool", HashAlg Whirlpool)
+        , ("Keccak-224", HashAlg Keccak_224)
+        , ("Keccak-256", HashAlg Keccak_256)
+        , ("Keccak-384", HashAlg Keccak_384)
+        , ("Keccak-512", HashAlg Keccak_512)
+        , ("SHA3-224", HashAlg SHA3_224)
+        , ("SHA3-256", HashAlg SHA3_256)
+        , ("SHA3-384", HashAlg SHA3_384)
+        , ("SHA3-512", HashAlg SHA3_512)
+        , ("Blake2b-160", HashAlg Blake2b_160)
+        , ("Blake2b-224", HashAlg Blake2b_224)
+        , ("Blake2b-256", HashAlg Blake2b_256)
+        , ("Blake2b-384", HashAlg Blake2b_384)
+        , ("Blake2b-512", HashAlg Blake2b_512)
+        , ("Blake2s-160", HashAlg Blake2s_160)
+        , ("Blake2s-224", HashAlg Blake2s_224)
+        , ("Blake2s-256", HashAlg Blake2s_256)
+        ]
 
 benchPBKDF2 =
     [ bgroup "64"
@@ -127,4 +181,5 @@ main = defaultMain
     , bgroup "AE" benchAE
     , bgroup "pbkdf2" benchPBKDF2
     , bgroup "ECC" benchECC
+    , bgroup "F2m" benchF2m
     ]
