@@ -85,8 +85,10 @@ saltMinLength = 8
 outputMinLength :: Int
 outputMinLength = 4
 
+-- specification allows up to 2^32-1 but this is too big for a signed Int
+-- on a 32-bit architecture, so we limit tag length to 2^31-1 bytes
 outputMaxLength :: Int
-outputMaxLength = 0xffffffff
+outputMaxLength = 0x7fffffff
 
 defaultOptions :: Options
 defaultOptions =
