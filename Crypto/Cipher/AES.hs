@@ -14,6 +14,7 @@ module Crypto.Cipher.AES
 
 import Crypto.Error
 import Crypto.Cipher.Types
+import Crypto.Cipher.Utils
 import Crypto.Cipher.Types.Block
 import Crypto.Cipher.AES.Primitive
 import Crypto.Internal.Imports
@@ -47,15 +48,6 @@ instance Cipher AES256 where
     cipherKeySize _ = KeySizeFixed 32
     cipherInit k    = AES256 <$> (initAES =<< validateKeySize (undefined :: AES256) k)
 
-validateKeySize :: (ByteArrayAccess key, Cipher cipher) => cipher -> key -> CryptoFailable key
-validateKeySize c k = if validKeyLength
-                      then CryptoPassed k
-                      else CryptoFailed CryptoError_KeySizeInvalid
-  where keyLength = BA.length k
-        validKeyLength = case cipherKeySize c of
-          KeySizeRange low high -> keyLength >= low && keyLength <= high
-          KeySizeEnum lengths -> keyLength `elem` lengths
-          KeySizeFixed s -> keyLength == s
 
 #define INSTANCE_BLOCKCIPHER(CSTR) \
 instance BlockCipher CSTR where \
