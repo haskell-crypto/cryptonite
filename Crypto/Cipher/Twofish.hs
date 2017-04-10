@@ -7,6 +7,7 @@ module Crypto.Cipher.Twofish
 import Crypto.Cipher.Twofish.Primitive
 import Crypto.Cipher.Types
 import Crypto.Cipher.Utils
+import Crypto.Internal.Imports
 
 newtype Twofish128 = Twofish128 Twofish
 
