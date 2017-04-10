@@ -33,19 +33,30 @@ rsPolynomial = 0x14d  -- x^8 + x^6 + x^3 + x^2 + 1, see [TWOFISH] 4.3
 data Twofish = Twofish { s :: (Array32, Array32, Array32, Array32)
                        , k :: Array32 }
 
--- | Initialize a 128-bit key
+data ByteSize = Bytes16 | Bytes24 | Bytes32 deriving (Eq)
+
+data KeyPackage ba = KeyPackage { rawKeyBytes :: ba
+                                , byteSize :: ByteSize }
+
+buildPackage :: ByteArray ba => ba -> Maybe (KeyPackage ba)
+buildPackage key
+    | B.length key == 16 = return $ KeyPackage key Bytes16
+    | B.length key == 24 = return $ KeyPackage key Bytes24
+    | B.length key == 32 = return $ KeyPackage key Bytes32
+    | otherwise = Nothing
+
+-- | Initialize a 128-bit, 192-bit, or 256-bit key
 --
 -- Return the initialized key or a error message if the given
 -- keyseed was not 16-bytes in length.
 initTwofish :: ByteArray key
-            => key -- ^ The key to create the camellia context
+            => key -- ^ The key to create the twofish context
             -> CryptoFailable Twofish
-initTwofish key
-    | B.length key /= blockSize = CryptoFailed CryptoError_KeySizeInvalid
-    | otherwise = CryptoPassed Twofish { k = generatedK, s = generatedS }
-        where generatedK = array32 40 $ genK key
-              generatedS = genSboxes $ sWords key
-
+initTwofish key =
+    case buildPackage key of Nothing -> CryptoFailed CryptoError_KeySizeInvalid
+                             Just keyPackage -> CryptoPassed Twofish { k = generatedK, s = generatedS }
+                                  where generatedK = array32 40 $ genK keyPackage
+                                        generatedS = genSboxes keyPackage $ sWords key
 
 mapBlocks :: ByteArray ba => (ba -> ba) -> ba -> ba
 mapBlocks operation input
@@ -195,41 +206,79 @@ sWords key = sWord
 
 data Column = Zero | One | Two | Three deriving (Show, Eq, Enum, Bounded)
 
--- Only implemented for 128-bit key (so far)
-genSboxes :: [Word8] -> (Array32, Array32, Array32, Array32)
-genSboxes ws = (mkArray b0, mkArray b1, mkArray b2, mkArray b3)
+genSboxes :: ByteArray ba => KeyPackage ba -> [Word8] -> (Array32, Array32, Array32, Array32)
+genSboxes keyPackage ws = (mkArray b0', mkArray b1', mkArray b2', mkArray b3')
     where range = [0..255]
           mkArray = array32 256
-          [w0, w1, w2, w3, w4, w5, w6, w7] = take 8 ws
-          b0 = fmap mapper range
-                where mapper :: Int -> Word32
-                      mapper byte = mdsColumnMult ((sbox1 . fromIntegral) ((sbox0 . fromIntegral $ sbox0 byte `xor` w0) `xor` w4)) Zero
-          b1 = fmap mapper range
-                where mapper byte = mdsColumnMult ((sbox0 . fromIntegral) ((sbox0 . fromIntegral $ sbox1 byte `xor` w1) `xor` w5)) One
-          b2 = fmap mapper range
-                where mapper byte = mdsColumnMult ((sbox1 . fromIntegral) ((sbox1 . fromIntegral $ sbox0 byte `xor` w2) `xor` w6)) Two
-          b3 = fmap mapper range
-                where mapper byte = mdsColumnMult ((sbox0 . fromIntegral) ((sbox1 . fromIntegral $ sbox1 byte `xor` w3) `xor` w7)) Three
+          [w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12, w13, w14, w15] = take 16 ws
+          (b0', b1', b2', b3') = sboxBySize $ byteSize keyPackage
 
-genK :: (ByteArray ba) => ba -> [Word32]
-genK key = concatMap makeTuple [0..19]
+          sboxBySize :: ByteSize -> ([Word32], [Word32], [Word32], [Word32])
+          sboxBySize Bytes16 = (b0, b1, b2, b3)
+            where !b0 = fmap mapper range
+                    where mapper :: Int -> Word32
+                          mapper byte = mdsColumnMult ((sbox1 . fromIntegral) ((sbox0 . fromIntegral $ sbox0 byte `xor` w0) `xor` w4)) Zero
+                  !b1 = fmap mapper range
+                    where mapper byte = mdsColumnMult ((sbox0 . fromIntegral) ((sbox0 . fromIntegral $ sbox1 byte `xor` w1) `xor` w5)) One
+                  !b2 = fmap mapper range
+                    where mapper byte = mdsColumnMult ((sbox1 . fromIntegral) ((sbox1 . fromIntegral $ sbox0 byte `xor` w2) `xor` w6)) Two
+                  !b3 = fmap mapper range
+                    where mapper byte = mdsColumnMult ((sbox0 . fromIntegral) ((sbox1 . fromIntegral $ sbox1 byte `xor` w3) `xor` w7)) Three
+
+          sboxBySize Bytes24 = (b0, b1, b2, b3)
+            where !b0 = fmap mapper range
+                    where mapper byte = mdsColumnMult ((sbox1 . fromIntegral) ((sbox0 . fromIntegral) ((sbox0 . fromIntegral $ sbox1 byte `xor` w0) `xor` w4) `xor` w8)) Zero
+                  !b1 = fmap mapper range
+                    where mapper byte = mdsColumnMult ((sbox0 . fromIntegral) ((sbox0 . fromIntegral) ((sbox1 . fromIntegral $ sbox1 byte `xor` w1) `xor` w5) `xor` w9)) One
+                  !b2 = fmap mapper range
+                    where mapper byte = mdsColumnMult ((sbox1 . fromIntegral) ((sbox1 . fromIntegral) ((sbox0 . fromIntegral $ sbox0 byte `xor` w2) `xor` w6) `xor` w10)) Two
+                  !b3 = fmap mapper range
+                    where mapper byte = mdsColumnMult ((sbox0 . fromIntegral) ((sbox1 . fromIntegral) ((sbox1 . fromIntegral $ sbox0 byte `xor` w3) `xor` w7) `xor` w11)) Three
+
+          sboxBySize Bytes32 = (b0, b1, b2, b3)
+            where !b0 = fmap mapper range
+                    where mapper byte = mdsColumnMult ((sbox1 . fromIntegral) ((sbox0 . fromIntegral) ((sbox0 . fromIntegral) ((sbox1 . fromIntegral $ sbox1 byte `xor` w0) `xor` w4) `xor` w8) `xor` w12)) Zero
+                  !b1 = fmap mapper range
+                    where mapper byte = mdsColumnMult ((sbox0 . fromIntegral) ((sbox0 . fromIntegral) ((sbox1 . fromIntegral) ((sbox1 . fromIntegral $ sbox0 byte `xor` w1) `xor` w5) `xor` w9) `xor` w13)) One
+                  !b2 = fmap mapper range
+                    where mapper byte = mdsColumnMult ((sbox1 . fromIntegral) ((sbox1 . fromIntegral) ((sbox0 . fromIntegral) ((sbox0 . fromIntegral $ sbox0 byte `xor` w2) `xor` w6) `xor` w10) `xor` w14)) Two
+                  !b3 = fmap mapper range
+                    where mapper byte = mdsColumnMult ((sbox0 . fromIntegral) ((sbox1 . fromIntegral) ((sbox1 . fromIntegral) ((sbox0 . fromIntegral $ sbox1 byte `xor` w3) `xor` w7) `xor` w11) `xor` w15)) Three
+
+genK :: (ByteArray ba) => KeyPackage ba -> [Word32]
+genK keyPackage = concatMap makeTuple [0..19]
     where makeTuple :: Word8 -> [Word32]
           makeTuple idx = [a + b', rotateL (2 * b' + a) 9]
             where tmp1 = replicate 4 $ 2 * idx
                   tmp2 = fmap (+1) tmp1
-                  a = h tmp1 key 0
-                  b = h tmp2 key 1
+                  a = h tmp1 keyPackage 0
+                  b = h tmp2 keyPackage 1
                   b' = rotateL b 8
 
+h :: (ByteArray ba) => [Word8] -> KeyPackage ba -> Int -> Word32
+h input keyPackage offset =  foldl' xorMdsColMult 0 $ zip [y0f, y1f, y2f, y3f] $ enumFrom Zero
+    where key = rawKeyBytes keyPackage
+          [y0, y1, y2, y3] = take 4 input
+          (!y0f, !y1f, !y2f, !y3f) = run (y0, y1, y2, y3) $ byteSize keyPackage
 
--- ONLY implemented for 128-bit key (so far)
-h :: (ByteArray ba) => [Word8] -> ba -> Int -> Word32
-h input key offset =  foldl' xorMdsColMult 0 $ zip [y0', y1', y2', y3'] $ enumFrom Zero
-    where [y0, y1, y2, y3] = take 4 input
-          y0' = sbox1 . fromIntegral $ (sbox0 . fromIntegral $ (sbox0 (fromIntegral y0) `xor` B.index key (4 * (2 + offset) + 0))) `xor` B.index key (4 * (0 + offset) + 0) :: Word8
-          y1' = sbox0 . fromIntegral $ (sbox0 . fromIntegral $ (sbox1 (fromIntegral y1) `xor` B.index key (4 * (2 + offset) + 1))) `xor` B.index key (4 * (0 + offset) + 1)
-          y2' = sbox1 . fromIntegral $ (sbox1 . fromIntegral $ (sbox0 (fromIntegral y2) `xor` B.index key (4 * (2 + offset) + 2))) `xor` B.index key (4 * (0 + offset) + 2)
-          y3' = sbox0 . fromIntegral $ (sbox1 . fromIntegral $ (sbox1 (fromIntegral y3) `xor` B.index key (4 * (2 + offset) + 3))) `xor` B.index key (4 * (0 + offset) + 3)
+          run :: (Word8, Word8, Word8, Word8) -> ByteSize -> (Word8, Word8, Word8, Word8)
+          run (!y0'', !y1'', !y2'', !y3'') Bytes32 = run (y0', y1', y2', y3') Bytes24
+            where y0' = sbox1 (fromIntegral y0'') `xor` B.index key (4 * (6 + offset) + 0)
+                  y1' = sbox0 (fromIntegral y1'') `xor` B.index key (4 * (6 + offset) + 1)
+                  y2' = sbox0 (fromIntegral y2'') `xor` B.index key (4 * (6 + offset) + 2)
+                  y3' = sbox1 (fromIntegral y3'') `xor` B.index key (4 * (6 + offset) + 3)
+
+          run (!y0'', !y1'', !y2'', !y3'') Bytes24 = run (y0', y1', y2', y3') Bytes16
+            where y0' = sbox1 (fromIntegral y0'') `xor` B.index key (4 * (4 + offset) + 0)
+                  y1' = sbox1 (fromIntegral y1'') `xor` B.index key (4 * (4 + offset) + 1)
+                  y2' = sbox0 (fromIntegral y2'') `xor` B.index key (4 * (4 + offset) + 2)
+                  y3' = sbox0 (fromIntegral y3'') `xor` B.index key (4 * (4 + offset) + 3)
+
+          run (!y0'', !y1'', !y2'', !y3'') Bytes16 = (y0', y1', y2', y3')
+            where y0' = sbox1 . fromIntegral $ (sbox0 . fromIntegral $ (sbox0 (fromIntegral y0'') `xor` B.index key (4 * (2 + offset) + 0))) `xor` B.index key (4 * (0 + offset) + 0)
+                  y1' = sbox0 . fromIntegral $ (sbox0 . fromIntegral $ (sbox1 (fromIntegral y1'') `xor` B.index key (4 * (2 + offset) + 1))) `xor` B.index key (4 * (0 + offset) + 1)
+                  y2' = sbox1 . fromIntegral $ (sbox1 . fromIntegral $ (sbox0 (fromIntegral y2'') `xor` B.index key (4 * (2 + offset) + 2))) `xor` B.index key (4 * (0 + offset) + 2)
+                  y3' = sbox0 . fromIntegral $ (sbox1 . fromIntegral $ (sbox1 (fromIntegral y3'') `xor` B.index key (4 * (2 + offset) + 3))) `xor` B.index key (4 * (0 + offset) + 3)
 
           xorMdsColMult :: Word32 -> (Word8, Column) -> Word32
           xorMdsColMult acc wordAndIndex = acc `xor` uncurry mdsColumnMult wordAndIndex
