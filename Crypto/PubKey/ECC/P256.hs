@@ -292,7 +292,7 @@ withNewScalarFreeze f = Scalar $ B.allocAndFreeze scalarSize f
 {-# NOINLINE withNewScalarFreeze #-}
 
 withTempPoint :: (Ptr P256X -> Ptr P256Y -> IO a) -> IO a
-withTempPoint f = allocTempScrubbed scalarSize (\p -> let px = castPtr p in f px (pxToPy px))
+withTempPoint f = allocTempScrubbed pointSize (\p -> let px = castPtr p in f px (pxToPy px))
 
 withTempScalar :: (Ptr P256Scalar -> IO a) -> IO a
 withTempScalar f = allocTempScrubbed scalarSize (f . castPtr)
