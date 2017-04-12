@@ -108,7 +108,9 @@ Library
                      Crypto.Cipher.RC4
                      Crypto.Cipher.Salsa
                      Crypto.Cipher.TripleDES
+                     Crypto.Cipher.Twofish
                      Crypto.Cipher.Types
+                     Crypto.Cipher.Utils
                      Crypto.Cipher.XSalsa
                      Crypto.ConstructHash.MiyaguchiPreneel
                      Crypto.Data.AFIS
@@ -165,6 +167,7 @@ Library
                      Crypto.Cipher.Blowfish.Primitive
                      Crypto.Cipher.Camellia.Primitive
                      Crypto.Cipher.DES.Primitive
+                     Crypto.Cipher.Twofish.Primitive
                      Crypto.Cipher.Types.AEAD
                      Crypto.Cipher.Types.Base
                      Crypto.Cipher.Types.Block
@@ -364,6 +367,7 @@ Test-Suite test-cryptonite
                      KAT_RC4
                      KAT_Scrypt
                      KAT_TripleDES
+                     KAT_Twofish
                      ChaChaPoly1305
                      Number
                      Number.F2m
