@@ -8,16 +8,20 @@
 -- Crypto hash types definitions
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Crypto.Hash.Types
     ( HashAlgorithm(..)
     , Context(..)
     , Digest(..)
+    , digestFromByteString
     ) where
 
 import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArrayAccess, Bytes)
 import qualified Crypto.Internal.ByteArray as B
 import           Foreign.Ptr (Ptr)
+import qualified Data.ByteString.Char8 as C
+import           Data.Maybe (maybeToList)
 
 -- | Class representing hashing algorithms.
 --
@@ -54,5 +58,30 @@ newtype Digest a = Digest Bytes
     deriving (Eq,Ord,ByteArrayAccess,NFData)
 
 instance Show (Digest a) where
-    show (Digest bs) = map (toEnum . fromIntegral)
-                     $ B.unpack (B.convertToBase B.Base16 bs :: Bytes)
+    show (Digest bs) = C.unpack $ B.convertToBase B.Base16 bs
+
+strongSplitAt :: Int -> [a] -> Maybe ([a],[a])
+strongSplitAt 0 xs = Just ([],xs)
+strongSplitAt _ [] = Nothing
+strongSplitAt n (x:xs) = (\(ys,zs) -> (x :ys,zs)) `fmap` strongSplitAt (n - 1) xs
+
+eitherToMaybe :: Either a b -> Maybe b
+eitherToMaybe =  either (const Nothing) Just 
+
+instance HashAlgorithm a => Read (Digest a) where
+    readsPrec _ x = maybeToList $ do
+        (ts,ls) <- strongSplitAt (hashDigestSize (undefined :: a) * 2) x
+        y :: B.Bytes <- eitherToMaybe $ B.convertFromBase B.Base16 . C.pack $ ts 
+        flip (,) ls `fmap` digestFromByteString y 
+
+-- | Try to transform a bytearray into a Digest of specific algorithm.
+--
+-- If the digest is not the right size for the algorithm specified, then
+-- Nothing is returned.
+digestFromByteString :: (HashAlgorithm a, ByteArrayAccess ba) => ba -> Maybe (Digest a)
+digestFromByteString = from undefined
+  where
+        from :: (HashAlgorithm a, ByteArrayAccess ba) => a -> ba -> Maybe (Digest a)
+        from alg bs
+            | B.length bs == (hashDigestSize alg) = (Just $ Digest $ B.convert bs)
+            | otherwise                           = Nothing
