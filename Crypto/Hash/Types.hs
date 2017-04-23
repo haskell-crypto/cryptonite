@@ -51,7 +51,10 @@ newtype Context a = Context Bytes
 
 -- | Represent a digest for a given hash algorithm.
 newtype Digest a = Digest Bytes
-    deriving (Eq,Ord,ByteArrayAccess,NFData)
+    deriving (Ord,ByteArrayAccess,NFData)
+
+instance Eq (Digest a) where
+    (Digest a) == (Digest b) = a `B.constEq` b
 
 instance Show (Digest a) where
     show (Digest bs) = map (toEnum . fromIntegral)
