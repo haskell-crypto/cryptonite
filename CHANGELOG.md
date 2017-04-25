@@ -1,3 +1,13 @@
+## 0.23
+
+* Digest memory usage improvement by using unpinned memory
+* Fix generateBetween to generate within the right bounds
+* Add pure Twofish implementation
+* Fix memory allocation in P256 when using a temp point
+* Consolidate hash benchmark code
+* Add Nat-length Blake2 support (GHC > 8.0)
+* Update tutorial
+
 ## 0.22
 
 * Add Argon2 (Password Hashing Competition winner) hash function
