@@ -16,6 +16,7 @@
 -- > hexSha3_512 :: ByteString -> String
 -- > hexSha3_512 bs = show (hash bs :: Digest SHA3_512)
 --
+{-# LANGUAGE ScopedTypeVariables #-}
 module Crypto.Hash
     (
     -- * Types
@@ -56,44 +57,37 @@ hashlazy :: HashAlgorithm a => L.ByteString -> Digest a
 hashlazy lbs = hashFinalize $ hashUpdates hashInit (L.toChunks lbs)
 
 -- | Initialize a new context for this hash algorithm
-hashInit :: HashAlgorithm a
-         => Context a
-hashInit = doInit undefined B.allocAndFreeze
-  where
-        doInit :: HashAlgorithm a => a -> (Int -> (Ptr (Context a) -> IO ()) -> B.Bytes) -> Context a
-        doInit alg alloc = Context $ alloc (hashInternalContextSize alg) hashInternalInit
-{-# NOINLINE hashInit #-}
+hashInit :: forall a . HashAlgorithm a => Context a
+hashInit = Context $ B.allocAndFreeze (hashInternalContextSize (undefined :: a)) $ \(ptr :: Ptr (Context a)) ->
+    hashInternalInit ptr
 
 -- | run hashUpdates on one single bytestring and return the updated context.
 hashUpdate :: (ByteArrayAccess ba, HashAlgorithm a) => Context a -> ba -> Context a
-hashUpdate ctx b = hashUpdates ctx [b]
+hashUpdate ctx b
+    | B.null b  = ctx
+    | otherwise = hashUpdates ctx [b]
 
 -- | Update the context with a list of strict bytestring,
 -- and return a new context with the updates.
-hashUpdates :: (HashAlgorithm a, ByteArrayAccess ba)
+hashUpdates :: forall a ba . (HashAlgorithm a, ByteArrayAccess ba)
             => Context a
             -> [ba]
             -> Context a
-hashUpdates c l = doUpdates (B.copyAndFreeze c)
-  where doUpdates :: HashAlgorithm a => ((Ptr (Context a) -> IO ()) -> B.Bytes) -> Context a
-        doUpdates copy = Context $ copy $ \ctx ->
-            mapM_ (\b -> B.withByteArray b $ \d -> hashInternalUpdate ctx d (fromIntegral $ B.length b)) l
-{-# NOINLINE hashUpdates #-}
+hashUpdates c l
+    | null ls   = c
+    | otherwise = Context $ B.copyAndFreeze c $ \(ctx :: Ptr (Context a)) ->
+        mapM_ (\b -> B.withByteArray b $ \d -> hashInternalUpdate ctx d (fromIntegral $ B.length b)) ls
+  where
+    ls = filter (not . B.null) l
 
 -- | Finalize a context and return a digest.
-hashFinalize :: HashAlgorithm a
+hashFinalize :: forall a . HashAlgorithm a
              => Context a
              -> Digest a
-hashFinalize c = doFinalize undefined (B.copy c) (B.allocAndFreeze)
-  where doFinalize :: HashAlgorithm alg
-                   => alg
-                   -> ((Ptr (Context alg) -> IO ()) -> IO B.Bytes)
-                   -> (Int -> (Ptr (Digest alg)  -> IO ()) -> B.Bytes)
-                   -> Digest alg
-        doFinalize alg copy allocDigest =
-            Digest $ allocDigest (hashDigestSize alg) $ \dig ->
-                (void $ copy $ \ctx -> hashInternalFinalize ctx dig)
-{-# NOINLINE hashFinalize #-}
+hashFinalize !c =
+    Digest $ B.allocAndFreeze (hashDigestSize (undefined :: a)) $ \(dig :: Ptr (Digest a)) -> do
+        ((!_) :: B.Bytes) <- B.copy c $ \(ctx :: Ptr (Context a)) -> hashInternalFinalize ctx dig
+        return ()
 
 -- | Initialize a new context for a specified hash algorithm
 hashInitWith :: HashAlgorithm alg => alg -> Context alg
