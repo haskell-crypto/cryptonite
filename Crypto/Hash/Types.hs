@@ -18,6 +18,8 @@ import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArrayAccess, Bytes)
 import qualified Crypto.Internal.ByteArray as B
 import           Foreign.Ptr (Ptr)
+import qualified Foundation.Array as F
+import qualified Foundation       as F
 
 -- | Class representing hashing algorithms.
 --
@@ -50,8 +52,11 @@ newtype Context a = Context Bytes
     deriving (ByteArrayAccess,NFData)
 
 -- | Represent a digest for a given hash algorithm.
-newtype Digest a = Digest Bytes
-    deriving (Eq,Ord,ByteArrayAccess,NFData)
+newtype Digest a = Digest (F.UArray Word8)
+    deriving (Eq,Ord,ByteArrayAccess)
+
+instance NFData (Digest a) where
+    rnf (Digest u) = u `F.deepseq` ()
 
 instance Show (Digest a) where
     show (Digest bs) = map (toEnum . fromIntegral)

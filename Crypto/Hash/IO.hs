@@ -8,6 +8,7 @@
 -- Generalized impure cryptographic hash interface
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 module Crypto.Hash.IO
     ( HashAlgorithm(..)
     , MutableContext
@@ -51,18 +52,10 @@ hashMutableUpdate mc dat = doUpdate mc (B.withByteArray mc)
                 hashInternalUpdate ctx d (fromIntegral $ B.length dat)
 
 -- | Finalize a mutable hash context and compute a digest
-hashMutableFinalize :: HashAlgorithm a => MutableContext a -> IO (Digest a)
-hashMutableFinalize mc = doFinalize undefined (B.withByteArray mc) B.alloc
-  where doFinalize :: HashAlgorithm alg
-                   => alg
-                   -> ((Ptr (Context alg) -> IO ()) -> IO ())
-                   -> (Int -> (Ptr (Digest alg)  -> IO ()) -> IO B.Bytes)
-                   -> IO (Digest alg)
-        doFinalize alg withCtx allocDigest = do
-            b <- allocDigest (hashDigestSize alg) $ \dig ->
-                    withCtx $ \ctx ->
-                        hashInternalFinalize ctx dig
-            return $ Digest b
+hashMutableFinalize :: forall a . HashAlgorithm a => MutableContext a -> IO (Digest a)
+hashMutableFinalize mc = do
+    b <- B.alloc (hashDigestSize (undefined :: a)) $ \dig -> B.withByteArray mc $ \(ctx :: Ptr (Context a)) -> hashInternalFinalize ctx dig
+    return $ Digest b
 
 -- | Reset the mutable context to the initial state of the hash
 hashMutableReset :: HashAlgorithm a => MutableContext a -> IO ()
