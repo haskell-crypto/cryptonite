@@ -17,6 +17,7 @@
 -- > hexSha3_512 bs = show (hash bs :: Digest SHA3_512)
 --
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE BangPatterns        #-}
 module Crypto.Hash
     (
     -- * Types
