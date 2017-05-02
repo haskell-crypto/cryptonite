@@ -1,5 +1,5 @@
+{-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE BangPatterns #-}
 module KAT_Ed25519 ( tests ) where
 
 import           Crypto.Error
@@ -23,6 +23,7 @@ vec1 = Vec
 testVec :: String -> Vec -> [TestTree]
 testVec s vec =
     [ testCase (s ++ " gen publickey") (pub @=? Ed25519.toPublic sec)
+    , testCase (s ++ " gen secretkey") (Ed25519.generateSecretKey *> pure ())
     , testCase (s ++ " gen signature") (sig @=? Ed25519.sign sec pub (vecMsg vec))
     ]
   where
