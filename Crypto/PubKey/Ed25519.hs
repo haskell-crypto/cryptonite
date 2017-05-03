@@ -9,7 +9,6 @@
 --
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
 module Crypto.PubKey.Ed25519
     ( SecretKey
     , PublicKey
@@ -116,9 +115,7 @@ verify public message signatureVal = unsafeDoIO $
 
 -- | Generate a secret key
 generateSecretKey :: MonadRandom m => m SecretKey
-generateSecretKey = do
-    ba :: ScrubbedBytes <- getRandomBytes secretKeySize
-    return (SecretKey $ B.copyAndFreeze ba (\_ -> return ()))
+generateSecretKey = SecretKey <$> getRandomBytes secretKeySize
 
 -- | A public key is 32 bytes
 publicKeySize :: Int
