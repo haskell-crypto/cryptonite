@@ -7,12 +7,17 @@
 --
 -- Ed25519 support
 --
+{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 module Crypto.PubKey.Ed25519
     ( SecretKey
     , PublicKey
     , Signature
+    -- * Size constants
+    , publicKeySize
+    , secretKeySize
+    , signatureSize
     -- * Smart constructors
     , signature
     , publicKey
@@ -21,17 +26,20 @@ module Crypto.PubKey.Ed25519
     , toPublic
     , sign
     , verify
+    , generateSecretKey
     ) where
 
 import           Data.Word
-import           Foreign.Ptr
 import           Foreign.C.Types
+import           Foreign.Ptr
 
+import           Crypto.Error
+import           Crypto.Internal.ByteArray (ByteArrayAccess, Bytes,
+                                            ScrubbedBytes, withByteArray)
+import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
-import           Crypto.Internal.ByteArray (ByteArrayAccess, withByteArray, ScrubbedBytes, Bytes)
-import qualified Crypto.Internal.ByteArray as B
-import           Crypto.Error
+import           Crypto.Random
 
 -- | An Ed25519 Secret key
 newtype SecretKey = SecretKey ScrubbedBytes
@@ -106,12 +114,21 @@ verify public message signatureVal = unsafeDoIO $
   where
     !msgLen = B.length message
 
+-- | Generate a secret key
+generateSecretKey :: MonadRandom m => m SecretKey
+generateSecretKey = do
+    ba :: ScrubbedBytes <- getRandomBytes secretKeySize
+    return (SecretKey $ B.copyAndFreeze ba (\_ -> return ()))
+
+-- | A public key is 32 bytes
 publicKeySize :: Int
 publicKeySize = 32
 
+-- | A secret key is 32 bytes
 secretKeySize :: Int
 secretKeySize = 32
 
+-- | A signature is 64 bytes
 signatureSize :: Int
 signatureSize = 64
 
