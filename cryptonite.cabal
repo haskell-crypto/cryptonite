@@ -261,13 +261,6 @@ Library
                    , cbits/cryptonite_whirlpool.c
                    , cbits/cryptonite_scrypt.c
                    , cbits/cryptonite_pbkdf2.c
-                   , cbits/decaf/utils.c
-                   , cbits/decaf/ed448goldilocks/decaf.c
-                   , cbits/decaf/ed448goldilocks/decaf_tables.c
-                   , cbits/decaf/ed448goldilocks/eddsa.c
-                   , cbits/decaf/ed448goldilocks/scalar.c
-                   , cbits/decaf/p448/f_arithmetic.c
-                   , cbits/decaf/p448/f_generic.c
   include-dirs:      cbits
                    , cbits/ed25519
                    , cbits/decaf/include
@@ -275,11 +268,25 @@ Library
 
   if arch(x86_64)
     C-sources:         cbits/decaf/p448/arch_ref64/f_impl.c
+                     , cbits/decaf/p448/f_generic.c
+                     , cbits/decaf/p448/f_arithmetic.c
+                     , cbits/decaf/utils.c
+                     , cbits/decaf/ed448goldilocks/scalar.c
+                     , cbits/decaf/ed448goldilocks/decaf_tables.c
+                     , cbits/decaf/ed448goldilocks/decaf.c
+                     , cbits/decaf/ed448goldilocks/eddsa.c
 
     include-dirs:      cbits/decaf/include/arch_ref64
                      , cbits/decaf/p448/arch_ref64
   else
     C-sources:         cbits/decaf/p448/arch_32/f_impl.c
+                     , cbits/decaf/p448/f_generic.c
+                     , cbits/decaf/p448/f_arithmetic.c
+                     , cbits/decaf/utils.c
+                     , cbits/decaf/ed448goldilocks/scalar.c
+                     , cbits/decaf/ed448goldilocks/decaf_tables.c
+                     , cbits/decaf/ed448goldilocks/decaf.c
+                     , cbits/decaf/ed448goldilocks/eddsa.c
 
     include-dirs:      cbits/decaf/include/arch_32
                      , cbits/decaf/p448/arch_32
