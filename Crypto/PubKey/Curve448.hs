@@ -93,9 +93,7 @@ toPublic :: SecretKey -> PublicKey
 toPublic (SecretKey sec) = PublicKey <$>
     B.allocAndFreeze x448_bytes     $ \result ->
     withByteArray sec               $ \psec   ->
-        decaf_x448 result basePoint psec
-  where
-        basePoint = Ptr "\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"#
+        decaf_x448_derive_public_key result psec
 {-# NOINLINE toPublic #-}
 
 -- | Generate a secret key.
@@ -110,3 +108,8 @@ foreign import ccall "cryptonite_decaf_x448"
                -> Ptr Word8 -- ^ basepoint
                -> Ptr Word8 -- ^ secret
                -> IO ()
+
+foreign import ccall "cryptonite_decaf_x448_derive_public_key"
+    decaf_x448_derive_public_key :: Ptr Word8 -- ^ public
+                                 -> Ptr Word8 -- ^ secret
+                                 -> IO ()
