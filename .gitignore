@@ -6,6 +6,7 @@
 gen/Gen
 gen/Crypto/*
 dist
+dist-newstyle
 QA
 benchs/Bench
 benchs/Hash

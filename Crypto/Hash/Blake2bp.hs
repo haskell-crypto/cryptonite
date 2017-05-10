@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.Blake2bp
     (  Blake2bp_512 (..)
     ) where
@@ -26,12 +28,14 @@ data Blake2bp_512 = Blake2bp_512
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Blake2bp_512 where
-    hashBlockSize  _          = 128
-    hashDigestSize _          = 64
-    hashInternalContextSize _ = 2325
     hashInternalInit p        = c_blake2sp_init p 512
     hashInternalUpdate        = c_blake2sp_update
     hashInternalFinalize p    = c_blake2sp_finalize p 512
+
+instance HashAlgorithm' Blake2bp_512 where
+    type HashBlockSize           Blake2bp_512 = 128
+    type HashDigestSize          Blake2bp_512 = 64
+    type HashInternalContextSize Blake2bp_512 = 2325
 
 
 foreign import ccall unsafe "cryptonite_blake2sp_init"
