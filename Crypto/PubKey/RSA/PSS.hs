@@ -66,13 +66,14 @@ signDigestWithSalt :: HashAlgorithm hash
                    -> Maybe Blinder -- ^ optional blinder to use
                    -> PSSParams hash ByteString ByteString -- ^ PSS Parameters to use
                    -> PrivateKey    -- ^ RSA Private Key
-                   -> ByteString    -- ^ Message digest
+                   -> Digest hash   -- ^ Message digest
                    -> Either Error ByteString
-signDigestWithSalt salt blinder params pk mHash
+signDigestWithSalt salt blinder params pk digest
     | k < hashLen + saltLen + 2 = Left InvalidParameters
     | hashLen /= B.length mHash = Left InvalidParameters
     | otherwise                 = Right $ dp blinder pk em
     where k        = private_size pk
+          mHash    = B.convert digest
           dbLen    = k - hashLen - 1
           saltLen  = B.length salt
           hashLen  = hashDigestSize (pssHash params)
@@ -95,7 +96,7 @@ signWithSalt :: HashAlgorithm hash
              -> ByteString    -- ^ Message to sign
              -> Either Error ByteString
 signWithSalt salt blinder params pk m = signDigestWithSalt salt blinder params pk mHash
-    where mHash    = B.convert $ hashWith (pssHash params) m
+    where mHash    = hashWith (pssHash params) m
 
 -- | Sign using the PSS Parameters
 sign :: (HashAlgorithm hash, MonadRandom m)
@@ -113,7 +114,7 @@ signDigest :: (HashAlgorithm hash, MonadRandom m)
            => Maybe Blinder   -- ^ optional blinder to use
            -> PSSParams hash ByteString ByteString -- ^ PSS Parameters to use
            -> PrivateKey      -- ^ RSA Private Key
-           -> ByteString      -- ^ Message digest
+           -> Digest hash     -- ^ Message digest
            -> m (Either Error ByteString)
 signDigest blinder params pk digest = do
     salt <- getRandomBytes (pssSaltLength params)
@@ -133,7 +134,7 @@ signSafer params pk m = do
 signDigestSafer :: (HashAlgorithm hash, MonadRandom m)
                 => PSSParams hash ByteString ByteString -- ^ PSS Parameters to use
                 -> PrivateKey     -- ^ private key
-                -> ByteString     -- ^ message digst
+                -> Digest hash    -- ^ message digst
                 -> m (Either Error ByteString)
 signDigestSafer params pk digest = do
     blinder <- generateBlinder (private_n pk)
@@ -149,18 +150,18 @@ verify :: HashAlgorithm hash
        -> ByteString -- ^ Signature
        -> Bool
 verify params pk m s = verifyDigest params pk mHash s
-  where mHash     = B.convert $ hashWith (pssHash params) m
+  where mHash     = hashWith (pssHash params) m
 
 -- | Verify a signature using the PSS Parameters
 verifyDigest :: HashAlgorithm hash
              => PSSParams hash ByteString ByteString
-                           -- ^ PSS Parameters to use to verify,
-                           --   this need to be identical to the parameters when signing
-             -> PublicKey  -- ^ RSA Public Key
-             -> ByteString -- ^ Digest to verify
-             -> ByteString -- ^ Signature
+                            -- ^ PSS Parameters to use to verify,
+                            --   this need to be identical to the parameters when signing
+             -> PublicKey   -- ^ RSA Public Key
+             -> Digest hash -- ^ Digest to verify
+             -> ByteString  -- ^ Signature
              -> Bool
-verifyDigest params pk mHash s
+verifyDigest params pk digest s
     | public_size pk /= B.length s        = False
     | B.last em /= pssTrailerField params = False
     | not (B.all (== 0) ps0)              = False
@@ -168,6 +169,7 @@ verifyDigest params pk mHash s
     | otherwise                           = h == B.convert h'
         where -- parameters
               hashLen   = hashDigestSize (pssHash params)
+              mHash     = B.convert digest
               dbLen     = public_size pk - hashLen - 1
               pubBits   = public_size pk * 8 -- to change if public_size is converted in bytes
               -- unmarshall fields
