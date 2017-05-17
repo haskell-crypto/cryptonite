@@ -36,13 +36,13 @@ import           Foreign.Ptr
 -- | Which variant of Argon2 to use. You should choose the variant that is most
 -- applicable to your intention to hash inputs.
 data Variant =
-      Argon2d  -- ^ Argon2i uses data-independent memory access, which is preferred
+      Argon2d  -- ^ Argon2d is faster than Argon2i and uses data-depending memory access,
+               -- which makes it suitable for cryptocurrencies and applications with no
+               -- threats from side-channel timing attacks.
+    | Argon2i  -- ^ Argon2i uses data-independent memory access, which is preferred
                -- for password hashing and password-based key derivation. Argon2i
                -- is slower as it makes more passes over the memory to protect from
                -- tradeoff attacks.
-    | Argon2i -- ^ Argon2d is faster and uses data-depending memory access, which
-              -- makes it suitable for cryptocurrencies and applications with no
-              -- threats from side-channel timing attacks.
     | Argon2id -- ^ Argon2id is a hybrid of Argon2i and Argon2d, using a combination
                -- of data-depending and data-independent memory accesses, which gives
                -- some of Argon2i's resistance to side-channel cache timing attacks
