@@ -81,6 +81,18 @@ instance ByteArrayAccess Nonce where
   withByteArray (Nonce8  n) = B.withByteArray n
   withByteArray (Nonce12 n) = B.withByteArray n
 
+instance Eq Nonce where
+  (Nonce8  a) == (Nonce8  b) = a == b
+  (Nonce12 a) == (Nonce12 b) = a == b
+  (Nonce8  a) == (Nonce12 b) = a == b
+  (Nonce12 a) == (Nonce8  b) = a == b
+
+instance Ord Nonce where
+  compare (Nonce8  a) (Nonce8  b) = compare a b
+  compare (Nonce12 a) (Nonce12 b) = compare a b
+  compare (Nonce8  a) (Nonce12 b) = compare a b
+  compare (Nonce12 a) (Nonce8  b) = compare a b
+
 -- Based on the following pseudo code:
 --
 -- chacha20_aead_encrypt(aad, key, iv, constant, plaintext):
