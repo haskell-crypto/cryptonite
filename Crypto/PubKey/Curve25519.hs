@@ -92,7 +92,10 @@ dhSecret bs
     | B.length bs == 32 = CryptoPassed $ DhSecret $ B.copyAndFreeze bs (\_ -> return ())
     | otherwise         = CryptoFailed CryptoError_SharedSecretSizeInvalid
 
--- | Compute the Diffie Hellman secret from a public key and a secret key
+-- | Compute the Diffie Hellman secret from a public key and a secret key.
+--
+-- This implementation may return an all-zero value as it does not check for
+-- the condition.
 dh :: PublicKey -> SecretKey -> DhSecret
 dh (PublicKey pub) (SecretKey sec) = DhSecret <$>
     B.allocAndFreeze 32        $ \result ->
