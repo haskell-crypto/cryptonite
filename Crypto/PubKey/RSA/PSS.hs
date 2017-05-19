@@ -70,7 +70,6 @@ signDigestWithSalt :: HashAlgorithm hash
                    -> Either Error ByteString
 signDigestWithSalt salt blinder params pk digest
     | k < hashLen + saltLen + 2 = Left InvalidParameters
-    | hashLen /= B.length mHash = Left InvalidParameters
     | otherwise                 = Right $ dp blinder pk em
     where k        = private_size pk
           mHash    = B.convert digest
