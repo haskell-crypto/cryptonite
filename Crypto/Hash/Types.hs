@@ -17,6 +17,7 @@ module Crypto.Hash.Types
 import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArrayAccess, Bytes)
 import qualified Crypto.Internal.ByteArray as B
+import           Data.Byteable (Byteable, toBytes)
 import           Foreign.Ptr (Ptr)
 import qualified Foundation.Array as F
 import qualified Foundation       as F
@@ -61,3 +62,6 @@ instance NFData (Digest a) where
 instance Show (Digest a) where
     show (Digest bs) = map (toEnum . fromIntegral)
                      $ B.unpack (B.convertToBase B.Base16 bs :: Bytes)
+
+instance Byteable (Digest a) where
+    toBytes (Digest bs) = B.pack $ B.unpack (bs :: Bytes)
