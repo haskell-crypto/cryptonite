@@ -36,7 +36,6 @@ module Crypto.Cipher.Types.Block
     --, cfb8Decrypt
     ) where
 
-import           Control.Monad (unless)
 import           Data.Word
 import           Data.Monoid
 import           Crypto.Error
@@ -171,13 +170,14 @@ ivAdd (IV b) i = IV $ copy b
         copy bs = B.copyAndFreeze bs $ loop i (B.length bs - 1)
 
         loop :: Int -> Int -> Ptr Word8 -> IO ()
-        loop 0   _   _ = return ()
-        loop acc ofs p = do
-            v <- peek (p `plusPtr` ofs) :: IO Word8
-            let accv    = acc + fromIntegral v
-                (hi,lo) = accv `divMod` 256
-            poke (p `plusPtr` ofs) (fromIntegral lo :: Word8)
-            unless (ofs == 0) $ loop hi (ofs - 1) p
+        loop acc ofs p
+            | ofs < 0   = return ()
+            | otherwise = do
+                v <- peek (p `plusPtr` ofs) :: IO Word8
+                let accv    = acc + fromIntegral v
+                    (hi,lo) = accv `divMod` 256
+                poke (p `plusPtr` ofs) (fromIntegral lo :: Word8)
+                loop hi (ofs - 1) p
 
 cbcEncryptGeneric :: (ByteArray ba, BlockCipher cipher) => cipher -> IV cipher -> ba -> ba
 cbcEncryptGeneric cipher ivini input = mconcat $ doEnc ivini $ chunk (blockSize cipher) input
