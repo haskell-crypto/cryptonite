@@ -16,7 +16,7 @@ import           Imports
 import           Data.Maybe
 import           Crypto.Error
 import           Crypto.Cipher.Types
-import           Data.ByteArray as B hiding (pack, null)
+import           Data.ByteArray as B hiding (pack, null, length)
 import qualified Data.ByteString as B hiding (all)
 
 ------------------------------------------------------------------------
@@ -389,7 +389,7 @@ testBlockCipherModes cipher =
 testBlockCipherAEAD :: BlockCipher a => a -> [TestTree]
 testBlockCipherAEAD cipher =
     [ testProperty "OCB" (aeadProp AEAD_OCB)
-    , testProperty "CCM" (aeadProp AEAD_CCM)
+    , testProperty "CCM" (aeadProp (AEAD_CCM 0 CCM_M16 CCM_L2))
     , testProperty "EAX" (aeadProp AEAD_EAX)
     , testProperty "CWC" (aeadProp AEAD_CWC)
     , testProperty "GCM" (aeadProp AEAD_GCM)
@@ -398,7 +398,7 @@ testBlockCipherAEAD cipher =
         toTests :: BlockCipher a => a -> (AEADMode -> AEADUnit a -> Bool)
         toTests _ = testProperty_AEAD
         testProperty_AEAD mode (AEADUnit key testIV (unPlaintext -> aad) (unPlaintext -> plaintext)) = withCtx key $ \ctx ->
-            case aeadInit mode ctx testIV of
+            case aeadInit mode' ctx testIV of
                 CryptoPassed iniAead ->
                     let aead           = aeadAppendHeader iniAead aad
                         (eText, aeadE) = aeadEncrypt aead plaintext
@@ -409,6 +409,10 @@ testBlockCipherAEAD cipher =
                 CryptoFailed err
                     | err == CryptoError_AEADModeNotSupported -> True
                     | otherwise                               -> error ("testProperty_AEAD: " ++ show err)
+            where mode' = updateCcmInputSize mode (B.length plaintext)
+                  updateCcmInputSize aeadmode k = case aeadmode of
+                    AEAD_CCM _ m l -> AEAD_CCM k m l
+                    aeadOther      -> aeadOther
 
 withCtx :: Cipher c => Key c -> (c -> a) -> a
 withCtx (Key key) f =

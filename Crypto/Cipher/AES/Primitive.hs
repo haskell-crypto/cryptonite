@@ -535,12 +535,7 @@ ccmEncrypt ctx ccm input = unsafeDoIO $ (withCCMKeyAndCopySt ctx ccm cbcmacAndIv
 -- needs to happen after AAD appending, or after initialization if no AAD data.
 {-# NOINLINE ccmDecrypt #-}
 ccmDecrypt :: ByteArray ba => AES -> AESCCM -> ba -> (ba, AESCCM)
-ccmDecrypt ctx ccm input = unsafeDoIO $ withCCMKeyAndCopySt ctx ccm doDec
-  where len = B.length input
-        doDec ccmStPtr aesPtr =
-            B.alloc len $ \o ->
-            withByteArray input $ \i ->
-            c_aes_ccm_decrypt (castPtr o) ccmStPtr aesPtr i (fromIntegral len)
+ccmDecrypt = ccmEncrypt
 
 -- | Generate the Tag from CCM context
 {-# NOINLINE ccmFinish #-}
