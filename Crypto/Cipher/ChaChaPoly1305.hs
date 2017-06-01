@@ -84,14 +84,12 @@ instance ByteArrayAccess Nonce where
 instance Eq Nonce where
   (Nonce8  a) == (Nonce8  b) = a == b
   (Nonce12 a) == (Nonce12 b) = a == b
-  (Nonce8  a) == (Nonce12 b) = a == b
-  (Nonce12 a) == (Nonce8  b) = a == b
+  _           == _           = error "unable to compare 8-byte and 12-byte nonces"
 
 instance Ord Nonce where
   compare (Nonce8  a) (Nonce8  b) = compare a b
   compare (Nonce12 a) (Nonce12 b) = compare a b
-  compare (Nonce8  a) (Nonce12 b) = compare a b
-  compare (Nonce12 a) (Nonce8  b) = compare a b
+  compare _           _           = error "unable to compare 8-byte and 12-byte nonces"
 
 -- Based on the following pseudo code:
 --
