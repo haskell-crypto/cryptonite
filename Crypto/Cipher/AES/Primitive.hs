@@ -104,7 +104,7 @@ ocbMode aes = AEADModeImpl
 -- | Create an AES AEAD implementation for GCM
 ccmMode :: AES -> AEADModeImpl AESCCM
 ccmMode aes = AEADModeImpl
-    { aeadImplAppendHeader = ccmAppendAAD
+    { aeadImplAppendHeader = ccmAppendAAD aes
     , aeadImplEncrypt      = ccmEncrypt aes
     , aeadImplDecrypt      = ccmDecrypt aes
     , aeadImplFinalize     = ccmFinish aes
@@ -133,7 +133,7 @@ sizeOCB :: Int
 sizeOCB = 160
 
 sizeCCM :: Int
-sizeCCM = 544
+sizeCCM = 80
 
 keyToPtr :: AES -> (Ptr AES -> IO a) -> IO a
 keyToPtr (AES b) f = withByteArray b (f . castPtr)
@@ -178,9 +178,6 @@ withCCMKeyAndCopySt aes (AESCCM ccmSt) f =
         newSt <- B.copy ccmSt (\_ -> return ())
         a     <- withByteArray newSt $ \ccmStPtr -> f (castPtr ccmStPtr) aesPtr
         return (a, AESCCM newSt)
-
-withNewCCMSt :: AESCCM -> (Ptr AESCCM -> IO ()) -> IO AESCCM
-withNewCCMSt (AESCCM ccmSt) f = B.copy ccmSt (f . castPtr) >>= \sm2 -> return (AESCCM sm2)
 
 -- | Initialize a new context with a key
 --
@@ -506,15 +503,10 @@ ccmInit ctx iv n m l = unsafeDoIO $ do
 --
 -- needs to happen after initialization and before appending encryption/decryption data.
 {-# NOINLINE ccmAppendAAD #-}
-ccmAppendAAD :: ByteArrayAccess aad => AESCCM -> aad -> AESCCM
-ccmAppendAAD ccmSt input = unsafeDoIO doAppend
-  where doAppend =
-            withNewCCMSt ccmSt $ \ccmStPtr ->
-            withByteArray input $ \i ->
-            c_aes_ccm_aad ccmStPtr i (fromIntegral $ B.length input)
-
-doCTR :: (ByteArray ba, BlockCipher cipher) => cipher -> ba -> ba -> ba
-doCTR ctx iv0 input = ctrCombine ctx (ivAdd (IV (B.convert iv0 :: B.Bytes)) 1) input
+ccmAppendAAD :: ByteArrayAccess aad => AES -> AESCCM -> aad -> AESCCM
+ccmAppendAAD ctx ccm input = unsafeDoIO $ snd <$> withCCMKeyAndCopySt ctx ccm doAppend
+  where doAppend ccmStPtr aesPtr =
+            withByteArray input $ \i -> c_aes_ccm_aad ccmStPtr aesPtr i (fromIntegral $ B.length input)
 
 -- | append data to encrypt and append to the CCM context
 --
@@ -522,10 +514,10 @@ doCTR ctx iv0 input = ctrCombine ctx (ivAdd (IV (B.convert iv0 :: B.Bytes)) 1) i
 -- needs to happen after AAD appending, or after initialization if no AAD data.
 {-# NOINLINE ccmEncrypt #-}
 ccmEncrypt :: ByteArray ba => AES -> AESCCM -> ba -> (ba, AESCCM)
-ccmEncrypt ctx ccm input = unsafeDoIO $ (withCCMKeyAndCopySt ctx ccm cbcmacAndIv >>= \(iv0, cc) -> return (doCTR ctx iv0 input, cc))
+ccmEncrypt ctx ccm input = unsafeDoIO $ withCCMKeyAndCopySt ctx ccm cbcmacAndIv
   where len = B.length input
         cbcmacAndIv ccmStPtr aesPtr =
-            B.alloc 16 $ \o ->
+            B.alloc len $ \o ->
             withByteArray input $ \i ->
             c_aes_ccm_encrypt (castPtr o) ccmStPtr aesPtr i (fromIntegral len)
 
@@ -535,7 +527,12 @@ ccmEncrypt ctx ccm input = unsafeDoIO $ (withCCMKeyAndCopySt ctx ccm cbcmacAndIv
 -- needs to happen after AAD appending, or after initialization if no AAD data.
 {-# NOINLINE ccmDecrypt #-}
 ccmDecrypt :: ByteArray ba => AES -> AESCCM -> ba -> (ba, AESCCM)
-ccmDecrypt = ccmEncrypt
+ccmDecrypt ctx ccm input = unsafeDoIO $ withCCMKeyAndCopySt ctx ccm cbcmacAndIv
+  where len = B.length input
+        cbcmacAndIv ccmStPtr aesPtr =
+            B.alloc len $ \o ->
+            withByteArray input $ \i ->
+            c_aes_ccm_decrypt (castPtr o) ccmStPtr aesPtr i (fromIntegral len)
 
 -- | Generate the Tag from CCM context
 {-# NOINLINE ccmFinish #-}
@@ -606,10 +603,10 @@ foreign import ccall "cryptonite_aes.h cryptonite_aes_ocb_finish"
     c_aes_ocb_finish :: CString -> Ptr AESOCB -> Ptr AES -> IO ()
 
 foreign import ccall "cryptonite_aes.h cryptonite_aes_ccm_init"
-    c_aes_ccm_init :: Ptr AESCCM -> Ptr AES -> Ptr Word8 -> CUInt -> CULong -> CInt -> CInt -> IO ()
+    c_aes_ccm_init :: Ptr AESCCM -> Ptr AES -> Ptr Word8 -> CUInt -> CUInt -> CInt -> CInt -> IO ()
 
 foreign import ccall "cryptonite_aes.h cryptonite_aes_ccm_aad"
-    c_aes_ccm_aad :: Ptr AESCCM -> CString -> CUInt -> IO ()
+    c_aes_ccm_aad :: Ptr AESCCM -> Ptr AES -> CString -> CUInt -> IO ()
 
 foreign import ccall "cryptonite_aes.h cryptonite_aes_ccm_encrypt"
     c_aes_ccm_encrypt :: CString -> Ptr AESCCM -> Ptr AES -> CString -> CUInt -> IO ()
