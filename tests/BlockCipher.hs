@@ -16,6 +16,7 @@ import           Imports
 import           Data.Maybe
 import           Crypto.Error
 import           Crypto.Cipher.Types
+
 import           Data.ByteArray as B hiding (pack, null, length)
 import qualified Data.ByteString as B
 
@@ -441,11 +442,33 @@ testModes cipher =
         (testBlockCipherBasic cipher ++ testBlockCipherModes cipher ++ testBlockCipherAEAD cipher)
     ]
 
+-- | Test IV arithmetic (based on the cipher block size)
+testIvArith :: BlockCipher a => a -> [TestTree]
+testIvArith cipher =
+    [ testCase "nullIV is null" $
+          True @=? B.all (== 0) (ivNull cipher)
+    , testProperty "ivAdd is linear" $ \a b -> do
+          iv <- generateIvFromCipher cipher
+          return $ ivAdd iv (a + b) `propertyEq` ivAdd (ivAdd iv a) b
+    ]
+  where
+    ivNull :: BlockCipher a => a -> IV a
+    ivNull = const nullIV
+
+    -- uses IV pattern <00 .. 00 FF .. FF> to test carry propagation
+    generateIvFromCipher :: BlockCipher a => a -> Gen (IV a)
+    generateIvFromCipher c = do
+        let n = blockSize c
+        i <- choose (0, n)
+        let zeros = Prelude.replicate (n - i) 0x00
+            ones  = Prelude.replicate i 0xFF
+        return $ cipherMakeIV c (B.pack $ zeros ++ ones)
+
 -- | Return tests for a specific blockcipher and a list of KATs
 testBlockCipher :: BlockCipher a => KATs -> a -> TestTree
 testBlockCipher kats cipher = testGroup (cipherName cipher)
     (  (if kats == defaultKATs  then [] else [testKATs kats cipher])
-    ++ testModes cipher
+    ++ testModes cipher ++ testIvArith cipher
     )
 
 cipherMakeKey :: Cipher cipher => cipher -> ByteString -> Key cipher

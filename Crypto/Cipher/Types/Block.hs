@@ -167,24 +167,17 @@ nullIV = toIV undefined
 ivAdd :: BlockCipher c => IV c -> Int -> IV c
 ivAdd (IV b) i = IV $ copy b
   where copy :: ByteArray bs => bs -> bs
-        copy bs = B.copyAndFreeze bs $ \p -> do
-            let until0 accu = do
-                  r <- loop accu (B.length bs - 1) p
-                  case r of
-                      0 -> return ()
-                      _ -> until0 r
-            until0 i
+        copy bs = B.copyAndFreeze bs $ loop i (B.length bs - 1)
 
-        loop :: Int -> Int -> Ptr Word8 -> IO Int
-        loop 0   _   _ = return 0
-        loop acc ofs p = do
-            v <- peek (p `plusPtr` ofs) :: IO Word8
-            let accv    = acc + fromIntegral v
-                (hi,lo) = accv `divMod` 256
-            poke (p `plusPtr` ofs) (fromIntegral lo :: Word8)
-            if ofs == 0
-                then return hi
-                else loop hi (ofs - 1) p
+        loop :: Int -> Int -> Ptr Word8 -> IO ()
+        loop acc ofs p
+            | ofs < 0   = return ()
+            | otherwise = do
+                v <- peek (p `plusPtr` ofs) :: IO Word8
+                let accv    = acc + fromIntegral v
+                    (hi,lo) = accv `divMod` 256
+                poke (p `plusPtr` ofs) (fromIntegral lo :: Word8)
+                loop hi (ofs - 1) p
 
 cbcEncryptGeneric :: (ByteArray ba, BlockCipher cipher) => cipher -> IV cipher -> ba -> ba
 cbcEncryptGeneric cipher ivini input = mconcat $ doEnc ivini $ chunk (blockSize cipher) input
