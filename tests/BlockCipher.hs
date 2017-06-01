@@ -18,7 +18,7 @@ import           Crypto.Error
 import           Crypto.Cipher.Types
 
 import           Data.ByteArray as B hiding (pack, null, length)
-import qualified Data.ByteString as B
+import qualified Data.ByteString as B hiding (all)
 
 ------------------------------------------------------------------------
 -- KAT
