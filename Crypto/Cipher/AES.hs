@@ -59,6 +59,7 @@ instance BlockCipher CSTR where \
     ; ctrCombine (CSTR aes) (IV iv) = encryptCTR aes (IV iv) \
     ; aeadInit AEAD_GCM (CSTR aes) iv = CryptoPassed $ AEAD (gcmMode aes) (gcmInit aes iv) \
     ; aeadInit AEAD_OCB (CSTR aes) iv = CryptoPassed $ AEAD (ocbMode aes) (ocbInit aes iv) \
+    ; aeadInit (AEAD_CCM n m l) (CSTR aes) iv = CryptoPassed $ AEAD (ccmMode aes) (ccmInit aes iv n m l) \
     ; aeadInit _        _          _  = CryptoFailed CryptoError_AEADModeNotSupported \
     }; \
 instance BlockCipher128 CSTR where \

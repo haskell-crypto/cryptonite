@@ -14,6 +14,8 @@ module Crypto.Cipher.Types.Base
     , Cipher(..)
     , AuthTag(..)
     , AEADMode(..)
+    , CCM_M(..)
+    , CCM_L(..)
     , DataUnitOffset
     ) where
 
@@ -39,10 +41,13 @@ newtype AuthTag = AuthTag { unAuthTag :: Bytes }
 instance Eq AuthTag where
     (AuthTag a) == (AuthTag b) = B.constEq a b
 
+data CCM_M = CCM_M4 | CCM_M6 | CCM_M8 | CCM_M10 | CCM_M12 | CCM_M14 | CCM_M16 deriving (Show, Eq)
+data CCM_L = CCM_L2 | CCM_L3 | CCM_L4 deriving (Show, Eq)
+
 -- | AEAD Mode
 data AEADMode =
       AEAD_OCB -- OCB3
-    | AEAD_CCM
+    | AEAD_CCM Int CCM_M CCM_L
     | AEAD_EAX
     | AEAD_CWC
     | AEAD_GCM
