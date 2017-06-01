@@ -114,7 +114,7 @@ instance EllipticCurve Curve_P256R1 where
         Nothing -> CryptoFailed $ CryptoError_PointSizeInvalid
         Just (m,xy)
             -- uncompressed
-            | m == 4 -> P256.pointFromBinary xy
+            | m == 4 -> P256.pointFromBinary xy >>= validateP256Point
             | otherwise -> CryptoFailed $ CryptoError_PointFormatInvalid
 
 instance EllipticCurveArith Curve_P256R1 where
@@ -201,6 +201,11 @@ instance EllipticCurve Curve_X448 where
 instance EllipticCurveDH Curve_X448 where
     ecdh _ s p = SharedSecret $ convert secret
       where secret = X448.dh p s
+
+validateP256Point :: P256.Point -> CryptoFailable P256.Point
+validateP256Point p
+    | P256.pointIsValid p = CryptoPassed p
+    | otherwise           = CryptoFailed $ CryptoError_PointCoordinatesInvalid
 
 encodeECPoint :: forall curve bs . (Simple.Curve curve, ByteArray bs) => Simple.Point curve -> bs
 encodeECPoint Simple.PointO      = error "encodeECPoint: cannot serialize point at infinity"
