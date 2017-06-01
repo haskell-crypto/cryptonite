@@ -55,15 +55,14 @@ typedef struct {
 	uint64_t length_input;
 } aes_gcm;
 
-/* size = 544 */
+/* size = 80 */
 typedef struct {
-	aes_block iv;	/* iv with counter = 0 block */
-	aes_block xi;	/* X_i: cbc mac */
-	aes_block b0;	/* block b0 */
+	aes_block xi;
+	aes_block header_cbcmac;
+	aes_block b0;
 	aes_block nonce;
-	aes_key  aad_key;
-	uint64_t length_aad;
-	uint64_t length_input;
+	unsigned length_aad;
+	unsigned length_input;
         int      length_M;
         int      length_L;
 } aes_ccm;
@@ -110,8 +109,8 @@ void cryptonite_aes_ocb_encrypt(uint8_t *output, aes_ocb *ocb, aes_key *key, uin
 void cryptonite_aes_ocb_decrypt(uint8_t *output, aes_ocb *ocb, aes_key *key, uint8_t *input, uint32_t length);
 void cryptonite_aes_ocb_finish(uint8_t *tag, aes_ocb *ocb, aes_key *key);
 
-void cryptonite_aes_ccm_init(aes_ccm *ccm, aes_key *key, uint8_t *nonce, uint32_t len, uint64_t msg_size, int m, int l);
-void cryptonite_aes_ccm_aad(aes_ccm *ccm, uint8_t *input, uint32_t length);
+void cryptonite_aes_ccm_init(aes_ccm *ccm, aes_key *key, uint8_t *nonce, uint32_t len, uint32_t msg_size, int m, int l);
+void cryptonite_aes_ccm_aad(aes_ccm *ccm, aes_key *key, uint8_t *input, uint32_t length);
 void cryptonite_aes_ccm_encrypt(uint8_t *output, aes_ccm *ccm, aes_key *key, uint8_t *input, uint32_t length);
 void cryptonite_aes_ccm_decrypt(uint8_t *output, aes_ccm *ccm, aes_key *key, uint8_t *input, uint32_t length);
 void cryptonite_aes_ccm_finish(uint8_t *tag, aes_ccm *ccm, aes_key *key);
