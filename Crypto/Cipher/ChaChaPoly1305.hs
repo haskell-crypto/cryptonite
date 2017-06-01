@@ -81,6 +81,16 @@ instance ByteArrayAccess Nonce where
   withByteArray (Nonce8  n) = B.withByteArray n
   withByteArray (Nonce12 n) = B.withByteArray n
 
+instance Eq Nonce where
+  (Nonce8  a) == (Nonce8  b) = a == b
+  (Nonce12 a) == (Nonce12 b) = a == b
+  _           == _           = error "unable to compare 8-byte and 12-byte nonces"
+
+instance Ord Nonce where
+  compare (Nonce8  a) (Nonce8  b) = compare a b
+  compare (Nonce12 a) (Nonce12 b) = compare a b
+  compare _           _           = error "unable to compare 8-byte and 12-byte nonces"
+
 -- Based on the following pseudo code:
 --
 -- chacha20_aead_encrypt(aad, key, iv, constant, plaintext):
