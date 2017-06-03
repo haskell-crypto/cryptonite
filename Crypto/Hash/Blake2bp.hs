@@ -21,7 +21,7 @@ import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 
--- | Blake2bp (512 bits) cryptographic hash algorithm
+-- | Blake2bp, 4-way parallel (512 bits) cryptographic hash algorithm
 data Blake2bp_512 = Blake2bp_512
     deriving (Show,Data,Typeable)
 
