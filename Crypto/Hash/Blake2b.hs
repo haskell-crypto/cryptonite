@@ -21,7 +21,7 @@ import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 
--- | Blake2b (160 bits) cryptographic hash algorithm
+-- | Blake2b, or just Blake2 (160 bits) cryptographic hash algorithm
 data Blake2b_160 = Blake2b_160
     deriving (Show,Data,Typeable)
 
@@ -33,7 +33,7 @@ instance HashAlgorithm Blake2b_160 where
     hashInternalUpdate        = c_blake2b_update
     hashInternalFinalize p    = c_blake2b_finalize p 160
 
--- | Blake2b (224 bits) cryptographic hash algorithm
+-- | Blake2b, or just Blake2 (224 bits) cryptographic hash algorithm
 data Blake2b_224 = Blake2b_224
     deriving (Show,Data,Typeable)
 
@@ -45,7 +45,7 @@ instance HashAlgorithm Blake2b_224 where
     hashInternalUpdate        = c_blake2b_update
     hashInternalFinalize p    = c_blake2b_finalize p 224
 
--- | Blake2b (256 bits) cryptographic hash algorithm
+-- | Blake2b, or just Blake2 (256 bits) cryptographic hash algorithm
 data Blake2b_256 = Blake2b_256
     deriving (Show,Data,Typeable)
 
@@ -57,7 +57,7 @@ instance HashAlgorithm Blake2b_256 where
     hashInternalUpdate        = c_blake2b_update
     hashInternalFinalize p    = c_blake2b_finalize p 256
 
--- | Blake2b (384 bits) cryptographic hash algorithm
+-- | Blake2b, or just Blake2 (384 bits) cryptographic hash algorithm
 data Blake2b_384 = Blake2b_384
     deriving (Show,Data,Typeable)
 
@@ -69,7 +69,7 @@ instance HashAlgorithm Blake2b_384 where
     hashInternalUpdate        = c_blake2b_update
     hashInternalFinalize p    = c_blake2b_finalize p 384
 
--- | Blake2b (512 bits) cryptographic hash algorithm
+-- | Blake2b, or just Blake2 (512 bits) cryptographic hash algorithm
 data Blake2b_512 = Blake2b_512
     deriving (Show,Data,Typeable)
 
