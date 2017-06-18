@@ -7,6 +7,7 @@
 --
 -- Elliptic Curve Cryptography
 --
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -37,6 +38,8 @@ import qualified Crypto.PubKey.Curve25519 as X25519
 import qualified Crypto.PubKey.Curve448 as X448
 import           Data.Function (on)
 import           Data.ByteArray (convert)
+import           Data.Data (Data())
+import           Data.Typeable (Typeable())
 
 -- | An elliptic curve key pair composed of the private part (a scalar), and
 -- the associated point.
@@ -94,6 +97,7 @@ class EllipticCurve curve => EllipticCurveArith curve where
 --
 -- also known as P256
 data Curve_P256R1 = Curve_P256R1
+    deriving (Show,Data,Typeable)
 
 instance EllipticCurve Curve_P256R1 where
     type Point Curve_P256R1 = P256.Point
@@ -114,7 +118,7 @@ instance EllipticCurve Curve_P256R1 where
         Nothing -> CryptoFailed $ CryptoError_PointSizeInvalid
         Just (m,xy)
             -- uncompressed
-            | m == 4 -> P256.pointFromBinary xy
+            | m == 4 -> P256.pointFromBinary xy >>= validateP256Point
             | otherwise -> CryptoFailed $ CryptoError_PointFormatInvalid
 
 instance EllipticCurveArith Curve_P256R1 where
@@ -125,6 +129,7 @@ instance EllipticCurveDH Curve_P256R1 where
     ecdh _ s p = SharedSecret $ P256.pointDh s p
 
 data Curve_P384R1 = Curve_P384R1
+    deriving (Show,Data,Typeable)
 
 instance EllipticCurve Curve_P384R1 where
     type Point Curve_P384R1 = Simple.Point Simple.SEC_p384r1
@@ -147,6 +152,7 @@ instance EllipticCurveDH Curve_P384R1 where
         Simple.Point x _ = pointSmul prx s p
 
 data Curve_P521R1 = Curve_P521R1
+    deriving (Show,Data,Typeable)
 
 instance EllipticCurve Curve_P521R1 where
     type Point Curve_P521R1 = Simple.Point Simple.SEC_p521r1
@@ -169,6 +175,7 @@ instance EllipticCurveDH Curve_P521R1 where
         Simple.Point x _ = pointSmul prx s p
 
 data Curve_X25519 = Curve_X25519
+    deriving (Show,Data,Typeable)
 
 instance EllipticCurve Curve_X25519 where
     type Point Curve_X25519 = X25519.PublicKey
@@ -186,6 +193,7 @@ instance EllipticCurveDH Curve_X25519 where
       where secret = X25519.dh p s
 
 data Curve_X448 = Curve_X448
+    deriving (Show,Data,Typeable)
 
 instance EllipticCurve Curve_X448 where
     type Point Curve_X448 = X448.PublicKey
@@ -201,6 +209,11 @@ instance EllipticCurve Curve_X448 where
 instance EllipticCurveDH Curve_X448 where
     ecdh _ s p = SharedSecret $ convert secret
       where secret = X448.dh p s
+
+validateP256Point :: P256.Point -> CryptoFailable P256.Point
+validateP256Point p
+    | P256.pointIsValid p = CryptoPassed p
+    | otherwise           = CryptoFailed $ CryptoError_PointCoordinatesInvalid
 
 encodeECPoint :: forall curve bs . (Simple.Curve curve, ByteArray bs) => Simple.Point curve -> bs
 encodeECPoint Simple.PointO      = error "encodeECPoint: cannot serialize point at infinity"
