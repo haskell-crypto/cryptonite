@@ -6,7 +6,7 @@
 # (available at <git://git.code.sf.net/p/ed448goldilocks/code>).
 #
 # Project is synced with upstream commit
-# '0a6e96827595fa1a5a62d12ac83c3cc5dda6dd67', i.e. tag 'v0.9.2'.
+# 'b29565fdfd654385b6d6e3257e60a7e94636057f'.
 #
 # Notes about transformations applied:
 #

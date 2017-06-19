@@ -98,11 +98,12 @@ const size_t API_NS(alignof_precomputed_s) = sizeof(big_register_t);
 
 /** Inverse. */
 static void
-cryptonite_gf_invert(gf y, const gf x) {
+cryptonite_gf_invert(gf y, const gf x, int assert_nonzero) {
     gf t1, t2;
     cryptonite_gf_sqr(t1, x); // o^2
     mask_t ret = cryptonite_gf_isr(t2, t1); // +-1/sqrt(o^2) = +-1/o
-    (void)ret; assert(ret);
+    (void)ret;
+    if (assert_nonzero) assert(ret);
     cryptonite_gf_sqr(t1, t2);
     cryptonite_gf_mul(t2, t1, x); // not direct to y in case of alias.
     cryptonite_gf_copy(y, t2);
@@ -891,7 +892,7 @@ static void cryptonite_gf_batch_invert (
     }
     cryptonite_gf_mul(out[0], out[n-1], in[n-1]);
 
-    cryptonite_gf_invert(out[0], out[0]);
+    cryptonite_gf_invert(out[0], out[0], 1);
 
     for (i=n-1; i>0; i--) {
         cryptonite_gf_mul(t1, out[i], out[0]);
@@ -1148,7 +1149,7 @@ void API_NS(point_mul_by_cofactor_and_encode_like_eddsa) (
     }
 #endif
     /* Affinize */
-    cryptonite_gf_invert(z,z);
+    cryptonite_gf_invert(z,z,1);
     cryptonite_gf_mul(t,x,z);
     cryptonite_gf_mul(x,y,z);
     
@@ -1322,7 +1323,7 @@ cryptonite_decaf_error_t cryptonite_decaf_x448 (
     /* Finish */
     cryptonite_gf_cond_swap(x2,x3,swap);
     cryptonite_gf_cond_swap(z2,z3,swap);
-    cryptonite_gf_invert(z2,z2);
+    cryptonite_gf_invert(z2,z2,0);
     cryptonite_gf_mul(x1,x2,z2);
     cryptonite_gf_serialize(out,x1,1);
     mask_t nz = ~cryptonite_gf_eq(x1,ZERO);
@@ -1361,14 +1362,14 @@ void cryptonite_decaf_ed448_convert_public_key_to_x448 (
         /* u = (1+y)/(1-y)*/
         cryptonite_gf_add(n, y, ONE); /* n = y+1 */
         cryptonite_gf_sub(d, ONE, y); /* d = 1-y */
-        cryptonite_gf_invert(d, d); /* d = 1/(1-y) */
+        cryptonite_gf_invert(d, d, 0); /* d = 1/(1-y) */
         cryptonite_gf_mul(y, n, d); /* u = (y+1)/(1-y) */
         cryptonite_gf_serialize(x,y,1);
 #else /* EDDSA_USE_SIGMA_ISOGENY */
         /* u = y^2 * (1-dy^2) / (1-y^2) */
         cryptonite_gf_sqr(n,y); /* y^2*/
         cryptonite_gf_sub(d,ONE,n); /* 1-y^2*/
-        cryptonite_gf_invert(d,d); /* 1/(1-y^2)*/
+        cryptonite_gf_invert(d,d,0); /* 1/(1-y^2)*/
         cryptonite_gf_mul(y,n,d); /* y^2 / (1-y^2) */
         cryptonite_gf_mulw(d,n,EDWARDS_D); /* dy^2*/
         cryptonite_gf_sub(d, ONE, d); /* 1-dy^2*/
@@ -1427,7 +1428,7 @@ void cryptonite_decaf_x448_derive_public_key (
      * component in the input.  In this function though, there isn't a cofactor
      * component in the input.
      */
-    cryptonite_gf_invert(p->t,p->x); /* 1/x */
+    cryptonite_gf_invert(p->t,p->x,0); /* 1/x */
     cryptonite_gf_mul(p->z,p->t,p->y); /* y/x */
     cryptonite_gf_sqr(p->y,p->z); /* (y/x)^2 */
 #if IMAGINE_TWIST
