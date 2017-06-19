@@ -9,7 +9,6 @@
 --
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
 module Crypto.PubKey.Ed25519
     ( SecretKey
     , PublicKey
@@ -43,7 +42,7 @@ import           Crypto.Random
 
 -- | An Ed25519 Secret key
 newtype SecretKey = SecretKey ScrubbedBytes
-    deriving (Eq,ByteArrayAccess,NFData)
+    deriving (Show,Eq,ByteArrayAccess,NFData)
 
 -- | An Ed25519 public key
 newtype PublicKey = PublicKey Bytes
@@ -116,9 +115,7 @@ verify public message signatureVal = unsafeDoIO $
 
 -- | Generate a secret key
 generateSecretKey :: MonadRandom m => m SecretKey
-generateSecretKey = do
-    ba :: ScrubbedBytes <- getRandomBytes secretKeySize
-    return (SecretKey $ B.copyAndFreeze ba (\_ -> return ()))
+generateSecretKey = SecretKey <$> getRandomBytes secretKeySize
 
 -- | A public key is 32 bytes
 publicKeySize :: Int

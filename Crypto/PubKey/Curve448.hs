@@ -7,6 +7,10 @@
 --
 -- Curve448 support
 --
+-- Internally uses Decaf point compression to omit the cofactor
+-- and implementation by Mike Hamburg.  Externally API and
+-- data types are compatible with the encoding specified in RFC 7748.
+--
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MagicHash #-}
 module Crypto.PubKey.Curve448
@@ -75,13 +79,16 @@ dhSecret bs
     | B.length bs == x448_bytes = CryptoPassed $ DhSecret $ B.copyAndFreeze bs (\_ -> return ())
     | otherwise                 = CryptoFailed CryptoError_SharedSecretSizeInvalid
 
--- | Compute the Diffie Hellman secret from a public key and a secret key
+-- | Compute the Diffie Hellman secret from a public key and a secret key.
+--
+-- This implementation may return an all-zero value as it does not check for
+-- the condition.
 dh :: PublicKey -> SecretKey -> DhSecret
 dh (PublicKey pub) (SecretKey sec) = DhSecret <$>
     B.allocAndFreeze x448_bytes $ \result ->
     withByteArray sec           $ \psec   ->
     withByteArray pub           $ \ppub   ->
-        ccryptonite_ed448 result psec ppub
+        decaf_x448 result ppub psec
 {-# NOINLINE dh #-}
 
 -- | Create a public key from a secret key
@@ -89,9 +96,7 @@ toPublic :: SecretKey -> PublicKey
 toPublic (SecretKey sec) = PublicKey <$>
     B.allocAndFreeze x448_bytes     $ \result ->
     withByteArray sec               $ \psec   ->
-        ccryptonite_ed448 result psec basePoint
-  where
-        basePoint = Ptr "\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"#
+        decaf_x448_derive_public_key result psec
 {-# NOINLINE toPublic #-}
 
 -- | Generate a secret key.
@@ -101,8 +106,13 @@ generateSecretKey = SecretKey <$> getRandomBytes x448_bytes
 x448_bytes :: Int
 x448_bytes = 448 `quot` 8
 
-foreign import ccall "cryptonite_x448"
-    ccryptonite_ed448 :: Ptr Word8 -- ^ public
-                      -> Ptr Word8 -- ^ secret
-                      -> Ptr Word8 -- ^ basepoint
-                      -> IO ()
+foreign import ccall "cryptonite_decaf_x448"
+    decaf_x448 :: Ptr Word8 -- ^ public
+               -> Ptr Word8 -- ^ basepoint
+               -> Ptr Word8 -- ^ secret
+               -> IO ()
+
+foreign import ccall "cryptonite_decaf_x448_derive_public_key"
+    decaf_x448_derive_public_key :: Ptr Word8 -- ^ public
+                                 -> Ptr Word8 -- ^ secret
+                                 -> IO ()
