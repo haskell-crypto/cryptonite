@@ -75,12 +75,7 @@ Flag support_pclmuldq
   Manual:            True
 
 Flag support_sse
-  Description:       Use SSE optimized version when existing (BLAKE2, ARGON2)
-  Default:           False
-  Manual:            True
-
-Flag support_blake2_sse
-  Description:       Use SSE optimized version of BLAKE2.
+  Description:       Use SSE optimized version of (BLAKE2, ARGON2)
   Default:           False
   Manual:            True
 
@@ -326,7 +321,7 @@ Library
                    , cbits/aes/gf.c
                    , cbits/cryptonite_aes.c
 
-  if arch(x86_64) || flag(support_blake2_sse)
+  if arch(x86_64) || flag(support_sse)
     C-sources:      cbits/blake2/sse/blake2s.c
                   , cbits/blake2/sse/blake2sp.c
                   , cbits/blake2/sse/blake2b.c
