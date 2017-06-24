@@ -135,8 +135,8 @@ void cryptonite_sha3_update(struct sha3_ctx *ctx, const uint8_t *data, uint32_t 
 		uint64_t tramp[SHA3_BUF_SIZE_MAX/8];
 		ASSERT_ALIGNMENT(tramp, 8);
 		for (; len >= ctx->bufsz; len -= ctx->bufsz, data += ctx->bufsz) {
-			memcpy(tramp, data, ctx->bufsz / 8);
-			sha3_do_chunk(ctx->state, (uint64_t *) data, ctx->bufsz / 8);
+			memcpy(tramp, data, ctx->bufsz);
+			sha3_do_chunk(ctx->state, tramp, ctx->bufsz / 8);
 		}
 	} else {
 		/* process as much ctx->bufsz-block */
