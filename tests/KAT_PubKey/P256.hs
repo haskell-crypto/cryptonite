@@ -97,7 +97,7 @@ tests = testGroup "P256"
         [ testProperty "marshalling" $ \rx ry ->
             let p = P256.pointFromIntegers (unP256 rx, unP256 ry)
                 b = P256.pointToBinary p :: Bytes
-                p' = P256.pointFromBinary b
+                p' = P256.unsafePointFromBinary b
              in propertyHold [ eqTest "point" (CryptoPassed p) p' ]
         , testProperty "marshalling-integer" $ \rx ry ->
             let p = P256.pointFromIntegers (unP256 rx, unP256 ry)

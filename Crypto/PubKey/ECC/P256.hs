@@ -26,6 +26,7 @@ module Crypto.PubKey.ECC.P256
     , pointFromIntegers
     , pointToBinary
     , pointFromBinary
+    , unsafePointFromBinary
     -- * scalar arithmetic
     , scalarGenerate
     , scalarZero
@@ -172,9 +173,18 @@ pointToBinary p = B.unsafeCreate pointSize $ \dst -> withPoint p $ \px py -> do
     ccryptonite_p256_to_bin (castPtr px) dst
     ccryptonite_p256_to_bin (castPtr py) (dst `plusPtr` 32)
 
--- | Convert from binary to a point
+-- | Convert from binary to a valid point
 pointFromBinary :: ByteArrayAccess ba => ba -> CryptoFailable Point
-pointFromBinary ba
+pointFromBinary ba = unsafePointFromBinary ba >>= validatePoint
+  where
+    validatePoint :: Point -> CryptoFailable Point
+    validatePoint p
+        | pointIsValid p = CryptoPassed p
+        | otherwise      = CryptoFailed $ CryptoError_PointCoordinatesInvalid
+
+-- | Convert from binary to a point, possibly invalid
+unsafePointFromBinary :: ByteArrayAccess ba => ba -> CryptoFailable Point
+unsafePointFromBinary ba
     | B.length ba /= pointSize = CryptoFailed $ CryptoError_PublicKeySizeInvalid
     | otherwise                =
         CryptoPassed $ withNewPoint $ \px py -> B.withByteArray ba $ \src -> do
