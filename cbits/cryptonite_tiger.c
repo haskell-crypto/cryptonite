@@ -25,6 +25,7 @@
 #include <string.h>
 #include "cryptonite_tiger.h"
 #include "cryptonite_bitfn.h"
+#include "cryptonite_align.h"
 
 static const uint64_t t1[256] = {
 	0x02aab17cf7e90c5eULL,0xac424b03e243a8ecULL,0x72cd5be30dd5fcd3ULL,0x6d019b93f6f97f3aULL,
@@ -381,9 +382,18 @@ void cryptonite_tiger_update(struct tiger_ctx *ctx, const uint8_t *data, uint32_
 		index = 0;
 	}
 
-	/* process as much 64-block as possible */
-	for (; len >= 64; len -= 64, data += 64)
-		tiger_do_chunk(ctx, (uint64_t *) data);
+	if (need_alignment(data, 8)) {
+		uint64_t tramp[8];
+		ASSERT_ALIGNMENT(tramp, 8);
+		for (; len >= 64; len -= 64, data += 64) {
+			memcpy(tramp, data, 64);
+			tiger_do_chunk(ctx, tramp);
+		}
+	} else {
+		/* process as much 64-block as possible */
+		for (; len >= 64; len -= 64, data += 64)
+			tiger_do_chunk(ctx, (uint64_t *) data);
+	}
 
 	/* append data into buf */
 	if (len)
@@ -395,7 +405,6 @@ void cryptonite_tiger_finalize(struct tiger_ctx *ctx, uint8_t *out)
 	static uint8_t padding[64] = { 0x01, };
 	uint64_t bits;
 	uint32_t index, padlen;
-	uint64_t *p = (uint64_t *) out;
 
 	/* add padding and update data with it */
 	bits = cpu_to_le64(ctx->sz << 3);
@@ -409,7 +418,7 @@ void cryptonite_tiger_finalize(struct tiger_ctx *ctx, uint8_t *out)
 	cryptonite_tiger_update(ctx, (uint8_t *) &bits, sizeof(bits));
 
 	/* output hash */
-	p[0] = cpu_to_le64(ctx->h[0]);
-	p[1] = cpu_to_le64(ctx->h[1]);
-	p[2] = cpu_to_le64(ctx->h[2]);
+	store_le64(out   , ctx->h[0]);
+	store_le64(out+ 8, ctx->h[1]);
+	store_le64(out+16, ctx->h[2]);
 }

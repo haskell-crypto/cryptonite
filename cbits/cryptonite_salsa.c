@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include "cryptonite_salsa.h"
 #include "cryptonite_bitfn.h"
+#include "cryptonite_align.h"
 
 static const uint8_t sigma[16] = "expand 32-byte k";
 static const uint8_t tau[16] = "expand 16-byte k";
@@ -57,11 +58,6 @@ static const uint8_t tau[16] = "expand 16-byte k";
 		QR (x10,x11,x8,x9); \
 		QR (x15,x12,x13,x14); \
 	}
-
-static inline uint32_t load32(const uint8_t *p)
-{
-	return le32_to_cpu(*((uint32_t *) p));
-}
 
 static void salsa_core(int rounds, block *out, const cryptonite_salsa_state *in)
 {
@@ -126,34 +122,34 @@ void cryptonite_salsa_init_core(cryptonite_salsa_state *st,
 	const uint8_t *constants = (keylen == 32) ? sigma : tau;
 	int i;
 
-	st->d[0] = load32(constants + 0);
-	st->d[5] = load32(constants + 4);
-	st->d[10] = load32(constants + 8);
-	st->d[15] = load32(constants + 12);
+	st->d[0] = load_le32_aligned(constants + 0);
+	st->d[5] = load_le32_aligned(constants + 4);
+	st->d[10] = load_le32_aligned(constants + 8);
+	st->d[15] = load_le32_aligned(constants + 12);
 
-	st->d[1] = load32(key + 0);
-	st->d[2] = load32(key + 4);
-	st->d[3] = load32(key + 8);
-	st->d[4] = load32(key + 12);
+	st->d[1] = load_le32(key + 0);
+	st->d[2] = load_le32(key + 4);
+	st->d[3] = load_le32(key + 8);
+	st->d[4] = load_le32(key + 12);
 	/* we repeat the key on 128 bits */
 	if (keylen == 32)
 		key += 16;
-	st->d[11] = load32(key + 0);
-	st->d[12] = load32(key + 4);
-	st->d[13] = load32(key + 8);
-	st->d[14] = load32(key + 12);
+	st->d[11] = load_le32(key + 0);
+	st->d[12] = load_le32(key + 4);
+	st->d[13] = load_le32(key + 8);
+	st->d[14] = load_le32(key + 12);
 
 	st->d[9] = 0;
 	switch (ivlen) {
 	case 8:
-		st->d[6] = load32(iv + 0);
-		st->d[7] = load32(iv + 4);
+		st->d[6] = load_le32(iv + 0);
+		st->d[7] = load_le32(iv + 4);
 		st->d[8] = 0;
 		break;
 	case 12:
-		st->d[6] = load32(iv + 0);
-		st->d[7] = load32(iv + 4);
-		st->d[8] = load32(iv + 8);
+		st->d[6] = load_le32(iv + 0);
+		st->d[7] = load_le32(iv + 4);
+		st->d[8] = load_le32(iv + 8);
 	default:
 		return;
 	}

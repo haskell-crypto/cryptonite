@@ -370,7 +370,7 @@ void cryptonite_aes_gcm_init(aes_gcm *gcm, aes_key *key, uint8_t *iv, uint32_t l
 		cryptonite_gf_mul(&gcm->iv, &gcm->h);
 	}
 
-	block128_copy(&gcm->civ, &gcm->iv);
+	block128_copy_aligned(&gcm->civ, &gcm->iv);
 }
 
 void cryptonite_aes_gcm_aad(aes_gcm *gcm, uint8_t *input, uint32_t length)
@@ -399,7 +399,7 @@ void cryptonite_aes_gcm_finish(uint8_t *tag, aes_gcm *gcm, aes_key *key)
 	gcm_ghash_add(gcm, &lblock);
 
 	cryptonite_aes_encrypt_block(&lblock, key, &gcm->iv);
-	block128_xor(&gcm->tag, &lblock);
+	block128_xor_aligned(&gcm->tag, &lblock);
 
 	for (i = 0; i < 16; i++) {
 		tag[i] = gcm->tag.b[i];
@@ -464,7 +464,7 @@ void cryptonite_aes_ocb_init(aes_ocb *ocb, aes_key *key, uint8_t *iv, uint32_t l
 	memcpy(stretch, ktop.b, 16);
 
 	memcpy(tmp.b, ktop.b + 1, 8);
-	block128_xor(&tmp, &ktop);
+	block128_xor_aligned(&tmp, &ktop);
 	memcpy(stretch + 16, tmp.b, 8);
 
 	/* initialize the encryption offset from stretch */
@@ -490,22 +490,22 @@ void cryptonite_aes_ocb_aad(aes_ocb *ocb, aes_key *key, uint8_t *input, uint32_t
 
 	for (i=1; i<= length/16; i++, input=input+16) {
 		ocb_get_L_i(&tmp, ocb->li, i);
-		block128_xor(&ocb->offset_aad, &tmp);
+		block128_xor_aligned(&ocb->offset_aad, &tmp);
 
 		block128_vxor(&tmp, &ocb->offset_aad, (block128 *) input);
 		cryptonite_aes_encrypt_block(&tmp, key, &tmp);
-		block128_xor(&ocb->sum_aad, &tmp);
+		block128_xor_aligned(&ocb->sum_aad, &tmp);
 	}
 
 	length = length % 16; /* Bytes in final block */
 	if (length > 0) {
-		block128_xor(&ocb->offset_aad, &ocb->lstar);
+		block128_xor_aligned(&ocb->offset_aad, &ocb->lstar);
 		block128_zero(&tmp);
 		block128_copy_bytes(&tmp, input, length);
 		tmp.b[length] = 0x80;
-		block128_xor(&tmp, &ocb->offset_aad);
+		block128_xor_aligned(&tmp, &ocb->offset_aad);
 		cryptonite_aes_encrypt_block(&tmp, key, &tmp);
-		block128_xor(&ocb->sum_aad, &tmp);
+		block128_xor_aligned(&ocb->sum_aad, &tmp);
 	}
 }
 
@@ -513,8 +513,8 @@ void cryptonite_aes_ocb_finish(uint8_t *tag, aes_ocb *ocb, aes_key *key)
 {
 	block128 tmp;
 
-	block128_vxor(&tmp, &ocb->sum_enc, &ocb->offset_enc);
-	block128_xor(&tmp, &ocb->ldollar);
+	block128_vxor_aligned(&tmp, &ocb->sum_enc, &ocb->offset_enc);
+	block128_xor_aligned(&tmp, &ocb->ldollar);
 	cryptonite_aes_encrypt_block((block128 *) tag, key, &tmp);
 	block128_xor((block128 *) tag, &ocb->sum_aad);
 }
@@ -699,7 +699,7 @@ static void ocb_generic_crypt(uint8_t *output, aes_ocb *ocb, aes_key *key,
 	for (i = 1; i <= length/16; i++, input += 16, output += 16) {
 		/* Offset_i = Offset_{i-1} xor L_{ntz(i)} */
 		ocb_get_L_i(&tmp, ocb->li, i);
-		block128_xor(&ocb->offset_enc, &tmp);
+		block128_xor_aligned(&ocb->offset_enc, &tmp);
 
 		block128_vxor(&tmp, &ocb->offset_enc, (block128 *) input);
 		if (encrypt) {
@@ -716,24 +716,24 @@ static void ocb_generic_crypt(uint8_t *output, aes_ocb *ocb, aes_key *key,
 	/* process the last partial block if any */
 	length = length % 16;
 	if (length > 0) {
-		block128_xor(&ocb->offset_enc, &ocb->lstar);
+		block128_xor_aligned(&ocb->offset_enc, &ocb->lstar);
 		cryptonite_aes_encrypt_block(&pad, key, &ocb->offset_enc);
 
 		if (encrypt) {
 			block128_zero(&tmp);
 			block128_copy_bytes(&tmp, input, length);
 			tmp.b[length] = 0x80;
-			block128_xor(&ocb->sum_enc, &tmp);
-			block128_xor(&pad, &tmp);
+			block128_xor_aligned(&ocb->sum_enc, &tmp);
+			block128_xor_aligned(&pad, &tmp);
 			memcpy(output, pad.b, length);
 			output += length;
 		} else {
-			block128_copy(&tmp, &pad);
+			block128_copy_aligned(&tmp, &pad);
 			block128_copy_bytes(&tmp, input, length);
-			block128_xor(&tmp, &pad);
+			block128_xor_aligned(&tmp, &pad);
 			tmp.b[length] = 0x80;
 			memcpy(output, tmp.b, length);
-			block128_xor(&ocb->sum_enc, &tmp);
+			block128_xor_aligned(&ocb->sum_enc, &tmp);
 			input += length;
 		}
 	}

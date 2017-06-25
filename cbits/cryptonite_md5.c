@@ -25,6 +25,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "cryptonite_bitfn.h"
+#include "cryptonite_align.h"
 #include "cryptonite_md5.h"
 
 void cryptonite_md5_init(struct md5_ctx *ctx)
@@ -143,9 +144,18 @@ void cryptonite_md5_update(struct md5_ctx *ctx, const uint8_t *data, uint32_t le
 		index = 0;
 	}
 
-	/* process as much 64-block as possible */
-	for (; len >= 64; len -= 64, data += 64)
-		md5_do_chunk(ctx, (uint32_t *) data);
+	if (need_alignment(data, 4)) {
+		uint32_t tramp[16];
+		ASSERT_ALIGNMENT(tramp, 4);
+		for (; len >= 64; len -= 64, data += 64) {
+			memcpy(tramp, data, 64);
+			md5_do_chunk(ctx, tramp);
+		}
+	} else {
+		/* process as much 64-block as possible */
+		for (; len >= 64; len -= 64, data += 64)
+			md5_do_chunk(ctx, (uint32_t *) data);
+	}
 
 	/* append data into buf */
 	if (len)
@@ -157,7 +167,6 @@ void cryptonite_md5_finalize(struct md5_ctx *ctx, uint8_t *out)
 	static uint8_t padding[64] = { 0x80, };
 	uint64_t bits;
 	uint32_t index, padlen;
-	uint32_t *p = (uint32_t *) out;
 
 	/* add padding and update data with it */
 	bits = cpu_to_le64(ctx->sz << 3);
@@ -171,8 +180,8 @@ void cryptonite_md5_finalize(struct md5_ctx *ctx, uint8_t *out)
 	cryptonite_md5_update(ctx, (uint8_t *) &bits, sizeof(bits));
 
 	/* output hash */
-	p[0] = cpu_to_le32(ctx->h[0]);
-	p[1] = cpu_to_le32(ctx->h[1]);
-	p[2] = cpu_to_le32(ctx->h[2]);
-	p[3] = cpu_to_le32(ctx->h[3]);
+	store_le32(out   , ctx->h[0]);
+	store_le32(out+ 4, ctx->h[1]);
+	store_le32(out+ 8, ctx->h[2]);
+	store_le32(out+12, ctx->h[3]);
 }

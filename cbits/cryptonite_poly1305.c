@@ -37,11 +37,7 @@
 #include <string.h>
 #include "cryptonite_poly1305.h"
 #include "cryptonite_bitfn.h"
-
-static inline uint32_t load32(uint8_t *p)
-{
-	return (le32_to_cpu(*((uint32_t *) p)));
-}
+#include "cryptonite_align.h"
 
 static void poly1305_do_chunk(poly1305_ctx *ctx, uint8_t *data, int blocks, int final)
 {
@@ -61,11 +57,11 @@ static void poly1305_do_chunk(poly1305_ctx *ctx, uint8_t *data, int blocks, int 
 	s1 = r1 * 5; s2 = r2 * 5; s3 = r3 * 5; s4 = r4 * 5;
 
 	while (blocks--) {
-		h0 += (load32(data+ 0)     ) & 0x3ffffff;
-		h1 += (load32(data+ 3) >> 2) & 0x3ffffff;
-		h2 += (load32(data+ 6) >> 4) & 0x3ffffff;
-		h3 += (load32(data+ 9) >> 6) & 0x3ffffff;
-		h4 += (load32(data+12) >> 8) | hibit;
+		h0 += (load_le32(data+ 0)     ) & 0x3ffffff;
+		h1 += (load_le32(data+ 3) >> 2) & 0x3ffffff;
+		h2 += (load_le32(data+ 6) >> 4) & 0x3ffffff;
+		h3 += (load_le32(data+ 9) >> 6) & 0x3ffffff;
+		h4 += (load_le32(data+12) >> 8) | hibit;
 
 		d0 = ((uint64_t)h0 * r0) + ((uint64_t)h1 * s4) + ((uint64_t)h2 * s3) + ((uint64_t)h3 * s2) + ((uint64_t)h4 * s1);
 		d1 = ((uint64_t)h0 * r1) + ((uint64_t)h1 * r0) + ((uint64_t)h2 * s4) + ((uint64_t)h3 * s3) + ((uint64_t)h4 * s2);
@@ -94,16 +90,16 @@ void cryptonite_poly1305_init(poly1305_ctx *ctx, poly1305_key *key)
 
 	memset(ctx, 0, sizeof(poly1305_ctx));
 
-	ctx->r[0] = (load32(&k[ 0])     ) & 0x3ffffff;
-	ctx->r[1] = (load32(&k[ 3]) >> 2) & 0x3ffff03;
-	ctx->r[2] = (load32(&k[ 6]) >> 4) & 0x3ffc0ff;
-	ctx->r[3] = (load32(&k[ 9]) >> 6) & 0x3f03fff;
-	ctx->r[4] = (load32(&k[12]) >> 8) & 0x00fffff;
+	ctx->r[0] = (load_le32(&k[ 0])     ) & 0x3ffffff;
+	ctx->r[1] = (load_le32(&k[ 3]) >> 2) & 0x3ffff03;
+	ctx->r[2] = (load_le32(&k[ 6]) >> 4) & 0x3ffc0ff;
+	ctx->r[3] = (load_le32(&k[ 9]) >> 6) & 0x3f03fff;
+	ctx->r[4] = (load_le32(&k[12]) >> 8) & 0x00fffff;
 
-	ctx->pad[0] = load32(&k[16]);
-	ctx->pad[1] = load32(&k[20]);
-	ctx->pad[2] = load32(&k[24]);
-	ctx->pad[3] = load32(&k[28]);
+	ctx->pad[0] = load_le32(&k[16]);
+	ctx->pad[1] = load_le32(&k[20]);
+	ctx->pad[2] = load_le32(&k[24]);
+	ctx->pad[3] = load_le32(&k[28]);
 
 	ctx->index = 0;
 }

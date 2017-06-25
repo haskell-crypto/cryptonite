@@ -26,6 +26,7 @@
 #include "cryptonite_skein.h"
 #include "cryptonite_skein256.h"
 #include "cryptonite_bitfn.h"
+#include "cryptonite_align.h"
 
 static const uint8_t K256_0[2] = { 14, 16, };
 static const uint8_t K256_1[2] = { 52, 57, };
@@ -143,9 +144,18 @@ void cryptonite_skein256_update(struct skein256_ctx *ctx, const uint8_t *data, u
 		ctx->bufindex = 0;
 	}
 
-	/* process as much 32-block as possible except the last one in case we finalize */
-	for (; len > 32; len -= 32, data += 32)
-		skein256_do_chunk(ctx, (uint64_t *) data, 32);
+	if (need_alignment(data, 8)) {
+		uint64_t tramp[4];
+		ASSERT_ALIGNMENT(tramp, 8);
+		for (; len > 32; len -= 32, data += 32) {
+			memcpy(tramp, data, 32);
+			skein256_do_chunk(ctx, tramp, 32);
+		}
+	} else {
+		/* process as much 32-block as possible except the last one in case we finalize */
+		for (; len > 32; len -= 32, data += 32)
+			skein256_do_chunk(ctx, (uint64_t *) data, 32);
+	}
 
 	/* append data into buf */
 	if (len) {
