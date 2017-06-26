@@ -137,6 +137,8 @@ unpad packed
 -- information from the timing of the operation, the blinder can be set to None.
 --
 -- If unsure always set a blinder or use decryptSafer
+--
+-- The message is returned un-padded.
 decrypt :: Maybe Blinder -- ^ optional blinder
         -> PrivateKey    -- ^ RSA private key
         -> ByteString    -- ^ cipher text
@@ -156,7 +158,8 @@ decryptSafer pk b = do
 
 -- | encrypt a bytestring using the public key.
 --
--- the message needs to be smaller than the key size - 11
+-- The message needs to be smaller than the key size - 11.
+-- The message should not be padded.
 encrypt :: MonadRandom m => PublicKey -> ByteString -> m (Either Error ByteString)
 encrypt pk m = do
     r <- pad (public_size pk) m
