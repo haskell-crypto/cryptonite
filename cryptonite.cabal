@@ -364,6 +364,7 @@ Test-Suite test-cryptonite
   Other-modules:     BlockCipher
                      ChaCha
                      BCrypt
+                     ECC
                      Hash
                      Imports
                      KAT_AES.KATCBC
