@@ -114,7 +114,8 @@ pointMul scalar p = withNewPoint $ \dx dy ->
     withScalar scalar $ \n -> withPoint p $ \px py -> withScalarZero $ \nzero ->
         ccryptonite_p256_points_mul_vartime nzero n px py dx dy
 
--- | Similar to 'pointMul', serializing the x coordinate as binary
+-- | Similar to 'pointMul', serializing the x coordinate as binary.
+-- When scalar is multiple of point order the result is all zero.
 pointDh :: ByteArray binary => Scalar -> Point -> binary
 pointDh scalar p =
     B.unsafeCreate scalarSize $ \dst -> withTempPoint $ \dx dy -> do
