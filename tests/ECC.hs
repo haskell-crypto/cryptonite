@@ -11,7 +11,7 @@ import           Data.ByteString (ByteString)
 
 import Imports
 
-data Curve = forall curve. (ECC.EllipticCurve curve, Show curve, Eq (ECC.Point curve)) => Curve curve
+data Curve = forall curve. (ECC.EllipticCurveDH curve, Show curve, Eq (ECC.Point curve)) => Curve curve
 
 instance Show Curve where
     showsPrec d (Curve curve) = showsPrec d curve
@@ -209,6 +209,54 @@ vectorsPoint =
         }
     ]
 
+vectorsWeakPoint =
+    [ VectorPoint
+        { vpCurve = Curve ECC.Curve_X25519
+        , vpHex   = "0000000000000000000000000000000000000000000000000000000000000000"
+        , vpError = Just CryptoError_ScalarMultiplicationInvalid
+        }
+    , VectorPoint
+        { vpCurve = Curve ECC.Curve_X25519
+        , vpHex   = "0100000000000000000000000000000000000000000000000000000000000000"
+        , vpError = Just CryptoError_ScalarMultiplicationInvalid
+        }
+    , VectorPoint
+        { vpCurve = Curve ECC.Curve_X25519
+        , vpHex   = "e0eb7a7c3b41b8ae1656e3faf19fc46ada098deb9c32b1fd866205165f49b800"
+        , vpError = Just CryptoError_ScalarMultiplicationInvalid
+        }
+    , VectorPoint
+        { vpCurve = Curve ECC.Curve_X25519
+        , vpHex   = "5f9c95bca3508c24b1d0b1559c83ef5b04445cc4581c8e86d8224eddd09f1157"
+        , vpError = Just CryptoError_ScalarMultiplicationInvalid
+        }
+    , VectorPoint
+        { vpCurve = Curve ECC.Curve_X25519
+        , vpHex   = "ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f"
+        , vpError = Just CryptoError_ScalarMultiplicationInvalid
+        }
+    , VectorPoint
+        { vpCurve = Curve ECC.Curve_X25519
+        , vpHex   = "edffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f"
+        , vpError = Just CryptoError_ScalarMultiplicationInvalid
+        }
+    , VectorPoint
+        { vpCurve = Curve ECC.Curve_X25519
+        , vpHex   = "eeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f"
+        , vpError = Just CryptoError_ScalarMultiplicationInvalid
+        }
+    , VectorPoint
+        { vpCurve = Curve ECC.Curve_X448
+        , vpHex   = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+        , vpError = Just CryptoError_ScalarMultiplicationInvalid
+        }
+    , VectorPoint
+        { vpCurve = Curve ECC.Curve_X448
+        , vpHex   = "0100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+        , vpError = Just CryptoError_ScalarMultiplicationInvalid
+        }
+    ]
+
 vpEncodedPoint :: VectorPoint -> ByteString
 vpEncodedPoint vector = let Right bs = convertFromBase Base16 (vpHex vector) in bs
 
@@ -221,8 +269,17 @@ doPointDecodeTest (i, vector) =
             let prx = Just curve -- using Maybe as Proxy
              in testCase (show i) (vpError vector @=? cryptoError (ECC.decodePoint prx $ vpEncodedPoint vector))
 
+doWeakPointECDHTest (i, vector) =
+    case vpCurve vector of
+        Curve curve -> testCase (show i) $ do
+            let prx = Just curve -- using Maybe as Proxy
+                CryptoPassed public = ECC.decodePoint prx $ vpEncodedPoint vector
+            keyPair <- ECC.curveGenerateKeyPair prx
+            vpError vector @=? cryptoError (ECC.ecdh prx (ECC.keypairGetPrivate keyPair) public)
+
 tests = testGroup "ECC"
     [ testGroup "decodePoint" $ map doPointDecodeTest (zip [katZero..] vectorsPoint)
+    , testGroup "ECDH weak points" $ map doWeakPointECDHTest (zip [katZero..] vectorsWeakPoint)
     , testGroup "property"
         [ testProperty "decodePoint.encodePoint==id" $ \testDRG (Curve curve) -> do
             let prx = Just curve -- using Maybe as Proxy
@@ -231,5 +288,16 @@ tests = testGroup "ECC"
                 bs = ECC.encodePoint prx p1 :: ByteString
                 p2 = ECC.decodePoint prx bs
              in CryptoPassed p1 == p2
+        , localOption (QuickCheckTests 20) $ testProperty "ECDH commutes" $ \testDRG (Curve curve) ->
+            let prx = Just curve -- using Maybe as Proxy
+                (alice, bob) = withTestDRG testDRG $
+                                   (,) <$> ECC.curveGenerateKeyPair prx
+                                       <*> ECC.curveGenerateKeyPair prx
+                aliceShared  = ECC.ecdh    prx (ECC.keypairGetPrivate alice) (ECC.keypairGetPublic bob)
+                bobShared    = ECC.ecdh    prx (ECC.keypairGetPrivate bob) (ECC.keypairGetPublic alice)
+                aliceShared' = ECC.ecdhRaw prx (ECC.keypairGetPrivate alice) (ECC.keypairGetPublic bob)
+                bobShared'   = ECC.ecdhRaw prx (ECC.keypairGetPrivate bob) (ECC.keypairGetPublic alice)
+             in aliceShared == bobShared && aliceShared == CryptoPassed aliceShared'
+                                         && bobShared   == CryptoPassed bobShared'
         ]
     ]
