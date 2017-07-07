@@ -10,6 +10,7 @@ module Crypto.Internal.Nat
     , byteLen
     , integralNatVal
     , type Div8
+    , type Mod8
     ) where
 
 import           GHC.TypeLits
@@ -84,7 +85,39 @@ type family Div8 (bitLen :: Nat) where
     Div8 30 = 3
     Div8 31 = 3
     Div8 32 = 4
-    Div8 n  = 4 + Div8 (n - 32)
+    Div8 33 = 4
+    Div8 34 = 4
+    Div8 35 = 4
+    Div8 36 = 4
+    Div8 37 = 4
+    Div8 38 = 4
+    Div8 39 = 4
+    Div8 40 = 5
+    Div8 41 = 5
+    Div8 42 = 5
+    Div8 43 = 5
+    Div8 44 = 5
+    Div8 45 = 5
+    Div8 46 = 5
+    Div8 47 = 5
+    Div8 48 = 6
+    Div8 49 = 6
+    Div8 50 = 6
+    Div8 51 = 6
+    Div8 52 = 6
+    Div8 53 = 6
+    Div8 54 = 6
+    Div8 55 = 6
+    Div8 56 = 7
+    Div8 57 = 7
+    Div8 58 = 7
+    Div8 59 = 7
+    Div8 60 = 7
+    Div8 61 = 7
+    Div8 62 = 7
+    Div8 63 = 7
+    Div8 64 = 8
+    Div8 n  = 8 + Div8 (n - 64)
 
 type family IsDiv8 (bitLen :: Nat) (n :: Nat) where
     IsDiv8 bitLen 0 = 'True
