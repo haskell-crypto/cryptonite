@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.Blake2s
     (  Blake2s_160 (..), Blake2s_224 (..), Blake2s_256 (..)
     ) where
@@ -26,36 +28,42 @@ data Blake2s_160 = Blake2s_160
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Blake2s_160 where
-    hashBlockSize  _          = 64
-    hashDigestSize _          = 20
-    hashInternalContextSize _ = 185
     hashInternalInit p        = c_blake2s_init p 160
     hashInternalUpdate        = c_blake2s_update
     hashInternalFinalize p    = c_blake2s_finalize p 160
+
+instance HashAlgorithm' Blake2s_160 where
+    type HashBlockSize           Blake2s_160 = 64
+    type HashDigestSize          Blake2s_160 = 20
+    type HashInternalContextSize Blake2s_160 = 185
 
 -- | Blake2s (224 bits) cryptographic hash algorithm
 data Blake2s_224 = Blake2s_224
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Blake2s_224 where
-    hashBlockSize  _          = 64
-    hashDigestSize _          = 28
-    hashInternalContextSize _ = 185
     hashInternalInit p        = c_blake2s_init p 224
     hashInternalUpdate        = c_blake2s_update
     hashInternalFinalize p    = c_blake2s_finalize p 224
+
+instance HashAlgorithm' Blake2s_224 where
+    type HashBlockSize           Blake2s_224 = 64
+    type HashDigestSize          Blake2s_224 = 28
+    type HashInternalContextSize Blake2s_224 = 185
 
 -- | Blake2s (256 bits) cryptographic hash algorithm
 data Blake2s_256 = Blake2s_256
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Blake2s_256 where
-    hashBlockSize  _          = 64
-    hashDigestSize _          = 32
-    hashInternalContextSize _ = 185
     hashInternalInit p        = c_blake2s_init p 256
     hashInternalUpdate        = c_blake2s_update
     hashInternalFinalize p    = c_blake2s_finalize p 256
+
+instance HashAlgorithm' Blake2s_256 where
+    type HashBlockSize           Blake2s_256 = 64
+    type HashDigestSize          Blake2s_256 = 32
+    type HashInternalContextSize Blake2s_256 = 185
 
 
 foreign import ccall unsafe "cryptonite_blake2s_init"

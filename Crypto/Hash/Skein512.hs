@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.Skein512
     (  Skein512_224 (..), Skein512_256 (..), Skein512_384 (..), Skein512_512 (..)
     ) where
@@ -26,48 +28,56 @@ data Skein512_224 = Skein512_224
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Skein512_224 where
-    hashBlockSize  _          = 64
-    hashDigestSize _          = 28
-    hashInternalContextSize _ = 160
     hashInternalInit p        = c_skein512_init p 224
     hashInternalUpdate        = c_skein512_update
     hashInternalFinalize p    = c_skein512_finalize p 224
+
+instance HashAlgorithm' Skein512_224 where
+    type HashBlockSize           Skein512_224 = 64
+    type HashDigestSize          Skein512_224 = 28
+    type HashInternalContextSize Skein512_224 = 160
 
 -- | Skein512 (256 bits) cryptographic hash algorithm
 data Skein512_256 = Skein512_256
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Skein512_256 where
-    hashBlockSize  _          = 64
-    hashDigestSize _          = 32
-    hashInternalContextSize _ = 160
     hashInternalInit p        = c_skein512_init p 256
     hashInternalUpdate        = c_skein512_update
     hashInternalFinalize p    = c_skein512_finalize p 256
+
+instance HashAlgorithm' Skein512_256 where
+    type HashBlockSize           Skein512_256 = 64
+    type HashDigestSize          Skein512_256 = 32
+    type HashInternalContextSize Skein512_256 = 160
 
 -- | Skein512 (384 bits) cryptographic hash algorithm
 data Skein512_384 = Skein512_384
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Skein512_384 where
-    hashBlockSize  _          = 64
-    hashDigestSize _          = 48
-    hashInternalContextSize _ = 160
     hashInternalInit p        = c_skein512_init p 384
     hashInternalUpdate        = c_skein512_update
     hashInternalFinalize p    = c_skein512_finalize p 384
+
+instance HashAlgorithm' Skein512_384 where
+    type HashBlockSize           Skein512_384 = 64
+    type HashDigestSize          Skein512_384 = 48
+    type HashInternalContextSize Skein512_384 = 160
 
 -- | Skein512 (512 bits) cryptographic hash algorithm
 data Skein512_512 = Skein512_512
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Skein512_512 where
-    hashBlockSize  _          = 64
-    hashDigestSize _          = 64
-    hashInternalContextSize _ = 160
     hashInternalInit p        = c_skein512_init p 512
     hashInternalUpdate        = c_skein512_update
     hashInternalFinalize p    = c_skein512_finalize p 512
+
+instance HashAlgorithm' Skein512_512 where
+    type HashBlockSize           Skein512_512 = 64
+    type HashDigestSize          Skein512_512 = 64
+    type HashInternalContextSize Skein512_512 = 160
 
 
 foreign import ccall unsafe "cryptonite_skein512_init"

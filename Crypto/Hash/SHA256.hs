@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.SHA256 ( SHA256 (..) ) where
 
 import           Crypto.Hash.Types
@@ -23,12 +25,14 @@ data SHA256 = SHA256
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm SHA256 where
-    hashBlockSize  _          = 64
-    hashDigestSize _          = 32
-    hashInternalContextSize _ = 192
     hashInternalInit          = c_sha256_init
     hashInternalUpdate        = c_sha256_update
     hashInternalFinalize      = c_sha256_finalize
+
+instance HashAlgorithm' SHA256 where
+    type HashBlockSize           SHA256 = 64
+    type HashDigestSize          SHA256 = 32
+    type HashInternalContextSize SHA256 = 192
 
 foreign import ccall unsafe "cryptonite_sha256_init"
     c_sha256_init :: Ptr (Context a)-> IO ()

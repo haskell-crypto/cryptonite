@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.MD4 ( MD4 (..) ) where
 
 import           Crypto.Hash.Types
@@ -23,12 +25,14 @@ data MD4 = MD4
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm MD4 where
-    hashBlockSize  _          = 64
-    hashDigestSize _          = 16
-    hashInternalContextSize _ = 96
     hashInternalInit          = c_md4_init
     hashInternalUpdate        = c_md4_update
     hashInternalFinalize      = c_md4_finalize
+
+instance HashAlgorithm' MD4 where
+    type HashBlockSize           MD4 = 64
+    type HashDigestSize          MD4 = 16
+    type HashInternalContextSize MD4 = 96
 
 foreign import ccall unsafe "cryptonite_md4_init"
     c_md4_init :: Ptr (Context a)-> IO ()

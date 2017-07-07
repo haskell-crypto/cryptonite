@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.MD5 ( MD5 (..) ) where
 
 import           Crypto.Hash.Types
@@ -23,12 +25,14 @@ data MD5 = MD5
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm MD5 where
-    hashBlockSize  _          = 64
-    hashDigestSize _          = 16
-    hashInternalContextSize _ = 96
     hashInternalInit          = c_md5_init
     hashInternalUpdate        = c_md5_update
     hashInternalFinalize      = c_md5_finalize
+
+instance HashAlgorithm' MD5 where
+    type HashBlockSize           MD5 = 64
+    type HashDigestSize          MD5 = 16
+    type HashInternalContextSize MD5 = 96
 
 foreign import ccall unsafe "cryptonite_md5_init"
     c_md5_init :: Ptr (Context a)-> IO ()

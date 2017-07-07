@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.Skein256
     (  Skein256_224 (..), Skein256_256 (..)
     ) where
@@ -26,24 +28,28 @@ data Skein256_224 = Skein256_224
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Skein256_224 where
-    hashBlockSize  _          = 32
-    hashDigestSize _          = 28
-    hashInternalContextSize _ = 96
     hashInternalInit p        = c_skein256_init p 224
     hashInternalUpdate        = c_skein256_update
     hashInternalFinalize p    = c_skein256_finalize p 224
+
+instance HashAlgorithm' Skein256_224 where
+    type HashBlockSize           Skein256_224 = 32
+    type HashDigestSize          Skein256_224 = 28
+    type HashInternalContextSize Skein256_224 = 96
 
 -- | Skein256 (256 bits) cryptographic hash algorithm
 data Skein256_256 = Skein256_256
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Skein256_256 where
-    hashBlockSize  _          = 32
-    hashDigestSize _          = 32
-    hashInternalContextSize _ = 96
     hashInternalInit p        = c_skein256_init p 256
     hashInternalUpdate        = c_skein256_update
     hashInternalFinalize p    = c_skein256_finalize p 256
+
+instance HashAlgorithm' Skein256_256 where
+    type HashBlockSize           Skein256_256 = 32
+    type HashDigestSize          Skein256_256 = 32
+    type HashInternalContextSize Skein256_256 = 96
 
 
 foreign import ccall unsafe "cryptonite_skein256_init"

@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.%%MODULENAME%% ( %%MODULENAME%% (..) ) where
 
 import           Crypto.Hash.Types
@@ -23,12 +25,14 @@ data %%MODULENAME%% = %%MODULENAME%%
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm %%MODULENAME%% where
-    hashBlockSize  _          = %%BLOCK_SIZE_BYTES%%
-    hashDigestSize _          = %%DIGEST_SIZE_BYTES%%
-    hashInternalContextSize _ = %%CTX_SIZE_BYTES%%
     hashInternalInit          = c_%%HASHNAME%%_init
     hashInternalUpdate        = c_%%HASHNAME%%_update
     hashInternalFinalize      = c_%%HASHNAME%%_finalize
+
+instance HashAlgorithm' %%MODULENAME%% where
+    type HashBlockSize           %%MODULENAME%% = %%BLOCK_SIZE_BYTES%%
+    type HashDigestSize          %%MODULENAME%% = %%DIGEST_SIZE_BYTES%%
+    type HashInternalContextSize %%MODULENAME%% = %%CTX_SIZE_BYTES%%
 
 foreign import ccall unsafe "cryptonite_%%HASHNAME%%_init"
     c_%%HASHNAME%%_init :: Ptr (Context a)-> IO ()

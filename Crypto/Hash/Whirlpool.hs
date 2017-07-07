@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.Whirlpool ( Whirlpool (..) ) where
 
 import           Crypto.Hash.Types
@@ -23,12 +25,14 @@ data Whirlpool = Whirlpool
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Whirlpool where
-    hashBlockSize  _          = 64
-    hashDigestSize _          = 64
-    hashInternalContextSize _ = 168
     hashInternalInit          = c_whirlpool_init
     hashInternalUpdate        = c_whirlpool_update
     hashInternalFinalize      = c_whirlpool_finalize
+
+instance HashAlgorithm' Whirlpool where
+    type HashBlockSize           Whirlpool = 64
+    type HashDigestSize          Whirlpool = 64
+    type HashInternalContextSize Whirlpool = 168
 
 foreign import ccall unsafe "cryptonite_whirlpool_init"
     c_whirlpool_init :: Ptr (Context a)-> IO ()
