@@ -54,11 +54,13 @@ initialize nbRounds key nonce
         nonceLen = B.length nonce
 
 -- | Initialize simple ChaCha State
-initializeSimple :: ByteArray seed
+--
+-- The seed need to be at least 40 bytes long
+initializeSimple :: ByteArrayAccess seed
                  => seed -- ^ a 40 bytes long seed
                  -> StateSimple
 initializeSimple seed
-    | sLen /= 40 = error "ChaCha Random: seed length should be 40 bytes"
+    | sLen < 40 = error "ChaCha Random: seed length should be 40 bytes"
     | otherwise = unsafeDoIO $ do
         stPtr <- B.alloc 64 $ \stPtr ->
                     B.withByteArray seed $ \seedPtr ->
