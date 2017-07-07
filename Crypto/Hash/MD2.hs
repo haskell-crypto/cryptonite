@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.MD2 ( MD2 (..) ) where
 
 import           Crypto.Hash.Types
@@ -23,6 +25,9 @@ data MD2 = MD2
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm MD2 where
+    type HashBlockSize           MD2 = 16
+    type HashDigestSize          MD2 = 16
+    type HashInternalContextSize MD2 = 96
     hashBlockSize  _          = 16
     hashDigestSize _          = 16
     hashInternalContextSize _ = 96

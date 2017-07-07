@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.%%MODULENAME%%
     ( %{CUSTOMIZABLE%}%%COMMA%% %%MODULENAME%%_%%CUSTOM_BITSIZE%% (..)%{CUSTOMIZABLE%}
     ) where
@@ -26,6 +28,9 @@ data %%MODULENAME%%_%%CUSTOM_BITSIZE%% = %%MODULENAME%%_%%CUSTOM_BITSIZE%%
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm %%MODULENAME%%_%%CUSTOM_BITSIZE%% where
+    type HashBlockSize           %%MODULENAME%%_%%CUSTOM_BITSIZE%% = %%CUSTOM_BLOCK_SIZE_BYTES%%
+    type HashDigestSize          %%MODULENAME%%_%%CUSTOM_BITSIZE%% = %%CUSTOM_DIGEST_SIZE_BYTES%%
+    type HashInternalContextSize %%MODULENAME%%_%%CUSTOM_BITSIZE%% = %%CUSTOM_CTX_SIZE_BYTES%%
     hashBlockSize  _          = %%CUSTOM_BLOCK_SIZE_BYTES%%
     hashDigestSize _          = %%CUSTOM_DIGEST_SIZE_BYTES%%
     hashInternalContextSize _ = %%CUSTOM_CTX_SIZE_BYTES%%

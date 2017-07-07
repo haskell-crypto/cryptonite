@@ -8,6 +8,8 @@
 -- Crypto hash types definitions
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.Types
     ( HashAlgorithm(..)
     , Context(..)
@@ -20,6 +22,7 @@ import qualified Crypto.Internal.ByteArray as B
 import           Foreign.Ptr (Ptr)
 import qualified Foundation.Array as F
 import qualified Foundation       as F
+import           GHC.TypeLits (Nat)
 
 -- | Class representing hashing algorithms.
 --
@@ -27,6 +30,13 @@ import qualified Foundation       as F
 -- and lowlevel. the Hash module takes care of
 -- hidding the mutable interface properly.
 class HashAlgorithm a where
+    -- | Associated type for the block size of the hash algorithm
+    type HashBlockSize a :: Nat
+    -- | Associated type for the digest size of the hash algorithm
+    type HashDigestSize a :: Nat
+    -- | Associated type for the internal context size of the hash algorithm
+    type HashInternalContextSize a :: Nat
+
     -- | Get the block size of a hash algorithm
     hashBlockSize           :: a -> Int
     -- | Get the digest size of a hash algorithm

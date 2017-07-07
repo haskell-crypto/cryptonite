@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.Blake2bp
     (  Blake2bp_512 (..)
     ) where
@@ -26,6 +28,9 @@ data Blake2bp_512 = Blake2bp_512
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Blake2bp_512 where
+    type HashBlockSize           Blake2bp_512 = 128
+    type HashDigestSize          Blake2bp_512 = 64
+    type HashInternalContextSize Blake2bp_512 = 2325
     hashBlockSize  _          = 128
     hashDigestSize _          = 64
     hashInternalContextSize _ = 2325

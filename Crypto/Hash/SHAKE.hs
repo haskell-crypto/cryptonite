@@ -40,13 +40,16 @@ import           Crypto.Internal.Nat
 data SHAKE128 (bitlen :: Nat) = SHAKE128
     deriving (Show, Typeable)
 
-instance (IsDivisibleBy8 bitLen, KnownNat bitLen) => HashAlgorithm (SHAKE128 bitLen) where
+instance (IsDivisibleBy8 bitlen, KnownNat bitlen) => HashAlgorithm (SHAKE128 bitlen) where
+    type HashBlockSize           (SHAKE128 bitlen)  = 168
+    type HashDigestSize          (SHAKE128 bitlen) = Div8 bitlen
+    type HashInternalContextSize (SHAKE128 bitlen) = 376
     hashBlockSize  _          = 168
-    hashDigestSize _          = byteLen (Proxy :: Proxy bitLen)
+    hashDigestSize _          = byteLen (Proxy :: Proxy bitlen)
     hashInternalContextSize _ = 376
     hashInternalInit p        = c_sha3_init p 128
     hashInternalUpdate        = c_sha3_update
-    hashInternalFinalize      = shakeFinalizeOutput (Proxy :: Proxy bitLen)
+    hashInternalFinalize      = shakeFinalizeOutput (Proxy :: Proxy bitlen)
 
 -- | SHAKE256 (256 bits) extendable output function.  Supports an arbitrary
 -- digest size (multiple of 8 bits), to be specified as a type parameter
@@ -58,16 +61,19 @@ instance (IsDivisibleBy8 bitLen, KnownNat bitLen) => HashAlgorithm (SHAKE128 bit
 data SHAKE256 (bitlen :: Nat) = SHAKE256
     deriving (Show, Typeable)
 
-instance (IsDivisibleBy8 bitLen, KnownNat bitLen) => HashAlgorithm (SHAKE256 bitLen) where
+instance (IsDivisibleBy8 bitlen, KnownNat bitlen) => HashAlgorithm (SHAKE256 bitlen) where
+    type HashBlockSize           (SHAKE256 bitlen) = 136
+    type HashDigestSize          (SHAKE256 bitlen) = Div8 bitlen
+    type HashInternalContextSize (SHAKE256 bitlen) = 344
     hashBlockSize  _          = 136
-    hashDigestSize _          = byteLen (Proxy :: Proxy bitLen)
+    hashDigestSize _          = byteLen (Proxy :: Proxy bitlen)
     hashInternalContextSize _ = 344
     hashInternalInit p        = c_sha3_init p 256
     hashInternalUpdate        = c_sha3_update
-    hashInternalFinalize      = shakeFinalizeOutput (Proxy :: Proxy bitLen)
+    hashInternalFinalize      = shakeFinalizeOutput (Proxy :: Proxy bitlen)
 
-shakeFinalizeOutput :: (IsDivisibleBy8 bitLen, KnownNat bitLen)
-                    => proxy bitLen
+shakeFinalizeOutput :: (IsDivisibleBy8 bitlen, KnownNat bitlen)
+                    => proxy bitlen
                     -> Ptr (Context a)
                     -> Ptr (Digest a)
                     -> IO ()

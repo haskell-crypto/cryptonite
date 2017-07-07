@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.Skein512
     (  Skein512_224 (..), Skein512_256 (..), Skein512_384 (..), Skein512_512 (..)
     ) where
@@ -26,6 +28,9 @@ data Skein512_224 = Skein512_224
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Skein512_224 where
+    type HashBlockSize           Skein512_224 = 64
+    type HashDigestSize          Skein512_224 = 28
+    type HashInternalContextSize Skein512_224 = 160
     hashBlockSize  _          = 64
     hashDigestSize _          = 28
     hashInternalContextSize _ = 160
@@ -38,6 +43,9 @@ data Skein512_256 = Skein512_256
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Skein512_256 where
+    type HashBlockSize           Skein512_256 = 64
+    type HashDigestSize          Skein512_256 = 32
+    type HashInternalContextSize Skein512_256 = 160
     hashBlockSize  _          = 64
     hashDigestSize _          = 32
     hashInternalContextSize _ = 160
@@ -50,6 +58,9 @@ data Skein512_384 = Skein512_384
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Skein512_384 where
+    type HashBlockSize           Skein512_384 = 64
+    type HashDigestSize          Skein512_384 = 48
+    type HashInternalContextSize Skein512_384 = 160
     hashBlockSize  _          = 64
     hashDigestSize _          = 48
     hashInternalContextSize _ = 160
@@ -62,6 +73,9 @@ data Skein512_512 = Skein512_512
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Skein512_512 where
+    type HashBlockSize           Skein512_512 = 64
+    type HashDigestSize          Skein512_512 = 64
+    type HashInternalContextSize Skein512_512 = 160
     hashBlockSize  _          = 64
     hashDigestSize _          = 64
     hashInternalContextSize _ = 160

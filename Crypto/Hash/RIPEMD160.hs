@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.RIPEMD160 ( RIPEMD160 (..) ) where
 
 import           Crypto.Hash.Types
@@ -23,6 +25,9 @@ data RIPEMD160 = RIPEMD160
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm RIPEMD160 where
+    type HashBlockSize           RIPEMD160 = 64
+    type HashDigestSize          RIPEMD160 = 20
+    type HashInternalContextSize RIPEMD160 = 128
     hashBlockSize  _          = 64
     hashDigestSize _          = 20
     hashInternalContextSize _ = 128

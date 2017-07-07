@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.Skein256
     (  Skein256_224 (..), Skein256_256 (..)
     ) where
@@ -26,6 +28,9 @@ data Skein256_224 = Skein256_224
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Skein256_224 where
+    type HashBlockSize           Skein256_224 = 32
+    type HashDigestSize          Skein256_224 = 28
+    type HashInternalContextSize Skein256_224 = 96
     hashBlockSize  _          = 32
     hashDigestSize _          = 28
     hashInternalContextSize _ = 96
@@ -38,6 +43,9 @@ data Skein256_256 = Skein256_256
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Skein256_256 where
+    type HashBlockSize           Skein256_256 = 32
+    type HashDigestSize          Skein256_256 = 32
+    type HashInternalContextSize Skein256_256 = 96
     hashBlockSize  _          = 32
     hashDigestSize _          = 32
     hashInternalContextSize _ = 96

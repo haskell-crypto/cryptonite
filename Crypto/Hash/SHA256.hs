@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.SHA256 ( SHA256 (..) ) where
 
 import           Crypto.Hash.Types
@@ -23,6 +25,9 @@ data SHA256 = SHA256
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm SHA256 where
+    type HashBlockSize           SHA256 = 64
+    type HashDigestSize          SHA256 = 32
+    type HashInternalContextSize SHA256 = 192
     hashBlockSize  _          = 64
     hashDigestSize _          = 32
     hashInternalContextSize _ = 192
