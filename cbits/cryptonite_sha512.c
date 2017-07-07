@@ -24,6 +24,7 @@
 
 #include <string.h>
 #include "cryptonite_bitfn.h"
+#include "cryptonite_align.h"
 #include "cryptonite_sha512.h"
 
 void cryptonite_sha384_init(struct sha512_ctx *ctx)
@@ -153,9 +154,18 @@ void cryptonite_sha512_update(struct sha512_ctx *ctx, const uint8_t *data, uint3
 		index = 0;
 	}
 
-	/* process as much 128-block as possible */
-	for (; len >= 128; len -= 128, data += 128)
-		sha512_do_chunk(ctx, (uint64_t *) data);
+	if (need_alignment(data, 8)) {
+		uint64_t tramp[16];
+		ASSERT_ALIGNMENT(tramp, 8);
+		for (; len >= 128; len -= 128, data += 128) {
+			memcpy(tramp, data, 128);
+			sha512_do_chunk(ctx, tramp);
+		}
+	} else {
+		/* process as much 128-block as possible */
+		for (; len >= 128; len -= 128, data += 128)
+			sha512_do_chunk(ctx, (uint64_t *) data);
+	}
 
 	/* append data into buf */
 	if (len)
@@ -175,7 +185,6 @@ void cryptonite_sha512_finalize(struct sha512_ctx *ctx, uint8_t *out)
 	static uint8_t padding[128] = { 0x80, };
 	uint32_t i, index, padlen;
 	uint64_t bits[2];
-	uint64_t *p = (uint64_t *) out;
 
 	/* cpu -> big endian */
 	bits[0] = cpu_to_be64((ctx->sz[1] << 3 | ctx->sz[0] >> 61));
@@ -191,7 +200,7 @@ void cryptonite_sha512_finalize(struct sha512_ctx *ctx, uint8_t *out)
 
 	/* store to digest */
 	for (i = 0; i < 8; i++)
-		p[i] = cpu_to_be64(ctx->h[i]);
+		store_be64(out+8*i, ctx->h[i]);
 }
 
 #include <stdio.h>

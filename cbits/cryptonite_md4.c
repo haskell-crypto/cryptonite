@@ -25,6 +25,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "cryptonite_bitfn.h"
+#include "cryptonite_align.h"
 #include "cryptonite_md4.h"
 
 void cryptonite_md4_init(struct md4_ctx *ctx)
@@ -130,9 +131,18 @@ void cryptonite_md4_update(struct md4_ctx *ctx, const uint8_t *data, uint32_t le
 		index = 0;
 	}
 
-	/* process as much 64-block as possible */
-	for (; len >= 64; len -= 64, data += 64)
-		md4_do_chunk(ctx, (uint32_t *) data);
+	if (need_alignment(data, 4)) {
+		uint32_t tramp[16];
+		ASSERT_ALIGNMENT(tramp, 4);
+		for (; len >= 64; len -= 64, data += 64) {
+			memcpy(tramp, data, 64);
+			md4_do_chunk(ctx, tramp);
+		}
+	} else {
+		/* process as much 64-block as possible */
+		for (; len >= 64; len -= 64, data += 64)
+			md4_do_chunk(ctx, (uint32_t *) data);
+	}
 
 	/* append data into buf */
 	if (len)
@@ -157,5 +167,8 @@ void cryptonite_md4_finalize(struct md4_ctx *ctx, uint8_t *out)
 	cryptonite_md4_update(ctx, (uint8_t *) &bits, sizeof(bits));
 
 	/* output hash */
-	le32_to_cpu_array((uint32_t *) out, ctx->h, 4);
+	store_le32(out   , ctx->h[0]);
+	store_le32(out+ 4, ctx->h[1]);
+	store_le32(out+ 8, ctx->h[2]);
+	store_le32(out+12, ctx->h[3]);
 }

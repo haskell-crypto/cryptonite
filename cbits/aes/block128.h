@@ -32,6 +32,7 @@
 #define BLOCK128_H
 
 #include <cryptonite_bitfn.h>
+#include <cryptonite_align.h>
 
 typedef union {
        uint64_t q[2];
@@ -40,15 +41,24 @@ typedef union {
        uint8_t  b[16];
 } block128;
 
-static inline void block128_copy_bytes(block128 *block, uint8_t *src, uint32_t len)
+static inline void block128_copy_bytes(block128 *block, const uint8_t *src, uint32_t len)
 {
 	int i;
 	for (i = 0; i < len; i++) block->b[i] = src[i];
 }
 
-static inline void block128_copy(block128 *d, const block128 *s)
+static inline void block128_copy_aligned(block128 *d, const block128 *s)
 {
 	d->q[0] = s->q[0]; d->q[1] = s->q[1];
+}
+
+static inline void block128_copy(block128 *d, const block128 *s)
+{
+	if (need_alignment(d, 8) || need_alignment(s, 8)) {
+		block128_copy_bytes(d, (const uint8_t *) s, 16);
+	} else {
+		block128_copy_aligned(d, s);
+	}
 }
 
 static inline void block128_zero(block128 *d)
@@ -56,22 +66,46 @@ static inline void block128_zero(block128 *d)
 	d->q[0] = 0; d->q[1] = 0;
 }
 
-static inline void block128_xor(block128 *d, const block128 *s)
+static inline void block128_xor_bytes(block128 *block, const uint8_t *src, uint32_t len)
+{
+	int i;
+	for (i = 0; i < len; i++) block->b[i] ^= src[i];
+}
+
+static inline void block128_xor_aligned(block128 *d, const block128 *s)
 {
 	d->q[0] ^= s->q[0];
 	d->q[1] ^= s->q[1];
 }
 
-static inline void block128_vxor(block128 *d, const block128 *s1, const block128 *s2)
+static inline void block128_xor(block128 *d, const block128 *s)
+{
+	if (need_alignment(d, 8) || need_alignment(s, 8)) {
+		block128_xor_bytes(d, (const uint8_t *) s, 16);
+	} else {
+		block128_xor_aligned(d, s);
+	}
+}
+
+static inline void block128_vxor_bytes(block128 *block, const uint8_t *src1, const uint8_t *src2, uint32_t len)
+{
+	int i;
+	for (i = 0; i < len; i++) block->b[i] = src1[i] ^ src2[i];
+}
+
+static inline void block128_vxor_aligned(block128 *d, const block128 *s1, const block128 *s2)
 {
 	d->q[0] = s1->q[0] ^ s2->q[0];
 	d->q[1] = s1->q[1] ^ s2->q[1];
 }
 
-static inline void block128_xor_bytes(block128 *block, uint8_t *src, uint32_t len)
+static inline void block128_vxor(block128 *d, const block128 *s1, const block128 *s2)
 {
-	int i;
-	for (i = 0; i < len; i++) block->b[i] ^= src[i];
+	if (need_alignment(d, 8) || need_alignment(s1, 8) || need_alignment(s2, 8)) {
+		block128_vxor_bytes(d, (const uint8_t *) s1, (const uint8_t *) s2, 16);
+	} else {
+		block128_vxor_aligned(d, s1, s2);
+	}
 }
 
 static inline void block128_inc_be(block128 *b)

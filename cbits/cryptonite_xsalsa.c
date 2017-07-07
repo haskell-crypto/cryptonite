@@ -30,12 +30,8 @@
 #include <stdint.h>
 #include <string.h>
 #include "cryptonite_xsalsa.h"
+#include "cryptonite_align.h"
 #include "cryptonite_bitfn.h"
-
-static inline uint32_t load32(const uint8_t *p)
-{
-  return le32_to_cpu(*((uint32_t *) p));
-}
 
 /* XSalsa20 algorithm as described in https://cr.yp.to/snuffle/xsalsa-20081128.pdf */
 void cryptonite_xsalsa_init(cryptonite_salsa_context *ctx, uint8_t nb_rounds,
@@ -51,8 +47,8 @@ void cryptonite_xsalsa_init(cryptonite_salsa_context *ctx, uint8_t nb_rounds,
        (x6, x7, x8, x9) is the first 128 bits of a 192-bit nonce
   */
   cryptonite_salsa_init_core(&ctx->st, keylen, key, 8, iv);
-  ctx->st.d[ 8] = load32(iv + 8);
-  ctx->st.d[ 9] = load32(iv + 12);
+  ctx->st.d[ 8] = load_le32(iv + 8);
+  ctx->st.d[ 9] = load_le32(iv + 12);
 
   /* Compute (z0, z1, . . . , z15) = doubleround ^(r/2) (x0, x1, . . . , x15) */
   block hSalsa;
@@ -73,8 +69,8 @@ void cryptonite_xsalsa_init(cryptonite_salsa_context *ctx, uint8_t nb_rounds,
   ctx->st.d[12] = hSalsa.d[ 7] - ctx->st.d[ 7];
   ctx->st.d[13] = hSalsa.d[ 8] - ctx->st.d[ 8];
   ctx->st.d[14] = hSalsa.d[ 9] - ctx->st.d[ 9];
-  ctx->st.d[ 6] = load32(iv + 16);
-  ctx->st.d[ 7] = load32(iv + 20);
+  ctx->st.d[ 6] = load_le32(iv + 16);
+  ctx->st.d[ 7] = load_le32(iv + 20);
   ctx->st.d[ 8] = 0;
   ctx->st.d[ 9] = 0;
 }

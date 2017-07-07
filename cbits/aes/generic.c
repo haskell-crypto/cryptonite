@@ -324,21 +324,22 @@ static void create_round_key(uint8_t *expandedKey, uint8_t *rk)
 static void aes_main(aes_key *key, uint8_t *state)
 {
 	int i = 0;
-	uint8_t rk[16];
+	uint32_t rk[4];
+	uint8_t *rkptr = (uint8_t *) rk;
 
-	create_round_key(key->data, rk);
-	add_round_key(state, rk);
+	create_round_key(key->data, rkptr);
+	add_round_key(state, rkptr);
 
 	for (i = 1; i < key->nbr; i++) {
-		create_round_key(key->data + 16 * i, rk);
+		create_round_key(key->data + 16 * i, rkptr);
 		shift_rows(state);
 		mix_columns(state);
-		add_round_key(state, rk);
+		add_round_key(state, rkptr);
 	}
 
-	create_round_key(key->data + 16 * key->nbr, rk);
+	create_round_key(key->data + 16 * key->nbr, rkptr);
 	shift_rows(state);
-	add_round_key(state, rk);
+	add_round_key(state, rkptr);
 }
 
 static void shift_rows_inv(uint8_t *state)
@@ -374,21 +375,22 @@ static void mix_columns_inv(uint8_t *state)
 static void aes_main_inv(aes_key *key, uint8_t *state)
 {
 	int i = 0;
-	uint8_t rk[16];
+	uint32_t rk[4];
+	uint8_t *rkptr = (uint8_t *) rk;
 
-	create_round_key(key->data + 16 * key->nbr, rk);
-	add_round_key(state, rk);
+	create_round_key(key->data + 16 * key->nbr, rkptr);
+	add_round_key(state, rkptr);
 
 	for (i = key->nbr - 1; i > 0; i--) {
-		create_round_key(key->data + 16 * i, rk);
+		create_round_key(key->data + 16 * i, rkptr);
 		shift_rows_inv(state);
-		add_round_key(state, rk);
+		add_round_key(state, rkptr);
 		mix_columns_inv(state);
 	}
 
-	create_round_key(key->data, rk);
+	create_round_key(key->data, rkptr);
 	shift_rows_inv(state);
-	add_round_key(state, rk);
+	add_round_key(state, rkptr);
 }
 
 /* Set the block values, for the block:
@@ -405,26 +407,28 @@ static void aes_main_inv(aes_key *key, uint8_t *state)
 
 void cryptonite_aes_generic_encrypt_block(aes_block *output, aes_key *key, aes_block *input)
 {
-	uint8_t block[16];
-	uint8_t *iptr, *optr;
+	uint32_t block[4];
+	uint8_t *iptr, *optr, *bptr;
 
 	iptr = (uint8_t *) input;
 	optr = (uint8_t *) output;
-	swap_block(block, iptr);
-	aes_main(key, block);
-	swap_block(optr, block);
+	bptr = (uint8_t *) block;
+	swap_block(bptr, iptr);
+	aes_main(key, bptr);
+	swap_block(optr, bptr);
 }
 
 void cryptonite_aes_generic_decrypt_block(aes_block *output, aes_key *key, aes_block *input)
 {
-	uint8_t block[16];
-	uint8_t *iptr, *optr;
+	uint32_t block[4];
+	uint8_t *iptr, *optr, *bptr;
 
 	iptr = (uint8_t *) input;
 	optr = (uint8_t *) output;
-	swap_block(block, iptr);
-	aes_main_inv(key, block);
-	swap_block(optr, block);
+	bptr = (uint8_t *) block;
+	swap_block(bptr, iptr);
+	aes_main_inv(key, bptr);
+	swap_block(optr, bptr);
 }
 
 void cryptonite_aes_generic_init(aes_key *key, uint8_t *origkey, uint8_t size)
