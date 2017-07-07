@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.Blake2s
     (  Blake2s_160 (..), Blake2s_224 (..), Blake2s_256 (..)
     ) where
@@ -26,6 +28,9 @@ data Blake2s_160 = Blake2s_160
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Blake2s_160 where
+    type HashBlockSize           Blake2s_160 = 64
+    type HashDigestSize          Blake2s_160 = 20
+    type HashInternalContextSize Blake2s_160 = 185
     hashBlockSize  _          = 64
     hashDigestSize _          = 20
     hashInternalContextSize _ = 185
@@ -38,6 +43,9 @@ data Blake2s_224 = Blake2s_224
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Blake2s_224 where
+    type HashBlockSize           Blake2s_224 = 64
+    type HashDigestSize          Blake2s_224 = 28
+    type HashInternalContextSize Blake2s_224 = 185
     hashBlockSize  _          = 64
     hashDigestSize _          = 28
     hashInternalContextSize _ = 185
@@ -50,6 +58,9 @@ data Blake2s_256 = Blake2s_256
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Blake2s_256 where
+    type HashBlockSize           Blake2s_256 = 64
+    type HashDigestSize          Blake2s_256 = 32
+    type HashInternalContextSize Blake2s_256 = 185
     hashBlockSize  _          = 64
     hashDigestSize _          = 32
     hashInternalContextSize _ = 185

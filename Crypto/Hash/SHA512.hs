@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.SHA512 ( SHA512 (..) ) where
 
 import           Crypto.Hash.Types
@@ -23,6 +25,9 @@ data SHA512 = SHA512
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm SHA512 where
+    type HashBlockSize           SHA512 = 128
+    type HashDigestSize          SHA512 = 64
+    type HashInternalContextSize SHA512 = 256
     hashBlockSize  _          = 128
     hashDigestSize _          = 64
     hashInternalContextSize _ = 256

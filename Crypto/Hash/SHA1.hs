@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.SHA1 ( SHA1 (..) ) where
 
 import           Crypto.Hash.Types
@@ -23,6 +25,9 @@ data SHA1 = SHA1
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm SHA1 where
+    type HashBlockSize           SHA1 = 64
+    type HashDigestSize          SHA1 = 20
+    type HashInternalContextSize SHA1 = 96
     hashBlockSize  _          = 64
     hashDigestSize _          = 20
     hashInternalContextSize _ = 96

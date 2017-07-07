@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.Tiger ( Tiger (..) ) where
 
 import           Crypto.Hash.Types
@@ -23,6 +25,9 @@ data Tiger = Tiger
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Tiger where
+    type HashBlockSize           Tiger = 64
+    type HashDigestSize          Tiger = 24
+    type HashInternalContextSize Tiger = 96
     hashBlockSize  _          = 64
     hashDigestSize _          = 24
     hashInternalContextSize _ = 96

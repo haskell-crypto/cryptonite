@@ -41,6 +41,9 @@ data SHAKE128 (bitlen :: Nat) = SHAKE128
     deriving (Show, Typeable)
 
 instance (IsDivisibleBy8 bitLen, KnownNat bitLen) => HashAlgorithm (SHAKE128 bitLen) where
+    type HashBlockSize           (SHAKE128 bitlen)  = 168
+    type HashDigestSize          (SHAKE128 bitlen) = Div8 bitlen
+    type HashInternalContextSize (SHAKE128 bitlen) = 376
     hashBlockSize  _          = 168
     hashDigestSize _          = byteLen (Proxy :: Proxy bitLen)
     hashInternalContextSize _ = 376
@@ -59,6 +62,9 @@ data SHAKE256 (bitlen :: Nat) = SHAKE256
     deriving (Show, Typeable)
 
 instance (IsDivisibleBy8 bitLen, KnownNat bitLen) => HashAlgorithm (SHAKE256 bitLen) where
+    type HashBlockSize           (SHAKE256 bitlen) = 136
+    type HashDigestSize          (SHAKE256 bitlen) = Div8 bitlen
+    type HashInternalContextSize (SHAKE256 bitlen) = 344
     hashBlockSize  _          = 136
     hashDigestSize _          = byteLen (Proxy :: Proxy bitLen)
     hashInternalContextSize _ = 344

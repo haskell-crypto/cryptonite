@@ -9,6 +9,7 @@ module Crypto.Internal.Nat
     , type IsAtMost, type IsAtLeast
     , byteLen
     , integralNatVal
+    , type Div8
     ) where
 
 import           GHC.TypeLits
@@ -48,6 +49,42 @@ type family IsGE (bitlen :: Nat) (n :: Nat) (c :: Bool) where
 -- | ensure the given `bitlen` is greater or equal to `n`
 --
 type IsAtLeast (bitlen :: Nat) (n :: Nat) = IsGE bitlen n (n <=? bitlen) ~ 'True
+
+type family Div8 (bitLen :: Nat) where
+    Div8 0 = 0
+    Div8 1 = 0
+    Div8 2 = 0
+    Div8 3 = 0
+    Div8 4 = 0
+    Div8 5 = 0
+    Div8 6 = 0
+    Div8 7 = 0
+    Div8 8 = 1
+    Div8 9 = 1
+    Div8 10 = 1
+    Div8 11 = 1
+    Div8 12 = 1
+    Div8 13 = 1
+    Div8 14 = 1
+    Div8 15 = 1
+    Div8 16 = 2
+    Div8 17 = 2
+    Div8 18 = 2
+    Div8 19 = 2
+    Div8 20 = 2
+    Div8 21 = 2
+    Div8 22 = 2
+    Div8 23 = 2
+    Div8 24 = 3
+    Div8 25 = 3
+    Div8 26 = 3
+    Div8 27 = 3
+    Div8 28 = 3
+    Div8 29 = 3
+    Div8 30 = 3
+    Div8 31 = 3
+    Div8 32 = 4
+    Div8 n  = 4 + Div8 (n - 32)
 
 type family IsDiv8 (bitLen :: Nat) (n :: Nat) where
     IsDiv8 bitLen 0 = 'True

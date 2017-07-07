@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.Blake2b
     (  Blake2b_160 (..), Blake2b_224 (..), Blake2b_256 (..), Blake2b_384 (..), Blake2b_512 (..)
     ) where
@@ -26,6 +28,9 @@ data Blake2b_160 = Blake2b_160
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Blake2b_160 where
+    type HashBlockSize           Blake2b_160 = 128
+    type HashDigestSize          Blake2b_160 = 20
+    type HashInternalContextSize Blake2b_160 = 361
     hashBlockSize  _          = 128
     hashDigestSize _          = 20
     hashInternalContextSize _ = 361
@@ -38,6 +43,9 @@ data Blake2b_224 = Blake2b_224
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Blake2b_224 where
+    type HashBlockSize           Blake2b_224 = 128
+    type HashDigestSize          Blake2b_224 = 28
+    type HashInternalContextSize Blake2b_224 = 361
     hashBlockSize  _          = 128
     hashDigestSize _          = 28
     hashInternalContextSize _ = 361
@@ -50,6 +58,9 @@ data Blake2b_256 = Blake2b_256
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Blake2b_256 where
+    type HashBlockSize           Blake2b_256 = 128
+    type HashDigestSize          Blake2b_256 = 32
+    type HashInternalContextSize Blake2b_256 = 361
     hashBlockSize  _          = 128
     hashDigestSize _          = 32
     hashInternalContextSize _ = 361
@@ -62,6 +73,9 @@ data Blake2b_384 = Blake2b_384
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Blake2b_384 where
+    type HashBlockSize           Blake2b_384 = 128
+    type HashDigestSize          Blake2b_384 = 48
+    type HashInternalContextSize Blake2b_384 = 361
     hashBlockSize  _          = 128
     hashDigestSize _          = 48
     hashInternalContextSize _ = 361
@@ -74,6 +88,9 @@ data Blake2b_512 = Blake2b_512
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Blake2b_512 where
+    type HashBlockSize           Blake2b_512 = 128
+    type HashDigestSize          Blake2b_512 = 64
+    type HashInternalContextSize Blake2b_512 = 361
     hashBlockSize  _          = 128
     hashDigestSize _          = 64
     hashInternalContextSize _ = 361

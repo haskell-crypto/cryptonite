@@ -63,6 +63,9 @@ data Blake2s (bitlen :: Nat) = Blake2s
 instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost bitlen 256)
       => HashAlgorithm (Blake2s bitlen)
       where
+    type HashBlockSize           (Blake2s bitlen) = 64
+    type HashDigestSize          (Blake2s bitlen) = bitlen
+    type HashInternalContextSize (Blake2s bitlen) = 185
     hashBlockSize  _          = 64
     hashDigestSize _          = byteLen (Proxy :: Proxy bitlen)
     hashInternalContextSize _ = 185
@@ -95,6 +98,9 @@ data Blake2b (bitlen :: Nat) = Blake2b
 instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost bitlen 512)
       => HashAlgorithm (Blake2b bitlen)
       where
+    type HashBlockSize           (Blake2b bitlen) = 128
+    type HashDigestSize          (Blake2b bitlen) = bitlen
+    type HashInternalContextSize (Blake2b bitlen) = 361
     hashBlockSize  _          = 128
     hashDigestSize _          = byteLen (Proxy :: Proxy bitlen)
     hashInternalContextSize _ = 361
@@ -115,6 +121,9 @@ data Blake2sp (bitlen :: Nat) = Blake2sp
 instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost bitlen 256)
       => HashAlgorithm (Blake2sp bitlen)
       where
+    type HashBlockSize           (Blake2sp bitlen) = 64
+    type HashDigestSize          (Blake2sp bitlen) = bitlen
+    type HashInternalContextSize (Blake2sp bitlen) = 2185
     hashBlockSize  _          = 64
     hashDigestSize _          = byteLen (Proxy :: Proxy bitlen)
     hashInternalContextSize _ = 2185
@@ -135,6 +144,9 @@ data Blake2bp (bitlen :: Nat) = Blake2bp
 instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost bitlen 512)
       => HashAlgorithm (Blake2bp bitlen)
       where
+    type HashBlockSize           (Blake2bp bitlen) = 128
+    type HashDigestSize          (Blake2bp bitlen) = bitlen
+    type HashInternalContextSize (Blake2bp bitlen) = 2325
     hashBlockSize  _          = 128
     hashDigestSize _          = byteLen (Proxy :: Proxy bitlen)
     hashInternalContextSize _ = 2325

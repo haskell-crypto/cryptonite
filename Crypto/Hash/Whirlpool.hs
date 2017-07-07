@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.Whirlpool ( Whirlpool (..) ) where
 
 import           Crypto.Hash.Types
@@ -23,6 +25,9 @@ data Whirlpool = Whirlpool
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Whirlpool where
+    type HashBlockSize           Whirlpool = 64
+    type HashDigestSize          Whirlpool = 64
+    type HashInternalContextSize Whirlpool = 168
     hashBlockSize  _          = 64
     hashDigestSize _          = 64
     hashInternalContextSize _ = 168

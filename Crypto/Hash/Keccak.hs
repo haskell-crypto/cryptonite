@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.Keccak
     (  Keccak_224 (..), Keccak_256 (..), Keccak_384 (..), Keccak_512 (..)
     ) where
@@ -26,6 +28,9 @@ data Keccak_224 = Keccak_224
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Keccak_224 where
+    type HashBlockSize           Keccak_224 = 144
+    type HashDigestSize          Keccak_224 = 28
+    type HashInternalContextSize Keccak_224 = 352
     hashBlockSize  _          = 144
     hashDigestSize _          = 28
     hashInternalContextSize _ = 352
@@ -38,6 +43,9 @@ data Keccak_256 = Keccak_256
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Keccak_256 where
+    type HashBlockSize           Keccak_256 = 136
+    type HashDigestSize          Keccak_256 = 32
+    type HashInternalContextSize Keccak_256 = 344
     hashBlockSize  _          = 136
     hashDigestSize _          = 32
     hashInternalContextSize _ = 344
@@ -50,6 +58,9 @@ data Keccak_384 = Keccak_384
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Keccak_384 where
+    type HashBlockSize           Keccak_384 = 104
+    type HashDigestSize          Keccak_384 = 48
+    type HashInternalContextSize Keccak_384 = 312
     hashBlockSize  _          = 104
     hashDigestSize _          = 48
     hashInternalContextSize _ = 312
@@ -62,6 +73,9 @@ data Keccak_512 = Keccak_512
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm Keccak_512 where
+    type HashBlockSize           Keccak_512 = 72
+    type HashDigestSize          Keccak_512 = 64
+    type HashInternalContextSize Keccak_512 = 280
     hashBlockSize  _          = 72
     hashDigestSize _          = 64
     hashInternalContextSize _ = 280

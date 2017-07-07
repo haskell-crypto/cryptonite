@@ -10,6 +10,8 @@
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.SHA384 ( SHA384 (..) ) where
 
 import           Crypto.Hash.Types
@@ -23,6 +25,9 @@ data SHA384 = SHA384
     deriving (Show,Data,Typeable)
 
 instance HashAlgorithm SHA384 where
+    type HashBlockSize           SHA384 = 128
+    type HashDigestSize          SHA384 = 48
+    type HashInternalContextSize SHA384 = 256
     hashBlockSize  _          = 128
     hashDigestSize _          = 48
     hashInternalContextSize _ = 256
