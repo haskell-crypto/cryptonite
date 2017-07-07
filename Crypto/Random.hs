@@ -16,6 +16,7 @@ module Crypto.Random
     , seedNew
     , seedFromInteger
     , seedToInteger
+    , seedFromBinary
     -- * Deterministic Random class
     , getSystemDRG
     , drgNew
@@ -29,10 +30,12 @@ module Crypto.Random
     , MonadPseudoRandom
     ) where
 
+import Crypto.Error
 import Crypto.Random.Types
 import Crypto.Random.ChaChaDRG
 import Crypto.Random.SystemDRG
 import Data.ByteArray (ByteArray, ByteArrayAccess, ScrubbedBytes)
+import qualified Data.ByteArray as B
 import Crypto.Internal.Imports
 
 import qualified Crypto.Number.Serialize as Serialize
@@ -55,6 +58,12 @@ seedToInteger (Seed b) = Serialize.os2ip b
 -- | Convert an integer to a Seed
 seedFromInteger :: Integer -> Seed
 seedFromInteger i = Seed $ Serialize.i2ospOf_ seedLength (i `mod` 2^(seedLength * 8))
+
+-- | Convert a binary to a seed
+seedFromBinary :: ByteArrayAccess b => b -> CryptoFailable Seed
+seedFromBinary b
+    | B.length b /= 40 = CryptoFailed (CryptoError_SeedSizeInvalid)
+    | otherwise        = CryptoPassed $ Seed $ B.convert b
 
 -- | Create a new DRG from system entropy
 drgNew :: MonadRandom randomly => randomly ChaChaDRG

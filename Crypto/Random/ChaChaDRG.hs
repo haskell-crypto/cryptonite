@@ -14,7 +14,7 @@ module Crypto.Random.ChaChaDRG
 
 import           Crypto.Random.Types
 import           Crypto.Internal.Imports
-import           Crypto.Internal.ByteArray (ByteArray, ScrubbedBytes)
+import           Crypto.Internal.ByteArray (ByteArray, ByteArrayAccess, ScrubbedBytes)
 import qualified Crypto.Internal.ByteArray as B
 import           Foreign.Storable (pokeElemOff)
 
@@ -29,7 +29,7 @@ newtype ChaChaDRG = ChaChaDRG C.StateSimple
 
 -- | Initialize a new ChaCha context with the number of rounds,
 -- the key and the nonce associated.
-initialize :: ByteArray seed
+initialize :: B.ByteArrayAccess seed
            => seed        -- ^ 40 bytes of seed
            -> ChaChaDRG   -- ^ the initial ChaCha state
 initialize seed = ChaChaDRG $ C.initializeSimple seed

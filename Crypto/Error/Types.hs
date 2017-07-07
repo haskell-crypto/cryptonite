@@ -28,6 +28,7 @@ data CryptoError =
     -- symmetric cipher errors
       CryptoError_KeySizeInvalid
     | CryptoError_IvSizeInvalid
+    | CryptoError_SeedSizeInvalid
     | CryptoError_AEADModeNotSupported
     -- public key cryptography error
     | CryptoError_SecretKeySizeInvalid
