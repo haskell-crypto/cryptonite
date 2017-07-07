@@ -26,6 +26,7 @@ module Crypto.PubKey.ECC.P256
     , pointFromIntegers
     , pointToBinary
     , pointFromBinary
+    , unsafePointFromBinary
     -- * scalar arithmetic
     , scalarGenerate
     , scalarZero
@@ -113,7 +114,8 @@ pointMul scalar p = withNewPoint $ \dx dy ->
     withScalar scalar $ \n -> withPoint p $ \px py -> withScalarZero $ \nzero ->
         ccryptonite_p256_points_mul_vartime nzero n px py dx dy
 
--- | Similar to 'pointMul', serializing the x coordinate as binary
+-- | Similar to 'pointMul', serializing the x coordinate as binary.
+-- When scalar is multiple of point order the result is all zero.
 pointDh :: ByteArray binary => Scalar -> Point -> binary
 pointDh scalar p =
     B.unsafeCreate scalarSize $ \dst -> withTempPoint $ \dx dy -> do
@@ -172,9 +174,18 @@ pointToBinary p = B.unsafeCreate pointSize $ \dst -> withPoint p $ \px py -> do
     ccryptonite_p256_to_bin (castPtr px) dst
     ccryptonite_p256_to_bin (castPtr py) (dst `plusPtr` 32)
 
--- | Convert from binary to a point
+-- | Convert from binary to a valid point
 pointFromBinary :: ByteArrayAccess ba => ba -> CryptoFailable Point
-pointFromBinary ba
+pointFromBinary ba = unsafePointFromBinary ba >>= validatePoint
+  where
+    validatePoint :: Point -> CryptoFailable Point
+    validatePoint p
+        | pointIsValid p = CryptoPassed p
+        | otherwise      = CryptoFailed $ CryptoError_PointCoordinatesInvalid
+
+-- | Convert from binary to a point, possibly invalid
+unsafePointFromBinary :: ByteArrayAccess ba => ba -> CryptoFailable Point
+unsafePointFromBinary ba
     | B.length ba /= pointSize = CryptoFailed $ CryptoError_PublicKeySizeInvalid
     | otherwise                =
         CryptoPassed $ withNewPoint $ \px py -> B.withByteArray ba $ \src -> do

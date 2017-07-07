@@ -81,7 +81,21 @@ class EllipticCurve curve => EllipticCurveDH curve where
     -- is not hashed.
     --
     -- use `pointSmul` to keep the result in Point format.
-    ecdh :: proxy curve -> Scalar curve -> Point curve -> SharedSecret
+    --
+    -- /WARNING:/ Curve implementations may return a special value or an
+    -- exception when the public point lies in a subgroup of small order.
+    -- This function is adequate when the scalar is in expected range and
+    -- contributory behaviour is not needed.  Otherwise use 'ecdh'.
+    ecdhRaw :: proxy curve -> Scalar curve -> Point curve -> SharedSecret
+    ecdhRaw prx s = throwCryptoError . ecdh prx s
+
+    -- | Generate a Diffie hellman secret value and verify that the result
+    -- is not the point at infinity.
+    --
+    -- This additional test avoids risks existing with function 'ecdhRaw'.
+    -- Implementations always return a 'CryptoError' instead of a special
+    -- value or an exception.
+    ecdh :: proxy curve -> Scalar curve -> Point curve -> CryptoFailable SharedSecret
 
 class EllipticCurve curve => EllipticCurveArith curve where
     -- | Add points on a curve
@@ -118,7 +132,7 @@ instance EllipticCurve Curve_P256R1 where
         Nothing -> CryptoFailed $ CryptoError_PointSizeInvalid
         Just (m,xy)
             -- uncompressed
-            | m == 4 -> P256.pointFromBinary xy >>= validateP256Point
+            | m == 4 -> P256.pointFromBinary xy
             | otherwise -> CryptoFailed $ CryptoError_PointFormatInvalid
 
 instance EllipticCurveArith Curve_P256R1 where
@@ -126,7 +140,8 @@ instance EllipticCurveArith Curve_P256R1 where
     pointSmul _ s p = P256.pointMul s p
 
 instance EllipticCurveDH Curve_P256R1 where
-    ecdh _ s p = SharedSecret $ P256.pointDh s p
+    ecdhRaw _ s p = SharedSecret $ P256.pointDh s p
+    ecdh  prx s p = checkNonZeroDH (ecdhRaw prx s p)
 
 data Curve_P384R1 = Curve_P384R1
     deriving (Show,Data,Typeable)
@@ -146,10 +161,9 @@ instance EllipticCurveArith Curve_P384R1 where
     pointSmul _ s p = Simple.pointMul s p
 
 instance EllipticCurveDH Curve_P384R1 where
-    ecdh _ s p = SharedSecret $ i2ospOf_ (curveSizeBytes prx) x
+    ecdh _ s p = encodeECShared prx (Simple.pointMul s p)
       where
-        prx = Proxy :: Proxy Curve_P384R1
-        Simple.Point x _ = pointSmul prx s p
+        prx = Proxy :: Proxy Simple.SEC_p384r1
 
 data Curve_P521R1 = Curve_P521R1
     deriving (Show,Data,Typeable)
@@ -169,10 +183,9 @@ instance EllipticCurveArith Curve_P521R1 where
     pointSmul _ s p = Simple.pointMul s p
 
 instance EllipticCurveDH Curve_P521R1 where
-    ecdh _ s p = SharedSecret $ i2ospOf_ (curveSizeBytes prx) x
+    ecdh _ s p = encodeECShared prx (Simple.pointMul s p)
       where
-        prx = Proxy :: Proxy Curve_P521R1
-        Simple.Point x _ = pointSmul prx s p
+        prx = Proxy :: Proxy Simple.SEC_p521r1
 
 data Curve_X25519 = Curve_X25519
     deriving (Show,Data,Typeable)
@@ -189,8 +202,9 @@ instance EllipticCurve Curve_X25519 where
     decodePoint _ bs = X25519.publicKey bs
 
 instance EllipticCurveDH Curve_X25519 where
-    ecdh _ s p = SharedSecret $ convert secret
+    ecdhRaw _ s p = SharedSecret $ convert secret
       where secret = X25519.dh p s
+    ecdh prx s p = checkNonZeroDH (ecdhRaw prx s p)
 
 data Curve_X448 = Curve_X448
     deriving (Show,Data,Typeable)
@@ -207,13 +221,18 @@ instance EllipticCurve Curve_X448 where
     decodePoint _ bs = X448.publicKey bs
 
 instance EllipticCurveDH Curve_X448 where
-    ecdh _ s p = SharedSecret $ convert secret
+    ecdhRaw _ s p = SharedSecret $ convert secret
       where secret = X448.dh p s
+    ecdh prx s p = checkNonZeroDH (ecdhRaw prx s p)
 
-validateP256Point :: P256.Point -> CryptoFailable P256.Point
-validateP256Point p
-    | P256.pointIsValid p = CryptoPassed p
-    | otherwise           = CryptoFailed $ CryptoError_PointCoordinatesInvalid
+checkNonZeroDH :: SharedSecret -> CryptoFailable SharedSecret
+checkNonZeroDH s@(SharedSecret b)
+    | B.constAllZero b = CryptoFailed CryptoError_ScalarMultiplicationInvalid
+    | otherwise        = CryptoPassed s
+
+encodeECShared :: Simple.Curve curve => Proxy curve -> Simple.Point curve -> CryptoFailable SharedSecret
+encodeECShared _   Simple.PointO      = CryptoFailed CryptoError_ScalarMultiplicationInvalid
+encodeECShared prx (Simple.Point x _) = CryptoPassed . SharedSecret $ i2ospOf_ (Simple.curveSizeBytes prx) x
 
 encodeECPoint :: forall curve bs . (Simple.Curve curve, ByteArray bs) => Simple.Point curve -> bs
 encodeECPoint Simple.PointO      = error "encodeECPoint: cannot serialize point at infinity"
@@ -237,6 +256,3 @@ decodeECPoint mxy = case B.uncons mxy of
                 y = os2ip yb
              in Simple.pointFromIntegers (x,y)
         | otherwise -> CryptoFailed $ CryptoError_PointFormatInvalid
-
-curveSizeBytes :: EllipticCurve c => Proxy c -> Int
-curveSizeBytes proxy = (curveSizeBits proxy + 7) `div` 8

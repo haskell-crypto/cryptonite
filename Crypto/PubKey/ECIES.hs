@@ -25,6 +25,7 @@ module Crypto.PubKey.ECIES
     ) where
 
 import           Crypto.ECC
+import           Crypto.Error
 import           Crypto.Random
 import           Crypto.Internal.Proxy
 
@@ -33,10 +34,10 @@ import           Crypto.Internal.Proxy
 deriveEncrypt :: (MonadRandom randomly, EllipticCurveDH curve)
               => proxy curve -- ^ representation of the curve
               -> Point curve -- ^ the public key of the receiver
-              -> randomly (Point curve, SharedSecret)
+              -> randomly (CryptoFailable (Point curve, SharedSecret))
 deriveEncrypt proxy pub = do
     (KeyPair rPoint rScalar) <- curveGenerateKeyPair proxy
-    return (rPoint, ecdh proxy rScalar pub)
+    return $ (\s -> (rPoint, s)) `fmap` ecdh proxy rScalar pub
 
 -- | Derive the shared secret with the receiver key
 -- and the R point of the scheme.
@@ -44,5 +45,5 @@ deriveDecrypt :: EllipticCurveDH curve
               => proxy curve  -- ^ representation of the curve
               -> Point curve  -- ^ The received R (supposedly, randomly generated on the encrypt side)
               -> Scalar curve -- ^ The secret key of the receiver
-              -> SharedSecret
+              -> CryptoFailable SharedSecret
 deriveDecrypt proxy point secret = ecdh proxy secret point
