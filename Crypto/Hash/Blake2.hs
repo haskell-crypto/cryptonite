@@ -64,7 +64,7 @@ instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost b
       => HashAlgorithm (Blake2s bitlen)
       where
     type HashBlockSize           (Blake2s bitlen) = 64
-    type HashDigestSize          (Blake2s bitlen) = bitlen
+    type HashDigestSize          (Blake2s bitlen) = Div8 bitlen
     type HashInternalContextSize (Blake2s bitlen) = 185
     hashBlockSize  _          = 64
     hashDigestSize _          = byteLen (Proxy :: Proxy bitlen)
@@ -99,7 +99,7 @@ instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost b
       => HashAlgorithm (Blake2b bitlen)
       where
     type HashBlockSize           (Blake2b bitlen) = 128
-    type HashDigestSize          (Blake2b bitlen) = bitlen
+    type HashDigestSize          (Blake2b bitlen) = Div8 bitlen
     type HashInternalContextSize (Blake2b bitlen) = 361
     hashBlockSize  _          = 128
     hashDigestSize _          = byteLen (Proxy :: Proxy bitlen)
@@ -122,7 +122,7 @@ instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost b
       => HashAlgorithm (Blake2sp bitlen)
       where
     type HashBlockSize           (Blake2sp bitlen) = 64
-    type HashDigestSize          (Blake2sp bitlen) = bitlen
+    type HashDigestSize          (Blake2sp bitlen) = Div8 bitlen
     type HashInternalContextSize (Blake2sp bitlen) = 2185
     hashBlockSize  _          = 64
     hashDigestSize _          = byteLen (Proxy :: Proxy bitlen)
@@ -145,7 +145,7 @@ instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost b
       => HashAlgorithm (Blake2bp bitlen)
       where
     type HashBlockSize           (Blake2bp bitlen) = 128
-    type HashDigestSize          (Blake2bp bitlen) = bitlen
+    type HashDigestSize          (Blake2bp bitlen) = Div8 bitlen
     type HashInternalContextSize (Blake2bp bitlen) = 2325
     hashBlockSize  _          = 128
     hashDigestSize _          = byteLen (Proxy :: Proxy bitlen)
