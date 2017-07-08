@@ -1,3 +1,30 @@
+## 0.24
+
+* Ed25519: generateSecret & Documentation updates
+* Repair tutorial
+* RSA: Allow signing digest directly
+* IV add: fix overflow behavior
+* P256: validate point when decoding
+* Compilation fix with deepseq disabled
+* Improve Curve448 and use decaf for Ed448
+* Compilation flag blake2 sse merged in sse support
+* Process unaligned data better in hashes and AES, on architecture needing alignment
+* Drop support for ghc 7.6
+* Add ability to create random generator Seed from binary data and
+  loosen constraint on ChaChaDRG seed from ByteArray to ByteArrayAccess.
+* Add 3 associated types with the HashAlgorithm class, to get
+  access to the constant for BlockSize, DigestSize and ContextSize at the type level.
+  the related function that this replaced will be deprecated in later release, and
+  eventually removed.
+
+API CHANGES:
+
+* Improve ECDH safety to return failure for bad inputs (e.g. public point in small order subgroup).
+  To go back to previous behavior you can replace `ecdh` by `ecdhRaw`. It's recommended to
+  use `ecdh` and handle the error appropriately.
+* Users defining their own HashAlgorithm needs to define the
+  HashBlockSize, HashDigest, HashInternalContextSize associated types
+
 ## 0.23
 
 * Digest memory usage improvement by using unpinned memory
