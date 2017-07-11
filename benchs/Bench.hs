@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Main where
 
 import Criterion.Main
@@ -11,6 +12,7 @@ import qualified Crypto.Cipher.ChaChaPoly1305 as CP
 import           Crypto.Cipher.DES
 import           Crypto.Cipher.Twofish
 import           Crypto.Cipher.Types
+import           Crypto.ECC
 import           Crypto.Error
 import           Crypto.Hash
 import qualified Crypto.KDF.PBKDF2 as PBKDF2
@@ -18,6 +20,7 @@ import qualified Crypto.PubKey.ECC.Types as ECC
 import qualified Crypto.PubKey.ECC.Prim as ECC
 import           Crypto.Random
 
+import           Control.DeepSeq (NFData)
 import           Data.ByteArray (ByteArray, Bytes)
 import qualified Data.ByteString as B
 
@@ -176,11 +179,34 @@ benchECC =
         n1 = 0x2ba9daf2363b2819e69b34a39cf496c2458a9b2a21505ea9e7b7cbca42dc7435
         n2 = 0xf054a7f60d10b8c2cf847ee90e9e029f8b0e971b09ca5f55c4d49921a11fadc1
 
+data CurveDH = forall c . (EllipticCurveDH c, NFData (Scalar c), NFData (Point c)) => CurveDH c
+
+benchECDH = map doECDHBench curves
+  where
+    doECDHBench (name, CurveDH c) =
+        let proxy = Just c -- using Maybe as Proxy
+         in env (generate proxy) $ bench name . nf (run proxy)
+
+    generate proxy = do
+        KeyPair _      aScalar <- curveGenerateKeyPair proxy
+        KeyPair bPoint _       <- curveGenerateKeyPair proxy
+        return (aScalar, bPoint)
+
+    run proxy (s, p) = throwCryptoError (ecdh proxy s p)
+
+    curves = [ ("P256R1", CurveDH Curve_P256R1)
+             , ("P384R1", CurveDH Curve_P384R1)
+             , ("P521R1", CurveDH Curve_P521R1)
+             , ("X25519", CurveDH Curve_X25519)
+             , ("X448",   CurveDH Curve_X448)
+             ]
+
 main = defaultMain
     [ bgroup "hash" benchHash
     , bgroup "block-cipher" benchBlockCipher
     , bgroup "AE" benchAE
     , bgroup "pbkdf2" benchPBKDF2
     , bgroup "ECC" benchECC
+    , bgroup "ECDH" benchECDH
     , bgroup "F2m" benchF2m
     ]
