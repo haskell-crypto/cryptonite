@@ -1,4 +1,3 @@
-{-# LANGUAGE PackageImports #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ExistentialQuantification #-}
 module Main where
@@ -22,26 +21,22 @@ import           Crypto.Random
 import           Data.ByteArray (ByteArray, Bytes)
 import qualified Data.ByteString as B
 
-import           System.IO.Unsafe (unsafePerformIO)
-
 import Number.F2m
 
 data HashAlg = forall alg . HashAlgorithm alg => HashAlg alg
 
 benchHash =
-    [ bgroup "1KB" $ map (doHashBench oneKB) hashAlgs
-    , bgroup "1MB" $ map (doHashBench oneMB) hashAlgs
+    [ env oneKB $ \b -> bgroup "1KB" $ map (doHashBench b) hashAlgs
+    , env oneMB $ \b -> bgroup "1MB" $ map (doHashBench b) hashAlgs
     ]
   where
     doHashBench b (name, HashAlg alg) = bench name $ nf (hashWith alg) b
 
-    oneKB :: Bytes
-    oneKB = unsafePerformIO (getRandomBytes 1024)
-    {-# NOINLINE oneKB #-}
+    oneKB :: IO Bytes
+    oneKB = getRandomBytes 1024
 
-    oneMB :: Bytes
-    oneMB = unsafePerformIO (getRandomBytes $ 1024 * 1024)
-    {-# NOINLINE oneMB #-}
+    oneMB :: IO Bytes
+    oneMB = getRandomBytes $ 1024 * 1024
 
     hashAlgs =
         [ ("MD2", HashAlg MD2)
