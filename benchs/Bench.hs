@@ -7,8 +7,10 @@ import Criterion.Main
 
 import           Crypto.Cipher.AES
 import           Crypto.Cipher.Blowfish
+import           Crypto.Cipher.CAST5
 import qualified Crypto.Cipher.ChaChaPoly1305 as CP
 import           Crypto.Cipher.DES
+import           Crypto.Cipher.Twofish
 import           Crypto.Cipher.Types
 import           Crypto.Error
 import           Crypto.Hash
@@ -110,23 +112,27 @@ benchBlockCipher =
         benchECB =
             [ bench "DES-input=1024" $ nf (run (undefined :: DES) cipherInit key8) input1024
             , bench "Blowfish128-input=1024" $ nf (run (undefined :: Blowfish128) cipherInit key16) input1024
+            , bench "Twofish128-input=1024" $ nf (run (undefined :: Twofish128) cipherInit key16) input1024
+            , bench "CAST5-128-input=1024" $ nf (run (undefined :: CAST5) cipherInit key16) input1024
             , bench "AES128-input=1024" $ nf (run (undefined :: AES128) cipherInit key16) input1024
             , bench "AES256-input=1024" $ nf (run (undefined :: AES256) cipherInit key32) input1024
             ]
           where run :: (ByteArray ba, ByteArray key, BlockCipher c)
                     => c -> (key -> CryptoFailable c) -> key -> ba -> ba
-                run witness initF key input =
+                run _witness initF key input =
                     (ecbEncrypt (throwCryptoError (initF key))) input
 
         benchCBC =
             [ bench "DES-input=1024" $ nf (run (undefined :: DES) cipherInit key8 iv8) input1024
             , bench "Blowfish128-input=1024" $ nf (run (undefined :: Blowfish128) cipherInit key16 iv8) input1024
+            , bench "Twofish128-input=1024" $ nf (run (undefined :: Twofish128) cipherInit key16 iv16) input1024
+            , bench "CAST5-128-input=1024" $ nf (run (undefined :: CAST5) cipherInit key16 iv8) input1024
             , bench "AES128-input=1024" $ nf (run (undefined :: AES128) cipherInit key16 iv16) input1024
             , bench "AES256-input=1024" $ nf (run (undefined :: AES256) cipherInit key32 iv16) input1024
             ]
           where run :: (ByteArray ba, ByteArray key, BlockCipher c)
                     => c -> (key -> CryptoFailable c) -> key -> IV c -> ba -> ba
-                run witness initF key iv input =
+                run _witness initF key iv input =
                     (cbcEncrypt (throwCryptoError (initF key))) iv input
 
         key8  = B.replicate 8 0

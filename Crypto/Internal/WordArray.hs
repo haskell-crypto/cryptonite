@@ -1,5 +1,5 @@
 -- |
--- Module      : Crypto.Internal.Compat
+-- Module      : Crypto.Internal.WordArray
 -- License     : BSD-style
 -- Maintainer  : Vincent Hanquez <vincent@snarc.org>
 -- Stability   : stable
@@ -20,6 +20,8 @@ module Crypto.Internal.WordArray
     , MutableArray32
     , array8
     , array32
+    , array32FromAddrBE
+    , allocArray32AndFreeze
     , mutableArray32
     , array64
     , arrayRead8
@@ -58,20 +60,20 @@ array8 = Array8
 
 -- | Create an Array of Word32 of specific size from a list of Word32
 array32 :: Int -> [Word32] -> Array32
-array32 (I# n) l = unsafeDoIO $ IO $ \s ->
-    case newAlignedPinnedByteArray# (n *# 4#) 4# s of
-        (# s', mbarr #) -> loop 0# s' mbarr l
-  where
-        loop _ st mb [] = freezeArray mb st
-        loop i st mb ((W32# x):xs)
-            | booleanPrim (i ==# n) = freezeArray mb st
-            | otherwise =
-                let !st' = writeWord32Array# mb i x st
-                 in loop (i +# 1#) st' mb xs
-        freezeArray mb st =
-            case unsafeFreezeByteArray# mb st of
-                (# st', b #) -> (# st', Array32 b #)
+array32 n l = unsafeDoIO (mutableArray32 n l >>= mutableArray32Freeze)
 {-# NOINLINE array32 #-}
+
+-- | Create an Array of BE Word32 aliasing an Addr
+array32FromAddrBE :: Int -> Addr# -> Array32
+array32FromAddrBE n a =
+    unsafeDoIO (mutableArray32FromAddrBE n a >>= mutableArray32Freeze)
+{-# NOINLINE array32FromAddrBE #-}
+
+-- | Create an Array of Word32 using an initializer
+allocArray32AndFreeze :: Int -> (MutableArray32 -> IO ()) -> Array32
+allocArray32AndFreeze n f =
+    unsafeDoIO (mutableArray32 n [] >>= \m -> f m >> mutableArray32Freeze m)
+{-# NOINLINE allocArray32AndFreeze #-}
 
 -- | Create an Array of Word64 of specific size from a list of Word64
 array64 :: Int -> [Word64] -> Array64

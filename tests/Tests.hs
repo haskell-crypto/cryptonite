@@ -29,6 +29,7 @@ import qualified KAT_Scrypt
 -- symmetric cipher --------------------
 import qualified KAT_AES
 import qualified KAT_Blowfish
+import qualified KAT_CAST5
 import qualified KAT_Camellia
 import qualified KAT_DES
 import qualified KAT_RC4
@@ -67,6 +68,7 @@ tests = testGroup "cryptonite"
     , testGroup "block-cipher"
         [ KAT_AES.tests
         , KAT_Blowfish.tests
+        , KAT_CAST5.tests
         , KAT_Camellia.tests
         , KAT_DES.tests
         , KAT_TripleDES.tests
