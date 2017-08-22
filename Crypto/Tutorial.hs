@@ -3,6 +3,9 @@ module Crypto.Tutorial
     ( -- * API design
       -- $api_design
 
+      -- * Hash algorithms
+      -- $hash_algorithms
+
       -- * Symmetric block ciphers
       -- $symmetric_block_ciphers
     ) where
@@ -25,6 +28,64 @@ module Crypto.Tutorial
 -- Error conditions are returned with data type 'Crypto.Error.CryptoFailable'.
 -- Functions in module "Crypto.Error" can convert those values to runtime
 -- exceptions, 'Maybe' or 'Either' values.
+
+-- $hash_algorithms
+--
+-- Hashing a complete message:
+--
+-- > import Crypto.Hash
+-- >
+-- > import Data.ByteString (ByteString)
+-- >
+-- > exampleHashWith :: ByteString -> IO ()
+-- > exampleHashWith msg = do
+-- >     putStrLn $ "  sha1(" ++ show msg ++ ") = " ++ show (hashWith SHA1   msg)
+-- >     putStrLn $ "sha256(" ++ show msg ++ ") = " ++ show (hashWith SHA256 msg)
+--
+-- Hashing incrementally, with intermediate context allocations:
+--
+-- > {-# LANGUAGE OverloadedStrings #-}
+-- >
+-- > import Crypto.Hash
+-- >
+-- > import Data.ByteString (ByteString)
+-- >
+-- > exampleIncrWithAllocs :: IO ()
+-- > exampleIncrWithAllocs = do
+-- >     let ctx0 = hashInitWith SHA3_512
+-- >         ctx1 = hashUpdate ctx0 ("The "   :: ByteString)
+-- >         ctx2 = hashUpdate ctx1 ("quick " :: ByteString)
+-- >         ctx3 = hashUpdate ctx2 ("brown " :: ByteString)
+-- >         ctx4 = hashUpdate ctx3 ("fox "   :: ByteString)
+-- >         ctx5 = hashUpdate ctx4 ("jumps " :: ByteString)
+-- >         ctx6 = hashUpdate ctx5 ("over "  :: ByteString)
+-- >         ctx7 = hashUpdate ctx6 ("the "   :: ByteString)
+-- >         ctx8 = hashUpdate ctx7 ("lazy "  :: ByteString)
+-- >         ctx9 = hashUpdate ctx8 ("dog"    :: ByteString)
+-- >     print (hashFinalize ctx9)
+--
+-- Hashing incrementally, updating context in place:
+--
+-- > {-# LANGUAGE OverloadedStrings #-}
+-- >
+-- > import Crypto.Hash.Algorithms
+-- > import Crypto.Hash.IO
+-- >
+-- > import Data.ByteString (ByteString)
+-- >
+-- > exampleIncrInPlace :: IO ()
+-- > exampleIncrInPlace = do
+-- >     ctx <- hashMutableInitWith SHA3_512
+-- >     hashMutableUpdate ctx ("The "   :: ByteString)
+-- >     hashMutableUpdate ctx ("quick " :: ByteString)
+-- >     hashMutableUpdate ctx ("brown " :: ByteString)
+-- >     hashMutableUpdate ctx ("fox "   :: ByteString)
+-- >     hashMutableUpdate ctx ("jumps " :: ByteString)
+-- >     hashMutableUpdate ctx ("over "  :: ByteString)
+-- >     hashMutableUpdate ctx ("the "   :: ByteString)
+-- >     hashMutableUpdate ctx ("lazy "  :: ByteString)
+-- >     hashMutableUpdate ctx ("dog"    :: ByteString)
+-- >     hashMutableFinalize ctx >>= print
 
 -- $symmetric_block_ciphers
 --
