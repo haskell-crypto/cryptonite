@@ -1,8 +1,30 @@
 -- | Examples of how to use @cryptonite@.
 module Crypto.Tutorial
-    ( -- * Symmetric block ciphers
+    ( -- * API design
+      -- $api_design
+
+      -- * Symmetric block ciphers
       -- $symmetric_block_ciphers
     ) where
+
+-- $api_design
+--
+-- APIs in cryptonite are often based on type classes from package
+-- <https://hackage.haskell.org/package/memory memory>, notably
+-- 'Data.ByteArray.ByteArrayAccess' and 'Data.ByteArray.ByteArray'.
+-- Module "Data.ByteArray" provides many primitives that are useful to
+-- work with cryptonite types.  For example function 'Data.ByteArray.convert'
+-- can transform one 'Data.ByteArray.ByteArrayAccess' concrete type like
+-- 'Crypto.Hash.Digest' to a 'Data.ByteString.ByteString'.
+--
+-- Algorithms and functions needing random bytes are based on type class
+-- 'Crypto.Random.Types.MonadRandom'.  Implementation 'IO' uses a system source
+-- of entropy.  It is also possible to use a 'Crypto.Random.Types.DRG' with
+-- 'Crypto.Random.Types.MonadPseudoRandom'
+--
+-- Error conditions are returned with data type 'Crypto.Error.CryptoFailable'.
+-- Functions in module "Crypto.Error" can convert those values to runtime
+-- exceptions, 'Maybe' or 'Either' values.
 
 -- $symmetric_block_ciphers
 --
