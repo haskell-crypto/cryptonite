@@ -62,6 +62,14 @@ newtype Context a = Context Bytes
     deriving (ByteArrayAccess,NFData)
 
 -- | Represent a digest for a given hash algorithm.
+--
+-- This type is an instance of 'ByteArrayAccess' from package
+-- <https://hackage.haskell.org/package/memory memory>.
+-- Module "Data.ByteArray" provides many primitives to work with those values
+-- including conversion to other types.
+--
+-- Creating a digest from a bytearray is also possible with function
+-- 'Crypto.Hash.digestFromByteString'.
 newtype Digest a = Digest (F.UArray Word8)
     deriving (Eq,Ord,ByteArrayAccess)
 
