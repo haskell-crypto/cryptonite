@@ -106,14 +106,14 @@ void cryptonite_gf_strong_reduce (gf a) {
     assert(word_is_zero(carry + scarry_0));
 }
 
-/** Add two gf elements */
+/** Subtract two gf elements d=a-b */
 void cryptonite_gf_sub (gf d, const gf a, const gf b) {
     cryptonite_gf_sub_RAW ( d, a, b );
     cryptonite_gf_bias( d, 2 );
     cryptonite_gf_weak_reduce ( d );
 }
 
-/** Subtract d = a-b */
+/** Add two field elements d = a+b */
 void cryptonite_gf_add (gf d, const gf a, const gf b) {
     cryptonite_gf_add_RAW ( d, a, b );
     cryptonite_gf_weak_reduce ( d );
