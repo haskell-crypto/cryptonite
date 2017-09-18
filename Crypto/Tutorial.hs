@@ -1,8 +1,91 @@
 -- | Examples of how to use @cryptonite@.
 module Crypto.Tutorial
-    ( -- * Symmetric block ciphers
+    ( -- * API design
+      -- $api_design
+
+      -- * Hash algorithms
+      -- $hash_algorithms
+
+      -- * Symmetric block ciphers
       -- $symmetric_block_ciphers
     ) where
+
+-- $api_design
+--
+-- APIs in cryptonite are often based on type classes from package
+-- <https://hackage.haskell.org/package/memory memory>, notably
+-- 'Data.ByteArray.ByteArrayAccess' and 'Data.ByteArray.ByteArray'.
+-- Module "Data.ByteArray" provides many primitives that are useful to
+-- work with cryptonite types.  For example function 'Data.ByteArray.convert'
+-- can transform one 'Data.ByteArray.ByteArrayAccess' concrete type like
+-- 'Crypto.Hash.Digest' to a 'Data.ByteString.ByteString'.
+--
+-- Algorithms and functions needing random bytes are based on type class
+-- 'Crypto.Random.Types.MonadRandom'.  Implementation 'IO' uses a system source
+-- of entropy.  It is also possible to use a 'Crypto.Random.Types.DRG' with
+-- 'Crypto.Random.Types.MonadPseudoRandom'
+--
+-- Error conditions are returned with data type 'Crypto.Error.CryptoFailable'.
+-- Functions in module "Crypto.Error" can convert those values to runtime
+-- exceptions, 'Maybe' or 'Either' values.
+
+-- $hash_algorithms
+--
+-- Hashing a complete message:
+--
+-- > import Crypto.Hash
+-- >
+-- > import Data.ByteString (ByteString)
+-- >
+-- > exampleHashWith :: ByteString -> IO ()
+-- > exampleHashWith msg = do
+-- >     putStrLn $ "  sha1(" ++ show msg ++ ") = " ++ show (hashWith SHA1   msg)
+-- >     putStrLn $ "sha256(" ++ show msg ++ ") = " ++ show (hashWith SHA256 msg)
+--
+-- Hashing incrementally, with intermediate context allocations:
+--
+-- > {-# LANGUAGE OverloadedStrings #-}
+-- >
+-- > import Crypto.Hash
+-- >
+-- > import Data.ByteString (ByteString)
+-- >
+-- > exampleIncrWithAllocs :: IO ()
+-- > exampleIncrWithAllocs = do
+-- >     let ctx0 = hashInitWith SHA3_512
+-- >         ctx1 = hashUpdate ctx0 ("The "   :: ByteString)
+-- >         ctx2 = hashUpdate ctx1 ("quick " :: ByteString)
+-- >         ctx3 = hashUpdate ctx2 ("brown " :: ByteString)
+-- >         ctx4 = hashUpdate ctx3 ("fox "   :: ByteString)
+-- >         ctx5 = hashUpdate ctx4 ("jumps " :: ByteString)
+-- >         ctx6 = hashUpdate ctx5 ("over "  :: ByteString)
+-- >         ctx7 = hashUpdate ctx6 ("the "   :: ByteString)
+-- >         ctx8 = hashUpdate ctx7 ("lazy "  :: ByteString)
+-- >         ctx9 = hashUpdate ctx8 ("dog"    :: ByteString)
+-- >     print (hashFinalize ctx9)
+--
+-- Hashing incrementally, updating context in place:
+--
+-- > {-# LANGUAGE OverloadedStrings #-}
+-- >
+-- > import Crypto.Hash.Algorithms
+-- > import Crypto.Hash.IO
+-- >
+-- > import Data.ByteString (ByteString)
+-- >
+-- > exampleIncrInPlace :: IO ()
+-- > exampleIncrInPlace = do
+-- >     ctx <- hashMutableInitWith SHA3_512
+-- >     hashMutableUpdate ctx ("The "   :: ByteString)
+-- >     hashMutableUpdate ctx ("quick " :: ByteString)
+-- >     hashMutableUpdate ctx ("brown " :: ByteString)
+-- >     hashMutableUpdate ctx ("fox "   :: ByteString)
+-- >     hashMutableUpdate ctx ("jumps " :: ByteString)
+-- >     hashMutableUpdate ctx ("over "  :: ByteString)
+-- >     hashMutableUpdate ctx ("the "   :: ByteString)
+-- >     hashMutableUpdate ctx ("lazy "  :: ByteString)
+-- >     hashMutableUpdate ctx ("dog"    :: ByteString)
+-- >     hashMutableFinalize ctx >>= print
 
 -- $symmetric_block_ciphers
 --
