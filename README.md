@@ -16,13 +16,23 @@ Instead, rely on higher level protocols or implementations.
 
 Documentation: [cryptonite on hackage](http://hackage.haskell.org/package/cryptonite)
 
+Stability
+---------
+
+Cryptonite APIs are stable, and we only strive to add, not change or remove.
+Note that because the API exposed is wide and also expose internals things (for
+power users and flexibility), certains APIs can be revised in extreme cases
+where we can't just add.
+
 Versioning
 ----------
 
-Development versions are an incremental number prefixed by 0. There is no
-API stability between development versions.
+Next version of `0.x` is `0.(x+1)`. There's no exceptions, or API related meaning
+behind the numbers.
 
-Production versions : TBD
+Each versions of stackage (going back 3 stable LTS) has a cryptonite version
+that we maintain with security fixes when necessary and are versioned with the
+following `0.x.y` scheme.
 
 Coding Style
 ------------
