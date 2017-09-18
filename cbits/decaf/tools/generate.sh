@@ -6,7 +6,7 @@
 # (available at <git://git.code.sf.net/p/ed448goldilocks/code>).
 #
 # Project is synced with upstream commit
-# 'b29565fdfd654385b6d6e3257e60a7e94636057f'.
+# '807a7e67decbf8ccc10be862cdf9ae03653ffe70'.
 #
 # Notes about transformations applied:
 #
@@ -33,6 +33,10 @@
 # * function posix_memalign is defined in order to avoid a warning on
 #   Windows/MinGW.  Hopefully it is not called.  This definition is put
 #   inside portable_endian.h because this file is already included.
+#
+# * files decaf.c and decaf_tables.c are compiled to a single object file
+#   decaf_all.o to avoid link failure on OpenBSD with --strip-unneeded
+#   and old versions of binutils (see #186)
 
 SRC_DIR="$1/src"
 DEST_DIR="`dirname "$0"`"/..
@@ -90,6 +94,12 @@ for CURVE in ed448goldilocks; do
   convert "$SRC_DIR"/GENERATED/c/$CURVE/decaf_tables.c "$DEST_DIR"/$CURVE
   convert "$SRC_DIR"/GENERATED/c/$CURVE/eddsa.c        "$DEST_DIR"/$CURVE
   convert "$SRC_DIR"/GENERATED/c/$CURVE/scalar.c       "$DEST_DIR"/$CURVE
+
+  cat > "$DEST_DIR"/$CURVE/decaf_all.c <<EOF
+/* Combined to avoid link failure on OpenBSD with --strip-unneeded, see #186 */
+#include "decaf.c"
+#include "decaf_tables.c"
+EOF
 done
 
 for FIELD in p448; do
