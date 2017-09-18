@@ -63,7 +63,7 @@ type TimeCost = Word32
 -- max 'FFI.ARGON2_MIN_MEMORY' (8 * 'hashParallelism') <= 'hashMemory' <= 'FFI.ARGON2_MAX_MEMORY'
 type MemoryCost = Word32
 
--- \ A parallelism degree, which defines the number of parallel threads.
+-- | A parallelism degree, which defines the number of parallel threads.
 --
 -- 'FFI.ARGON2_MIN_LANES' <= 'hashParallelism' <= 'FFI.ARGON2_MAX_LANES' && 'FFI.ARGON_MIN_THREADS' <= 'hashParallelism' <= 'FFI.ARGON2_MAX_THREADS'
 type Parallelism = Word32
