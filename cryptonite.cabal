@@ -4,7 +4,7 @@ Synopsis:            Cryptography Primitives sink
 Description:
     A repository of cryptographic primitives.
     .
-    * Symmetric ciphers: AES, DES, 3DES, Blowfish, Camellia, RC4, Salsa, XSalsa, ChaCha.
+    * Symmetric ciphers: AES, DES, 3DES, CAST5, Blowfish, Twofish, Camellia, RC4, Salsa, XSalsa, ChaCha.
     .
     * Hash: SHA1, SHA2, SHA3, SHAKE, MD2, MD4, MD5, Keccak, Skein, Ripemd, Tiger, Whirlpool, Blake2
     .
@@ -105,6 +105,7 @@ Flag check_alignment
 Library
   Exposed-modules:   Crypto.Cipher.AES
                      Crypto.Cipher.Blowfish
+                     Crypto.Cipher.CAST5
                      Crypto.Cipher.Camellia
                      Crypto.Cipher.ChaCha
                      Crypto.Cipher.ChaChaPoly1305
@@ -169,6 +170,7 @@ Library
   Other-modules:     Crypto.Cipher.AES.Primitive
                      Crypto.Cipher.Blowfish.Box
                      Crypto.Cipher.Blowfish.Primitive
+                     Crypto.Cipher.CAST5.Primitive
                      Crypto.Cipher.Camellia.Primitive
                      Crypto.Cipher.DES.Primitive
                      Crypto.Cipher.Twofish.Primitive
@@ -379,6 +381,7 @@ Test-Suite test-cryptonite
                      KAT_AFIS
                      KAT_Argon2
                      KAT_Blowfish
+                     KAT_CAST5
                      KAT_Camellia
                      KAT_Curve25519
                      KAT_Curve448
