@@ -35,7 +35,7 @@ supportedBackends =
 #ifdef WINDOWS
     openBackend (undefined :: WinCryptoAPI)
 #else
-    openBackend (undefined :: DevRandom), openBackend (undefined :: DevURandom)
+    openBackend (undefined :: DevURandom), openBackend (undefined :: DevRandom)
 #endif
     ]
 
