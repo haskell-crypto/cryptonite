@@ -88,6 +88,10 @@ tests = testGroup "P256"
                 v = unP256 r
                 v' = P256.scalarSub (unP256Scalar r) nm1
              in ((v - (curveN - 1)) `mod` curveN) `propertyEq` p256ScalarToInteger v'
+        , testProperty "mul" $ \r1 r2 ->
+            let r = (unP256 r1 * unP256 r2) `mod` curveN
+                r' = P256.scalarMul (unP256Scalar r1) (unP256Scalar r2)
+             in r `propertyEq` p256ScalarToInteger r'
         , testProperty "inv" $ \r' ->
             let inv  = inverseCoprimes (unP256 r') curveN
                 inv' = P256.scalarInv (unP256Scalar r')
