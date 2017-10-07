@@ -34,6 +34,7 @@ module Crypto.PubKey.ECC.P256
     , scalarIsZero
     , scalarAdd
     , scalarSub
+    , scalarMul
     , scalarInv
     , scalarCmp
     , scalarFromBinary
@@ -236,6 +237,14 @@ scalarSub :: Scalar -> Scalar -> Scalar
 scalarSub a b =
     withNewScalarFreeze $ \d -> withScalar a $ \pa -> withScalar b $ \pb ->
         ccryptonite_p256e_modsub ccryptonite_SECP256r1_n pa pb d
+
+-- | Perform multiplication between two scalars
+--
+-- > a * b
+scalarMul :: Scalar -> Scalar -> Scalar
+scalarMul a b =
+    withNewScalarFreeze $ \d -> withScalar a $ \pa -> withScalar b $ \pb ->
+         ccryptonite_p256_modmul ccryptonite_SECP256r1_n pa 0 pb d
 
 -- | Give the inverse of the scalar
 --
