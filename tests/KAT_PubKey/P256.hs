@@ -126,6 +126,12 @@ tests = testGroup "P256"
         , testProperty "point-add" propertyPointAdd
         , testProperty "point-negate" propertyPointNegate
         , testProperty "point-mul" propertyPointMul
+        , testProperty "infinity" $
+            let gN = P256.toPoint P256.scalarN
+                g1 = P256.pointBase
+             in propertyHold [ eqTest "zero" True  (P256.pointIsAtInfinity gN)
+                             , eqTest "base" False (P256.pointIsAtInfinity g1)
+                             ]
         ]
     ]
   where

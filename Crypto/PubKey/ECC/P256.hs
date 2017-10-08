@@ -8,7 +8,6 @@
 -- P256 support
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE EmptyDataDecls #-}
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
 module Crypto.PubKey.ECC.P256
@@ -22,7 +21,9 @@ module Crypto.PubKey.ECC.P256
     , pointDh
     , pointsMulVarTime
     , pointIsValid
+    , pointIsAtInfinity
     , toPoint
+    , pointX
     , pointToIntegers
     , pointFromIntegers
     , pointToBinary
@@ -31,6 +32,7 @@ module Crypto.PubKey.ECC.P256
     -- * Scalar arithmetic
     , scalarGenerate
     , scalarZero
+    , scalarN
     , scalarIsZero
     , scalarAdd
     , scalarSub
@@ -76,6 +78,9 @@ type P256Digit  = Word32
 data P256Scalar
 data P256Y
 data P256X
+
+order :: Integer
+order = 0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
 
 ------------------------------------------------------------------------
 -- Point methods
@@ -146,6 +151,19 @@ pointIsValid p = unsafeDoIO $ withPoint p $ \px py -> do
     r <- ccryptonite_p256_is_valid_point px py
     return (r /= 0)
 
+-- | Check if a 'Point' is the point at infinity
+pointIsAtInfinity :: Point -> Bool
+pointIsAtInfinity (Point b) = constAllZero b
+
+-- | Return the x coordinate as a 'Scalar' if the point is not at infinity
+pointX :: Point -> Maybe Scalar
+pointX p
+    | pointIsAtInfinity p = Nothing
+    | otherwise           = Just $
+        withNewScalarFreeze $ \d    ->
+        withPoint p         $ \px _ ->
+            ccryptonite_p256_mod ccryptonite_SECP256r1_n (castPtr px) (castPtr d)
+
 -- | Convert a point to (x,y) Integers
 pointToIntegers :: Point -> (Integer, Integer)
 pointToIntegers p = unsafeDoIO $ withPoint p $ \px py ->
@@ -215,6 +233,10 @@ scalarGenerate = unwrap . scalarFromBinary . witness <$> getRandomBytes 32
 -- | The scalar representing 0
 scalarZero :: Scalar
 scalarZero = withNewScalarFreeze $ \d -> ccryptonite_p256_init d
+
+-- | The scalar representing the curve order
+scalarN :: Scalar
+scalarN = throwCryptoError (scalarFromInteger order)
 
 -- | Check if the scalar is 0
 scalarIsZero :: Scalar -> Bool
