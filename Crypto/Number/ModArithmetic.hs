@@ -16,6 +16,7 @@ module Crypto.Number.ModArithmetic
     , inverse
     , inverseCoprimes
     , jacobi
+    , inverseFermat
     ) where
 
 import Control.Exception (throw, Exception)
@@ -120,3 +121,8 @@ jacobi a n
           n1      = n `mod` a1
        in if a1 == 1 then Just s
           else fmap (*s) (jacobi n1 a1)
+
+-- | Modular inverse using Fermat's little theorem.  This works only when
+-- the modulus is prime but avoids side channels like in 'expSafe'.
+inverseFermat :: Integer -> Integer -> Integer
+inverseFermat g p = expSafe g (p - 2) p
