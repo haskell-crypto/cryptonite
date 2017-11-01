@@ -241,7 +241,6 @@ Library
                    , cbits/cryptonite_xsalsa.c
                    , cbits/cryptonite_rc4.c
                    , cbits/cryptonite_cpu.c
-                   , cbits/ed25519/ed25519.c
                    , cbits/p256/p256.c
                    , cbits/p256/p256_ec.c
                    , cbits/cryptonite_blake2s.c
@@ -263,6 +262,7 @@ Library
                    , cbits/cryptonite_whirlpool.c
                    , cbits/cryptonite_scrypt.c
                    , cbits/cryptonite_pbkdf2.c
+                   , cbits/ed25519/ed25519.c
   include-dirs:      cbits
                    , cbits/ed25519
                    , cbits/decaf/include
