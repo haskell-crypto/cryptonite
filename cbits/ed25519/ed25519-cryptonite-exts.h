@@ -140,6 +140,62 @@ ED25519_FN(ed25519_point_scalarmul) (ge25519 *r, const ge25519 *p, const bignum2
 }
 
 void
+ED25519_FN(ed25519_point_scalarmul_w) (ge25519 *r, const ge25519 *p, const bignum256modm s) {
+    ge25519_pniels mult[16];
+    ge25519_p1p1 t;
+    unsigned char ss[32];
+
+    // transform scalar as little-endian number
+    contract256_modm(ss, s);
+
+    // initialize r to identity, i.e. ge25519 (0, 1, 1, 0)
+    memset(r, 0, sizeof(ge25519));
+    r->y[0] = 1;
+    r->z[0] = 1;
+
+    // initialize mult[0] to identity, i.e. ge25519_pniels (1, 1, 1, 0)
+    memset(&mult[0], 0, sizeof(ge25519_pniels));
+    mult->ysubx[0] = 1;
+    mult->xaddy[0] = 1;
+    mult->z[0] = 1;
+
+    // precompute other multiples of P: 1.P, 2.P, ..., 15.P
+    ge25519_full_to_pniels(&mult[1], p);
+    for (int i = 2; i < 16; i++) {
+        ge25519_pnielsadd(&mult[i], p, &mult[i-1]);
+    }
+
+    // 4-bit fixed window, still 256 doublings but 64 additions
+    //
+    // NOTE: direct indexed access to 'mult' table leaks data through
+    // CPU cache but provides 33% speedup compared to naive unvectored
+    // table lookup with unint32 constant-time conditional selection
+    for (int i = 31; i >= 0; i--) {
+        // higher bits in ss[i]
+        ge25519_pnielsadd_p1p1(&t, r, &mult[ss[i] >> 4], 0);
+        ge25519_p1p1_to_partial(r, &t);
+
+        ge25519_double_partial(r, r);
+        ge25519_double_partial(r, r);
+        ge25519_double_partial(r, r);
+        ge25519_double(r, r);
+
+        // lower bits in ss[i]
+        ge25519_pnielsadd_p1p1(&t, r, &mult[ss[i] & 0x0F], 0);
+        if (i > 0) {
+            ge25519_p1p1_to_partial(r, &t);
+
+            ge25519_double_partial(r, r);
+            ge25519_double_partial(r, r);
+            ge25519_double_partial(r, r);
+            ge25519_double(r, r);
+        } else {
+            ge25519_p1p1_to_full(r, &t);
+        }
+    }
+}
+
+void
 ED25519_FN(ed25519_base_double_scalarmul_vartime) (ge25519 *r, const bignum256modm s1, const ge25519 *p2, const bignum256modm s2) {
     // computes [s1]basepoint + [s2]p2
     ge25519_double_scalarmult_vartime(r, p2, s2, s1);
