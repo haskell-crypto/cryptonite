@@ -139,9 +139,53 @@ ED25519_FN(ed25519_point_scalarmul) (ge25519 *r, const ge25519 *p, const bignum2
     }
 }
 
+#if defined(ED25519_64BIT)
+typedef uint64_t ed25519_move_cond_word;
+#else
+typedef uint32_t ed25519_move_cond_word;
+#endif
+
+/* out = (flag) ? in : out */
+DONNA_INLINE static void
+ed25519_move_cond_pniels(ge25519_pniels *out, const ge25519_pniels *in, uint32_t flag) {
+    const int word_count = sizeof(ge25519_pniels) / sizeof(ed25519_move_cond_word);
+    const ed25519_move_cond_word nb = (ed25519_move_cond_word) flag - 1, b = ~nb;
+
+    ed25519_move_cond_word *outw = (ed25519_move_cond_word *) out;
+    const ed25519_move_cond_word *inw  = (const ed25519_move_cond_word *) in;
+
+    // ge25519_pniels has 4 coordinates, so word_count is divisible by 4
+    for (int i = 0; i < word_count; i += 4) {
+        outw[i + 0] = (outw[i + 0] & nb) | (inw[i + 0] & b);
+        outw[i + 1] = (outw[i + 1] & nb) | (inw[i + 1] & b);
+        outw[i + 2] = (outw[i + 2] & nb) | (inw[i + 2] & b);
+        outw[i + 3] = (outw[i + 3] & nb) | (inw[i + 3] & b);
+    }
+}
+
+static void
+ed25519_point_scalarmul_w_choose_pniels(ge25519_pniels *t, const ge25519_pniels table[15], uint32_t pos) {
+    // initialize t to identity, i.e. (1, 1, 1, 0)
+    memset(t, 0, sizeof(ge25519_pniels));
+    t->ysubx[0] = 1;
+    t->xaddy[0] = 1;
+    t->z[0] = 1;
+
+    // move one entry from table matching requested position,
+    // scanning all table to avoid cache-timing attack
+    //
+    // when pos == 0, no entry matches and this returns
+    // identity as expected
+    for (uint32_t i = 1; i < 16; i++) {
+        uint32_t flag = ((i ^ pos) - 1) >> 31;
+        ed25519_move_cond_pniels(t, table + i - 1, flag);
+    }
+}
+
 void
 ED25519_FN(ed25519_point_scalarmul_w) (ge25519 *r, const ge25519 *p, const bignum256modm s) {
-    ge25519_pniels mult[16];
+    ge25519_pniels mult[15];
+    ge25519_pniels pn;
     ge25519_p1p1 t;
     unsigned char ss[32];
 
@@ -153,26 +197,17 @@ ED25519_FN(ed25519_point_scalarmul_w) (ge25519 *r, const ge25519 *p, const bignu
     r->y[0] = 1;
     r->z[0] = 1;
 
-    // initialize mult[0] to identity, i.e. ge25519_pniels (1, 1, 1, 0)
-    memset(&mult[0], 0, sizeof(ge25519_pniels));
-    mult->ysubx[0] = 1;
-    mult->xaddy[0] = 1;
-    mult->z[0] = 1;
-
-    // precompute other multiples of P: 1.P, 2.P, ..., 15.P
-    ge25519_full_to_pniels(&mult[1], p);
-    for (int i = 2; i < 16; i++) {
+    // precompute multiples of P: 1.P, 2.P, ..., 15.P
+    ge25519_full_to_pniels(&mult[0], p);
+    for (int i = 1; i < 15; i++) {
         ge25519_pnielsadd(&mult[i], p, &mult[i-1]);
     }
 
     // 4-bit fixed window, still 256 doublings but 64 additions
-    //
-    // NOTE: direct indexed access to 'mult' table leaks data through
-    // CPU cache but provides 33% speedup compared to naive unvectored
-    // table lookup with unint32 constant-time conditional selection
     for (int i = 31; i >= 0; i--) {
         // higher bits in ss[i]
-        ge25519_pnielsadd_p1p1(&t, r, &mult[ss[i] >> 4], 0);
+        ed25519_point_scalarmul_w_choose_pniels(&pn, mult, ss[i] >> 4);
+        ge25519_pnielsadd_p1p1(&t, r, &pn, 0);
         ge25519_p1p1_to_partial(r, &t);
 
         ge25519_double_partial(r, r);
@@ -181,7 +216,8 @@ ED25519_FN(ed25519_point_scalarmul_w) (ge25519 *r, const ge25519 *p, const bignu
         ge25519_double(r, r);
 
         // lower bits in ss[i]
-        ge25519_pnielsadd_p1p1(&t, r, &mult[ss[i] & 0x0F], 0);
+        ed25519_point_scalarmul_w_choose_pniels(&pn, mult, ss[i] & 0x0F);
+        ge25519_pnielsadd_p1p1(&t, r, &pn, 0);
         if (i > 0) {
             ge25519_p1p1_to_partial(r, &t);
 
