@@ -78,6 +78,14 @@ ED25519_FN(ed25519_point_eq) (const ge25519 *p, const ge25519 *q) {
 }
 
 void
+ED25519_FN(ed25519_point_negate) (ge25519 *r, const ge25519 *p) {
+    curve25519_neg(r->x, p->x);
+    curve25519_copy(r->y, p->y);
+    curve25519_copy(r->z, p->z);
+    curve25519_neg(r->t, p->t);
+}
+
+void
 ED25519_FN(ed25519_point_add) (ge25519 *r, const ge25519 *p, const ge25519 *q) {
     ge25519_add(r, p, q);
 }

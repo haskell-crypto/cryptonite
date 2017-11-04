@@ -20,6 +20,7 @@ module Crypto.ECC.Ed25519
     , pointEncode
     -- * Arithmetic functions
     , toPoint
+    , pointNegate
     , pointAdd
     , pointDouble
     , pointMul
@@ -151,6 +152,13 @@ pointDecode bs
                     else return $ CryptoPassed (Point p)
 {-# NOINLINE pointDecode #-}
 
+-- | Negate a point.
+pointNegate :: Point -> Point
+pointNegate (Point a) =
+    Point $ B.allocAndFreeze pointArraySize $ \out ->
+        withByteArray a $ \pa ->
+             ed25519_point_negate out pa
+
 -- | Add two points.
 pointAdd :: Point -> Point -> Point
 pointAdd (Point a) (Point b) =
@@ -208,6 +216,11 @@ foreign import ccall "cryptonite_ed25519_point_eq"
     ed25519_point_eq :: Ptr Point
                      -> Ptr Point
                      -> IO CInt
+
+foreign import ccall "cryptonite_ed25519_point_negate"
+    ed25519_point_negate :: Ptr Point -- minus_a
+                         -> Ptr Point -- a
+                         -> IO ()
 
 foreign import ccall "cryptonite_ed25519_point_add"
     ed25519_point_add :: Ptr Point -- sum
