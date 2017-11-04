@@ -371,6 +371,7 @@ Test-Suite test-cryptonite
                      ChaCha
                      BCrypt
                      ECC
+                     ECC.Ed25519
                      Hash
                      Imports
                      KAT_AES.KATCBC
