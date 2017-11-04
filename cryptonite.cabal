@@ -121,6 +121,7 @@ Library
                      Crypto.Data.AFIS
                      Crypto.Data.Padding
                      Crypto.ECC
+                     Crypto.ECC.Ed25519
                      Crypto.Error
                      Crypto.MAC.CMAC
                      Crypto.MAC.Poly1305
