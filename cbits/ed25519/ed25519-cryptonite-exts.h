@@ -110,35 +110,6 @@ ED25519_FN(ed25519_point_base_scalarmul) (ge25519 *r, const bignum256modm s) {
     ge25519_scalarmult_base_niels(r, ge25519_niels_base_multiples, s);
 }
 
-void
-ED25519_FN(ed25519_point_scalarmul) (ge25519 *r, const ge25519 *p, const bignum256modm s) {
-    ge25519 tmp;
-    uint32_t scalar_bit;
-    unsigned char ss[32];
-
-    // transform scalar as little-endian number
-    contract256_modm(ss, s);
-
-    // initialize r to identity
-    memset(r, 0, sizeof(ge25519));
-    r->y[0] = 1;
-    r->z[0] = 1;
-
-    // double-add-always
-    for (int i = 31; i >= 0; i--) {
-        for (int j = 7; j >= 0; j--) {
-            ge25519_double(r, r);
-
-            ge25519_add(&tmp, r, p);
-            scalar_bit = (ss[i] >> j) & 1;
-            curve25519_swap_conditional(r->x, tmp.x, scalar_bit);
-            curve25519_swap_conditional(r->y, tmp.y, scalar_bit);
-            curve25519_swap_conditional(r->z, tmp.z, scalar_bit);
-            curve25519_swap_conditional(r->t, tmp.t, scalar_bit);
-        }
-    }
-}
-
 #if defined(ED25519_64BIT)
 typedef uint64_t ed25519_move_cond_word;
 #else
@@ -183,7 +154,7 @@ ed25519_point_scalarmul_w_choose_pniels(ge25519_pniels *t, const ge25519_pniels 
 }
 
 void
-ED25519_FN(ed25519_point_scalarmul_w) (ge25519 *r, const ge25519 *p, const bignum256modm s) {
+ED25519_FN(ed25519_point_scalarmul) (ge25519 *r, const ge25519 *p, const bignum256modm s) {
     ge25519_pniels mult[15];
     ge25519_pniels pn;
     ge25519_p1p1 t;
