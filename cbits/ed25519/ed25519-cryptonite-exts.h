@@ -30,6 +30,16 @@ ED25519_FN(ed25519_scalar_eq) (const bignum256modm a, const bignum256modm b) {
     return (int) (1 & ((e - 1) >> bignum256modm_bits_per_limb));
 }
 
+void
+ED25519_FN(ed25519_scalar_add) (bignum256modm r, const bignum256modm x, const bignum256modm y) {
+    add256_modm(r, x, y);
+}
+
+void
+ED25519_FN(ed25519_scalar_mul) (bignum256modm r, const bignum256modm x, const bignum256modm y) {
+    mul256_modm(r, x, y);
+}
+
 
 /*
     Point functions

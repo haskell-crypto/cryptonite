@@ -20,6 +20,8 @@ module Crypto.ECC.Ed25519
     , pointEncode
     -- * Arithmetic functions
     , toPoint
+    , scalarAdd
+    , scalarMul
     , pointNegate
     , pointAdd
     , pointDouble
@@ -119,6 +121,22 @@ scalarDecodeLong bs
         return $ CryptoPassed (Scalar s)
 {-# NOINLINE scalarDecodeLong #-}
 
+-- | Add two scalars.
+scalarAdd :: Scalar -> Scalar -> Scalar
+scalarAdd (Scalar a) (Scalar b) =
+    Scalar $ B.allocAndFreeze scalarArraySize $ \out ->
+        withByteArray a $ \pa ->
+        withByteArray b $ \pb ->
+             ed25519_scalar_add out pa pb
+
+-- | Multiply two scalars.
+scalarMul :: Scalar -> Scalar -> Scalar
+scalarMul (Scalar a) (Scalar b) =
+    Scalar $ B.allocAndFreeze scalarArraySize $ \out ->
+        withByteArray a $ \pa ->
+        withByteArray b $ \pb ->
+             ed25519_scalar_mul out pa pb
+
 -- | Multiplies a scalar with the curve base point.
 toPoint :: Scalar -> Point
 toPoint (Scalar scalar) =
@@ -201,6 +219,18 @@ foreign import ccall "cryptonite_ed25519_scalar_decode_long"
                                -> Ptr Word8
                                -> CSize
                                -> IO ()
+
+foreign import ccall "cryptonite_ed25519_scalar_add"
+    ed25519_scalar_add :: Ptr Scalar -- sum
+                       -> Ptr Scalar -- a
+                       -> Ptr Scalar -- b
+                       -> IO ()
+
+foreign import ccall "cryptonite_ed25519_scalar_mul"
+    ed25519_scalar_mul :: Ptr Scalar -- out
+                       -> Ptr Scalar -- a
+                       -> Ptr Scalar -- b
+                       -> IO ()
 
 foreign import ccall "cryptonite_ed25519_point_encode"
     ed25519_point_encode :: Ptr Word8
