@@ -164,6 +164,7 @@ Library
                      Crypto.PubKey.ECIES
                      Crypto.PubKey.Ed25519
                      Crypto.PubKey.Ed448
+                     Crypto.PubKey.EdDSA
                      Crypto.PubKey.RSA
                      Crypto.PubKey.RSA.PKCS15
                      Crypto.PubKey.RSA.Prim
