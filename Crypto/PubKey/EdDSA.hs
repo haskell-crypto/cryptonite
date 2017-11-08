@@ -5,7 +5,16 @@
 -- Stability   : experimental
 -- Portability : unknown
 --
--- EdDSA signature generation and verification.
+-- EdDSA signature generation and verification, implemented in Haskell and
+-- parameterized with elliptic curve and hash algorithm.  Only edwards25519 is
+-- supported at the moment.
+--
+-- The module provides \"context\" and \"prehash\" variants defined in
+-- <https://tools.ietf.org/html/rfc8032 RFC 8032>.
+--
+-- This implementation is most useful when wanting to customize the hash
+-- algorithm.  See module "Crypto.PubKey.Ed25519" for faster Ed25519 with
+-- SHA-512.
 --
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleContexts           #-}
@@ -30,18 +39,24 @@ module Crypto.PubKey.EdDSA
     -- * Methods
     , toPublic
     , sign
+    , signCtx
+    , signPh
     , verify
+    , verifyCtx
+    , verifyPh
     , generateSecretKey
     ) where
 
 import           Data.Bits
 import           Data.ByteArray (ByteArray, ByteArrayAccess, Bytes, ScrubbedBytes)
 import qualified Data.ByteArray as B
+import           Data.ByteString (ByteString)
 import           Data.Proxy
 
 import           Crypto.ECC
 import qualified Crypto.ECC.Edwards25519 as Edwards25519
 import           Crypto.Error
+import           Crypto.Hash (Digest)
 import           Crypto.Hash.IO
 import           Crypto.Random
 
@@ -79,9 +94,9 @@ class ( EllipticCurveBasepointArith curve
     -- | Size of secret keys for this curve (in bytes)
     secretKeySize :: proxy curve -> Int
 
-    -- hash with a given prefix
-    hashWithDom :: (HashAlgorithm hash, ByteArrayAccess msg)
-                => proxy curve -> hash -> [Bytes] -> msg -> Bytes
+    -- hash with specified parameters
+    hashWithDom :: (HashAlgorithm hash, ByteArrayAccess ctx, ByteArrayAccess msg)
+                => proxy curve -> hash -> Bool -> ctx -> [Bytes] -> msg -> Bytes
 
     -- conversion between scalar, point and public key
     pointPublic :: proxy curve -> Point curve -> PublicKey curve hash
@@ -174,23 +189,13 @@ secretScalar prx alg priv = fst (scheduleSecret prx alg priv)
 -- EdDSA signature generation & verification
 
 -- | Sign a message using the key pair
-sign :: forall proxy curve hash msg .
-        ( EllipticCurveEdDSA curve
+sign :: ( EllipticCurveEdDSA curve
         , HashAlgorithm hash
-        , ByteArrayAccess msg
         , HashDigestSize hash ~ CurveDigestSize curve
+        , ByteArrayAccess msg
         )
      => proxy curve -> SecretKey curve -> PublicKey curve hash -> msg -> Signature curve hash
-sign prx priv pub msg =
-    let alg  = undefined :: hash
-        (s, prefix) = scheduleSecret prx alg priv
-        digR = hashWithDom prx alg [prefix] msg
-        r    = decodeScalarNoErr prx digR
-        pR   = pointBaseSmul prx r
-        bsR  = encodePoint prx pR
-        sK   = getK prx pub bsR msg
-        sS   = scalarAdd prx r (scalarMul prx sK s)
-     in encodeSignature prx (bsR, pR, sS)
+sign prx = signCtx prx emptyCtx
 
 -- | Verify a message
 verify :: ( EllipticCurveEdDSA curve
@@ -199,7 +204,73 @@ verify :: ( EllipticCurveEdDSA curve
           , ByteArrayAccess msg
           )
        => proxy curve -> PublicKey curve hash -> msg -> Signature curve hash -> Bool
-verify prx pub msg sig =
+verify prx = verifyCtx prx emptyCtx
+
+-- | Sign a message using the key pair under context @ctx@
+signCtx :: ( EllipticCurveEdDSA curve
+           , HashAlgorithm hash
+           , HashDigestSize hash ~ CurveDigestSize curve
+           , ByteArrayAccess ctx
+           , ByteArrayAccess msg
+           )
+        => proxy curve -> ctx -> SecretKey curve -> PublicKey curve hash -> msg -> Signature curve hash
+signCtx prx = signPhCtx prx False
+
+-- | Verify a message under context @ctx@
+verifyCtx :: ( EllipticCurveEdDSA curve
+             , HashAlgorithm hash
+             , HashDigestSize hash ~ CurveDigestSize curve
+             , ByteArrayAccess ctx
+             , ByteArrayAccess msg
+             )
+          => proxy curve -> ctx -> PublicKey curve hash -> msg -> Signature curve hash -> Bool
+verifyCtx prx = verifyPhCtx prx False
+
+-- | Sign a prehashed message using the key pair under context @ctx@
+signPh :: ( EllipticCurveEdDSA curve
+          , HashAlgorithm hash
+          , HashDigestSize hash ~ CurveDigestSize curve
+          , ByteArrayAccess ctx
+          )
+       => proxy curve -> ctx -> SecretKey curve -> PublicKey curve hash -> Digest prehash -> Signature curve hash
+signPh prx = signPhCtx prx True
+
+-- | Verify a prehashed message under context @ctx@
+verifyPh :: ( EllipticCurveEdDSA curve
+            , HashAlgorithm hash
+            , HashDigestSize hash ~ CurveDigestSize curve
+            , ByteArrayAccess ctx
+            )
+         => proxy curve -> ctx -> PublicKey curve hash -> Digest prehash -> Signature curve hash -> Bool
+verifyPh prx = verifyPhCtx prx True
+
+signPhCtx :: forall proxy curve hash ctx msg .
+             ( EllipticCurveEdDSA curve
+             , HashAlgorithm hash
+             , HashDigestSize hash ~ CurveDigestSize curve
+             , ByteArrayAccess ctx
+             , ByteArrayAccess msg
+             )
+          => proxy curve -> Bool -> ctx -> SecretKey curve -> PublicKey curve hash -> msg -> Signature curve hash
+signPhCtx prx ph ctx priv pub msg =
+    let alg  = undefined :: hash
+        (s, prefix) = scheduleSecret prx alg priv
+        digR = hashWithDom prx alg ph ctx [prefix] msg
+        r    = decodeScalarNoErr prx digR
+        pR   = pointBaseSmul prx r
+        bsR  = encodePoint prx pR
+        sK   = getK prx ph ctx pub bsR msg
+        sS   = scalarAdd prx r (scalarMul prx sK s)
+     in encodeSignature prx (bsR, pR, sS)
+
+verifyPhCtx :: ( EllipticCurveEdDSA curve
+               , HashAlgorithm hash
+               , HashDigestSize hash ~ CurveDigestSize curve
+               , ByteArrayAccess ctx
+               , ByteArrayAccess msg
+               )
+            => proxy curve -> Bool -> ctx -> PublicKey curve hash -> msg -> Signature curve hash -> Bool
+verifyPhCtx prx ph ctx pub msg sig =
     case doVerify of
         CryptoPassed verified -> verified
         CryptoFailed _        -> False
@@ -207,20 +278,24 @@ verify prx pub msg sig =
     doVerify = do
         (bsR, pR, sS) <- decodeSignature prx sig
         nPub <- pointNegate prx `fmap` publicPoint prx pub
-        let sK  = getK prx pub bsR msg
+        let sK  = getK prx ph ctx pub bsR msg
             pR' = pointsSmulVarTime prx sS sK nPub
         return (pR == pR')
 
-getK :: forall proxy curve hash msg .
+emptyCtx :: Bytes
+emptyCtx = B.empty
+
+getK :: forall proxy curve hash ctx msg .
         ( EllipticCurveEdDSA curve
         , HashAlgorithm hash
         , HashDigestSize hash ~ CurveDigestSize curve
+        , ByteArrayAccess ctx
         , ByteArrayAccess msg
         )
-     => proxy curve -> PublicKey curve hash -> Bytes -> msg -> Scalar curve
-getK prx (PublicKey pub) bsR msg =
+     => proxy curve -> Bool -> ctx -> PublicKey curve hash -> Bytes -> msg -> Scalar curve
+getK prx ph ctx (PublicKey pub) bsR msg =
     let alg  = undefined :: hash
-        digK = hashWithDom prx alg [bsR, pub] msg
+        digK = hashWithDom prx alg ph ctx [bsR, pub] msg
      in decodeScalarNoErr prx digK
 
 encodeSignature :: EllipticCurveEdDSA curve
@@ -262,7 +337,14 @@ instance EllipticCurveEdDSA Curve_Edwards25519 where
     type CurveDigestSize Curve_Edwards25519 = 64
     secretKeySize _ = 32
 
-    hashWithDom _ = digestDomMsg
+    hashWithDom _ alg ph ctx bss
+        | not ph && B.null ctx = digestDomMsg alg bss
+        | otherwise            = digestDomMsg alg (bs:bss)
+      where bs = B.concat [ "SigEd25519 no Ed25519 collisions" :: ByteString
+                          , B.singleton $ if ph then 1 else 0
+                          , B.singleton $ fromIntegral $ B.length ctx
+                          , B.convert ctx
+                          ]
 
     pointPublic _ = PublicKey . Edwards25519.pointEncode
     publicPoint _ = Edwards25519.pointDecode
