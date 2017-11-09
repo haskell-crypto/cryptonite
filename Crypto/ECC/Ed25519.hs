@@ -26,6 +26,7 @@ module Crypto.ECC.Ed25519
     , pointAdd
     , pointDouble
     , pointMul
+    , pointsMulVarTime
     ) where
 
 import           Data.Bits
@@ -204,6 +205,21 @@ pointMul (Scalar scalar) (Point base) =
         withByteArray base   $ \pbase   ->
              ed25519_point_scalarmul out pbase pscalar
 
+-- | Multiply the point @p@ with @s2@ and add a lifted to curve value @s1@.
+--
+-- @
+-- pointsMulVarTime s1 s2 p = 'pointAdd' ('toPoint' s1) ('pointMul' s2 p)
+-- @
+--
+-- /WARNING:/ variable time
+pointsMulVarTime :: Scalar -> Scalar -> Point -> Point
+pointsMulVarTime (Scalar s1) (Scalar s2) (Point p) =
+    Point $ B.allocAndFreeze pointArraySize $ \out ->
+        withByteArray s1 $ \ps1 ->
+        withByteArray s2 $ \ps2 ->
+        withByteArray p  $ \pp  ->
+             ed25519_base_double_scalarmul_vartime out ps1 pp ps2
+
 foreign import ccall "cryptonite_ed25519_scalar_eq"
     ed25519_scalar_eq :: Ptr Scalar
                       -> Ptr Scalar
@@ -273,3 +289,10 @@ foreign import ccall "cryptonite_ed25519_point_scalarmul"
                             -> Ptr Point  -- base
                             -> Ptr Scalar -- scalar
                             -> IO ()
+
+foreign import ccall "cryptonite_ed25519_base_double_scalarmul_vartime"
+    ed25519_base_double_scalarmul_vartime :: Ptr Point  -- combo
+                                          -> Ptr Scalar -- scalar1
+                                          -> Ptr Point  -- base2
+                                          -> Ptr Scalar -- scalar2
+                                          -> IO ()

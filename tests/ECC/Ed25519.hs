@@ -87,6 +87,9 @@ tests = testGroup "ECC.Ed25519"
         , testProperty "scalarmult distributive" $ \x y p ->
             let pR = Ed25519.pointMul x p `Ed25519.pointAdd` Ed25519.pointMul y p
              in pR `propertyEq` Ed25519.pointMul (x `Ed25519.scalarAdd` y) p
+        , testProperty "double scalarmult" $ \n1 n2 p ->
+            let pR = Ed25519.pointAdd (Ed25519.toPoint n1) (Ed25519.pointMul n2 p)
+             in pR `propertyEq` Ed25519.pointsMulVarTime n1 n2 p
         ]
     ]
   where

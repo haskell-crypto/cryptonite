@@ -138,3 +138,9 @@ ED25519_FN(ed25519_point_scalarmul) (ge25519 *r, const ge25519 *p, const bignum2
         }
     }
 }
+
+void
+ED25519_FN(ed25519_base_double_scalarmul_vartime) (ge25519 *r, const bignum256modm s1, const ge25519 *p2, const bignum256modm s2) {
+    // computes [s1]basepoint + [s2]p2
+    ge25519_double_scalarmult_vartime(r, p2, s2, s1);
+}
