@@ -6,6 +6,7 @@ module Crypto.ECC.Simple.Prim
     ( scalarGenerate
     , scalarFromInteger
     , pointAdd
+    , pointNegate
     , pointDouble
     , pointBaseMul
     , pointMul

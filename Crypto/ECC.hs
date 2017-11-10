@@ -103,6 +103,9 @@ class EllipticCurve curve => EllipticCurveArith curve where
     -- | Add points on a curve
     pointAdd :: proxy curve -> Point curve -> Point curve -> Point curve
 
+    -- | Negate a curve point
+    pointNegate :: proxy curve -> Point curve -> Point curve
+
     -- | Scalar Multiplication on a curve
     pointSmul :: proxy curve -> Scalar curve -> Point curve -> Point curve
 
@@ -139,6 +142,7 @@ instance EllipticCurve Curve_P256R1 where
 
 instance EllipticCurveArith Curve_P256R1 where
     pointAdd  _ a b = P256.pointAdd a b
+    pointNegate _ p = P256.pointNegate p
     pointSmul _ s p = P256.pointMul s p
 
 instance EllipticCurveDH Curve_P256R1 where
@@ -160,6 +164,7 @@ instance EllipticCurve Curve_P384R1 where
 
 instance EllipticCurveArith Curve_P384R1 where
     pointAdd _ a b = Simple.pointAdd a b
+    pointNegate _ p = Simple.pointNegate p
     pointSmul _ s p = Simple.pointMul s p
 
 instance EllipticCurveDH Curve_P384R1 where
@@ -182,6 +187,7 @@ instance EllipticCurve Curve_P521R1 where
 
 instance EllipticCurveArith Curve_P521R1 where
     pointAdd _ a b = Simple.pointAdd a b
+    pointNegate _ p = Simple.pointNegate p
     pointSmul _ s p = Simple.pointMul s p
 
 instance EllipticCurveDH Curve_P521R1 where
@@ -242,6 +248,7 @@ instance EllipticCurve Curve_Ed25519 where
 
 instance EllipticCurveArith Curve_Ed25519 where
     pointAdd _ a b = Ed25519.pointAdd a b
+    pointNegate _ p = Ed25519.pointNegate p
     pointSmul _ s p = Ed25519.pointMul s p
 
 checkNonZeroDH :: SharedSecret -> CryptoFailable SharedSecret
