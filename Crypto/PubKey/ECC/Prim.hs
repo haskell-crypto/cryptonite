@@ -4,6 +4,7 @@
 module Crypto.PubKey.ECC.Prim
     ( scalarGenerate
     , pointAdd
+    , pointNegate
     , pointDouble
     , pointBaseMul
     , pointMul

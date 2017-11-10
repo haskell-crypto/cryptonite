@@ -155,6 +155,13 @@ eccTests = testGroup "ECC"
                 p2       = ECC.pointMul aCurve r2 curveGen
                 pR       = ECC.pointMul aCurve ((r1 + r2) `mod` curveN) curveGen
              in pR `propertyEq` ECC.pointAdd aCurve p1 p2
+        , testProperty "point-negate-add" $ \aCurve -> do
+            p <- arbitraryPoint aCurve
+            let o = ECC.pointAdd aCurve p (ECC.pointNegate aCurve p)
+            return $ ECC.PointO `propertyEq` o
+        , testProperty "point-negate-negate" $ \aCurve -> do
+            p <- arbitraryPoint aCurve
+            return $ p `propertyEq` ECC.pointNegate aCurve (ECC.pointNegate aCurve p)
         , localOption (QuickCheckTests 20) $
           testProperty "point-mul-mul" $ \aCurve (QAInteger n1) (QAInteger n2) -> do
             p <- arbitraryPoint aCurve
