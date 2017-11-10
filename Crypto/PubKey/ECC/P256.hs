@@ -17,6 +17,7 @@ module Crypto.PubKey.ECC.P256
     -- * Point arithmetic
     , pointBase
     , pointAdd
+    , pointNegate
     , pointMul
     , pointDh
     , pointsMulVarTime
@@ -105,6 +106,12 @@ pointAdd :: Point -> Point -> Point
 pointAdd a b = withNewPoint $ \dx dy ->
     withPoint a $ \ax ay -> withPoint b $ \bx by ->
         ccryptonite_p256e_point_add ax ay bx by dx dy
+
+-- | Negate a point
+pointNegate :: Point -> Point
+pointNegate a = withNewPoint $ \dx dy ->
+    withPoint a $ \ax ay -> do
+        ccryptonite_p256e_point_negate ax ay dx dy
 
 -- | Multiply a point by a scalar
 --
@@ -371,6 +378,11 @@ foreign import ccall "cryptonite_p256e_point_add"
                                 -> Ptr P256X -> Ptr P256Y
                                 -> Ptr P256X -> Ptr P256Y
                                 -> IO ()
+
+foreign import ccall "cryptonite_p256e_point_negate"
+    ccryptonite_p256e_point_negate :: Ptr P256X -> Ptr P256Y
+                                   -> Ptr P256X -> Ptr P256Y
+                                   -> IO ()
 
 -- compute (out_x,out,y) = n1 * G + n2 * (in_x,in_y)
 foreign import ccall "cryptonite_p256_points_mul_vartime"
