@@ -24,6 +24,8 @@ import qualified Crypto.PubKey.DH as DH
 import qualified Crypto.PubKey.ECC.Types as ECC
 import qualified Crypto.PubKey.ECC.Prim as ECC
 import qualified Crypto.PubKey.ECDSA as ECDSA
+import qualified Crypto.PubKey.Ed25519 as Ed25519
+import qualified Crypto.PubKey.EdDSA as EdDSA
 import           Crypto.Random
 
 import           Control.DeepSeq (NFData)
@@ -325,6 +327,43 @@ benchECDSA = map doECDSABench curveHashes
                   , ("secp521r1_sha512", CurveHashECDSA Curve_P521R1 SHA512)
                   ]
 
+benchEdDSA =
+    [ bgroup "EdDSA-Ed25519" $ benchGeneric (Just Curve_Edwards25519)
+    , bgroup "Ed25519"         benchEd25519
+    ]
+  where
+    benchGeneric prx =
+        [ bench "sign"   $ perBatchEnv (genEnv prx) (run_gen_sign   prx)
+        , bench "verify" $ perBatchEnv (genEnv prx) (run_gen_verify prx)
+        ]
+
+    benchEd25519 =
+        [ bench "sign"   $ perBatchEnv ed25519Env run_ed25519_sign
+        , bench "verify" $ perBatchEnv ed25519Env run_ed25519_verify
+        ]
+
+    msg = B.empty -- empty message = worst-case scenario showing API overhead
+
+    genEnv prx _ = do
+        sec <- EdDSA.generateSecretKey prx
+        let pub = EdDSA.toPublic prx sec
+            sig = EdDSA.sign prx sec pub msg
+        return (sec, pub, sig)
+
+    run_gen_sign prx (sec, pub, _) = return (EdDSA.sign prx sec pub msg)
+
+    run_gen_verify prx (_, pub, sig) = return (EdDSA.verify prx pub msg sig)
+
+    ed25519Env _ = do
+        sec <- Ed25519.generateSecretKey
+        let pub = Ed25519.toPublic sec
+            sig = Ed25519.sign sec pub msg
+        return (sec, pub, sig)
+
+    run_ed25519_sign (sec, pub, _) = return (Ed25519.sign sec pub msg)
+
+    run_ed25519_verify (_, pub, sig) = return (Ed25519.verify pub msg sig)
+
 main = defaultMain
     [ bgroup "hash" benchHash
     , bgroup "block-cipher" benchBlockCipher
@@ -338,5 +377,6 @@ main = defaultMain
           , bgroup "ECDH" benchECDH
           ]
     , bgroup "ECDSA" benchECDSA
+    , bgroup "EdDSA" benchEdDSA
     , bgroup "F2m" benchF2m
     ]
