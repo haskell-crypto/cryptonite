@@ -10,7 +10,7 @@
 --
 module Crypto.Hash.Algorithms
     ( HashAlgorithm
-    -- * hash algorithms
+    -- * Hash algorithms
     , Blake2s_160(..)
     , Blake2s_224(..)
     , Blake2s_256(..)

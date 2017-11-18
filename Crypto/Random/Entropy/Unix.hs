@@ -22,10 +22,10 @@ import System.IO
 type H = Handle
 type DeviceName = String
 
--- | Entropy device /dev/random on unix system 
+-- | Entropy device @/dev/random@ on unix system
 newtype DevRandom  = DevRandom DeviceName
 
--- | Entropy device /dev/urandom on unix system 
+-- | Entropy device @/dev/urandom@ on unix system
 newtype DevURandom = DevURandom DeviceName
 
 instance EntropySource DevRandom where

@@ -21,7 +21,7 @@ module Crypto.PubKey.Curve448
     , dhSecret
     , publicKey
     , secretKey
-    -- * methods
+    -- * Methods
     , dh
     , toPublic
     , generateSecretKey

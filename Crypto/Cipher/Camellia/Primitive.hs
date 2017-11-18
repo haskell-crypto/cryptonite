@@ -6,8 +6,8 @@
 -- Stability   : experimental
 -- Portability : Good
 --
--- this only cover Camellia 128 bits for now, API will change once
--- 192 and 256 mode are implemented too
+-- This only cover Camellia 128 bits for now. The API will change once
+-- 192 and 256 mode are implemented too.
 {-# LANGUAGE MagicHash #-}
 module Crypto.Cipher.Camellia.Primitive
     ( Camellia

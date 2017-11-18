@@ -20,7 +20,7 @@ import Crypto.Random
 -- This is useful for probabilistic algorithm like Miller Rabin
 -- probably prime algorithm, given appropriate choice of the heuristic
 --
--- Generally, it's advise not to use this function.
+-- Generally, it's advised not to use this function.
 probabilistic :: MonadPseudoRandom ChaChaDRG a -> a
 probabilistic f = fst $ withDRG drg f
   where {-# NOINLINE drg #-}

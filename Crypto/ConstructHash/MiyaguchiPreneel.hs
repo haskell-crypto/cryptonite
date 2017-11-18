@@ -5,7 +5,7 @@
 -- Stability   : experimental
 -- Portability : unknown
 --
--- provide the hash function construction method from block cipher
+-- Provide the hash function construction method from block cipher
 -- <https://en.wikipedia.org/wiki/One-way_compression_function>
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}

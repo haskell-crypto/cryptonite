@@ -7,19 +7,19 @@
 --
 module Crypto.PubKey.RSA.PKCS15
     (
-    -- * padding and unpadding
+    -- * Padding and unpadding
       pad
     , padSignature
     , unpad
-    -- * private key operations
+    -- * Private key operations
     , decrypt
     , decryptSafer
     , sign
     , signSafer
-    -- * public key operations
+    -- * Public key operations
     , encrypt
     , verify
-    -- * hash ASN1 description
+    -- * Hash ASN1 description
     , HashAlgorithmASN1
     ) where
 

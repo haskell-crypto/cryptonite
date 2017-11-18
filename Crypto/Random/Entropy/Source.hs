@@ -13,10 +13,10 @@ import Data.Word (Word8)
 -- | A handle to an entropy maker, either a system capability
 -- or a hardware generator.
 class EntropySource a where
-    -- | try to open an handle for this source
+    -- | Try to open an handle for this source
     entropyOpen   :: IO (Maybe a)
-    -- | try to gather a number of entropy bytes into a buffer.
-    -- return the number of actual bytes gathered
+    -- | Try to gather a number of entropy bytes into a buffer.
+    -- Return the number of actual bytes gathered
     entropyGather :: a -> Ptr Word8 -> Int -> IO Int
     -- | Close an open handle
     entropyClose  :: a -> IO ()

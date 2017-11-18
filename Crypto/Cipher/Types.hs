@@ -5,7 +5,7 @@
 -- Stability   : Stable
 -- Portability : Excellent
 --
--- symmetric cipher basic types
+-- Symmetric cipher basic types
 --
 {-# LANGUAGE DeriveDataTypeable #-}
 module Crypto.Cipher.Types

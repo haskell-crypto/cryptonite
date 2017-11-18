@@ -14,13 +14,13 @@ module Crypto.PubKey.DSA
     , PrivateKey(..)
     , PublicNumber
     , PrivateNumber
-    -- * generation
+    -- * Generation
     , generatePrivate
     , calculatePublic
-    -- * signature primitive
+    -- * Signature primitive
     , sign
     , signWith
-    -- * verification primitive
+    -- * Verification primitive
     , verify
     -- * Key pair
     , KeyPair(..)

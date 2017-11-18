@@ -17,8 +17,8 @@ module Crypto.Number.Basic
 
 import Crypto.Number.Compat
 
--- | sqrti returns two integer (l,b) so that l <= sqrt i <= b
--- the implementation is quite naive, use an approximation for the first number
+-- | @sqrti@ returns two integers @(l,b)@ so that @l <= sqrt i <= b@.
+-- The implementation is quite naive, use an approximation for the first number
 -- and use a dichotomy algorithm to compute the bound relatively efficiently.
 sqrti :: Integer -> (Integer, Integer)
 sqrti i
@@ -49,7 +49,7 @@ sqrti i
                         else iter (lb+d) ub
             sq a = a * a
 
--- | get the extended GCD of two integer using integer divMod
+-- | Get the extended GCD of two integer using integer divMod
 --
 -- gcde 'a' 'b' find (x,y,gcd(a,b)) where ax + by = d
 --
@@ -63,7 +63,7 @@ gcde a b = onGmpUnsupported (gmpGcde a b) $
         let (q, r) = a' `divMod` b' in
         f t (r, sa - (q * sb), ta - (q * tb))
 
--- | check if a list of integer are all even
+-- | Check if a list of integer are all even
 areEven :: [Integer] -> Bool
 areEven = and . map even
 

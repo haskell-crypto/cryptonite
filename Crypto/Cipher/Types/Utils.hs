@@ -5,7 +5,7 @@
 -- Stability   : Stable
 -- Portability : Excellent
 --
--- basic utility for cipher related stuff
+-- Basic utility for cipher related stuff
 --
 module Crypto.Cipher.Types.Utils where
 

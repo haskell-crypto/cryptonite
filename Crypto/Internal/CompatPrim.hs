@@ -5,11 +5,11 @@
 -- Stability   : stable
 -- Portability : Compat
 --
--- This module try to keep all the difference between versions of ghc primitive
+-- This module tries to keep all the difference between versions of ghc primitive
 -- or other needed packages, so that modules don't need to use CPP.
 --
 -- Note that MagicHash and CPP conflicts in places, making it "more interesting"
--- to write compat code for primitives
+-- to write compat code for primitives.
 --
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE BangPatterns #-}
@@ -28,9 +28,9 @@ import GHC.Prim
 import Data.Memory.Endian (getSystemEndianness, Endianness(..))
 #endif
 
--- | byteswap Word# to or from Big Endian
+-- | Byteswap Word# to or from Big Endian
 --
--- on a big endian machine, this function is a nop.
+-- On a big endian machine, this function is a nop.
 be32Prim :: Word# -> Word#
 #ifdef ARCH_IS_LITTLE_ENDIAN
 be32Prim = byteswap32Prim
@@ -40,9 +40,9 @@ be32Prim = id
 be32Prim w = if getSystemEndianness == LittleEndian then byteswap32Prim w else w
 #endif
 
--- | byteswap Word# to or from Little Endian
+-- | Byteswap Word# to or from Little Endian
 --
--- on a little endian machine, this function is a nop.
+-- On a little endian machine, this function is a nop.
 le32Prim :: Word# -> Word#
 #ifdef ARCH_IS_LITTLE_ENDIAN
 le32Prim w = w
@@ -66,7 +66,7 @@ byteswap32Prim w =
      in or# a (or# b (or# c d))
 #endif
 
--- | combine 4 word8 [a,b,c,d] to a word32 representing [a,b,c,d]
+-- | Combine 4 word8 [a,b,c,d] to a word32 representing [a,b,c,d]
 convert4To32 :: Word# -> Word# -> Word# -> Word#
              -> Word#
 convert4To32 a b c d = or# (or# c1 c2) (or# c3 c4)

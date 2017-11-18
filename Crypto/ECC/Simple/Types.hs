@@ -6,7 +6,7 @@
 -- Stability   : Experimental
 -- Portability : Excellent
 --
--- references:
+-- References:
 --   <https://tools.ietf.org/html/rfc5915>
 --
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
@@ -20,7 +20,7 @@ module Crypto.ECC.Simple.Types
     , curveSizeBits
     , curveSizeBytes
     , CurveParameters(..)
-    -- * specific curves definition
+    -- * Specific curves definition
     , SEC_p112r1(..)
     , SEC_p112r2(..)
     , SEC_p128r1(..)

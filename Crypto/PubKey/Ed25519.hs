@@ -21,7 +21,7 @@ module Crypto.PubKey.Ed25519
     , signature
     , publicKey
     , secretKey
-    -- * methods
+    -- * Methods
     , toPublic
     , sign
     , verify

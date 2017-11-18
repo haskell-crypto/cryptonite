@@ -9,10 +9,10 @@
 
 module Crypto.Number.ModArithmetic
     (
-    -- * exponentiation
+    -- * Exponentiation
       expSafe
     , expFast
-    -- * inverse computing
+    -- * Inverse computing
     , inverse
     , inverseCoprimes
     ) where
@@ -64,7 +64,7 @@ expFast :: Integer -- ^ base
         -> Integer -- ^ result
 expFast b e m = gmpPowModInteger b e m `onGmpUnsupported` exponentiation b e m
 
--- | exponentiation computes modular exponentiation as b^e mod m
+-- | @exponentiation@ computes modular exponentiation as /b^e mod m/
 -- using repetitive squaring.
 exponentiation :: Integer -> Integer -> Integer -> Integer
 exponentiation b e m
@@ -75,7 +75,7 @@ exponentiation b e m
                    in (p^(2::Integer)) `mod` m
     | otherwise = (b * exponentiation b (e-1) m) `mod` m
 
--- | inverse computes the modular inverse as in g^(-1) mod m
+-- | @inverse@ computes the modular inverse as in /g^(-1) mod m/.
 inverse :: Integer -> Integer -> Maybe Integer
 inverse g m = gmpInverse g m `onGmpUnsupported` v
   where
@@ -84,12 +84,12 @@ inverse g m = gmpInverse g m `onGmpUnsupported` v
         | otherwise = Just (x `mod` m)
     (x,_,d) = gcde g m
 
--- | Compute the modular inverse of 2 coprime numbers.
+-- | Compute the modular inverse of two coprime numbers.
 -- This is equivalent to inverse except that the result
 -- is known to exists.
 --
--- if the numbers are not defined as coprime, this function
--- will raise a CoprimesAssertionError.
+-- If the numbers are not defined as coprime, this function
+-- will raise a 'CoprimesAssertionError'.
 inverseCoprimes :: Integer -> Integer -> Integer
 inverseCoprimes g m =
     case inverse g m of

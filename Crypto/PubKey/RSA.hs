@@ -10,7 +10,7 @@ module Crypto.PubKey.RSA
     , PublicKey(..)
     , PrivateKey(..)
     , Blinder(..)
-    -- * generation function
+    -- * Generation function
     , generateWith
     , generate
     , generateBlinder

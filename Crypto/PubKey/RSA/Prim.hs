@@ -7,9 +7,9 @@
 --
 module Crypto.PubKey.RSA.Prim
     (
-    -- * decrypt primitive
+    -- * Decrypt primitive
       dp
-    -- * encrypt primitive
+    -- * Encrypt primitive
     , ep
     ) where
 

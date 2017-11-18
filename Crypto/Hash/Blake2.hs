@@ -5,7 +5,7 @@
 -- Stability   : experimental
 -- Portability : unknown
 --
--- module containing the binding functions to work with the
+-- Module containing the binding functions to work with the
 -- Blake2
 --
 -- Implementation based from [RFC7693](https://tools.ietf.org/html/rfc7693)
@@ -51,7 +51,7 @@ import           Crypto.Internal.Nat
 --
 -- It is espacially known to target 32bits architectures.
 --
--- known supported digest sizes:
+-- Known supported digest sizes:
 --
 -- * Blake2s 160
 -- * Blake2s 224

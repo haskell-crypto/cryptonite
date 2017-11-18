@@ -5,7 +5,7 @@
 -- Stability   : Stable
 -- Portability : Excellent
 --
--- block cipher basic types
+-- Block cipher basic types
 --
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ExistentialQuantification #-}
@@ -16,7 +16,7 @@ module Crypto.Cipher.Types.Block
     -- * BlockCipher
       BlockCipher(..)
     , BlockCipher128(..)
-    -- * initialization vector (IV)
+    -- * Initialization vector (IV)
     , IV(..)
     , makeIV
     , nullIV

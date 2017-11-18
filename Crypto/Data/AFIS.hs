@@ -5,7 +5,7 @@
 -- Stability   : experimental
 -- Portability : unknown
 --
--- haskell implementation of the Anti-forensic information splitter
+-- Haskell implementation of the Anti-forensic information splitter
 -- available in LUKS. <http://clemens.endorphin.org/AFsplitter>
 --
 -- The algorithm bloats an arbitrary secret with many bits that are necessary for

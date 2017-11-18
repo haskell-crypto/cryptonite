@@ -11,37 +11,37 @@
 --
 module Crypto.Cipher.AES.Primitive
     (
-    -- * block cipher data types
+    -- * Block cipher data types
       AES
 
     -- * Authenticated encryption block cipher types
     , AESGCM
     , AESOCB
 
-    -- * creation
+    -- * Creation
     , initAES
 
-    -- * misc
+    -- * Miscellanea
     , genCTR
     , genCounter
 
-    -- * encryption
+    -- * Encryption
     , encryptECB
     , encryptCBC
     , encryptCTR
     , encryptXTS
 
-    -- * decryption
+    -- * Decryption
     , decryptECB
     , decryptCBC
     , decryptCTR
     , decryptXTS
 
-    -- * incremental GCM
+    -- * Incremental GCM
     , gcmMode
     , gcmInit
 
-    -- * incremental OCB
+    -- * Incremental OCB
     , ocbMode
     , ocbInit
     ) where

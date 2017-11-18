@@ -19,17 +19,17 @@ module Crypto.PubKey.ElGamal
     , EphemeralKey(..)
     , SharedKey
     , Signature
-    -- * generation
+    -- * Generation
     , generatePrivate
     , generatePublic
-    -- * encryption and decryption with no scheme
+    -- * Encryption and decryption with no scheme
     , encryptWith
     , encrypt
     , decrypt
-    -- * signature primitives
+    -- * Signature primitives
     , signWith
     , sign
-    -- * verification primitives
+    -- * Verification primitives
     , verify
     ) where
 

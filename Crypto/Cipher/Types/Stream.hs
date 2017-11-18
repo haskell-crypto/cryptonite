@@ -5,7 +5,7 @@
 -- Stability   : Stable
 -- Portability : Excellent
 --
--- stream cipher basic types
+-- Stream cipher basic types
 --
 module Crypto.Cipher.Types.Stream
     ( StreamCipher(..)

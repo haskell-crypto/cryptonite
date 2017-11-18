@@ -25,7 +25,7 @@ module Crypto.PubKey.Ed448
     , signature
     , publicKey
     , secretKey
-    -- * methods
+    -- * Methods
     , toPublic
     , sign
     , verify

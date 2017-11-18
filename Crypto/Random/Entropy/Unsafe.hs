@@ -16,8 +16,8 @@ import Crypto.Random.Entropy.Backend
 
 -- | Refill the entropy in a buffer
 --
--- call each entropy backend in turn until the buffer has
--- been replenish.
+-- Call each entropy backend in turn until the buffer has
+-- been replenished.
 --
 -- If the buffer cannot be refill after 3 loopings, this will raise
 -- an User Error exception
