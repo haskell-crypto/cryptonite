@@ -21,7 +21,7 @@ foreign import ccall unsafe "cryptonite_cpu_has_rdrand"
 foreign import ccall unsafe "cryptonite_get_rand_bytes"
   c_get_rand_bytes :: Ptr Word8 -> CInt -> IO CInt
 
--- | fake handle to Intel RDRand entropy cpu instruction
+-- | Fake handle to Intel RDRand entropy CPU instruction
 data RDRand = RDRand
 
 instance EntropySource RDRand where

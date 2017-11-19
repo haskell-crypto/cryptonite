@@ -12,7 +12,7 @@ module Crypto.Cipher.ChaCha
     , combine
     , generate
     , State
-    -- * simple interface for DRG purpose
+    -- * Simple interface for DRG purpose
     , initializeSimple
     , generateSimple
     , StateSimple

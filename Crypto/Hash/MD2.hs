@@ -5,7 +5,7 @@
 -- Stability   : experimental
 -- Portability : unknown
 --
--- module containing the binding functions to work with the
+-- Module containing the binding functions to work with the
 -- MD2 cryptographic hash.
 --
 {-# LANGUAGE ForeignFunctionInterface #-}

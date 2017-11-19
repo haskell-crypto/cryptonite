@@ -5,7 +5,7 @@
 -- Stability   : experimental
 -- Portability : unknown
 --
--- provide the CMAC (Cipher based Message Authentification Code) base algorithm.
+-- Provide the CMAC (Cipher based Message Authentification Code) base algorithm.
 -- <http://en.wikipedia.org/wiki/CMAC>
 -- <http://csrc.nist.gov/publications/nistpubs/800-38B/SP_800-38B.pdf>
 --

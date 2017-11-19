@@ -5,7 +5,7 @@
 -- Stability   : experimental
 -- Portability : Good
 --
--- fast serialization primitives for integer using raw pointers
+-- Fast serialization primitives for integer using raw pointers
 {-# LANGUAGE BangPatterns #-}
 module Crypto.Number.Serialize.Internal
     ( i2osp
@@ -21,12 +21,12 @@ import           Data.Word (Word8)
 import           Foreign.Ptr
 import           Foreign.Storable
 
--- | fill a pointer with the big endian binary representation of an integer
+-- | Fill a pointer with the big endian binary representation of an integer
 --
--- if the room available @ptrSz is less than the number of bytes needed,
+-- If the room available @ptrSz is less than the number of bytes needed,
 -- 0 is returned. Likewise if a parameter is invalid, 0 is returned.
 --
--- returns the number of bytes written
+-- Returns the number of bytes written
 i2osp :: Integer -> Ptr Word8 -> Int -> IO Int
 i2osp m ptr ptrSz
     | ptrSz <= 0 = return 0
@@ -61,7 +61,7 @@ fillPtr p sz m = gmpExportInteger m p `onGmpUnsupported` export (sz-1) m
             pokeByteOff p ofs (fromIntegral b :: Word8)
             export (ofs-1) i'
 
--- | transform a big endian binary integer representation pointed by a pointer and a size
+-- | Transform a big endian binary integer representation pointed by a pointer and a size
 -- into an integer
 os2ip :: Ptr Word8 -> Int -> IO Integer
 os2ip ptr ptrSz

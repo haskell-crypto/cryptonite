@@ -8,7 +8,7 @@
 
 module Crypto.Math.Polynomial
     ( Monomial(..)
-    -- * polynomial operations
+    -- * Polynomial operations
     , Polynomial
     , toList
     , fromList

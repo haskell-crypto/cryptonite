@@ -6,7 +6,7 @@
 -- Stability   : Experimental
 -- Portability : Excellent
 --
--- references:
+-- References:
 --   <https://tools.ietf.org/html/rfc5915>
 --
 module Crypto.PubKey.ECC.Types
@@ -21,7 +21,7 @@ module Crypto.PubKey.ECC.Types
     , ecc_fx
     , ecc_p
     , CurveCommon(..)
-    -- * recommended curves definition
+    -- * Recommended curves definition
     , CurveName(..)
     , getCurveByName
     ) where

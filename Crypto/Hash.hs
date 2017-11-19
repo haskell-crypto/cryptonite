@@ -25,10 +25,10 @@ module Crypto.Hash
     , Digest
     -- * Functions
     , digestFromByteString
-    -- * hash methods parametrized by algorithm
+    -- * Hash methods parametrized by algorithm
     , hashInitWith
     , hashWith
-    -- * hash methods
+    -- * Hash methods
     , hashInit
     , hashUpdates
     , hashUpdate

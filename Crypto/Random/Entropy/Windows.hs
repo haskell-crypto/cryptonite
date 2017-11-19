@@ -5,7 +5,7 @@
 -- Stability   : experimental
 -- Portability : Good
 --
--- code originally from the entropy package and thus is:
+-- Code originally from the entropy package and thus is:
 --   Copyright (c) Thomas DuBuisson.
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
@@ -26,7 +26,7 @@ import System.Win32.Types (getLastError)
 import Crypto.Random.Entropy.Source
 
 
--- | handle to windows crypto API for random generation
+-- | Handle to Windows crypto API for random generation
 data WinCryptoAPI = WinCryptoAPI
 
 instance EntropySource WinCryptoAPI where

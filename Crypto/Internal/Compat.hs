@@ -5,8 +5,8 @@
 -- Stability   : stable
 -- Portability : Good
 --
--- This module try to keep all the difference between versions of base
--- or other needed packages, so that modules don't need to use CPP
+-- This module tries to keep all the difference between versions of base
+-- or other needed packages, so that modules don't need to use CPP.
 --
 {-# LANGUAGE CPP #-}
 module Crypto.Internal.Compat
@@ -19,10 +19,10 @@ import System.IO.Unsafe
 import Data.Word
 import Data.Bits
 
--- | perform io for hashes that do allocation and ffi.
--- unsafeDupablePerformIO is used when possible as the
+-- | Perform io for hashes that do allocation and FFI.
+-- 'unsafeDupablePerformIO' is used when possible as the
 -- computation is pure and the output is directly linked
--- to the input. we also do not modify anything after it has
+-- to the input. We also do not modify anything after it has
 -- been returned to the user.
 unsafeDoIO :: IO a -> a
 #if __GLASGOW_HASKELL__ > 704

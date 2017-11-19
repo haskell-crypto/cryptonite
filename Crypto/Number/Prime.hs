@@ -31,10 +31,10 @@ import Crypto.Error
 
 import Data.Bits
 
--- | returns if the number is probably prime.
--- first a list of small primes are implicitely tested for divisibility,
+-- | Returns if the number is probably prime.
+-- First a list of small primes are implicitely tested for divisibility,
 -- then a fermat primality test is used with arbitrary numbers and
--- then the Miller Rabin algorithm is used with an accuracy of 30 recursions
+-- then the Miller Rabin algorithm is used with an accuracy of 30 recursions.
 isProbablyPrime :: Integer -> Bool
 isProbablyPrime !n
     | any (\p -> p `divides` n) (filter (< n) firstPrimes) = False
@@ -42,14 +42,14 @@ isProbablyPrime !n
     | primalityTestFermat 50 (n `div` 2) n                 = primalityTestMillerRabin 30 n
     | otherwise                                            = False
 
--- | generate a prime number of the required bitsize (i.e. in the range
---   [2^(b-1)+2^(b-2), 2^b)).
+-- | Generate a prime number of the required bitsize (i.e. in the range
+-- [2^(b-1)+2^(b-2), 2^b)).
 --
---   May throw a CryptoError_PrimeSizeInvalid if the requested size is less
---   than 5 bits, as the smallest prime meeting these conditions is 29.
---   This function requires that the two highest bits are set, so that when
---   multiplied with another prime to create a key, it is guaranteed to be of
---   the proper size.
+-- May throw a 'CryptoError_PrimeSizeInvalid' if the requested size is less
+-- than 5 bits, as the smallest prime meeting these conditions is 29.
+-- This function requires that the two highest bits are set, so that when
+-- multiplied with another prime to create a key, it is guaranteed to be of
+-- the proper size.
 generatePrime :: MonadRandom m => Int -> m Integer
 generatePrime bits = do
     if bits < 5 then
@@ -61,13 +61,13 @@ generatePrime bits = do
             return $ prime
         else generatePrime bits
 
--- | generate a prime number of the form 2p+1 where p is also prime.
+-- | Generate a prime number of the form 2p+1 where p is also prime.
 -- it is also knowed as a Sophie Germaine prime or safe prime.
 --
 -- The number of safe prime is significantly smaller to the number of prime,
 -- as such it shouldn't be used if this number is supposed to be kept safe.
 --
--- May throw a CryptoError_PrimeSizeInvalid if the requested size is less than
+-- May throw a 'CryptoError_PrimeSizeInvalid' if the requested size is less than
 -- 6 bits, as the smallest safe prime with the two highest bits set is 59.
 generateSafePrime :: MonadRandom m => Int -> m Integer
 generateSafePrime bits = do
@@ -81,7 +81,7 @@ generateSafePrime bits = do
             return $ val
         else generateSafePrime bits
 
--- | find a prime from a starting point where the property hold.
+-- | Find a prime from a starting point where the property hold.
 findPrimeFromWith :: (Integer -> Bool) -> Integer -> Integer
 findPrimeFromWith prop !n
     | even n        = findPrimeFromWith prop (n+1)
@@ -93,7 +93,7 @@ findPrimeFromWith prop !n
                     then n
                     else findPrimeFromWith prop (n+2)
 
--- | find a prime from a starting point with no specific property.
+-- | Find a prime from a starting point with no specific property.
 findPrimeFrom :: Integer -> Integer
 findPrimeFrom n =
     case gmpNextPrime n of
@@ -185,7 +185,7 @@ primalityTestNaive n
 isCoprime :: Integer -> Integer -> Bool
 isCoprime m n = case gcde m n of (_,_,d) -> d == 1
 
--- | list of the first primes till 2903..
+-- | List of the first primes till 2903.
 firstPrimes :: [Integer]
 firstPrimes =
     [ 2    , 3    , 5    , 7    , 11   , 13   , 17   , 19   , 23   , 29

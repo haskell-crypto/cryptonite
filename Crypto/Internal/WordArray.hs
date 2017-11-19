@@ -8,7 +8,7 @@
 -- Small and self contained array representation
 -- with limited safety for internal use.
 --
--- the array produced should never be exposed to the user directly
+-- The array produced should never be exposed to the user directly.
 --
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash #-}

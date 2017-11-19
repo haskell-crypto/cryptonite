@@ -14,7 +14,7 @@
 module Crypto.PubKey.ECC.P256
     ( Scalar
     , Point
-    -- * point arithmetic
+    -- * Point arithmetic
     , pointBase
     , pointAdd
     , pointMul
@@ -27,7 +27,7 @@ module Crypto.PubKey.ECC.P256
     , pointToBinary
     , pointFromBinary
     , unsafePointFromBinary
-    -- * scalar arithmetic
+    -- * Scalar arithmetic
     , scalarGenerate
     , scalarZero
     , scalarIsZero

@@ -5,7 +5,7 @@
 -- Stability   : experimental
 -- Portability : unknown
 --
--- provide the HMAC (Hash based Message Authentification Code) base algorithm.
+-- Provide the HMAC (Hash based Message Authentification Code) base algorithm.
 -- <http://en.wikipedia.org/wiki/HMAC>
 --
 {-# LANGUAGE BangPatterns #-}
@@ -13,7 +13,7 @@
 module Crypto.MAC.HMAC
     ( hmac
     , HMAC(..)
-    -- * incremental
+    -- * Incremental
     , Context(..)
     , initialize
     , update
