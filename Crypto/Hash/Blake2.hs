@@ -65,10 +65,10 @@ instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost b
       where
     type HashBlockSize           (Blake2s bitlen) = 64
     type HashDigestSize          (Blake2s bitlen) = Div8 bitlen
-    type HashInternalContextSize (Blake2s bitlen) = 185
+    type HashInternalContextSize (Blake2s bitlen) = 136
     hashBlockSize  _          = 64
     hashDigestSize _          = byteLen (Proxy :: Proxy bitlen)
-    hashInternalContextSize _ = 185
+    hashInternalContextSize _ = 136
     hashInternalInit p        = c_blake2s_init p (integralNatVal (Proxy :: Proxy bitlen))
     hashInternalUpdate        = c_blake2s_update
     hashInternalFinalize p    = c_blake2s_finalize p (integralNatVal (Proxy :: Proxy bitlen))
@@ -100,10 +100,10 @@ instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost b
       where
     type HashBlockSize           (Blake2b bitlen) = 128
     type HashDigestSize          (Blake2b bitlen) = Div8 bitlen
-    type HashInternalContextSize (Blake2b bitlen) = 361
+    type HashInternalContextSize (Blake2b bitlen) = 248
     hashBlockSize  _          = 128
     hashDigestSize _          = byteLen (Proxy :: Proxy bitlen)
-    hashInternalContextSize _ = 361
+    hashInternalContextSize _ = 248
     hashInternalInit p        = c_blake2b_init p (integralNatVal (Proxy :: Proxy bitlen))
     hashInternalUpdate        = c_blake2b_update
     hashInternalFinalize p    = c_blake2b_finalize p (integralNatVal (Proxy :: Proxy bitlen))

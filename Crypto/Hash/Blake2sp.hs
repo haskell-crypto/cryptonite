@@ -30,10 +30,10 @@ data Blake2sp_224 = Blake2sp_224
 instance HashAlgorithm Blake2sp_224 where
     type HashBlockSize           Blake2sp_224 = 64
     type HashDigestSize          Blake2sp_224 = 28
-    type HashInternalContextSize Blake2sp_224 = 2185
+    type HashInternalContextSize Blake2sp_224 = 1752
     hashBlockSize  _          = 64
     hashDigestSize _          = 28
-    hashInternalContextSize _ = 2185
+    hashInternalContextSize _ = 1752
     hashInternalInit p        = c_blake2sp_init p 224
     hashInternalUpdate        = c_blake2sp_update
     hashInternalFinalize p    = c_blake2sp_finalize p 224
@@ -45,10 +45,10 @@ data Blake2sp_256 = Blake2sp_256
 instance HashAlgorithm Blake2sp_256 where
     type HashBlockSize           Blake2sp_256 = 64
     type HashDigestSize          Blake2sp_256 = 32
-    type HashInternalContextSize Blake2sp_256 = 2185
+    type HashInternalContextSize Blake2sp_256 = 1752
     hashBlockSize  _          = 64
     hashDigestSize _          = 32
-    hashInternalContextSize _ = 2185
+    hashInternalContextSize _ = 1752
     hashInternalInit p        = c_blake2sp_init p 256
     hashInternalUpdate        = c_blake2sp_update
     hashInternalFinalize p    = c_blake2sp_finalize p 256

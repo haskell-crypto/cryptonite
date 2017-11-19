@@ -30,20 +30,20 @@ data Blake2bp_512 = Blake2bp_512
 instance HashAlgorithm Blake2bp_512 where
     type HashBlockSize           Blake2bp_512 = 128
     type HashDigestSize          Blake2bp_512 = 64
-    type HashInternalContextSize Blake2bp_512 = 2325
+    type HashInternalContextSize Blake2bp_512 = 1768
     hashBlockSize  _          = 128
     hashDigestSize _          = 64
-    hashInternalContextSize _ = 2325
-    hashInternalInit p        = c_blake2sp_init p 512
-    hashInternalUpdate        = c_blake2sp_update
-    hashInternalFinalize p    = c_blake2sp_finalize p 512
+    hashInternalContextSize _ = 1768
+    hashInternalInit p        = c_blake2bp_init p 512
+    hashInternalUpdate        = c_blake2bp_update
+    hashInternalFinalize p    = c_blake2bp_finalize p 512
 
 
-foreign import ccall unsafe "cryptonite_blake2sp_init"
-    c_blake2sp_init :: Ptr (Context a) -> Word32 -> IO ()
+foreign import ccall unsafe "cryptonite_blake2bp_init"
+    c_blake2bp_init :: Ptr (Context a) -> Word32 -> IO ()
 
-foreign import ccall "cryptonite_blake2sp_update"
-    c_blake2sp_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
+foreign import ccall "cryptonite_blake2bp_update"
+    c_blake2bp_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
 
-foreign import ccall unsafe "cryptonite_blake2sp_finalize"
-    c_blake2sp_finalize :: Ptr (Context a) -> Word32 -> Ptr (Digest a) -> IO ()
+foreign import ccall unsafe "cryptonite_blake2bp_finalize"
+    c_blake2bp_finalize :: Ptr (Context a) -> Word32 -> Ptr (Digest a) -> IO ()
