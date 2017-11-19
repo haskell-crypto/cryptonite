@@ -15,6 +15,7 @@ module Crypto.Random.Entropy.Backend
 
 import Foreign.Ptr
 import Data.Word (Word8)
+import Crypto.Internal.Proxy
 import Crypto.Random.Entropy.Source
 #ifdef SUPPORT_RDRAND
 import Crypto.Random.Entropy.RDRand
@@ -30,12 +31,12 @@ supportedBackends :: [IO (Maybe EntropyBackend)]
 supportedBackends =
     [
 #ifdef SUPPORT_RDRAND
-    openBackend (undefined :: RDRand),
+    openBackend (Proxy :: Proxy RDRand),
 #endif
 #ifdef WINDOWS
-    openBackend (undefined :: WinCryptoAPI)
+    openBackend (Proxy :: Proxy WinCryptoAPI)
 #else
-    openBackend (undefined :: DevRandom), openBackend (undefined :: DevURandom)
+    openBackend (Proxy :: Proxy DevRandom), openBackend (Proxy :: Proxy DevURandom)
 #endif
     ]
 
@@ -43,9 +44,9 @@ supportedBackends =
 data EntropyBackend = forall b . EntropySource b => EntropyBackend b
 
 -- | Open a backend handle
-openBackend :: EntropySource b => b -> IO (Maybe EntropyBackend)
+openBackend :: EntropySource b => Proxy b -> IO (Maybe EntropyBackend)
 openBackend b = fmap EntropyBackend `fmap` callOpen b
-  where callOpen :: EntropySource b => b -> IO (Maybe b)
+  where callOpen :: EntropySource b => Proxy b -> IO (Maybe b)
         callOpen _ = entropyOpen
 
 -- | Gather randomness from an open handle

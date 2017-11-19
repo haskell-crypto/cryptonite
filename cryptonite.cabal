@@ -224,7 +224,7 @@ Library
     Other-modules:   Crypto.Hash.SHAKE
                      Crypto.Hash.Blake2
                      Crypto.Internal.Nat
-  Build-depends:     base >= 4.3 && < 5
+  Build-depends:     base >= 4.6 && < 5
                    , bytestring
                    , memory >= 0.14.5
                    , foundation >= 0.0.8
