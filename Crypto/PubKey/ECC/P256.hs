@@ -222,34 +222,21 @@ scalarIsZero s = unsafeDoIO $ withScalar s $ \d -> do
     result <- ccryptonite_p256_is_zero d
     return $ result /= 0
 
-scalarNeedReducing :: Ptr P256Scalar -> IO Bool
-scalarNeedReducing d = do
-    c <- ccryptonite_p256_cmp d ccryptonite_SECP256r1_n
-    return (c >= 0)
-
 -- | Perform addition between two scalars
 --
 -- > a + b
 scalarAdd :: Scalar -> Scalar -> Scalar
 scalarAdd a b =
-    withNewScalarFreeze $ \d -> withScalar a $ \pa -> withScalar b $ \pb -> do
-        carry <- ccryptonite_p256_add pa pb d
-        when (carry /= 0) $ void $ ccryptonite_p256_sub d ccryptonite_SECP256r1_n d
-        needReducing <- scalarNeedReducing d
-        when needReducing $ do
-            ccryptonite_p256_mod ccryptonite_SECP256r1_n d d
+    withNewScalarFreeze $ \d -> withScalar a $ \pa -> withScalar b $ \pb ->
+        ccryptonite_p256e_modadd ccryptonite_SECP256r1_n pa pb d
 
 -- | Perform subtraction between two scalars
 --
 -- > a - b
 scalarSub :: Scalar -> Scalar -> Scalar
 scalarSub a b =
-    withNewScalarFreeze $ \d -> withScalar a $ \pa -> withScalar b $ \pb -> do
-        borrow <- ccryptonite_p256_sub pa pb d
-        when (borrow /= 0) $ void $ ccryptonite_p256_add d ccryptonite_SECP256r1_n d
-        --needReducing <- scalarNeedReducing d
-        --when needReducing $ do
-        --    ccryptonite_p256_mod ccryptonite_SECP256r1_n d d
+    withNewScalarFreeze $ \d -> withScalar a $ \pa -> withScalar b $ \pb ->
+        ccryptonite_p256e_modsub ccryptonite_SECP256r1_n pa pb d
 
 -- | Give the inverse of the scalar
 --
@@ -352,12 +339,12 @@ foreign import ccall "cryptonite_p256_is_zero"
     ccryptonite_p256_is_zero :: Ptr P256Scalar -> IO CInt
 foreign import ccall "cryptonite_p256_clear"
     ccryptonite_p256_clear :: Ptr P256Scalar -> IO ()
-foreign import ccall "cryptonite_p256_add"
-    ccryptonite_p256_add :: Ptr P256Scalar -> Ptr P256Scalar -> Ptr P256Scalar -> IO CInt
+foreign import ccall "cryptonite_p256e_modadd"
+    ccryptonite_p256e_modadd :: Ptr P256Scalar -> Ptr P256Scalar -> Ptr P256Scalar -> Ptr P256Scalar -> IO ()
 foreign import ccall "cryptonite_p256_add_d"
     ccryptonite_p256_add_d :: Ptr P256Scalar -> P256Digit -> Ptr P256Scalar -> IO CInt
-foreign import ccall "cryptonite_p256_sub"
-    ccryptonite_p256_sub :: Ptr P256Scalar -> Ptr P256Scalar -> Ptr P256Scalar -> IO CInt
+foreign import ccall "cryptonite_p256e_modsub"
+    ccryptonite_p256e_modsub :: Ptr P256Scalar -> Ptr P256Scalar -> Ptr P256Scalar -> Ptr P256Scalar -> IO ()
 foreign import ccall "cryptonite_p256_cmp"
     ccryptonite_p256_cmp :: Ptr P256Scalar -> Ptr P256Scalar -> IO CInt
 foreign import ccall "cryptonite_p256_mod"
