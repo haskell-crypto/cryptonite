@@ -11,12 +11,23 @@
 --
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Crypto.KDF.Scrypt
-    ( Parameters(..)
+    ( SCrypt
+    , SCryptDefault
+    , Parameters(..)
     , generate
+    , generate2
     ) where
 
 import           Data.Word
+import           Data.Proxy
 import           Foreign.Marshal.Alloc
 import           Foreign.Ptr (Ptr, plusPtr)
 import           Control.Monad (forM_)
@@ -26,8 +37,22 @@ import qualified Crypto.KDF.PBKDF2 as PBKDF2
 import           Crypto.Internal.Compat (popCount, unsafeDoIO)
 import           Crypto.Internal.ByteArray (ByteArray, ByteArrayAccess)
 import qualified Crypto.Internal.ByteArray as B
+import           Basement.Nat
 
--- | Parameters for Scrypt
+-- | Type level parameter for SCrypt
+--
+-- N represent the CPU/Memory cost ratio as a power of 2 greater than 1.
+-- R
+data SCrypt (n :: Nat) (r :: Nat) (p :: Nat) (outputLength :: Nat)
+
+-- | Alias to SCrypt with the usual default parameter listed in the paper
+--
+-- * N=14
+-- * R=8
+-- * P=1
+type SCryptDefault outputLength = SCrypt 14 8 1 outputLength
+
+-- | Value Parameters for Scrypt
 data Parameters = Parameters
     { n            :: Word64 -- ^ Cpu/Memory cost ratio. must be a power of 2 greater than 1. also known as N.
     , r            :: Int    -- ^ Must satisfy r * p < 2^30
@@ -38,7 +63,24 @@ data Parameters = Parameters
 foreign import ccall "cryptonite_scrypt_smix"
     ccryptonite_scrypt_smix :: Ptr Word8 -> Word32 -> Word64 -> Ptr Word8 -> Ptr Word8 -> IO ()
 
+generate2 :: forall (n :: Nat) (r :: Nat) (p :: Nat) (outlen :: Nat) password salt output
+           . ( KnownNat n, KnownNat r, KnownNat p, KnownNat outlen
+             , 2 <= n, n <= 63, r * p <= (0x40000000-1)
+             , ByteArrayAccess password, ByteArrayAccess salt, ByteArray output )
+          => Proxy (SCrypt n r p outlen)
+          -> password
+          -> salt
+          -> output
+generate2 _ = generate params
+  where
+    params = Parameters (fromIntegral $ natVal (Proxy :: Proxy n))
+                        (fromIntegral $ natVal (Proxy :: Proxy r))
+                        (fromIntegral $ natVal (Proxy :: Proxy p))
+                        (fromIntegral $ natVal (Proxy :: Proxy outlen))
+
 -- | Generate the scrypt key derivation data
+--
+-- prefer `generate2` nowadays
 generate :: (ByteArrayAccess password, ByteArrayAccess salt, ByteArray output)
          => Parameters
          -> password
