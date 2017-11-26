@@ -39,6 +39,7 @@ module Crypto.PubKey.ECC.P256
     , scalarSub
     , scalarMul
     , scalarInv
+    , scalarInvSafe
     , scalarCmp
     , scalarFromBinary
     , scalarToBinary
@@ -290,6 +291,14 @@ scalarInv a =
     withNewScalarFreeze $ \b -> withScalar a $ \pa ->
         ccryptonite_p256_modinv_vartime ccryptonite_SECP256r1_n pa b
 
+-- | Give the inverse of the scalar using safe exponentiation
+--
+-- > 1 / a
+scalarInvSafe :: Scalar -> Scalar
+scalarInvSafe a =
+    withNewScalarFreeze $ \b -> withScalar a $ \pa ->
+        ccryptonite_p256e_scalar_invert pa b
+
 -- | Compare 2 Scalar
 scalarCmp :: Scalar -> Scalar -> Ordering
 scalarCmp a b = unsafeDoIO $
@@ -393,6 +402,8 @@ foreign import ccall "cryptonite_p256_mod"
     ccryptonite_p256_mod :: Ptr P256Scalar -> Ptr P256Scalar -> Ptr P256Scalar -> IO ()
 foreign import ccall "cryptonite_p256_modmul"
     ccryptonite_p256_modmul :: Ptr P256Scalar -> Ptr P256Scalar -> P256Digit -> Ptr P256Scalar -> Ptr P256Scalar -> IO ()
+foreign import ccall "cryptonite_p256e_scalar_invert"
+    ccryptonite_p256e_scalar_invert :: Ptr P256Scalar -> Ptr P256Scalar -> IO ()
 --foreign import ccall "cryptonite_p256_modinv"
 --    ccryptonite_p256_modinv :: Ptr P256Scalar -> Ptr P256Scalar -> Ptr P256Scalar -> IO ()
 foreign import ccall "cryptonite_p256_modinv_vartime"

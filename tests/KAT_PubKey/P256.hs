@@ -95,7 +95,21 @@ tests = testGroup "P256"
         , testProperty "inv" $ \r' ->
             let inv  = inverseCoprimes (unP256 r') curveN
                 inv' = P256.scalarInv (unP256Scalar r')
-             in if unP256 r' == 0 then True else inv `propertyEq` p256ScalarToInteger inv'
+             in unP256 r' /= 0 ==> inv `propertyEq` p256ScalarToInteger inv'
+        , testProperty "inv-safe" $ \r' ->
+            let inv  = P256.scalarInv (unP256Scalar r')
+                inv' = P256.scalarInvSafe (unP256Scalar r')
+             in unP256 r' /= 0 ==> inv `propertyEq` inv'
+        , testProperty "inv-safe-mul" $ \r' ->
+            let inv = P256.scalarInvSafe (unP256Scalar r')
+                res = P256.scalarMul (unP256Scalar r') inv
+             in unP256 r' /= 0 ==> 1 `propertyEq` p256ScalarToInteger res
+        , testProperty "inv-safe-zero" $
+            let inv0 = P256.scalarInvSafe P256.scalarZero
+                invN = P256.scalarInvSafe P256.scalarN
+             in propertyHold [ eqTest "scalarZero" P256.scalarZero inv0
+                             , eqTest "scalarN"    P256.scalarZero invN
+                             ]
         ]
     , testGroup "point"
         [ testProperty "marshalling" $ \rx ry ->
