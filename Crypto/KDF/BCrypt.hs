@@ -27,13 +27,16 @@
 -- salt and hash bytes (each separately Base64 encoded. Incrementing the
 -- cost parameter approximately doubles the time taken to calculate the hash.
 --
--- The different version numbers have evolved because of bugs in the standard
--- C implementations. The most up to date version is @2b@ and this
--- implementation the @2b@ version prefix, but will also attempt to validate
+-- The different version numbers evolved to account for bugs in the standard
+-- C implementations. They don't represent different versions of the algorithm
+-- itself and in most cases should produce identical results.
+-- The most up to date version is @2b@ and this implementation uses the
+-- @2b@ version prefix, but will also attempt to validate
 -- against hashes with versions @2a@ and @2y@. Version @2@ or @2x@ will be
 -- rejected. No attempt is made to differentiate between the different versions
 -- when validating a password, but in practice this shouldn't cause any problems
--- if passwords are UTF-8 encoded (which they should be).
+-- if passwords are UTF-8 encoded (which they should be) and less than 256
+-- characters long.
 --
 -- The cost parameter can be between 4 and 31 inclusive, but anything less than
 -- 10 is probably not strong enough. High values may be prohibitively slow
@@ -93,7 +96,7 @@ bcrypt :: (ByteArray salt, ByteArray password, ByteArray output)
 bcrypt cost salt password = B.concat [header, B.snoc costBytes dollar, b64 salt, b64 hash]
   where
     hash   = rawHash 'b' realCost salt password
-    header = B.pack [dollar, fromIntegral (ord '2'), fromIntegral (ord 'a'), dollar]
+    header = B.pack [dollar, fromIntegral (ord '2'), fromIntegral (ord 'b'), dollar]
     dollar = fromIntegral (ord '$')
     zero   = fromIntegral (ord '0')
     costBytes  = B.pack [zero + fromIntegral (realCost `div` 10), zero + fromIntegral (realCost `mod` 10)]
