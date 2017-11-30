@@ -20,8 +20,8 @@ import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArrayAccess, Bytes)
 import qualified Crypto.Internal.ByteArray as B
 import           Foreign.Ptr (Ptr)
-import qualified Foundation.Array as F
-import qualified Foundation       as F
+import           Basement.UArray (UArray)
+import           Basement.NormalForm (deepseq)
 import           GHC.TypeLits (Nat)
 
 -- | Class representing hashing algorithms.
@@ -70,11 +70,11 @@ newtype Context a = Context Bytes
 --
 -- Creating a digest from a bytearray is also possible with function
 -- 'Crypto.Hash.digestFromByteString'.
-newtype Digest a = Digest (F.UArray Word8)
+newtype Digest a = Digest (UArray Word8)
     deriving (Eq,Ord,ByteArrayAccess)
 
 instance NFData (Digest a) where
-    rnf (Digest u) = u `F.deepseq` ()
+    rnf (Digest u) = u `deepseq` ()
 
 instance Show (Digest a) where
     show (Digest bs) = map (toEnum . fromIntegral)

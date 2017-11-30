@@ -227,7 +227,7 @@ Library
   Build-depends:     base >= 4.6 && < 5
                    , bytestring
                    , memory >= 0.14.5
-                   , foundation >= 0.0.8
+                   , basement
                    , ghc-prim
   ghc-options:       -Wall -fwarn-tabs -optc-O3 -fno-warn-unused-imports
   if os(linux)
