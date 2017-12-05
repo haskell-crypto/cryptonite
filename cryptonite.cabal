@@ -102,6 +102,11 @@ Flag check_alignment
   Default:           False
   Manual:            True
 
+Flag foundation-0_14
+  Description:       use foundation >=0.0.14
+  Default:           True
+  Manual:            False
+
 Library
   Exposed-modules:   Crypto.Cipher.AES
                      Crypto.Cipher.Blowfish
@@ -229,6 +234,13 @@ Library
                    , memory >= 0.14.5
                    , foundation >= 0.0.8
                    , ghc-prim
+
+  -- memory >=0.14.9 and foundation<0.14 are incompatible.
+  if flag(foundation-0_14)
+    Build-depends:   foundation >=0.0.14
+  else
+    Build-depends:   foundation <0.0.14, memory <0.14.9
+
   ghc-options:       -Wall -fwarn-tabs -optc-O3 -fno-warn-unused-imports
   if os(linux)
     extra-libraries: pthread
