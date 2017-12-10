@@ -17,7 +17,7 @@ module Crypto.ECC
     , Curve_P521R1(..)
     , Curve_X25519(..)
     , Curve_X448(..)
-    , Curve_Ed25519(..)
+    , Curve_Edwards25519(..)
     , EllipticCurve(..)
     , EllipticCurveDH(..)
     , EllipticCurveArith(..)
@@ -26,7 +26,7 @@ module Crypto.ECC
     ) where
 
 import qualified Crypto.PubKey.ECC.P256 as P256
-import qualified Crypto.ECC.Ed25519 as Ed25519
+import qualified Crypto.ECC.Edwards25519 as Edwards25519
 import qualified Crypto.ECC.Simple.Types as Simple
 import qualified Crypto.ECC.Simple.Prim as Simple
 import           Crypto.Random
@@ -233,23 +233,23 @@ instance EllipticCurveDH Curve_X448 where
       where secret = X448.dh p s
     ecdh prx s p = checkNonZeroDH (ecdhRaw prx s p)
 
-data Curve_Ed25519 = Curve_Ed25519
+data Curve_Edwards25519 = Curve_Edwards25519
     deriving (Show,Data,Typeable)
 
-instance EllipticCurve Curve_Ed25519 where
-    type Point Curve_Ed25519 = Ed25519.Point
-    type Scalar Curve_Ed25519 = Ed25519.Scalar
+instance EllipticCurve Curve_Edwards25519 where
+    type Point Curve_Edwards25519 = Edwards25519.Point
+    type Scalar Curve_Edwards25519 = Edwards25519.Scalar
     curveSizeBits _ = 255
-    curveGenerateScalar _ = Ed25519.scalarGenerate
-    curveGenerateKeyPair _ = toKeyPair <$> Ed25519.scalarGenerate
-      where toKeyPair scalar = KeyPair (Ed25519.toPoint scalar) scalar
-    encodePoint _ point = Ed25519.pointEncode point
-    decodePoint _ bs = Ed25519.pointDecode bs
+    curveGenerateScalar _ = Edwards25519.scalarGenerate
+    curveGenerateKeyPair _ = toKeyPair <$> Edwards25519.scalarGenerate
+      where toKeyPair scalar = KeyPair (Edwards25519.toPoint scalar) scalar
+    encodePoint _ point = Edwards25519.pointEncode point
+    decodePoint _ bs = Edwards25519.pointDecode bs
 
-instance EllipticCurveArith Curve_Ed25519 where
-    pointAdd _ a b = Ed25519.pointAdd a b
-    pointNegate _ p = Ed25519.pointNegate p
-    pointSmul _ s p = Ed25519.pointMul s p
+instance EllipticCurveArith Curve_Edwards25519 where
+    pointAdd _ a b = Edwards25519.pointAdd a b
+    pointNegate _ p = Edwards25519.pointNegate p
+    pointSmul _ s p = Edwards25519.pointMul s p
 
 checkNonZeroDH :: SharedSecret -> CryptoFailable SharedSecret
 checkNonZeroDH s@(SharedSecret b)

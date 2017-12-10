@@ -1,14 +1,14 @@
 -- |
--- Module      : Crypto.ECC.Ed25519
+-- Module      : Crypto.ECC.Edwards25519
 -- License     : BSD-style
 -- Maintainer  : Olivier Chéron <olivier.cheron@gmail.com>
 -- Stability   : experimental
 -- Portability : unknown
 --
--- Ed25519 arithmetic primitives.
+-- Arithmetic primitives over curve edwards25519.
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Crypto.ECC.Ed25519
+module Crypto.ECC.Edwards25519
     ( Scalar
     , Point
     -- * Scalars
@@ -47,7 +47,7 @@ import           Crypto.Random
 scalarArraySize :: Int
 scalarArraySize = 40 -- maximum [9 * 4 {- 32 bits -}, 5 * 8 {- 64 bits -}]
 
--- | A scalar modulo order of curve Ed25519.
+-- | A scalar modulo order of curve edwards25519.
 newtype Scalar = Scalar ScrubbedBytes
     deriving (Show,NFData)
 
@@ -61,7 +61,7 @@ instance Eq Scalar where
 pointArraySize :: Int
 pointArraySize = 160 -- maximum [4 * 10 * 4 {- 32 bits -}, 4 * 5 * 8 {- 64 bits -}]
 
--- | A point on curve Ed25519.
+-- | A point on curve edwards25519.
 newtype Point = Point Bytes
     deriving NFData
 
@@ -156,7 +156,7 @@ pointEncode (Point p) =
              ed25519_point_encode out pp
 
 -- | Deserialize a 32-byte array as a point, ensuring the point is
--- valid on Ed25519.
+-- valid on edwards25519.
 --
 -- /WARNING:/ variable time
 pointDecode :: B.ByteArrayAccess bs => bs -> CryptoFailable Point
@@ -197,7 +197,7 @@ pointDouble (Point a) =
         withByteArray a $ \pa ->
              ed25519_point_double out pa
 
--- | Scalar multiplication over Ed25519.
+-- | Scalar multiplication over curve edwards25519.
 pointMul :: Scalar -> Point -> Point
 pointMul (Scalar scalar) (Point base) =
     Point $ B.allocAndFreeze pointArraySize $ \out ->

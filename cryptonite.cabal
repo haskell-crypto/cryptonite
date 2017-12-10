@@ -121,7 +121,7 @@ Library
                      Crypto.Data.AFIS
                      Crypto.Data.Padding
                      Crypto.ECC
-                     Crypto.ECC.Ed25519
+                     Crypto.ECC.Edwards25519
                      Crypto.Error
                      Crypto.MAC.CMAC
                      Crypto.MAC.Poly1305
@@ -371,7 +371,7 @@ Test-Suite test-cryptonite
                      ChaCha
                      BCrypt
                      ECC
-                     ECC.Ed25519
+                     ECC.Edwards25519
                      Hash
                      Imports
                      KAT_AES.KATCBC

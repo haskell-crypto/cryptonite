@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
-module ECC.Ed25519 ( tests ) where
+module ECC.Edwards25519 ( tests ) where
 
 import           Crypto.Error
-import           Crypto.ECC.Ed25519
+import           Crypto.ECC.Edwards25519
 import           Imports
 
 instance Arbitrary Scalar where
@@ -12,7 +12,7 @@ instance Arbitrary Scalar where
 instance Arbitrary Point where
     arbitrary = toPoint `fmap` arbitrary
 
-tests = testGroup "ECC.Ed25519"
+tests = testGroup "ECC.Edwards25519"
     [ testGroup "vectors"
         [ testCase "11*G"         $ p011 @=? toPoint s011
         , testCase "123*G"        $ p123 @=? toPoint s123
