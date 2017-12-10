@@ -58,11 +58,11 @@ import qualified Crypto.Number.Serialize as S (os2ip, i2ospOf)
 
 -- | A P256 scalar
 newtype Scalar = Scalar ScrubbedBytes
-    deriving (Show,Eq,ByteArrayAccess)
+    deriving (Show,Eq,ByteArrayAccess,NFData)
 
 -- | A P256 point
 newtype Point = Point Bytes
-    deriving (Show,Eq)
+    deriving (Show,Eq,NFData)
 
 scalarSize :: Int
 scalarSize = 32

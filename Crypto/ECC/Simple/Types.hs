@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 -- |
 -- Module      : Crypto.ECC.Simple.Types
 -- License     : BSD-style
@@ -98,7 +99,7 @@ data CurveType =
 
 -- | ECC Private Number
 newtype Scalar curve = Scalar Integer
-    deriving (Show,Read,Eq,Data,Typeable)
+    deriving (Show,Read,Eq,Data,Typeable,NFData)
 
 -- | Define a point on a curve.
 data Point curve =

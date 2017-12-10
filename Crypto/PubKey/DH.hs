@@ -35,17 +35,20 @@ data Params = Params
     , params_bits :: Int
     } deriving (Show,Read,Eq,Data,Typeable)
 
+instance NFData Params where
+    rnf (Params p g bits) = rnf p `seq` rnf g `seq` bits `seq` ()
+
 -- | Represent Diffie Hellman public number Y.
 newtype PublicNumber = PublicNumber Integer
-    deriving (Show,Read,Eq,Enum,Real,Num,Ord)
+    deriving (Show,Read,Eq,Enum,Real,Num,Ord,NFData)
 
 -- | Represent Diffie Hellman private number X.
 newtype PrivateNumber = PrivateNumber Integer
-    deriving (Show,Read,Eq,Enum,Real,Num,Ord)
+    deriving (Show,Read,Eq,Enum,Real,Num,Ord,NFData)
 
 -- | Represent Diffie Hellman shared secret.
 newtype SharedKey = SharedKey ScrubbedBytes
-    deriving (Show,Eq,ByteArrayAccess)
+    deriving (Show,Eq,ByteArrayAccess,NFData)
 
 -- | generate params from a specific generator (2 or 5 are common values)
 -- we generate a safe prime (a prime number of the form 2p+1 where p is also prime)

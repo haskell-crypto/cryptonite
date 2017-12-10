@@ -431,6 +431,7 @@ Benchmark bench-cryptonite
   Other-modules:     Number.F2m
   Build-Depends:     base >= 3 && < 5
                    , bytestring
+                   , deepseq
                    , memory
                    , criterion
                    , random

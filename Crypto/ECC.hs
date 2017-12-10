@@ -49,7 +49,7 @@ data KeyPair curve = KeyPair
     }
 
 newtype SharedSecret = SharedSecret ScrubbedBytes
-    deriving (Eq, ByteArrayAccess)
+    deriving (Eq, ByteArrayAccess, NFData)
 
 class EllipticCurve curve where
     -- | Point on an Elliptic Curve
