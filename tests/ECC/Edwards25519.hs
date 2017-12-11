@@ -94,19 +94,19 @@ tests = testGroup "ECC.Edwards25519"
     ]
   where
     p0 = toPoint s0
-    CryptoPassed s0 = scalarDecodeLong ("" :: ByteString)
-    CryptoPassed s1 = scalarDecodeLong ("\x01" :: ByteString)
-    CryptoPassed s2 = scalarDecodeLong ("\x02" :: ByteString)
-    CryptoPassed sI = scalarDecodeLong ("\236\211\245\\\SUBc\DC2X\214\156\247\162\222\249\222\DC4\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\DLE" :: ByteString)
-    CryptoPassed sN = scalarDecodeLong ("\237\211\245\\\SUBc\DC2X\214\156\247\162\222\249\222\DC4\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\DLE" :: ByteString)
+    s0 = throwCryptoError $ scalarDecodeLong ("" :: ByteString)
+    s1 = throwCryptoError $ scalarDecodeLong ("\x01" :: ByteString)
+    s2 = throwCryptoError $ scalarDecodeLong ("\x02" :: ByteString)
+    sI = throwCryptoError $ scalarDecodeLong ("\236\211\245\\\SUBc\DC2X\214\156\247\162\222\249\222\DC4\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\DLE" :: ByteString)
+    sN = throwCryptoError $ scalarDecodeLong ("\237\211\245\\\SUBc\DC2X\214\156\247\162\222\249\222\DC4\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\DLE" :: ByteString)
 
-    CryptoPassed s011 = scalarDecodeLong ("\011" :: ByteString)
-    CryptoPassed s123 = scalarDecodeLong ("\123" :: ByteString)
-    CryptoPassed s134 = scalarDecodeLong ("\134" :: ByteString)
+    s011 = throwCryptoError $ scalarDecodeLong ("\011" :: ByteString)
+    s123 = throwCryptoError $ scalarDecodeLong ("\123" :: ByteString)
+    s134 = throwCryptoError $ scalarDecodeLong ("\134" :: ByteString)
 
-    CryptoPassed p011 = pointDecode ("\x13\x37\x03\x6a\xc3\x2d\x8f\x30\xd4\x58\x9c\x3c\x1c\x59\x58\x12\xce\x0f\xff\x40\xe3\x7c\x6f\x5a\x97\xab\x21\x3f\x31\x82\x90\xad" :: ByteString)
-    CryptoPassed p123 = pointDecode ("\xc4\xb8\x00\xc8\x70\x10\xf9\x46\x83\x03\xde\xea\x87\x65\x03\xe8\x86\xbf\xde\x19\x00\xe9\xe8\x46\xfd\x4c\x3c\xd0\x9c\x1c\xbc\x9f" :: ByteString)
-    CryptoPassed p134 = pointDecode ("\x51\x20\xab\xe0\x3c\xa2\xaf\x66\xc7\x7c\xa3\x20\xf0\xb2\x1f\xb5\x56\xf6\xb6\x5f\xdd\x7e\x32\x64\xc1\x4a\x30\xd9\x7b\xf7\xa7\x6f" :: ByteString)
+    p011 = throwCryptoError $ pointDecode ("\x13\x37\x03\x6a\xc3\x2d\x8f\x30\xd4\x58\x9c\x3c\x1c\x59\x58\x12\xce\x0f\xff\x40\xe3\x7c\x6f\x5a\x97\xab\x21\x3f\x31\x82\x90\xad" :: ByteString)
+    p123 = throwCryptoError $ pointDecode ("\xc4\xb8\x00\xc8\x70\x10\xf9\x46\x83\x03\xde\xea\x87\x65\x03\xe8\x86\xbf\xde\x19\x00\xe9\xe8\x46\xfd\x4c\x3c\xd0\x9c\x1c\xbc\x9f" :: ByteString)
+    p134 = throwCryptoError $ pointDecode ("\x51\x20\xab\xe0\x3c\xa2\xaf\x66\xc7\x7c\xa3\x20\xf0\xb2\x1f\xb5\x56\xf6\xb6\x5f\xdd\x7e\x32\x64\xc1\x4a\x30\xd9\x7b\xf7\xa7\x6f" :: ByteString)
 
     -- Using <http://cr.yp.to/python/py>:
     --

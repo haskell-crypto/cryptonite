@@ -80,11 +80,8 @@ instance Eq Point where
 
 -- | Generate a random scalar.
 scalarGenerate :: MonadRandom randomly => randomly Scalar
-scalarGenerate = unwrap . scalarDecodeLong . clamp <$> generate
+scalarGenerate = throwCryptoError . scalarDecodeLong . clamp <$> generate
   where
-    unwrap (CryptoPassed x) = x
-    unwrap (CryptoFailed _) = error "scalarGenerate: assumption failed"
-
     generate :: MonadRandom randomly => randomly ScrubbedBytes
     generate = getRandomBytes 32
 
