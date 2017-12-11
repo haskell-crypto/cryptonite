@@ -80,20 +80,16 @@ instance Eq Point where
 
 -- | Generate a random scalar.
 scalarGenerate :: MonadRandom randomly => randomly Scalar
-scalarGenerate = throwCryptoError . scalarDecodeLong . clamp <$> generate
+scalarGenerate = throwCryptoError . scalarDecodeLong <$> generate
   where
+    -- Scalar generation is based on a fixed number of bytes so that
+    -- there is no timing leak.  But because of modular reduction
+    -- distribution is not uniform.  We use many more bytes than
+    -- necessary so the probability bias is small.  With 512 bits we
+    -- get 22% of scalars with a higher frequency, but the relative
+    -- probability difference is only 2^(-260).
     generate :: MonadRandom randomly => randomly ScrubbedBytes
-    generate = getRandomBytes 32
-
-    -- Uses the same bit mask than during key-generation procedure,
-    -- but without making divisible by 8.  As a consequence of modular
-    -- reduction, distribution is not uniform.  But the curve order is
-    -- very close to 2^252 so only a tiny fraction of the scalars have
-    -- lower probability, roughly 1/(2^126) of all possible values.
-    clamp :: ByteArrayAccess ba => ba -> ScrubbedBytes
-    clamp bs = B.copyAndFreeze bs $ \p -> do
-                   b31 <- peekElemOff p 31 :: IO Word8
-                   pokeElemOff p 31 ((b31 .&. 0x7F) .|. 0x40)
+    generate = getRandomBytes 64
 
 -- | Serialize a scalar to binary, i.e. a 32-byte little-endian
 -- number.

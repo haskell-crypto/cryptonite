@@ -7,7 +7,7 @@ import           Imports
 
 instance Arbitrary Scalar where
     arbitrary = fmap (throwCryptoError . scalarDecodeLong)
-                     (arbitraryBS 32)
+                     (arbitraryBS 64)
 
 instance Arbitrary Point where
     arbitrary = toPoint `fmap` arbitrary
