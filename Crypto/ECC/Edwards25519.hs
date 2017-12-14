@@ -7,6 +7,44 @@
 --
 -- Arithmetic primitives over curve edwards25519.
 --
+-- Twisted Edwards curves are a familly of elliptic curves allowing
+-- complete addition formulas without any special case and no point at
+-- infinity.  Curve edwards25519 is based on prime 2^255 - 19 for
+-- efficient implementation.  Equation and parameters are given in
+-- <https://tools.ietf.org/html/rfc7748 RFC 7748>.
+--
+-- This module provides types and primitive operations that are useful
+-- to implement cryptographic schemes based on curve edwards25519:
+--
+-- - arithmetic functions for point addition, doubling, negation,
+-- scalar multiplication with an arbitrary point, with the base point,
+-- etc.
+--
+-- - arithmetic functions dealing with scalars modulo the prime order
+-- L of the base point
+--
+-- All functions run in constant time unless noted otherwise.
+--
+-- Warnings:
+--
+-- 1. Curve edwards25519 has a cofactor h = 8 so the base point does
+-- not generate the entire curve and points with order 2, 4, 8 exist.
+-- When implementing cryptographic algorithms, special care must be
+-- taken using one of the following methods:
+--
+--     - points must be checked for membership in the prime-order
+--     subgroup
+--
+--     - or cofactor must be cleared by multiplying points by 8
+--
+-- 2. Scalar arithmetic is always reduced modulo L, allowing fixed
+-- length and constant execution time, but this reduction is valid
+-- only when points are in the prime-order subgroup.
+--
+-- 3. Because of modular reduction in this implementation it is not
+-- possible to multiply points directly by scalars like 8.s or L.
+-- This has to be decomposed into several steps.
+--
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Crypto.ECC.Edwards25519
     ( Scalar
@@ -47,7 +85,7 @@ import           Crypto.Random
 scalarArraySize :: Int
 scalarArraySize = 40 -- maximum [9 * 4 {- 32 bits -}, 5 * 8 {- 64 bits -}]
 
--- | A scalar modulo order of curve edwards25519.
+-- | A scalar modulo prime order of curve edwards25519.
 newtype Scalar = Scalar ScrubbedBytes
     deriving (Show,NFData)
 
@@ -93,9 +131,6 @@ scalarGenerate = throwCryptoError . scalarDecodeLong <$> generate
 
 -- | Serialize a scalar to binary, i.e. a 32-byte little-endian
 -- number.
---
--- Format is binary compatible with 'Crypto.PubKey.Curve25519.SecretKey'
--- from module "Crypto.PubKey.Curve25519".
 scalarEncode :: B.ByteArray bs => Scalar -> bs
 scalarEncode (Scalar s) =
     B.allocAndFreeze 32 $ \out ->
@@ -103,6 +138,10 @@ scalarEncode (Scalar s) =
 
 -- | Deserialize a little-endian number as a scalar.  Input array can
 -- have any length from 0 to 64 bytes.
+--
+-- Note: it is not advised to put secret information in the 3 lowest
+-- bits of a scalar if this scalar may be multiplied to untrusted
+-- points outside the prime-order subgroup.
 scalarDecodeLong :: B.ByteArrayAccess bs => bs -> CryptoFailable Scalar
 scalarDecodeLong bs
     | B.length bs > 64 = CryptoFailed CryptoError_EcScalarOutOfBounds
@@ -191,6 +230,10 @@ pointDouble (Point a) =
              ed25519_point_double out pa
 
 -- | Scalar multiplication over curve edwards25519.
+--
+-- Note: when the scalar had reduction modulo L and the input point
+-- has a torsion component, the output point may not be in the
+-- expected subgroup.
 pointMul :: Scalar -> Point -> Point
 pointMul (Scalar scalar) (Point base) =
     Point $ B.allocAndFreeze pointArraySize $ \out ->
