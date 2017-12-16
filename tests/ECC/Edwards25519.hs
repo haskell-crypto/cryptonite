@@ -3,14 +3,33 @@ module ECC.Edwards25519 ( tests ) where
 
 import           Crypto.Error
 import           Crypto.ECC.Edwards25519
+import qualified Data.ByteString as B
+import           Data.Word (Word8)
 import           Imports
 
 instance Arbitrary Scalar where
     arbitrary = fmap (throwCryptoError . scalarDecodeLong)
                      (arbitraryBS 64)
 
+smallScalar :: Word8 -> Scalar
+smallScalar = throwCryptoError . scalarDecodeLong . B.singleton
+
+newtype PrimeOrder = PrimeOrder Point
+    deriving Show
+
+-- points in the prime-order subgroup
+instance Arbitrary PrimeOrder where
+    arbitrary = (PrimeOrder . toPoint) `fmap` arbitrary
+
+-- arbitrary curve point, including points with a torsion component
 instance Arbitrary Point where
-    arbitrary = toPoint `fmap` arbitrary
+    arbitrary = do a <- arbitrary
+                   b <- elements $ map smallScalar [0 .. 7]
+                   return (pointsMulVarTime a b torsion8)
+
+-- an 8-torsion point
+torsion8 :: Point
+torsion8 = throwCryptoError $ pointDecode ("\199\ETBjp=M\216O\186<\vv\r\DLEg\SI* S\250,9\204\198N\199\253w\146\172\ETXz" :: ByteString)
 
 tests = testGroup "ECC.Edwards25519"
     [ testGroup "vectors"
@@ -74,17 +93,20 @@ tests = testGroup "ECC.Edwards25519"
             p0 `propertyEq` pointAdd p (pointNegate p)
         , testProperty "doubling" $ \p ->
             pointAdd p p `propertyEq` pointDouble p
+        , testCase "8-torsion point" $ do
+            assertBool "mul by 4" $ p0 /= pointMul s4 torsion8
+            assertBool "mul by 8" $ p0 == pointMul s8 torsion8
         , testProperty "scalarmult with zero" $ \p ->
             p0 `propertyEq` pointMul s0 p
         , testProperty "scalarmult with one" $ \p ->
             p `propertyEq` pointMul s1 p
         , testProperty "scalarmult with two" $ \p ->
             pointDouble p `propertyEq` pointMul s2 p
-        , testProperty "scalarmult with curve order - 1" $ \p ->
+        , testProperty "scalarmult with curve order - 1" $ \(PrimeOrder p) ->
             pointNegate p `propertyEq` pointMul sI p
         , testProperty "scalarmult commutative" $ \a b ->
             pointMul a (toPoint b) === pointMul b (toPoint a)
-        , testProperty "scalarmult distributive" $ \x y p ->
+        , testProperty "scalarmult distributive" $ \x y (PrimeOrder p) ->
             let pR = pointMul x p `pointAdd` pointMul y p
              in pR `propertyEq` pointMul (x `scalarAdd` y) p
         , testProperty "double scalarmult" $ \n1 n2 p ->
@@ -94,9 +116,11 @@ tests = testGroup "ECC.Edwards25519"
     ]
   where
     p0 = toPoint s0
-    s0 = throwCryptoError $ scalarDecodeLong ("" :: ByteString)
-    s1 = throwCryptoError $ scalarDecodeLong ("\x01" :: ByteString)
-    s2 = throwCryptoError $ scalarDecodeLong ("\x02" :: ByteString)
+    s0 = smallScalar 0
+    s1 = smallScalar 1
+    s2 = smallScalar 2
+    s4 = smallScalar 4
+    s8 = smallScalar 8
     sI = throwCryptoError $ scalarDecodeLong ("\236\211\245\\\SUBc\DC2X\214\156\247\162\222\249\222\DC4\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\DLE" :: ByteString)
     sN = throwCryptoError $ scalarDecodeLong ("\237\211\245\\\SUBc\DC2X\214\156\247\162\222\249\222\DC4\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\DLE" :: ByteString)
 
