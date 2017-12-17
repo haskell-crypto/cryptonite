@@ -87,6 +87,25 @@ ED25519_FN(ed25519_point_eq) (const ge25519 *p, const ge25519 *q) {
     return eq;
 }
 
+static int
+ED25519_FN(ed25519_point_is_identity) (const ge25519 *p) {
+    static const unsigned char zero[32] = {0};
+    unsigned char check[32];
+    bignum25519 d;
+    int eq;
+
+    // pX = 0
+    curve25519_contract(check, p->x);
+    eq = ed25519_verify(check, zero, 32);
+
+    // pY - pZ = 0
+    curve25519_sub_reduce(d, p->y, p->z);
+    curve25519_contract(check, d);
+    eq &= ed25519_verify(check, zero, 32);
+
+    return eq;
+}
+
 void
 ED25519_FN(ed25519_point_negate) (ge25519 *r, const ge25519 *p) {
     curve25519_neg(r->x, p->x);
@@ -103,6 +122,13 @@ ED25519_FN(ed25519_point_add) (ge25519 *r, const ge25519 *p, const ge25519 *q) {
 void
 ED25519_FN(ed25519_point_double) (ge25519 *r, const ge25519 *p) {
     ge25519_double(r, p);
+}
+
+void
+ED25519_FN(ed25519_point_mul_by_cofactor) (ge25519 *r, const ge25519 *p) {
+    ge25519_double_partial(r, p);
+    ge25519_double_partial(r, r);
+    ge25519_double(r, r);
 }
 
 void
@@ -206,4 +232,15 @@ void
 ED25519_FN(ed25519_base_double_scalarmul_vartime) (ge25519 *r, const bignum256modm s1, const ge25519 *p2, const bignum256modm s2) {
     // computes [s1]basepoint + [s2]p2
     ge25519_double_scalarmult_vartime(r, p2, s2, s1);
+}
+
+int
+ED25519_FN(ed25519_point_has_prime_order) (const ge25519 *p) {
+    static const bignum256modm sc_zero = {0};
+    ge25519 q;
+
+    // computes Q = m.P, vartime allowed because m is not secret
+    ED25519_FN(ed25519_base_double_scalarmul_vartime) (&q, sc_zero, p, modm_m);
+
+    return ED25519_FN(ed25519_point_is_identity) (&q);
 }

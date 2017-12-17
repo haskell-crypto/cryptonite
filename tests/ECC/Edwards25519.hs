@@ -93,6 +93,10 @@ tests = testGroup "ECC.Edwards25519"
             p0 `propertyEq` pointAdd p (pointNegate p)
         , testProperty "doubling" $ \p ->
             pointAdd p p `propertyEq` pointDouble p
+        , testProperty "multiplication by cofactor" $ \p ->
+            pointMul s8 p `propertyEq` pointMulByCofactor p
+        , testProperty "prime order" $ \(PrimeOrder p) ->
+            True `propertyEq` pointHasPrimeOrder p
         , testCase "8-torsion point" $ do
             assertBool "mul by 4" $ p0 /= pointMul s4 torsion8
             assertBool "mul by 8" $ p0 == pointMul s8 torsion8
@@ -102,8 +106,8 @@ tests = testGroup "ECC.Edwards25519"
             p `propertyEq` pointMul s1 p
         , testProperty "scalarmult with two" $ \p ->
             pointDouble p `propertyEq` pointMul s2 p
-        , testProperty "scalarmult with curve order - 1" $ \(PrimeOrder p) ->
-            pointNegate p `propertyEq` pointMul sI p
+        , testProperty "scalarmult with curve order - 1" $ \p ->
+            pointHasPrimeOrder p === (pointNegate p == pointMul sI p)
         , testProperty "scalarmult commutative" $ \a b ->
             pointMul a (toPoint b) === pointMul b (toPoint a)
         , testProperty "scalarmult distributive" $ \x y (PrimeOrder p) ->
