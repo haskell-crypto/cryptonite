@@ -4,6 +4,7 @@
 module Crypto.PubKey.ECC.Prim
     ( scalarGenerate
     , pointAdd
+    , pointNegate
     , pointDouble
     , pointBaseMul
     , pointMul
@@ -30,9 +31,9 @@ scalarGenerate curve = generateBetween 1 (n - 1)
 -- | Elliptic Curve point negation:
 -- @pointNegate c p@ returns point @q@ such that @pointAdd c p q == PointO@.
 pointNegate :: Curve -> Point -> Point
-pointNegate _           PointO     = PointO
-pointNegate CurveFP{}  (Point x y) = Point x (-y)
-pointNegate CurveF2m{} (Point x y) = Point x (x `addF2m` y)
+pointNegate _            PointO     = PointO
+pointNegate (CurveFP c) (Point x y) = Point x (ecc_p c - y)
+pointNegate CurveF2m{}  (Point x y) = Point x (x `addF2m` y)
 
 -- | Elliptic Curve point addition.
 --

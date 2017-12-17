@@ -11,6 +11,7 @@
 #include "ed25519.h"
 #include "ed25519-randombytes.h"
 #include "ed25519-hash.h"
+#include "ed25519-cryptonite-exts.h"
 
 /*
 	Generates a (extsk[0..31]) and aExt (extsk[32..63])

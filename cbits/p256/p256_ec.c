@@ -1303,3 +1303,14 @@ void cryptonite_p256e_point_add(
     from_montgomery(out_x, px1);
     from_montgomery(out_y, py1);
 }
+
+/* this function is not part of the original source
+   negate a point, i.e. (out_x, out_y) = (in_x, -in_y)
+ */
+void cryptonite_p256e_point_negate(
+    const cryptonite_p256_int *in_x, const cryptonite_p256_int *in_y,
+    cryptonite_p256_int *out_x, cryptonite_p256_int *out_y)
+{
+    memcpy(out_x, in_x, P256_NBYTES);
+    cryptonite_p256_sub(&cryptonite_SECP256r1_p, in_y, out_y);
+}

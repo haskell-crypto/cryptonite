@@ -6,6 +6,7 @@ module Crypto.ECC.Simple.Prim
     ( scalarGenerate
     , scalarFromInteger
     , pointAdd
+    , pointNegate
     , pointDouble
     , pointBaseMul
     , pointMul
@@ -49,7 +50,7 @@ pointNegate :: Curve curve => Point curve -> Point curve
 pointNegate        PointO     = PointO
 pointNegate point@(Point x y) =
     case curveType point of
-        CurvePrime {}  -> Point x (-y)
+        CurvePrime (CurvePrimeParam p) -> Point x (p - y)
         CurveBinary {} -> Point x (x `addF2m` y)
 
 -- | Elliptic Curve point addition.

@@ -147,7 +147,7 @@ arbitraryPoint aCurve =
 
 eccTests = testGroup "ECC"
     [ testGroup "valid-point" $ map doPointValidTest (zip [katZero..] vectorsPoint)
-    , testGroup "property"
+    , localOption (QuickCheckTests 20) $ testGroup "property"
         [ testProperty "point-add" $ \aCurve (QAInteger r1) (QAInteger r2) ->
             let curveN   = ECC.ecc_n . ECC.common_curve $ aCurve
                 curveGen = ECC.ecc_g . ECC.common_curve $ aCurve
@@ -155,14 +155,19 @@ eccTests = testGroup "ECC"
                 p2       = ECC.pointMul aCurve r2 curveGen
                 pR       = ECC.pointMul aCurve ((r1 + r2) `mod` curveN) curveGen
              in pR `propertyEq` ECC.pointAdd aCurve p1 p2
-        , localOption (QuickCheckTests 20) $
-          testProperty "point-mul-mul" $ \aCurve (QAInteger n1) (QAInteger n2) -> do
+        , testProperty "point-negate-add" $ \aCurve -> do
+            p <- arbitraryPoint aCurve
+            let o = ECC.pointAdd aCurve p (ECC.pointNegate aCurve p)
+            return $ ECC.PointO `propertyEq` o
+        , testProperty "point-negate-negate" $ \aCurve -> do
+            p <- arbitraryPoint aCurve
+            return $ p `propertyEq` ECC.pointNegate aCurve (ECC.pointNegate aCurve p)
+        , testProperty "point-mul-mul" $ \aCurve (QAInteger n1) (QAInteger n2) -> do
             p <- arbitraryPoint aCurve
             let pRes = ECC.pointMul aCurve (n1 * n2) p
             let pDef = ECC.pointMul aCurve n1 (ECC.pointMul aCurve n2 p)
             return $ pRes `propertyEq` pDef
-        , localOption (QuickCheckTests 20) $
-          testProperty "double-scalar-mult" $ \aCurve (QAInteger n1) (QAInteger n2) -> do
+        , testProperty "double-scalar-mult" $ \aCurve (QAInteger n1) (QAInteger n2) -> do
             p1 <- arbitraryPoint aCurve
             p2 <- arbitraryPoint aCurve
             let pRes = ECC.pointAddTwoMuls aCurve n1 p1 n2 p2
