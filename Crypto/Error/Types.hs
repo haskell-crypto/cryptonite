@@ -22,7 +22,7 @@ module Crypto.Error.Types
 import qualified Control.Exception as E
 import           Data.Data
 
-import           Foundation.Monad (MonadFailure(..))
+import           Basement.Monad (MonadFailure(..))
 import           Crypto.Internal.Imports
 
 -- | Enumeration of all possible errors that can be found in this library
