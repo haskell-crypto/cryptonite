@@ -8,6 +8,7 @@ import qualified Number.F2m
 import qualified BCrypt
 import qualified ECC
 import qualified ECC.Edwards25519
+import qualified ECDSA
 import qualified Hash
 import qualified Poly1305
 import qualified Salsa
@@ -85,6 +86,7 @@ tests = testGroup "cryptonite"
     , KAT_AFIS.tests
     , ECC.tests
     , ECC.Edwards25519.tests
+    , ECDSA.tests
     ]
 
 main = defaultMain tests

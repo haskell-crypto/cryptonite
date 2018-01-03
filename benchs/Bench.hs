@@ -21,6 +21,7 @@ import           Crypto.Number.Generate
 import qualified Crypto.PubKey.DH as DH
 import qualified Crypto.PubKey.ECC.Types as ECC
 import qualified Crypto.PubKey.ECC.Prim as ECC
+import qualified Crypto.PubKey.ECDSA as ECDSA
 import           Crypto.Random
 
 import           Control.DeepSeq (NFData)
@@ -228,6 +229,44 @@ benchECDH = map doECDHBench curves
              , ("X448",   CurveDH Curve_X448)
              ]
 
+data CurveHashECDSA =
+    forall curve hashAlg . (ECDSA.EllipticCurveECDSA curve,
+                            NFData (Scalar curve),
+                            NFData (Point curve),
+                            HashAlgorithm hashAlg) => CurveHashECDSA curve hashAlg
+
+benchECDSA = map doECDSABench curveHashes
+  where
+    doECDSABench (name, CurveHashECDSA c hashAlg) =
+        let proxy = Just c -- using Maybe as Proxy
+         in bgroup name
+                [ env (signGenerate proxy) $ bench "sign" . nfIO . (signRun proxy hashAlg)
+                , env (verifyGenerate proxy hashAlg) $ bench "verify" . nf (verifyRun proxy hashAlg)
+                ]
+
+    signGenerate proxy = do
+        m <- tenKB
+        s <- curveGenerateScalar proxy
+        return (s, m)
+
+    signRun proxy hashAlg (priv, msg) = ECDSA.sign proxy priv hashAlg msg
+
+    verifyGenerate proxy hashAlg = do
+        m <- tenKB
+        KeyPair p s <- curveGenerateKeyPair proxy
+        sig <- ECDSA.sign proxy s hashAlg m
+        return (p, sig, m)
+
+    verifyRun proxy hashAlg (pub, sig, msg) = ECDSA.verify proxy hashAlg pub sig msg
+
+    tenKB :: IO Bytes
+    tenKB = getRandomBytes 10240
+
+    curveHashes = [ ("secp256r1_sha256", CurveHashECDSA Curve_P256R1 SHA256)
+                  , ("secp384r1_sha384", CurveHashECDSA Curve_P384R1 SHA384)
+                  , ("secp521r1_sha512", CurveHashECDSA Curve_P521R1 SHA512)
+                  ]
+
 main = defaultMain
     [ bgroup "hash" benchHash
     , bgroup "block-cipher" benchBlockCipher
@@ -238,5 +277,6 @@ main = defaultMain
           [ bgroup "FFDH" benchFFDH
           , bgroup "ECDH" benchECDH
           ]
+    , bgroup "ECDSA" benchECDSA
     , bgroup "F2m" benchF2m
     ]
