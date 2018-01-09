@@ -25,6 +25,9 @@ module Crypto.Hash
     , Digest
     -- * Functions
     , digestFromByteString
+    , byteStringFromDigest
+    , byteStringFromDigest'
+    , byteStringFromDigest''
     -- * Hash methods parametrized by algorithm
     , hashInitWith
     , hashWith
@@ -43,14 +46,18 @@ module Crypto.Hash
 
 import           Basement.Types.OffsetSize (CountOf (..))
 import           Basement.Block (Block, unsafeFreeze)
-import           Basement.Block.Mutable (copyFromPtr, new)
+import           Basement.Block.Mutable (copyFromPtr, copyToPtr, new)
+import           Basement.UArray (UArray (..))
+import qualified Basement.UArray as UA (copyToPtr)
 import           Control.Monad
 import           Crypto.Internal.Compat (unsafeDoIO)
 import           Crypto.Hash.Types
 import           Crypto.Hash.Algorithms
 import           Foreign.Ptr (Ptr)
-import           Crypto.Internal.ByteArray (ByteArrayAccess)
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray)
 import qualified Crypto.Internal.ByteArray as B
+import           Data.ByteString (ByteString)
+import qualified Data.ByteString.Internal as BS
 import qualified Data.ByteString.Lazy as L
 import           Data.Word (Word8)
 
@@ -122,3 +129,18 @@ digestFromByteString = from undefined
             unsafeFreeze muArray
           where
             count = CountOf (B.length ba)
+
+-- | Inefficient version.
+byteStringFromDigest :: forall a ba . (ByteArray ba) => Digest a -> ba
+byteStringFromDigest = B.convert
+
+-- | Very fast version.
+byteStringFromDigest' :: forall a . Digest a -> ByteString
+byteStringFromDigest' (Digest uarray@(UArray _ (CountOf size) _)) = unsafeDoIO $
+    BS.create size $ \bsPtr -> UA.copyToPtr uarray bsPtr
+
+-- | General version which is good but not as good as 'byteStringFromDigest''
+byteStringFromDigest'' :: forall a ba . (ByteArray ba) => Digest a -> ba
+byteStringFromDigest'' (Digest uarray@(UArray _ (CountOf size) _)) = unsafeDoIO $ do
+    (_, ba) <- B.allocRet size $ \ptr -> UA.copyToPtr uarray ptr
+    return ba
