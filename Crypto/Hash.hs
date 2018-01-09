@@ -41,13 +41,18 @@ module Crypto.Hash
     , module Crypto.Hash.Algorithms
     ) where
 
+import           Basement.Types.OffsetSize (CountOf (..))
+import           Basement.UArray (UArray, new, unsafeFreeze)
+import           Basement.UArray.Mutable (copyFromPtr)
 import           Control.Monad
+import           Crypto.Internal.Compat (unsafeDoIO)
 import           Crypto.Hash.Types
 import           Crypto.Hash.Algorithms
 import           Foreign.Ptr (Ptr)
 import           Crypto.Internal.ByteArray (ByteArrayAccess)
 import qualified Crypto.Internal.ByteArray as B
 import qualified Data.ByteString.Lazy as L
+import           Data.Word (Word8)
 
 -- | Hash a strict bytestring into a digest.
 hash :: (ByteArrayAccess ba, HashAlgorithm a) => ba -> Digest a
@@ -102,10 +107,18 @@ hashWith _ = hash
 --
 -- If the digest is not the right size for the algorithm specified, then
 -- Nothing is returned.
-digestFromByteString :: (HashAlgorithm a, ByteArrayAccess ba) => ba -> Maybe (Digest a)
+digestFromByteString :: forall a ba . (HashAlgorithm a, ByteArrayAccess ba) => ba -> Maybe (Digest a)
 digestFromByteString = from undefined
   where
-        from :: (HashAlgorithm a, ByteArrayAccess ba) => a -> ba -> Maybe (Digest a)
+        from :: HashAlgorithm a => a -> ba -> Maybe (Digest a)
         from alg bs
-            | B.length bs == (hashDigestSize alg) = (Just $ Digest $ B.convert bs)
+            | B.length bs == (hashDigestSize alg) = Just $ Digest $ unsafeDoIO $ copyBytes bs
             | otherwise                           = Nothing
+
+        copyBytes :: ba -> IO (UArray Word8)
+        copyBytes ba = do
+            muArray <- new count
+            B.withByteArray ba $ \ptr -> copyFromPtr ptr count muArray
+            unsafeFreeze muArray
+          where
+            count = CountOf (B.length ba)
