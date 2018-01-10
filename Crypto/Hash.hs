@@ -26,8 +26,6 @@ module Crypto.Hash
     -- * Functions
     , digestFromByteString
     , byteStringFromDigest
-    , byteStringFromDigest'
-    , byteStringFromDigest''
     -- * Hash methods parametrized by algorithm
     , hashInitWith
     , hashWith
@@ -129,21 +127,11 @@ digestFromByteString = from undefined
             unsafeFreeze muArray
           where
             count = CountOf (B.length ba)
+{-# INLINABLE digestFromByteString #-}
 
--- | Inefficient version.
+-- | Get the bytes of a Digest.
 byteStringFromDigest :: forall a ba . (ByteArray ba) => Digest a -> ba
-byteStringFromDigest = B.convert
-{-# INLINABLE byteStringFromDigest #-}
-
--- | Very fast version.
-byteStringFromDigest' :: forall a . Digest a -> ByteString
-byteStringFromDigest' (Digest uarray@(UArray _ (CountOf size) _)) = unsafeDoIO $
-    BS.create size (UA.copyToPtr uarray)
-{-# INLINABLE byteStringFromDigest' #-}
-
--- | General version which is good but not as good as 'byteStringFromDigest''
-byteStringFromDigest'' :: forall a ba . (ByteArray ba) => Digest a -> ba
-byteStringFromDigest'' (Digest uarray@(UArray _ (CountOf size) _)) = unsafeDoIO $ do
+byteStringFromDigest (Digest uarray@(UArray _ (CountOf size) _)) = unsafeDoIO $ do
     (_, ba) <- B.allocRet size (B.copyByteArrayToPtr uarray)
     return ba
-{-# INLINABLE byteStringFromDigest'' #-}
+{-# INLINABLE byteStringFromDigest #-}
