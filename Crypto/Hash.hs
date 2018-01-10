@@ -133,14 +133,17 @@ digestFromByteString = from undefined
 -- | Inefficient version.
 byteStringFromDigest :: forall a ba . (ByteArray ba) => Digest a -> ba
 byteStringFromDigest = B.convert
+{-# INLINABLE byteStringFromDigest #-}
 
 -- | Very fast version.
 byteStringFromDigest' :: forall a . Digest a -> ByteString
 byteStringFromDigest' (Digest uarray@(UArray _ (CountOf size) _)) = unsafeDoIO $
-    BS.create size $ \bsPtr -> UA.copyToPtr uarray bsPtr
+    BS.create size (UA.copyToPtr uarray)
+{-# INLINABLE byteStringFromDigest' #-}
 
 -- | General version which is good but not as good as 'byteStringFromDigest''
 byteStringFromDigest'' :: forall a ba . (ByteArray ba) => Digest a -> ba
 byteStringFromDigest'' (Digest uarray@(UArray _ (CountOf size) _)) = unsafeDoIO $ do
-    (_, ba) <- B.allocRet size $ \ptr -> UA.copyToPtr uarray ptr
+    (_, ba) <- B.allocRet size (B.copyByteArrayToPtr uarray)
     return ba
+{-# INLINABLE byteStringFromDigest'' #-}
