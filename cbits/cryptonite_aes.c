@@ -30,7 +30,6 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <assert.h>
 
 #include <cryptonite_cpu.h>
 #include <cryptonite_aes.h>
@@ -530,7 +529,8 @@ void cryptonite_aes_ccm_aad(aes_ccm *ccm, aes_key *key, uint8_t *input, uint32_t
 {
 	block128 tmp;
 
-	assert (ccm->length_aad == 0);
+	if (ccm->length_aad == 0) return;
+	
 	ccm->length_aad = length;
 	int len_len;
 
@@ -915,7 +915,6 @@ void cryptonite_aes_generic_ccm_encrypt(uint8_t *output, aes_ccm *ccm, aes_key *
 		block128_copy(&ccm->header_cbcmac, &ccm->xi);
 	}
 
-	assert (length == ccm->length_input);
 	if (length != ccm->length_input) {
 		return;
 	}
@@ -938,16 +937,15 @@ void cryptonite_aes_generic_ccm_decrypt(uint8_t *output, aes_ccm *ccm, aes_key *
 {
 	block128 tmp, ctr;
 
+	if (length != ccm->length_input) {
+		return;
+	}
+	
 	/* when aad is absent, reset b0 block */
 	if (ccm->length_aad == 0) {
 		ccm_encode_b0(&ccm->b0, ccm, 0); /* assume aad is present */
 		cryptonite_aes_encrypt_block(&ccm->xi, key, &ccm->b0);
 		block128_copy(&ccm->header_cbcmac, &ccm->xi);
-	}
-
-	assert (length == ccm->length_input);
-	if (length != ccm->length_input) {
-		return;
 	}
 
 	ccm_encode_ctr(&ctr, ccm, 1);
