@@ -529,7 +529,7 @@ void cryptonite_aes_ccm_aad(aes_ccm *ccm, aes_key *key, uint8_t *input, uint32_t
 {
 	block128 tmp;
 
-	if (ccm->length_aad == 0) return;
+	if (ccm->length_aad != 0) return;
 	
 	ccm->length_aad = length;
 	int len_len;
