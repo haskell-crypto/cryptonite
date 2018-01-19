@@ -2,16 +2,6 @@
 module KAT_AES.KATCCM where
 
 import qualified Data.ByteString as B
-import Data.ByteString.Char8 ()
-import Data.ByteString.Builder
-
-import Numeric
-import Data.List (zipWith4)
-import Data.Semigroup
-import System.IO(stdout)
-import Data.Char (ord)
-import Data.Bits
-import Data.Word
 
 -- (key, iv, header, in, out+atag, taglen)
 type KATCCM = (B.ByteString, B.ByteString, B.ByteString, B.ByteString, B.ByteString, Int)
