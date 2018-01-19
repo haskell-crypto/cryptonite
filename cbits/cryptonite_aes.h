@@ -61,10 +61,10 @@ typedef struct {
 	aes_block header_cbcmac;
 	aes_block b0;
 	aes_block nonce;
-	unsigned length_aad;
-	unsigned length_input;
-        int      length_M;
-        int      length_L;
+	uint32_t length_aad;
+	uint32_t length_input;
+        uint32_t length_M;
+        uint32_t length_L;
 } aes_ccm;
 
 typedef struct {

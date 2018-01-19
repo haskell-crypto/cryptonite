@@ -341,6 +341,7 @@ Test-Suite test-cryptonite
                      KAT_AES.KATCBC
                      KAT_AES.KATECB
                      KAT_AES.KATGCM
+                     KAT_AES.KATCCM
                      KAT_AES.KATOCB3
                      KAT_AES.KATXTS
                      KAT_AES

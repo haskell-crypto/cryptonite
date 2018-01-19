@@ -460,13 +460,13 @@ static void ccm_encode_b0(block128* output, aes_ccm* ccm, int has_adata)
 }
 
 /* encode adata length */
-static int ccm_encode_la(block128* output, unsigned la)
+static int ccm_encode_la(block128* output, uint32_t la)
 {
 	if (la < ( (1 << 16) - (1 << 8)) ) {
 		output->b[0] = (la >> 8) & 0xff;
 		output->b[1] = la        & 0xff;
 		return 2;
-	} else if (la < (1ull << 32)) {
+	} else {
 		output->b[0] = 0xff;
 		output->b[1] = 0xfe;
 		output->b[2] = (la >> 24) & 0xff;
@@ -504,7 +504,7 @@ void cryptonite_aes_ccm_init(aes_ccm *ccm, aes_key *key, uint8_t *nonce, uint32_
 	if (m != 4 && m != 6 && m != 8 && m != 10
 		   && m != 12 && m != 14 && m != 16) return;
 
-	if (nonce_len != 15 - l) {
+	if (nonce_len > 15 - l) {
 		nonce_len = 15 - l;
 	}
 

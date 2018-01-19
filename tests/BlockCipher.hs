@@ -162,7 +162,7 @@ testKATs kats cipher = testGroup "KAT"
      ++ maybeGroup makeCFBTest "CFB" (kat_CFB kats)
      ++ maybeGroup makeCTRTest "CTR" (kat_CTR kats)
      -- ++ maybeGroup makeXTSTest "XTS" (kat_XTS kats)
-     -- ++ maybeGroup makeAEADTest "AEAD" (kat_AEAD kats)
+     ++ maybeGroup makeAEADTest "AEAD" (kat_AEAD kats)
     )
   where makeECBTest i d =
             [ testCase ("E" ++ i) (ecbEncrypt ctx (ecbPlaintext d) @?= ecbCiphertext d)
@@ -192,25 +192,24 @@ testKATs kats cipher = testGroup "KAT"
             [ testCase ("E" ++ i) (xtsEncrypt ctx iv 0 (xtsPlaintext d) @?= xtsCiphertext d)
             , testCase ("D" ++ i) (xtsDecrypt ctx iv 0 (xtsCiphertext d) @?= xtsPlaintext d)
             ]
-          where ctx1 = cipherInit (cipherMakeKey cipher $ xtsKey1 d)
-                ctx2 = cipherInit (cipherMakeKey cipher $ xtsKey2 d)
+          where ctx1 = cipherInitNoErr (cipherMakeKey cipher $ xtsKey1 d)
+                ctx2 = cipherInitNoErr (cipherMakeKey cipher $ xtsKey2 d)
                 ctx  = (ctx1, ctx2)
                 iv   = cipherMakeIV cipher $ xtsIV d
+-}
         makeAEADTest i d =
-            [ testCase ("AE" ++ i) (etag @?= aeadTag d)
-            , testCase ("AD" ++ i) (dtag @?= aeadTag d)
+            [ testCase ("AE" ++ i) (etag @?= AuthTag (B.convert (aeadTag d)))
+            , testCase ("AD" ++ i) (dtag @?= AuthTag (B.convert (aeadTag d)))
             , testCase ("E" ++ i)  (ebs @?= aeadCiphertext d)
             , testCase ("D" ++ i)  (dbs @?= aeadPlaintext d)
             ]
-          where ctx  = cipherInit (cipherMakeKey cipher $ aeadKey d)
-                aead = maybe (error $ "cipher doesn't support aead mode: " ++ show (aeadMode d)) id
-                     $ aeadInit (aeadMode d) ctx (aeadIV d)
+          where ctx  = cipherInitNoErr (cipherMakeKey cipher $ aeadKey d)
+                aead = aeadInitNoErr (aeadMode d) ctx (aeadIV d)
                 aeadHeaded     = aeadAppendHeader aead (aeadHeader d)
                 (ebs,aeadEFinal) = aeadEncrypt aeadHeaded (aeadPlaintext d)
                 (dbs,aeadDFinal) = aeadDecrypt aeadHeaded (aeadCiphertext d)
                 etag = aeadFinalize aeadEFinal (aeadTaglen d)
                 dtag = aeadFinalize aeadDFinal (aeadTaglen d)
--}
 
         cipherInitNoErr :: BlockCipher c => Key c -> c
         cipherInitNoErr (Key k) =
@@ -218,6 +217,11 @@ testKATs kats cipher = testGroup "KAT"
                 CryptoPassed a -> a
                 CryptoFailed e -> error (show e)
 
+        aeadInitNoErr :: (ByteArrayAccess iv, BlockCipher cipher) => AEADMode -> cipher -> iv -> AEAD cipher
+        aeadInitNoErr mode ct iv =
+            case aeadInit mode ct iv of
+                CryptoPassed a -> a
+                CryptoFailed _ -> error $ "cipher does'nt support aead mode: " ++ show mode
 ------------------------------------------------------------------------
 -- Properties
 ------------------------------------------------------------------------
