@@ -48,6 +48,7 @@ instance Cipher AES256 where
     cipherKeySize _ = KeySizeFixed 32
     cipherInit k    = AES256 <$> (initAES =<< validateKeySize (undefined :: AES256) k)
 
+
 #define INSTANCE_BLOCKCIPHER(CSTR) \
 instance BlockCipher CSTR where \
     { blockSize _ = 16 \

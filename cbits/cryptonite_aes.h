@@ -55,7 +55,7 @@ typedef struct {
 	uint64_t length_input;
 } aes_gcm;
 
-/* size = 80 */
+/* size = 4*16+4*4= 80 */
 typedef struct {
 	aes_block xi;
 	aes_block header_cbcmac;
@@ -63,8 +63,8 @@ typedef struct {
 	aes_block nonce;
 	uint32_t length_aad;
 	uint32_t length_input;
-        uint32_t length_M;
-        uint32_t length_L;
+	uint32_t length_M;
+	uint32_t length_L;
 } aes_ccm;
 
 typedef struct {

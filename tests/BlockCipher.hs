@@ -220,7 +220,7 @@ testKATs kats cipher = testGroup "KAT"
         aeadInitNoErr mode ct iv =
             case aeadInit mode ct iv of
                 CryptoPassed a -> a
-                CryptoFailed _ -> error $ "cipher does'nt support aead mode: " ++ show mode
+                CryptoFailed _ -> error $ "cipher doesn't support aead mode: " ++ show mode
 ------------------------------------------------------------------------
 -- Properties
 ------------------------------------------------------------------------

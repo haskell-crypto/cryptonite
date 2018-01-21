@@ -7,6 +7,7 @@ import Data.Maybe
 import Crypto.Cipher.Types
 import qualified Crypto.Cipher.AES as AES
 import qualified Data.ByteString as B
+
 import qualified KAT_AES.KATECB as KATECB
 import qualified KAT_AES.KATCBC as KATCBC
 import qualified KAT_AES.KATXTS as KATXTS
@@ -49,8 +50,10 @@ toKatCCM (k,iv,h,i,o,m) =
            , aeadTaglen = m
            , aeadTag = at
            }
-  where ccmMVal x = fromMaybe CCM_M16 (lookup x [ (4, CCM_M4), (6, CCM_M6), (8, CCM_M8), (10, CCM_M10),
-                                                  (12, CCM_M12), (14, CCM_M14), (16, CCM_M16) ])
+  where ccmMVal x = fromMaybe (error $ "unsupported CCM tag length: " ++ show x) $
+                        lookup x [ (4, CCM_M4), (6, CCM_M6), (8, CCM_M8), (10, CCM_M10)
+                                 , (12, CCM_M12), (14, CCM_M14), (16, CCM_M16)
+                                 ]
         ctWithTag = B.drop (B.length h) o
         (ct, at)  = B.splitAt (B.length ctWithTag - m) ctWithTag
 

@@ -101,7 +101,7 @@ ocbMode aes = AEADModeImpl
     , aeadImplFinalize     = ocbFinish aes
     }
 
--- | Create an AES AEAD implementation for GCM
+-- | Create an AES AEAD implementation for CCM
 ccmMode :: AES -> AEADModeImpl AESCCM
 ccmMode aes = AEADModeImpl
     { aeadImplAppendHeader = ccmAppendAAD aes
@@ -109,6 +109,7 @@ ccmMode aes = AEADModeImpl
     , aeadImplDecrypt      = ccmDecrypt aes
     , aeadImplFinalize     = ccmFinish aes
     }
+
 
 -- | AES Context (pre-processed key)
 newtype AES = AES ScrubbedBytes

@@ -437,18 +437,18 @@ void cryptonite_aes_gcm_finish(uint8_t *tag, aes_gcm *gcm, aes_key *key)
 	}
 }
 
-static inline int ccm_b0_flags(int has_adata, int m, int l)
+static inline uint8_t ccm_b0_flags(uint32_t has_adata, uint32_t m, uint32_t l)
 {
 	return 8*m + l + (has_adata? 64: 0);
 }
 
 /* depends on input size */
-static void ccm_encode_b0(block128* output, aes_ccm* ccm, int has_adata)
+static void ccm_encode_b0(block128* output, aes_ccm* ccm, uint32_t has_adata)
 {
 	int last = 15;
-	int m = ccm->length_M;
-	int l = ccm->length_L;
-	unsigned msg_len = ccm->length_input;
+	uint32_t m = ccm->length_M;
+	uint32_t l = ccm->length_L;
+	uint32_t msg_len = ccm->length_input;
 
 	block128_zero(output);
 	block128_copy(output, &ccm->nonce);
@@ -530,7 +530,7 @@ void cryptonite_aes_ccm_aad(aes_ccm *ccm, aes_key *key, uint8_t *input, uint32_t
 	block128 tmp;
 
 	if (ccm->length_aad != 0) return;
-	
+
 	ccm->length_aad = length;
 	int len_len;
 
@@ -940,7 +940,7 @@ void cryptonite_aes_generic_ccm_decrypt(uint8_t *output, aes_ccm *ccm, aes_key *
 	if (length != ccm->length_input) {
 		return;
 	}
-	
+
 	/* when aad is absent, reset b0 block */
 	if (ccm->length_aad == 0) {
 		ccm_encode_b0(&ccm->b0, ccm, 0); /* assume aad is present */
