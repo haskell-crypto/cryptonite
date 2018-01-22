@@ -516,7 +516,7 @@ void cryptonite_aes_ccm_init(aes_ccm *ccm, aes_key *key, uint8_t *nonce, uint32_
 	ccm->length_M = m;
 	ccm->length_input = input_size;
 
-	memcpy(&ccm->nonce.b[1], nonce, 15 - l);
+	memcpy(&ccm->nonce.b[1], nonce, nonce_len);
 
 	ccm_encode_b0(&ccm->b0, ccm, 1); /* assume aad is present */
 	cryptonite_aes_encrypt_block(&ccm->xi, key, &ccm->b0);
