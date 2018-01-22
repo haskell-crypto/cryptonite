@@ -18,7 +18,7 @@ import           Crypto.Error
 import           Crypto.Cipher.Types
 
 import           Data.ByteArray as B hiding (pack, null, length)
-import qualified Data.ByteString as B hiding (all)
+import qualified Data.ByteString as B hiding (all, take, replicate)
 
 ------------------------------------------------------------------------
 -- KAT
@@ -403,7 +403,7 @@ testBlockCipherAEAD cipher =
         toTests :: BlockCipher a => a -> (AEADMode -> AEADUnit a -> Bool)
         toTests _ = testProperty_AEAD
         testProperty_AEAD mode (AEADUnit key testIV (unPlaintext -> aad) (unPlaintext -> plaintext)) = withCtx key $ \ctx ->
-            case aeadInit mode' ctx testIV of
+            case aeadInit mode' ctx iv' of
                 CryptoPassed iniAead ->
                     let aead           = aeadAppendHeader iniAead aad
                         (eText, aeadE) = aeadEncrypt aead plaintext
@@ -414,10 +414,10 @@ testBlockCipherAEAD cipher =
                 CryptoFailed err
                     | err == CryptoError_AEADModeNotSupported -> True
                     | otherwise                               -> error ("testProperty_AEAD: " ++ show err)
-            where mode' = updateCcmInputSize mode (B.length plaintext)
-                  updateCcmInputSize aeadmode k = case aeadmode of
-                    AEAD_CCM _ m l -> AEAD_CCM k m l
-                    aeadOther      -> aeadOther
+            where (mode', iv') = updateCcmInputSize mode (B.length plaintext) testIV
+                  updateCcmInputSize aeadmode k iv = case aeadmode of
+                    AEAD_CCM _ m l -> (AEAD_CCM k m l, B.take 13 (iv <> (B.replicate 15 0)))
+                    aeadOther      -> (aeadOther, iv)
 
 withCtx :: Cipher c => Key c -> (c -> a) -> a
 withCtx (Key key) f =
