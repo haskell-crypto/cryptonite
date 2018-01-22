@@ -48,6 +48,13 @@ instance Cipher AES256 where
     cipherKeySize _ = KeySizeFixed 32
     cipherInit k    = AES256 <$> (initAES =<< validateKeySize (undefined :: AES256) k)
 
+aeadInitCcm :: ByteArrayAccess iv => Int -> CCM_M -> CCM_L -> AES -> iv -> CryptoFailable (AEAD cihper)
+aeadInitCcm n m l aes iv = if BA.length iv /= 15 - ln then CryptoFailed CryptoError_IvSizeInvalid else CryptoPassed $ AEAD (ccmMode aes) (ccmInit aes iv n m l)
+  where
+    ln = case l of
+      CCM_L2 -> 2
+      CCM_L3 -> 3
+      CCM_L4 -> 4
 
 #define INSTANCE_BLOCKCIPHER(CSTR) \
 instance BlockCipher CSTR where \
@@ -59,7 +66,7 @@ instance BlockCipher CSTR where \
     ; ctrCombine (CSTR aes) (IV iv) = encryptCTR aes (IV iv) \
     ; aeadInit AEAD_GCM (CSTR aes) iv = CryptoPassed $ AEAD (gcmMode aes) (gcmInit aes iv) \
     ; aeadInit AEAD_OCB (CSTR aes) iv = CryptoPassed $ AEAD (ocbMode aes) (ocbInit aes iv) \
-    ; aeadInit (AEAD_CCM n m l) (CSTR aes) iv = CryptoPassed $ AEAD (ccmMode aes) (ccmInit aes iv n m l) \
+    ; aeadInit (AEAD_CCM n m l) (CSTR aes) iv = aeadInitCcm n m l aes iv \
     ; aeadInit _        _          _  = CryptoFailed CryptoError_AEADModeNotSupported \
     }; \
 instance BlockCipher128 CSTR where \
