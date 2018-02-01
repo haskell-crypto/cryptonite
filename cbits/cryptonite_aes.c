@@ -52,6 +52,8 @@ void cryptonite_aes_generic_gcm_encrypt(uint8_t *output, aes_gcm *gcm, aes_key *
 void cryptonite_aes_generic_gcm_decrypt(uint8_t *output, aes_gcm *gcm, aes_key *key, uint8_t *input, uint32_t length);
 void cryptonite_aes_generic_ocb_encrypt(uint8_t *output, aes_ocb *ocb, aes_key *key, uint8_t *input, uint32_t length);
 void cryptonite_aes_generic_ocb_decrypt(uint8_t *output, aes_ocb *ocb, aes_key *key, uint8_t *input, uint32_t length);
+void cryptonite_aes_generic_ccm_encrypt(uint8_t *output, aes_ccm *ccm, aes_key *key, uint8_t *input, uint32_t length);
+void cryptonite_aes_generic_ccm_decrypt(uint8_t *output, aes_ccm *ccm, aes_key *key, uint8_t *input, uint32_t length);
 
 enum {
 	/* init */
@@ -76,6 +78,9 @@ enum {
 	/* ocb */
 	ENCRYPT_OCB_128, ENCRYPT_OCB_192, ENCRYPT_OCB_256,
 	DECRYPT_OCB_128, DECRYPT_OCB_192, DECRYPT_OCB_256,
+	/* ccm */
+	ENCRYPT_CCM_128, ENCRYPT_CCM_192, ENCRYPT_CCM_256,
+	DECRYPT_CCM_128, DECRYPT_CCM_192, DECRYPT_CCM_256,
 };
 
 void *cryptonite_aes_branch_table[] = {
@@ -129,6 +134,13 @@ void *cryptonite_aes_branch_table[] = {
 	[DECRYPT_OCB_128]   = cryptonite_aes_generic_ocb_decrypt,
 	[DECRYPT_OCB_192]   = cryptonite_aes_generic_ocb_decrypt,
 	[DECRYPT_OCB_256]   = cryptonite_aes_generic_ocb_decrypt,
+	/* CCM */
+	[ENCRYPT_CCM_128]   = cryptonite_aes_generic_ccm_encrypt,
+	[ENCRYPT_CCM_192]   = cryptonite_aes_generic_ccm_encrypt,
+	[ENCRYPT_CCM_256]   = cryptonite_aes_generic_ccm_encrypt,
+	[DECRYPT_CCM_128]   = cryptonite_aes_generic_ccm_decrypt,
+	[DECRYPT_CCM_192]   = cryptonite_aes_generic_ccm_decrypt,
+	[DECRYPT_CCM_256]   = cryptonite_aes_generic_ccm_decrypt,
 };
 
 typedef void (*init_f)(aes_key *, uint8_t *, uint8_t);
@@ -138,6 +150,7 @@ typedef void (*ctr_f)(uint8_t *output, aes_key *key, aes_block *iv, uint8_t *inp
 typedef void (*xts_f)(aes_block *output, aes_key *k1, aes_key *k2, aes_block *dataunit, uint32_t spoint, aes_block *input, uint32_t nb_blocks);
 typedef void (*gcm_crypt_f)(uint8_t *output, aes_gcm *gcm, aes_key *key, uint8_t *input, uint32_t length);
 typedef void (*ocb_crypt_f)(uint8_t *output, aes_ocb *ocb, aes_key *key, uint8_t *input, uint32_t length);
+typedef void (*ccm_crypt_f)(uint8_t *output, aes_ccm *ccm, aes_key *key, uint8_t *input, uint32_t length);
 typedef void (*block_f)(aes_block *output, aes_key *key, aes_block *input);
 
 #ifdef WITH_AESNI
@@ -165,6 +178,10 @@ typedef void (*block_f)(aes_block *output, aes_key *key, aes_block *input);
 	((ocb_crypt_f) (cryptonite_aes_branch_table[ENCRYPT_OCB_128 + strength]))
 #define GET_OCB_DECRYPT(strength) \
 	((ocb_crypt_f) (cryptonite_aes_branch_table[DECRYPT_OCB_128 + strength]))
+#define GET_CCM_ENCRYPT(strength) \
+	((ccm_crypt_f) (cryptonite_aes_branch_table[ENCRYPT_CCM_128 + strength]))
+#define GET_CCM_DECRYPT(strength) \
+	((ccm_crypt_f) (cryptonite_aes_branch_table[DECRYPT_CCM_128 + strength]))
 #define cryptonite_aes_encrypt_block(o,k,i) \
 	(((block_f) (cryptonite_aes_branch_table[ENCRYPT_BLOCK_128 + k->strength]))(o,k,i))
 #define cryptonite_aes_decrypt_block(o,k,i) \
@@ -182,6 +199,8 @@ typedef void (*block_f)(aes_block *output, aes_key *key, aes_block *input);
 #define GET_GCM_DECRYPT(strength) cryptonite_aes_generic_gcm_decrypt
 #define GET_OCB_ENCRYPT(strength) cryptonite_aes_generic_ocb_encrypt
 #define GET_OCB_DECRYPT(strength) cryptonite_aes_generic_ocb_decrypt
+#define GET_CCM_ENCRYPT(strength) cryptonite_aes_generic_ccm_encrypt
+#define GET_CCM_DECRYPT(strength) cryptonite_aes_generic_ccm_decrypt
 #define cryptonite_aes_encrypt_block(o,k,i) cryptonite_aes_generic_encrypt_block(o,k,i)
 #define cryptonite_aes_decrypt_block(o,k,i) cryptonite_aes_generic_decrypt_block(o,k,i)
 #endif
@@ -321,6 +340,18 @@ void cryptonite_aes_gcm_decrypt(uint8_t *output, aes_gcm *gcm, aes_key *key, uin
 	d(output, gcm, key, input, length);
 }
 
+void cryptonite_aes_ccm_encrypt(uint8_t *output, aes_ccm *ccm, aes_key *key, uint8_t *input, uint32_t length)
+{
+	ccm_crypt_f e = GET_CCM_ENCRYPT(key->strength);
+	e(output, ccm, key, input, length);
+}
+
+void cryptonite_aes_ccm_decrypt(uint8_t *output, aes_ccm *ccm, aes_key *key, uint8_t *input, uint32_t length)
+{
+	ccm_crypt_f d = GET_CCM_DECRYPT(key->strength);
+	d(output, ccm, key, input, length);
+}
+
 void cryptonite_aes_ocb_encrypt(uint8_t *output, aes_ocb *ocb, aes_key *key, uint8_t *input, uint32_t length)
 {
 	ocb_crypt_f e = GET_OCB_ENCRYPT(key->strength);
@@ -404,6 +435,140 @@ void cryptonite_aes_gcm_finish(uint8_t *tag, aes_gcm *gcm, aes_key *key)
 	for (i = 0; i < 16; i++) {
 		tag[i] = gcm->tag.b[i];
 	}
+}
+
+static inline int ccm_b0_flags(int has_adata, int m, int l)
+{
+	return 8*m + l + (has_adata? 64: 0);
+}
+
+/* depends on input size */
+static void ccm_encode_b0(block128* output, aes_ccm* ccm, int has_adata)
+{
+	int last = 15;
+	int m = ccm->length_M;
+	int l = ccm->length_L;
+	unsigned msg_len = ccm->length_input;
+
+	block128_zero(output);
+	block128_copy(output, &ccm->nonce);
+	output->b[0] = ccm_b0_flags(has_adata, (m-2)/2, l-1);
+	while (msg_len > 0) {
+		output->b[last--] = msg_len & 0xff;
+		msg_len >>= 8;
+	}
+}
+
+/* encode adata length */
+static int ccm_encode_la(block128* output, uint32_t la)
+{
+	if (la < ( (1 << 16) - (1 << 8)) ) {
+		output->b[0] = (la >> 8) & 0xff;
+		output->b[1] = la        & 0xff;
+		return 2;
+	} else {
+		output->b[0] = 0xff;
+		output->b[1] = 0xfe;
+		output->b[2] = (la >> 24) & 0xff;
+		output->b[3] = (la >> 16) & 0xff;
+		output->b[4] = (la >>  8) & 0xff;
+		output->b[5] = la         & 0xff;
+		return 6;
+	}
+}
+
+static void ccm_encode_ctr(block128* out, aes_ccm* ccm, unsigned int cnt)
+{
+	int last = 15;
+	block128_copy(out, &ccm->nonce);
+	out->b[0] = ccm->length_L - 1;
+
+	while (cnt > 0) {
+		out->b[last--] = cnt & 0xff;
+		cnt >>= 8;
+	}
+}
+
+static void ccm_cbcmac_add(aes_ccm* ccm, aes_key* key, block128* bi)
+{
+	block128_xor(&ccm->xi, bi);
+	cryptonite_aes_generic_encrypt_block(&ccm->xi, key, &ccm->xi);
+}
+
+/* even though it is possible to support message size as large as 2^64, we support up to 2^32 only */
+void cryptonite_aes_ccm_init(aes_ccm *ccm, aes_key *key, uint8_t *nonce, uint32_t nonce_len, uint32_t input_size, int m, int l)
+{
+	memset(ccm, 0, sizeof(aes_ccm));
+
+	if (l < 2 || l > 4) return;
+	if (m != 4 && m != 6 && m != 8 && m != 10
+		   && m != 12 && m != 14 && m != 16) return;
+
+	if (nonce_len > 15 - l) {
+		nonce_len = 15 - l;
+	}
+
+	if (l <= 4) {
+		if (input_size >= (1ull << (8*l))) return;
+	}
+
+	ccm->length_L = l;
+	ccm->length_M = m;
+	ccm->length_input = input_size;
+
+	memcpy(&ccm->nonce.b[1], nonce, nonce_len);
+
+	ccm_encode_b0(&ccm->b0, ccm, 1); /* assume aad is present */
+	cryptonite_aes_encrypt_block(&ccm->xi, key, &ccm->b0);
+}
+
+/* even though l(a) can be as large as 2^64, we only handle aad up to 2 ^ 32 for practical reasons.
+  Also we don't support incremental aad add, because the 1st encoded adata has length information
+ */
+void cryptonite_aes_ccm_aad(aes_ccm *ccm, aes_key *key, uint8_t *input, uint32_t length)
+{
+	block128 tmp;
+
+	if (ccm->length_aad != 0) return;
+	
+	ccm->length_aad = length;
+	int len_len;
+
+	block128_zero(&tmp);
+	len_len = ccm_encode_la(&tmp, length);
+
+	if (length < 16 - len_len) {
+		memcpy(&tmp.b[len_len], input, length);
+		length = 0;
+	} else {
+		memcpy(&tmp.b[len_len], input, 16 - len_len);
+		input += 16 - len_len;
+		length -= 16 - len_len;
+	}
+
+	ccm_cbcmac_add(ccm, key, &tmp);
+
+	for (; length >= 16; input += 16, length -= 16) {
+		block128_copy(&tmp, (block128*)input);
+		ccm_cbcmac_add(ccm, key, &tmp);
+
+	}
+	if (length > 0) {
+		block128_zero(&tmp);
+		block128_copy_bytes(&tmp, input, length);
+		ccm_cbcmac_add(ccm, key, &tmp);
+	}
+	block128_copy(&ccm->header_cbcmac, &ccm->xi);
+}
+
+void cryptonite_aes_ccm_finish(uint8_t *tag, aes_ccm *ccm, aes_key *key)
+{
+	block128 iv, s0;
+
+	block128_zero(&iv);
+	ccm_encode_ctr(&iv, ccm, 0);
+	cryptonite_aes_encrypt_block(&s0, key, &iv);
+	block128_vxor((block128*)tag, &ccm->xi, &s0);
 }
 
 static inline void ocb_block_double(block128 *d, block128 *s)
@@ -736,6 +901,66 @@ static void ocb_generic_crypt(uint8_t *output, aes_ocb *ocb, aes_key *key,
 			block128_xor_aligned(&ocb->sum_enc, &tmp);
 			input += length;
 		}
+	}
+}
+
+void cryptonite_aes_generic_ccm_encrypt(uint8_t *output, aes_ccm *ccm, aes_key *key, uint8_t *input, uint32_t length)
+{
+	block128 tmp, ctr;
+
+	/* when aad is absent, reset b0 block */
+	if (ccm->length_aad == 0) {
+		ccm_encode_b0(&ccm->b0, ccm, 0); /* assume aad is present */
+		cryptonite_aes_encrypt_block(&ccm->xi, key, &ccm->b0);
+		block128_copy(&ccm->header_cbcmac, &ccm->xi);
+	}
+
+	if (length != ccm->length_input) {
+		return;
+	}
+
+	ccm_encode_ctr(&ctr, ccm, 1);
+	cryptonite_aes_encrypt_ctr(output, key, &ctr, input, length);
+
+	for (;length >= 16; input += 16, length -= 16) {
+		block128_copy(&tmp, (block128*)input);
+		ccm_cbcmac_add(ccm, key, &tmp);
+	}
+	if (length > 0) {
+		block128_zero(&tmp);
+		block128_copy_bytes(&tmp, input, length);
+		ccm_cbcmac_add(ccm, key, &tmp);
+	}
+}
+
+void cryptonite_aes_generic_ccm_decrypt(uint8_t *output, aes_ccm *ccm, aes_key *key, uint8_t *input, uint32_t length)
+{
+	block128 tmp, ctr;
+
+	if (length != ccm->length_input) {
+		return;
+	}
+	
+	/* when aad is absent, reset b0 block */
+	if (ccm->length_aad == 0) {
+		ccm_encode_b0(&ccm->b0, ccm, 0); /* assume aad is present */
+		cryptonite_aes_encrypt_block(&ccm->xi, key, &ccm->b0);
+		block128_copy(&ccm->header_cbcmac, &ccm->xi);
+	}
+
+	ccm_encode_ctr(&ctr, ccm, 1);
+	cryptonite_aes_encrypt_ctr(output, key, &ctr, input, length);
+	block128_copy(&ccm->xi, &ccm->header_cbcmac);
+	input = output;
+
+	for (;length >= 16; input += 16, length -= 16) {
+		block128_copy(&tmp, (block128*)input);
+		ccm_cbcmac_add(ccm, key, &tmp);
+	}
+	if (length > 0) {
+		block128_zero(&tmp);
+		block128_copy_bytes(&tmp, input, length);
+		ccm_cbcmac_add(ccm, key, &tmp);
 	}
 }
 
