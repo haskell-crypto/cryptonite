@@ -77,7 +77,7 @@ instance BlockCipher AES where
     ctrCombine = encryptCTR
     aeadInit AEAD_GCM aes iv = CryptoPassed $ AEAD (gcmMode aes) (gcmInit aes iv)
     aeadInit AEAD_OCB aes iv = CryptoPassed $ AEAD (ocbMode aes) (ocbInit aes iv)
-    aeadInit (AEAD_CCM n m l) aes iv = CryptoPassed $ AEAD (ccmMode aes) (ccmInit aes iv n m l)
+    aeadInit (AEAD_CCM n m l) aes iv = AEAD (ccmMode aes) <$> ccmInit aes iv n m l
     aeadInit _        _   _  = CryptoFailed CryptoError_AEADModeNotSupported
 instance BlockCipher128 AES where
     xtsEncrypt = encryptXTS
@@ -492,12 +492,13 @@ ccmGetL l = case l of
 
 -- | initialize a ccm context
 {-# NOINLINE ccmInit #-}
-ccmInit :: ByteArrayAccess iv => AES -> iv -> Int -> CCM_M -> CCM_L -> AESCCM
-ccmInit ctx iv n m l = unsafeDoIO $ do
-    sm <- B.alloc sizeCCM $ \ccmStPtr ->
-            withKeyAndIV ctx iv $ \k v ->
-            c_aes_ccm_init (castPtr ccmStPtr) k v (fromIntegral $ B.length iv) (fromIntegral n) (fromIntegral (ccmGetM m)) (fromIntegral (ccmGetL l))
-    return $ AESCCM sm
+ccmInit :: ByteArrayAccess iv => AES -> iv -> Int -> CCM_M -> CCM_L -> CryptoFailable AESCCM
+ccmInit ctx iv n m l = if 15 - ccmGetL l /= B.length iv then CryptoFailed CryptoError_IvSizeInvalid
+  else unsafeDoIO $ do
+      sm <- B.alloc sizeCCM $ \ccmStPtr ->
+        withKeyAndIV ctx iv $ \k v ->
+        c_aes_ccm_init (castPtr ccmStPtr) k v (fromIntegral $ B.length iv) (fromIntegral n) (fromIntegral (ccmGetM m)) (fromIntegral (ccmGetL l))
+      return $ CryptoPassed (AESCCM sm)
 
 -- | append data which is only going to be authenticated to the CCM context.
 --
