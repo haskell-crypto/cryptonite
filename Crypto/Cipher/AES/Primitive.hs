@@ -494,12 +494,16 @@ ccmGetL l = case l of
 -- | initialize a ccm context
 {-# NOINLINE ccmInit #-}
 ccmInit :: ByteArrayAccess iv => AES -> iv -> Int -> CCM_M -> CCM_L -> CryptoFailable AESCCM
-ccmInit ctx iv n m l = if 15 - ccmGetL l /= B.length iv then CryptoFailed CryptoError_IvSizeInvalid
-  else unsafeDoIO $ do
-      sm <- B.alloc sizeCCM $ \ccmStPtr ->
-        withKeyAndIV ctx iv $ \k v ->
-        c_aes_ccm_init (castPtr ccmStPtr) k v (fromIntegral $ B.length iv) (fromIntegral n) (fromIntegral (ccmGetM m)) (fromIntegral (ccmGetL l))
-      return $ CryptoPassed (AESCCM sm)
+ccmInit ctx iv n m l
+    | 15 - li /= B.length iv = CryptoFailed CryptoError_IvSizeInvalid
+    | otherwise = unsafeDoIO $ do
+          sm <- B.alloc sizeCCM $ \ccmStPtr ->
+            withKeyAndIV ctx iv $ \k v ->
+            c_aes_ccm_init (castPtr ccmStPtr) k v (fromIntegral $ B.length iv) (fromIntegral n) (fromIntegral mi) (fromIntegral li)
+          return $ CryptoPassed (AESCCM sm)
+  where
+    mi = ccmGetM m
+    li = ccmGetL l
 
 -- | append data which is only going to be authenticated to the CCM context.
 --
