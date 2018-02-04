@@ -12,7 +12,7 @@ option: testdeps extradep=QuickCheck-2.11.3 extradep=ansi-terminal-0.8.0.1 extra
 # builds 
 build: ghc-7.8 nohaddock
 build: ghc-8.2
-build: ghc-7.10
+build: ghc-7.10 extradep=basement-0.0.6 extradep=foundation-0.0.19 extradep=memory-0.14.14
 build: ghc-8.0
 build: ghc-8.0 os=osx
 build: ghc-8.4 extradep=basement-0.0.6 extradep=memory-0.14.14 extradep=foundation-0.0.19 testdeps
