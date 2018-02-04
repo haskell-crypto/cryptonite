@@ -3,7 +3,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Main where
 
-import Criterion.Main
+import Gauge.Main
 
 import           Crypto.Cipher.AES
 import           Crypto.Cipher.Blowfish
