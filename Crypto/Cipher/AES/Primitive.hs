@@ -44,6 +44,10 @@ module Crypto.Cipher.AES.Primitive
     -- * Incremental OCB
     , ocbMode
     , ocbInit
+
+    -- * CCM
+    , ccmMode
+    , ccmInit
     ) where
 
 import           Data.Word
@@ -73,6 +77,7 @@ instance BlockCipher AES where
     ctrCombine = encryptCTR
     aeadInit AEAD_GCM aes iv = CryptoPassed $ AEAD (gcmMode aes) (gcmInit aes iv)
     aeadInit AEAD_OCB aes iv = CryptoPassed $ AEAD (ocbMode aes) (ocbInit aes iv)
+    aeadInit (AEAD_CCM n m l) aes iv = AEAD (ccmMode aes) <$> ccmInit aes iv n m l
     aeadInit _        _   _  = CryptoFailed CryptoError_AEADModeNotSupported
 instance BlockCipher128 AES where
     xtsEncrypt = encryptXTS
@@ -96,6 +101,15 @@ ocbMode aes = AEADModeImpl
     , aeadImplFinalize     = ocbFinish aes
     }
 
+-- | Create an AES AEAD implementation for CCM
+ccmMode :: AES -> AEADModeImpl AESCCM
+ccmMode aes = AEADModeImpl
+    { aeadImplAppendHeader = ccmAppendAAD aes
+    , aeadImplEncrypt      = ccmEncrypt aes
+    , aeadImplDecrypt      = ccmDecrypt aes
+    , aeadImplFinalize     = ccmFinish aes
+    }
+
 
 -- | AES Context (pre-processed key)
 newtype AES = AES ScrubbedBytes
@@ -109,11 +123,18 @@ newtype AESGCM = AESGCM ScrubbedBytes
 newtype AESOCB = AESOCB ScrubbedBytes
     deriving (NFData)
 
+-- | AESCCM State
+newtype AESCCM = AESCCM ScrubbedBytes
+    deriving (NFData)
+
 sizeGCM :: Int
 sizeGCM = 80
 
 sizeOCB :: Int
 sizeOCB = 160
+
+sizeCCM :: Int
+sizeCCM = 80
 
 keyToPtr :: AES -> (Ptr AES -> IO a) -> IO a
 keyToPtr (AES b) f = withByteArray b (f . castPtr)
@@ -151,6 +172,13 @@ withOCBKeyAndCopySt aes (AESOCB gcmSt) f =
         newSt <- B.copy gcmSt (\_ -> return ())
         a     <- withByteArray newSt $ \gcmStPtr -> f (castPtr gcmStPtr) aesPtr
         return (a, AESOCB newSt)
+
+withCCMKeyAndCopySt :: AES -> AESCCM -> (Ptr AESCCM -> Ptr AES -> IO a) -> IO (a, AESCCM)
+withCCMKeyAndCopySt aes (AESCCM ccmSt) f =
+    keyToPtr aes $ \aesPtr -> do
+        newSt <- B.copy ccmSt (\_ -> return ())
+        a     <- withByteArray newSt $ \ccmStPtr -> f (castPtr ccmStPtr) aesPtr
+        return (a, AESCCM newSt)
 
 -- | Initialize a new context with a key
 --
@@ -447,6 +475,78 @@ ocbFinish ctx ocb taglen = AuthTag $ B.take taglen computeTag
   where computeTag = B.allocAndFreeze 16 $ \t ->
                         withOCBKeyAndCopySt ctx ocb (c_aes_ocb_finish (castPtr t)) >> return ()
 
+ccmGetM :: CCM_M -> Int
+ccmGetL :: CCM_L -> Int
+ccmGetM m = case m of
+  CCM_M4 -> 4
+  CCM_M6 -> 6
+  CCM_M8 -> 8
+  CCM_M10 -> 10
+  CCM_M12 -> 12
+  CCM_M14 -> 14
+  CCM_M16 -> 16
+
+ccmGetL l = case l of
+  CCM_L2 -> 2
+  CCM_L3 -> 3
+  CCM_L4 -> 4
+
+-- | initialize a ccm context
+{-# NOINLINE ccmInit #-}
+ccmInit :: ByteArrayAccess iv => AES -> iv -> Int -> CCM_M -> CCM_L -> CryptoFailable AESCCM
+ccmInit ctx iv n m l
+    | 15 - li /= B.length iv = CryptoFailed CryptoError_IvSizeInvalid
+    | otherwise = unsafeDoIO $ do
+          sm <- B.alloc sizeCCM $ \ccmStPtr ->
+            withKeyAndIV ctx iv $ \k v ->
+            c_aes_ccm_init (castPtr ccmStPtr) k v (fromIntegral $ B.length iv) (fromIntegral n) (fromIntegral mi) (fromIntegral li)
+          return $ CryptoPassed (AESCCM sm)
+  where
+    mi = ccmGetM m
+    li = ccmGetL l
+
+-- | append data which is only going to be authenticated to the CCM context.
+--
+-- needs to happen after initialization and before appending encryption/decryption data.
+{-# NOINLINE ccmAppendAAD #-}
+ccmAppendAAD :: ByteArrayAccess aad => AES -> AESCCM -> aad -> AESCCM
+ccmAppendAAD ctx ccm input = unsafeDoIO $ snd <$> withCCMKeyAndCopySt ctx ccm doAppend
+  where doAppend ccmStPtr aesPtr =
+            withByteArray input $ \i -> c_aes_ccm_aad ccmStPtr aesPtr i (fromIntegral $ B.length input)
+
+-- | append data to encrypt and append to the CCM context
+--
+-- the bytearray needs to be a multiple of AES block size, unless it's the last call to this function.
+-- needs to happen after AAD appending, or after initialization if no AAD data.
+{-# NOINLINE ccmEncrypt #-}
+ccmEncrypt :: ByteArray ba => AES -> AESCCM -> ba -> (ba, AESCCM)
+ccmEncrypt ctx ccm input = unsafeDoIO $ withCCMKeyAndCopySt ctx ccm cbcmacAndIv
+  where len = B.length input
+        cbcmacAndIv ccmStPtr aesPtr =
+            B.alloc len $ \o ->
+            withByteArray input $ \i ->
+            c_aes_ccm_encrypt (castPtr o) ccmStPtr aesPtr i (fromIntegral len)
+
+-- | append data to decrypt and append to the CCM context
+--
+-- the bytearray needs to be a multiple of AES block size, unless it's the last call to this function.
+-- needs to happen after AAD appending, or after initialization if no AAD data.
+{-# NOINLINE ccmDecrypt #-}
+ccmDecrypt :: ByteArray ba => AES -> AESCCM -> ba -> (ba, AESCCM)
+ccmDecrypt ctx ccm input = unsafeDoIO $ withCCMKeyAndCopySt ctx ccm cbcmacAndIv
+  where len = B.length input
+        cbcmacAndIv ccmStPtr aesPtr =
+            B.alloc len $ \o ->
+            withByteArray input $ \i ->
+            c_aes_ccm_decrypt (castPtr o) ccmStPtr aesPtr i (fromIntegral len)
+
+-- | Generate the Tag from CCM context
+{-# NOINLINE ccmFinish #-}
+ccmFinish :: AES -> AESCCM -> Int -> AuthTag
+ccmFinish ctx ccm taglen = AuthTag $ B.take taglen computeTag
+  where computeTag = B.allocAndFreeze 16 $ \t ->
+                        withCCMKeyAndCopySt ctx ccm (c_aes_ccm_finish (castPtr t)) >> return ()
+
 ------------------------------------------------------------------------
 foreign import ccall "cryptonite_aes.h cryptonite_aes_initkey"
     c_aes_init :: Ptr AES -> CString -> CUInt -> IO ()
@@ -508,3 +608,17 @@ foreign import ccall "cryptonite_aes.h cryptonite_aes_ocb_decrypt"
 foreign import ccall "cryptonite_aes.h cryptonite_aes_ocb_finish"
     c_aes_ocb_finish :: CString -> Ptr AESOCB -> Ptr AES -> IO ()
 
+foreign import ccall "cryptonite_aes.h cryptonite_aes_ccm_init"
+    c_aes_ccm_init :: Ptr AESCCM -> Ptr AES -> Ptr Word8 -> CUInt -> CUInt -> CInt -> CInt -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_ccm_aad"
+    c_aes_ccm_aad :: Ptr AESCCM -> Ptr AES -> CString -> CUInt -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_ccm_encrypt"
+    c_aes_ccm_encrypt :: CString -> Ptr AESCCM -> Ptr AES -> CString -> CUInt -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_ccm_decrypt"
+    c_aes_ccm_decrypt :: CString -> Ptr AESCCM -> Ptr AES -> CString -> CUInt -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_ccm_finish"
+    c_aes_ccm_finish :: CString -> Ptr AESCCM -> Ptr AES -> IO ()

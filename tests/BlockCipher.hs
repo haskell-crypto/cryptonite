@@ -16,8 +16,8 @@ import           Imports
 import           Data.Maybe
 import           Crypto.Error
 import           Crypto.Cipher.Types
-import           Data.ByteArray as B hiding (pack, null)
-import qualified Data.ByteString as B hiding (all)
+import           Data.ByteArray as B hiding (pack, null, length)
+import qualified Data.ByteString as B hiding (all, take, replicate)
 
 ------------------------------------------------------------------------
 -- KAT
@@ -161,7 +161,7 @@ testKATs kats cipher = testGroup "KAT"
      ++ maybeGroup makeCFBTest "CFB" (kat_CFB kats)
      ++ maybeGroup makeCTRTest "CTR" (kat_CTR kats)
      -- ++ maybeGroup makeXTSTest "XTS" (kat_XTS kats)
-     -- ++ maybeGroup makeAEADTest "AEAD" (kat_AEAD kats)
+     ++ maybeGroup makeAEADTest "AEAD" (kat_AEAD kats)
     )
   where makeECBTest i d =
             [ testCase ("E" ++ i) (ecbEncrypt ctx (ecbPlaintext d) @?= ecbCiphertext d)
@@ -191,25 +191,24 @@ testKATs kats cipher = testGroup "KAT"
             [ testCase ("E" ++ i) (xtsEncrypt ctx iv 0 (xtsPlaintext d) @?= xtsCiphertext d)
             , testCase ("D" ++ i) (xtsDecrypt ctx iv 0 (xtsCiphertext d) @?= xtsPlaintext d)
             ]
-          where ctx1 = cipherInit (cipherMakeKey cipher $ xtsKey1 d)
-                ctx2 = cipherInit (cipherMakeKey cipher $ xtsKey2 d)
+          where ctx1 = cipherInitNoErr (cipherMakeKey cipher $ xtsKey1 d)
+                ctx2 = cipherInitNoErr (cipherMakeKey cipher $ xtsKey2 d)
                 ctx  = (ctx1, ctx2)
                 iv   = cipherMakeIV cipher $ xtsIV d
+-}
         makeAEADTest i d =
-            [ testCase ("AE" ++ i) (etag @?= aeadTag d)
-            , testCase ("AD" ++ i) (dtag @?= aeadTag d)
+            [ testCase ("AE" ++ i) (etag @?= AuthTag (B.convert (aeadTag d)))
+            , testCase ("AD" ++ i) (dtag @?= AuthTag (B.convert (aeadTag d)))
             , testCase ("E" ++ i)  (ebs @?= aeadCiphertext d)
             , testCase ("D" ++ i)  (dbs @?= aeadPlaintext d)
             ]
-          where ctx  = cipherInit (cipherMakeKey cipher $ aeadKey d)
-                aead = maybe (error $ "cipher doesn't support aead mode: " ++ show (aeadMode d)) id
-                     $ aeadInit (aeadMode d) ctx (aeadIV d)
+          where ctx  = cipherInitNoErr (cipherMakeKey cipher $ aeadKey d)
+                aead = aeadInitNoErr (aeadMode d) ctx (aeadIV d)
                 aeadHeaded     = aeadAppendHeader aead (aeadHeader d)
                 (ebs,aeadEFinal) = aeadEncrypt aeadHeaded (aeadPlaintext d)
                 (dbs,aeadDFinal) = aeadDecrypt aeadHeaded (aeadCiphertext d)
                 etag = aeadFinalize aeadEFinal (aeadTaglen d)
                 dtag = aeadFinalize aeadDFinal (aeadTaglen d)
--}
 
         cipherInitNoErr :: BlockCipher c => Key c -> c
         cipherInitNoErr (Key k) =
@@ -217,6 +216,11 @@ testKATs kats cipher = testGroup "KAT"
                 CryptoPassed a -> a
                 CryptoFailed e -> error (show e)
 
+        aeadInitNoErr :: (ByteArrayAccess iv, BlockCipher cipher) => AEADMode -> cipher -> iv -> AEAD cipher
+        aeadInitNoErr mode ct iv =
+            case aeadInit mode ct iv of
+                CryptoPassed a -> a
+                CryptoFailed _ -> error $ "cipher doesn't support aead mode: " ++ show mode
 ------------------------------------------------------------------------
 -- Properties
 ------------------------------------------------------------------------
@@ -389,7 +393,7 @@ testBlockCipherModes cipher =
 testBlockCipherAEAD :: BlockCipher a => a -> [TestTree]
 testBlockCipherAEAD cipher =
     [ testProperty "OCB" (aeadProp AEAD_OCB)
-    , testProperty "CCM" (aeadProp AEAD_CCM)
+    , testProperty "CCM" (aeadProp (AEAD_CCM 0 CCM_M16 CCM_L2))
     , testProperty "EAX" (aeadProp AEAD_EAX)
     , testProperty "CWC" (aeadProp AEAD_CWC)
     , testProperty "GCM" (aeadProp AEAD_GCM)
@@ -398,7 +402,7 @@ testBlockCipherAEAD cipher =
         toTests :: BlockCipher a => a -> (AEADMode -> AEADUnit a -> Bool)
         toTests _ = testProperty_AEAD
         testProperty_AEAD mode (AEADUnit key testIV (unPlaintext -> aad) (unPlaintext -> plaintext)) = withCtx key $ \ctx ->
-            case aeadInit mode ctx testIV of
+            case aeadInit mode' ctx iv' of
                 CryptoPassed iniAead ->
                     let aead           = aeadAppendHeader iniAead aad
                         (eText, aeadE) = aeadEncrypt aead plaintext
@@ -409,6 +413,10 @@ testBlockCipherAEAD cipher =
                 CryptoFailed err
                     | err == CryptoError_AEADModeNotSupported -> True
                     | otherwise                               -> error ("testProperty_AEAD: " ++ show err)
+            where (mode', iv') = updateCcmInputSize mode (B.length plaintext) testIV
+                  updateCcmInputSize aeadmode k iv = case aeadmode of
+                    AEAD_CCM _ m l -> (AEAD_CCM k m l, B.take 13 (iv <> (B.replicate 15 0)))
+                    aeadOther      -> (aeadOther, iv)
 
 withCtx :: Cipher c => Key c -> (c -> a) -> a
 withCtx (Key key) f =

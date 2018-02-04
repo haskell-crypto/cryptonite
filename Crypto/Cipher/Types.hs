@@ -21,6 +21,8 @@ module Crypto.Cipher.Types
     -- , cfb8Decrypt
     -- * AEAD functions
     , AEADMode(..)
+    , CCM_M(..)
+    , CCM_L(..)
     , module Crypto.Cipher.Types.AEAD
     -- * Initial Vector type and constructor
     , IV
