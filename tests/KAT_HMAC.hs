@@ -132,17 +132,17 @@ instance HashAlgorithm a => Arbitrary (MacIncrementalList a) where
 
 macIncrementalTests :: [TestTree]
 macIncrementalTests =
-    [ testProperties MD5
-    , testProperties SHA1
-    , testProperties SHA256
-    , testProperties SHA3_224
-    , testProperties SHA3_256
-    , testProperties SHA3_384
-    , testProperties SHA3_512
+    [ testIncrProperties MD5
+    , testIncrProperties SHA1
+    , testIncrProperties SHA256
+    , testIncrProperties SHA3_224
+    , testIncrProperties SHA3_256
+    , testIncrProperties SHA3_384
+    , testIncrProperties SHA3_512
     ]
   where
-        --testProperties :: HashAlgorithm a => a -> [Property]
-        testProperties a = testGroup (show a)
+        --testIncrProperties :: HashAlgorithm a => a -> [Property]
+        testIncrProperties a = testGroup (show a)
             [ testProperty "list-one" (prop_inc0 a)
             , testProperty "list-multi" (prop_inc1 a)
             ]
