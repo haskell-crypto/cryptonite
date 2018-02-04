@@ -3,7 +3,7 @@
 {-# LANGUAGE PackageImports #-}
 module Main where
 
-import              Criterion.Main
+import              Gauge.Main
 import              Crypto.Hash.Algorithms as Crypto
 import "cryptonite" Crypto.KDF.PBKDF2 as Crypto
 import "fastpbkdf2" Crypto.KDF.PBKDF2 as Fast

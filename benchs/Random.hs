@@ -2,7 +2,7 @@
 {-# LANGUAGE PackageImports #-}
 module Main where
 
-import Criterion.Main
+import Gauge.Main
 import Control.Monad
 
 import "cryptonite" Crypto.Random
