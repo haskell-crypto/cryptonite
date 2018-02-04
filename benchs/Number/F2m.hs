@@ -2,7 +2,7 @@
 
 module Number.F2m (benchF2m) where
 
-import Criterion.Main
+import Gauge.Main
 import System.Random
 
 import Crypto.Number.Basic (log2)

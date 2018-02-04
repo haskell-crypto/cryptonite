@@ -436,7 +436,7 @@ Benchmark bench-cryptonite
                    , bytestring
                    , deepseq
                    , memory
-                   , criterion
+                   , gauge
                    , random
                    , cryptonite
   ghc-options:       -Wall -fno-warn-missing-signatures
