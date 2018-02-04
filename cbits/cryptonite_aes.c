@@ -451,7 +451,7 @@ static void ccm_encode_b0(block128* output, aes_ccm* ccm, uint32_t has_adata)
 	uint32_t msg_len = ccm->length_input;
 
 	block128_zero(output);
-	block128_copy(output, &ccm->nonce);
+	block128_copy_aligned(output, &ccm->nonce);
 	output->b[0] = ccm_b0_flags(has_adata, (m-2)/2, l-1);
 	while (msg_len > 0) {
 		output->b[last--] = msg_len & 0xff;
@@ -480,7 +480,7 @@ static int ccm_encode_la(block128* output, uint32_t la)
 static void ccm_encode_ctr(block128* out, aes_ccm* ccm, unsigned int cnt)
 {
 	int last = 15;
-	block128_copy(out, &ccm->nonce);
+	block128_copy_aligned(out, &ccm->nonce);
 	out->b[0] = ccm->length_L - 1;
 
 	while (cnt > 0) {
@@ -491,7 +491,7 @@ static void ccm_encode_ctr(block128* out, aes_ccm* ccm, unsigned int cnt)
 
 static void ccm_cbcmac_add(aes_ccm* ccm, aes_key* key, block128* bi)
 {
-	block128_xor(&ccm->xi, bi);
+	block128_xor_aligned(&ccm->xi, bi);
 	cryptonite_aes_generic_encrypt_block(&ccm->xi, key, &ccm->xi);
 }
 
@@ -558,7 +558,7 @@ void cryptonite_aes_ccm_aad(aes_ccm *ccm, aes_key *key, uint8_t *input, uint32_t
 		block128_copy_bytes(&tmp, input, length);
 		ccm_cbcmac_add(ccm, key, &tmp);
 	}
-	block128_copy(&ccm->header_cbcmac, &ccm->xi);
+	block128_copy_aligned(&ccm->header_cbcmac, &ccm->xi);
 }
 
 void cryptonite_aes_ccm_finish(uint8_t *tag, aes_ccm *ccm, aes_key *key)
@@ -912,7 +912,7 @@ void cryptonite_aes_generic_ccm_encrypt(uint8_t *output, aes_ccm *ccm, aes_key *
 	if (ccm->length_aad == 0) {
 		ccm_encode_b0(&ccm->b0, ccm, 0); /* assume aad is present */
 		cryptonite_aes_encrypt_block(&ccm->xi, key, &ccm->b0);
-		block128_copy(&ccm->header_cbcmac, &ccm->xi);
+		block128_copy_aligned(&ccm->header_cbcmac, &ccm->xi);
 	}
 
 	if (length != ccm->length_input) {
@@ -945,12 +945,12 @@ void cryptonite_aes_generic_ccm_decrypt(uint8_t *output, aes_ccm *ccm, aes_key *
 	if (ccm->length_aad == 0) {
 		ccm_encode_b0(&ccm->b0, ccm, 0); /* assume aad is present */
 		cryptonite_aes_encrypt_block(&ccm->xi, key, &ccm->b0);
-		block128_copy(&ccm->header_cbcmac, &ccm->xi);
+		block128_copy_aligned(&ccm->header_cbcmac, &ccm->xi);
 	}
 
 	ccm_encode_ctr(&ctr, ccm, 1);
 	cryptonite_aes_encrypt_ctr(output, key, &ctr, input, length);
-	block128_copy(&ccm->xi, &ccm->header_cbcmac);
+	block128_copy_aligned(&ccm->xi, &ccm->header_cbcmac);
 	input = output;
 
 	for (;length >= 16; input += 16, length -= 16) {
