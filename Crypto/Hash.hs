@@ -26,6 +26,7 @@ module Crypto.Hash
     -- * Functions
     , digestFromByteString
     , byteStringFromDigest
+    , convertByteStringFromDigest
     -- * Hash methods parametrized by algorithm
     , hashInitWith
     , hashWith
@@ -51,7 +52,7 @@ import           Control.Monad
 import           Crypto.Internal.Compat (unsafeDoIO)
 import           Crypto.Hash.Types
 import           Crypto.Hash.Algorithms
-import           Foreign.Ptr (Ptr)
+import           Foreign.Ptr (Ptr, castPtr)
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray)
 import qualified Crypto.Internal.ByteArray as B
 import           Data.ByteString (ByteString)
@@ -129,9 +130,17 @@ digestFromByteString = from undefined
             count = CountOf (B.length ba)
 {-# INLINABLE digestFromByteString #-}
 
--- | Get the bytes of a Digest.
 byteStringFromDigest :: forall a ba . (ByteArray ba) => Digest a -> ba
-byteStringFromDigest (Digest uarray@(UArray _ (CountOf size) _)) = unsafeDoIO $ do
-    (_, ba) <- B.allocRet size (B.copyByteArrayToPtr uarray)
+byteStringFromDigest digest = unsafeDoIO $ do
+    (_, ba) <- B.allocRet (B.length digest) (B.copyByteArrayToPtr digest)
     return ba
 {-# INLINABLE byteStringFromDigest #-}
+
+convertByteStringFromDigest :: forall a ba . (ByteArray ba) => Digest a -> ba
+convertByteStringFromDigest digest = unsafeDoIO (go (B.length digest))
+  where
+    go sz | sz < 0 = go 0
+          | otherwise = fmap snd $ B.allocRet sz $ \d -> do
+                            B.copyByteArrayToPtr digest d
+                            (\_ -> return ()) (castPtr d)
+{-# INLINABLE convertByteStringFromDigest #-}
