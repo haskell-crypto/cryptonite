@@ -26,7 +26,6 @@ module Crypto.Hash
     -- * Functions
     , digestFromByteString
     , byteStringFromDigest
-    , convertByteStringFromDigest
     -- * Hash methods parametrized by algorithm
     , hashInitWith
     , hashWith
@@ -131,16 +130,5 @@ digestFromByteString = from undefined
 {-# INLINABLE digestFromByteString #-}
 
 byteStringFromDigest :: forall a ba . (ByteArray ba) => Digest a -> ba
-byteStringFromDigest digest = unsafeDoIO $ do
-    (_, ba) <- B.allocRet (B.length digest) (B.copyByteArrayToPtr digest)
-    return ba
+byteStringFromDigest = B.convert
 {-# INLINABLE byteStringFromDigest #-}
-
-convertByteStringFromDigest :: forall a ba . (ByteArray ba) => Digest a -> ba
-convertByteStringFromDigest digest = unsafeDoIO (go (B.length digest))
-  where
-    go sz | sz < 0 = go 0
-          | otherwise = fmap snd $ B.allocRet sz $ \d -> do
-                            B.copyByteArrayToPtr digest d
-                            (\_ -> return ()) (castPtr d)
-{-# INLINABLE convertByteStringFromDigest #-}
