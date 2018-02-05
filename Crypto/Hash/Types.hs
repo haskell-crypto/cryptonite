@@ -20,7 +20,7 @@ import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArrayAccess, Bytes)
 import qualified Crypto.Internal.ByteArray as B
 import           Foreign.Ptr (Ptr)
-import           Basement.UArray (UArray)
+import           Basement.Block (Block)
 import           Basement.NormalForm (deepseq)
 import           GHC.TypeLits (Nat)
 
@@ -70,7 +70,7 @@ newtype Context a = Context Bytes
 --
 -- Creating a digest from a bytearray is also possible with function
 -- 'Crypto.Hash.digestFromByteString'.
-newtype Digest a = Digest (UArray Word8)
+newtype Digest a = Digest (Block Word8)
     deriving (Eq,Ord,ByteArrayAccess)
 
 instance NFData (Digest a) where

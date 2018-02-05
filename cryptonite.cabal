@@ -227,8 +227,8 @@ Library
                      Crypto.Internal.Nat
   Build-depends:     base >= 4.6 && < 5
                    , bytestring
-                   , memory >= 0.14.10
-                   , basement
+                   , memory >= 0.14.14
+                   , basement >= 0.0.6
                    , ghc-prim
   ghc-options:       -Wall -fwarn-tabs -optc-O3 -fno-warn-unused-imports
   if os(linux)

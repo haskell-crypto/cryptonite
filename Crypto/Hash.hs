@@ -42,8 +42,8 @@ module Crypto.Hash
     ) where
 
 import           Basement.Types.OffsetSize (CountOf (..))
-import           Basement.UArray (UArray, new, unsafeFreeze)
-import           Basement.UArray.Mutable (copyFromPtr)
+import           Basement.Block (Block, unsafeFreeze)
+import           Basement.Block.Mutable (copyFromPtr, new)
 import           Control.Monad
 import           Crypto.Internal.Compat (unsafeDoIO)
 import           Crypto.Hash.Types
@@ -115,10 +115,10 @@ digestFromByteString = from undefined
             | B.length bs == (hashDigestSize alg) = Just $ Digest $ unsafeDoIO $ copyBytes bs
             | otherwise                           = Nothing
 
-        copyBytes :: ba -> IO (UArray Word8)
+        copyBytes :: ba -> IO (Block Word8)
         copyBytes ba = do
             muArray <- new count
-            B.withByteArray ba $ \ptr -> copyFromPtr ptr count muArray
+            B.withByteArray ba $ \ptr -> copyFromPtr ptr muArray 0 count
             unsafeFreeze muArray
           where
             count = CountOf (B.length ba)
