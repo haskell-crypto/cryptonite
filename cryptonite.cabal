@@ -1,5 +1,5 @@
 Name:                cryptonite
-version:             0.24
+version:             0.25
 Synopsis:            Cryptography Primitives sink
 Description:
     A repository of cryptographic primitives.

@@ -1,3 +1,18 @@
+## 0.25
+
+* Improve digest binary conversion efficiency
+* AES CCM support
+* Add MonadFailure instance for CryptoFailable
+* Various misc improvements on documentation
+* Edwards25519 lowlevel arithmetic support
+* P256 add point negation
+* Improvement in ECC (benchmark, better normalization)
+* Blake2 improvements to context size
+* Use gauge instead of criterion
+* Use haskell-ci for CI scripts
+* Improve Digest memory representation to be 2 less Ints and one less boxing
+  moving from `UArray` to `Block`
+
 ## 0.24
 
 * Ed25519: generateSecret & Documentation updates
