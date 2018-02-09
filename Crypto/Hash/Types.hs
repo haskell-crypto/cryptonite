@@ -9,6 +9,7 @@
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.Types
     ( HashAlgorithm(..)
@@ -19,9 +20,13 @@ module Crypto.Hash.Types
 import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArrayAccess, Bytes)
 import qualified Crypto.Internal.ByteArray as B
+import           Control.Monad.ST
+import           Data.Char (digitToInt, isHexDigit)
 import           Foreign.Ptr (Ptr)
-import           Basement.Block (Block)
+import           Basement.Block (Block, unsafeFreeze)
+import           Basement.Block.Mutable (MutableBlock, new, unsafeWrite)
 import           Basement.NormalForm (deepseq)
+import           Basement.Types.OffsetSize (CountOf(..), Offset(..))
 import           GHC.TypeLits (Nat)
 
 -- | Class representing hashing algorithms.
@@ -79,3 +84,21 @@ instance NFData (Digest a) where
 instance Show (Digest a) where
     show (Digest bs) = map (toEnum . fromIntegral)
                      $ B.unpack (B.convertToBase B.Base16 bs :: Bytes)
+
+instance HashAlgorithm a => Read (Digest a) where
+    readsPrec _ str = runST $ do mut <- new (CountOf len)
+                                 loop mut len str
+      where
+        len = hashDigestSize (undefined :: a)
+
+        loop :: MutableBlock Word8 s -> Int -> String -> ST s [(Digest a, String)]
+        loop mut 0   cs          = (\b -> [(Digest b, cs)]) <$> unsafeFreeze mut
+        loop _   _   []          = return []
+        loop _   _   [_]         = return []
+        loop mut n   (c:(d:ds))
+            | not (isHexDigit c) = return []
+            | not (isHexDigit d) = return []
+            | otherwise          = do
+                let w8 = fromIntegral $ digitToInt c * 16 + digitToInt d
+                unsafeWrite mut (Offset $ len - n) w8
+                loop mut (n - 1) ds
