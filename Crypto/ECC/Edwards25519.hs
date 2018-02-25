@@ -83,6 +83,7 @@ import           Crypto.Internal.ByteArray (Bytes, ScrubbedBytes, withByteArray)
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
+import           Crypto.Number.Serialize.LE (i2osp)
 import           Crypto.Random
 
 
@@ -99,6 +100,17 @@ instance Eq Scalar where
         withByteArray s2 $ \ps2 ->
             fmap (/= 0) (ed25519_scalar_eq ps1 ps2)
     {-# NOINLINE (==) #-}
+
+instance Num Scalar where
+    (+) = scalarAdd
+    (-) = scalarSub
+    (*) = scalarMul
+
+    abs = error "Edwards25519.Scalar: abs not implemented"
+    signum = error "Edwards25519.Scalar: signum not implemented"
+
+    fromInteger i = throwCryptoError (scalarDecodeLong bs)
+      where bs = i2osp i :: Bytes
 
 pointArraySize :: Int
 pointArraySize = 160 -- maximum [4 * 10 * 4 {- 32 bits -}, 4 * 5 * 8 {- 64 bits -}]

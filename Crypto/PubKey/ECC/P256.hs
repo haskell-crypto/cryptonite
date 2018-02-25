@@ -61,6 +61,18 @@ import qualified Crypto.Number.Serialize as S (os2ip, i2ospOf)
 newtype Scalar = Scalar ScrubbedBytes
     deriving (Show,Eq,ByteArrayAccess,NFData)
 
+instance Num Scalar where
+    (+) = scalarAdd
+    (-) = scalarSub
+    (*) = scalarMul
+
+    negate = scalarSub scalarN
+
+    abs = error "P256.Scalar: abs not implemented"
+    signum = error "P256.Scalar: signum not implemented"
+
+    fromInteger i = throwCryptoError $ scalarFromInteger (i `mod` order)
+
 -- | A P256 point
 newtype Point = Point Bytes
     deriving (Show,Eq,NFData)
@@ -76,6 +88,9 @@ type P256Digit  = Word32
 data P256Scalar
 data P256Y
 data P256X
+
+order :: Integer
+order = 0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
 
 ------------------------------------------------------------------------
 -- Point methods
@@ -215,6 +230,10 @@ scalarGenerate = unwrap . scalarFromBinary . witness <$> getRandomBytes 32
 -- | The scalar representing 0
 scalarZero :: Scalar
 scalarZero = withNewScalarFreeze $ \d -> ccryptonite_p256_init d
+
+-- | The scalar representing the curve order
+scalarN :: Scalar
+scalarN = throwCryptoError (scalarFromInteger order)
 
 -- | Check if the scalar is 0
 scalarIsZero :: Scalar -> Bool

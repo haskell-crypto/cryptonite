@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 -- |
 -- Module      : Crypto.ECC.Simple.Types
 -- License     : BSD-style
@@ -100,6 +101,26 @@ data CurveType =
 -- | ECC Private Number
 newtype Scalar curve = Scalar Integer
     deriving (Show,Read,Eq,Data,NFData)
+
+instance Curve curve => Num (Scalar curve) where
+    (+) = scalarOp (+)
+    (-) = scalarOp (-)
+    (*) = scalarOp (*)
+
+    negate (Scalar a) = Scalar (n - a)
+      where n = curveEccN $ curveParameters (Proxy :: Proxy curve)
+
+    abs = error "Simple.Scalar: abs not implemented"
+    signum = error "Simple.Scalar: signum not implemented"
+
+    fromInteger i = Scalar (i `mod` n)
+      where n = curveEccN $ curveParameters (Proxy :: Proxy curve)
+
+scalarOp :: forall curve . Curve curve
+         => (Integer -> Integer -> Integer)
+         -> Scalar curve -> Scalar curve -> Scalar curve
+scalarOp op (Scalar a) (Scalar b) = Scalar (op a b `mod` n)
+  where n = curveEccN $ curveParameters (Proxy :: Proxy curve)
 
 -- | Define a point on a curve.
 data Point curve =
