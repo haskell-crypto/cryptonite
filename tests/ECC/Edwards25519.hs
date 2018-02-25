@@ -52,6 +52,12 @@ tests = testGroup "ECC.Edwards25519"
             scalarAdd sa (scalarAdd sb sc) === scalarAdd (scalarAdd sa sb) sc
         , testProperty "addition commutative" $ \sa sb ->
             scalarAdd sa sb === scalarAdd sb sa
+        , testProperty "substraction with zero" $ \s ->
+            s `propertyEq` scalarSub s s0
+        , testProperty "substraction non-associative" $ \sa sb sc ->
+            scalarSub sa (scalarSub sb sc) === scalarSub (scalarAdd sa sc) sb
+        , testProperty "substraction anticommutative" $ \sa sb ->
+            s0 `propertyEq` (scalarSub sa sb `scalarAdd` scalarSub sb sa)
         , testProperty "multiplication with zero" $ \s ->
             propertyHold [ eqTest "zero left"  s0 (scalarMul s0 s)
                          , eqTest "zero right" s0 (scalarMul s s0)
@@ -65,10 +71,14 @@ tests = testGroup "ECC.Edwards25519"
         , testProperty "multiplication commutative" $ \sa sb ->
             scalarMul sa sb === scalarMul sb sa
         , testProperty "multiplication distributive" $ \sa sb sc ->
-            propertyHold [ eqTest "distributive left"  ((sa `scalarMul` sb) `scalarAdd` (sa `scalarMul` sc))
-                                                       (sa `scalarMul` (sb `scalarAdd` sc))
-                         , eqTest "distributive right" ((sb `scalarMul` sa) `scalarAdd` (sc `scalarMul` sa))
-                                                       ((sb `scalarAdd` sc) `scalarMul` sa)
+            propertyHold [ eqTest "distributive add left"  ((sa `scalarMul` sb) `scalarAdd` (sa `scalarMul` sc))
+                                                           (sa `scalarMul` (sb `scalarAdd` sc))
+                         , eqTest "distributive add right" ((sb `scalarMul` sa) `scalarAdd` (sc `scalarMul` sa))
+                                                           ((sb `scalarAdd` sc) `scalarMul` sa)
+                         , eqTest "distributive sub left"  ((sa `scalarMul` sb) `scalarSub` (sa `scalarMul` sc))
+                                                           (sa `scalarMul` (sb `scalarSub` sc))
+                         , eqTest "distributive sub right" ((sb `scalarMul` sa) `scalarSub` (sc `scalarMul` sa))
+                                                           ((sb `scalarSub` sc) `scalarMul` sa)
                          ]
         ]
     , testGroup "point arithmetic"

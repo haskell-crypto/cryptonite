@@ -40,6 +40,32 @@ ED25519_FN(ed25519_scalar_mul) (bignum256modm r, const bignum256modm x, const bi
     mul256_modm(r, x, y);
 }
 
+#if defined(ED25519_64BIT)
+typedef int64_t ed25519_scalar_sub_selem;
+#else
+typedef int32_t ed25519_scalar_sub_selem;
+#endif
+
+void
+ED25519_FN(ed25519_scalar_sub) (bignum256modm r, const bignum256modm x, const bignum256modm y) {
+    static const bignum256modm_element_t one = 1;
+    static const bignum256modm_element_t mask = (one << bignum256modm_bits_per_limb) - 1;
+    ed25519_scalar_sub_selem chain = 0;
+    for (int i = 0; i < bignum256modm_limb_size; i++) {
+        chain = (chain + x[i]) - y[i];
+        r[i] = chain & mask;
+        chain >>= bignum256modm_bits_per_limb;
+    }
+    bignum256modm_element_t borrow = chain; /* = 0 or -1 */
+
+    chain = 0;
+    for (int i = 0; i < bignum256modm_limb_size; i++) {
+        chain = (chain + r[i]) + (modm_m[i] & borrow);
+        r[i] = chain & mask;
+        chain >>= bignum256modm_bits_per_limb;
+    }
+}
+
 
 /*
     Point functions

@@ -64,6 +64,7 @@ module Crypto.ECC.Edwards25519
     -- * Arithmetic functions
     , toPoint
     , scalarAdd
+    , scalarSub
     , scalarMul
     , pointNegate
     , pointAdd
@@ -164,6 +165,14 @@ scalarAdd (Scalar a) (Scalar b) =
         withByteArray a $ \pa ->
         withByteArray b $ \pb ->
              ed25519_scalar_add out pa pb
+
+-- | Substract two scalars.
+scalarSub :: Scalar -> Scalar -> Scalar
+scalarSub (Scalar a) (Scalar b) =
+    Scalar $ B.allocAndFreeze scalarArraySize $ \out ->
+        withByteArray a $ \pa ->
+        withByteArray b $ \pb ->
+             ed25519_scalar_sub out pa pb
 
 -- | Multiply two scalars.
 scalarMul :: Scalar -> Scalar -> Scalar
@@ -301,6 +310,12 @@ foreign import ccall "cryptonite_ed25519_scalar_decode_long"
 
 foreign import ccall "cryptonite_ed25519_scalar_add"
     ed25519_scalar_add :: Ptr Scalar -- sum
+                       -> Ptr Scalar -- a
+                       -> Ptr Scalar -- b
+                       -> IO ()
+
+foreign import ccall "cryptonite_ed25519_scalar_sub"
+    ed25519_scalar_sub :: Ptr Scalar -- diff
                        -> Ptr Scalar -- a
                        -> Ptr Scalar -- b
                        -> IO ()
