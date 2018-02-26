@@ -3,16 +3,11 @@ module ECC.Edwards25519 ( tests ) where
 
 import           Crypto.Error
 import           Crypto.ECC.Edwards25519
-import qualified Data.ByteString as B
-import           Data.Word (Word8)
 import           Imports
 
 instance Arbitrary Scalar where
     arbitrary = fmap (throwCryptoError . scalarDecodeLong)
                      (arbitraryBS 64)
-
-smallScalar :: Word8 -> Scalar
-smallScalar = throwCryptoError . scalarDecodeLong . B.singleton
 
 newtype PrimeOrder = PrimeOrder Point
     deriving Show
@@ -24,7 +19,7 @@ instance Arbitrary PrimeOrder where
 -- arbitrary curve point, including points with a torsion component
 instance Arbitrary Point where
     arbitrary = do a <- arbitrary
-                   b <- elements $ map smallScalar [0 .. 7]
+                   b <- elements $ map fromInteger [0 .. 7]
                    return (pointsMulVarTime a b torsion8)
 
 -- an 8-torsion point
@@ -33,9 +28,9 @@ torsion8 = throwCryptoError $ pointDecode ("\199\ETBjp=M\216O\186<\vv\r\DLEg\SI*
 
 tests = testGroup "ECC.Edwards25519"
     [ testGroup "vectors"
-        [ testCase "11*G"         $ p011 @=? toPoint s011
-        , testCase "123*G"        $ p123 @=? toPoint s123
-        , testCase "134*G"        $ p134 @=? toPoint s134
+        [ testCase "11*G"         $ p011 @=? toPoint 11
+        , testCase "123*G"        $ p123 @=? toPoint 123
+        , testCase "134*G"        $ p134 @=? toPoint 134
         , testCase "123*G + 11*G" $ p134 @=? pointAdd p123 p011
         ]
     , testGroup "scalar arithmetic"
@@ -43,28 +38,31 @@ tests = testGroup "ECC.Edwards25519"
             let bs = scalarEncode s :: ByteString
                 ss = scalarDecodeLong bs
              in CryptoPassed s `propertyEq` ss
-        , testCase "curve order" $ s0 @=? sN
+        , testCase "curve order" $ 0 @=? sN
         , testProperty "addition with zero" $ \s ->
-            propertyHold [ eqTest "zero left"  s (scalarAdd s0 s)
-                         , eqTest "zero right" s (scalarAdd s s0)
+            propertyHold [ eqTest "zero left"  s (scalarAdd 0 s)
+                         , eqTest "zero right" s (scalarAdd s 0)
                          ]
         , testProperty "addition associative" $ \sa sb sc ->
             scalarAdd sa (scalarAdd sb sc) === scalarAdd (scalarAdd sa sb) sc
         , testProperty "addition commutative" $ \sa sb ->
             scalarAdd sa sb === scalarAdd sb sa
+        , testProperty "addition from integers" $ \(QAInteger ia) (QAInteger ib) ->
+            let s = fromInteger ia `scalarAdd` fromInteger ib
+             in fromInteger (ia + ib) === s
         , testProperty "substraction with zero" $ \s ->
-            s `propertyEq` scalarSub s s0
+            s `propertyEq` scalarSub s 0
         , testProperty "substraction non-associative" $ \sa sb sc ->
             scalarSub sa (scalarSub sb sc) === scalarSub (scalarAdd sa sc) sb
         , testProperty "substraction anticommutative" $ \sa sb ->
-            s0 `propertyEq` (scalarSub sa sb `scalarAdd` scalarSub sb sa)
+            0 `propertyEq` (scalarSub sa sb `scalarAdd` scalarSub sb sa)
         , testProperty "multiplication with zero" $ \s ->
-            propertyHold [ eqTest "zero left"  s0 (scalarMul s0 s)
-                         , eqTest "zero right" s0 (scalarMul s s0)
+            propertyHold [ eqTest "zero left"  0 (scalarMul 0 s)
+                         , eqTest "zero right" 0 (scalarMul s 0)
                          ]
         , testProperty "multiplication with one" $ \s ->
-            propertyHold [ eqTest "one left"  s (scalarMul s1 s)
-                         , eqTest "one right" s (scalarMul s s1)
+            propertyHold [ eqTest "one left"  s (scalarMul 1 s)
+                         , eqTest "one right" s (scalarMul s 1)
                          ]
         , testProperty "multiplication associative" $ \sa sb sc ->
             scalarMul sa (scalarMul sb sc) === scalarMul (scalarMul sa sb) sc
@@ -104,18 +102,18 @@ tests = testGroup "ECC.Edwards25519"
         , testProperty "doubling" $ \p ->
             pointAdd p p `propertyEq` pointDouble p
         , testProperty "multiplication by cofactor" $ \p ->
-            pointMul s8 p `propertyEq` pointMulByCofactor p
+            pointMul 8 p `propertyEq` pointMulByCofactor p
         , testProperty "prime order" $ \(PrimeOrder p) ->
             True `propertyEq` pointHasPrimeOrder p
         , testCase "8-torsion point" $ do
-            assertBool "mul by 4" $ p0 /= pointMul s4 torsion8
-            assertBool "mul by 8" $ p0 == pointMul s8 torsion8
+            assertBool "mul by 4" $ p0 /= pointMul 4 torsion8
+            assertBool "mul by 8" $ p0 == pointMul 8 torsion8
         , testProperty "scalarmult with zero" $ \p ->
-            p0 `propertyEq` pointMul s0 p
+            p0 `propertyEq` pointMul 0 p
         , testProperty "scalarmult with one" $ \p ->
-            p `propertyEq` pointMul s1 p
+            p `propertyEq` pointMul 1 p
         , testProperty "scalarmult with two" $ \p ->
-            pointDouble p `propertyEq` pointMul s2 p
+            pointDouble p `propertyEq` pointMul 2 p
         , testProperty "scalarmult with curve order - 1" $ \p ->
             pointHasPrimeOrder p === (pointNegate p == pointMul sI p)
         , testProperty "scalarmult commutative" $ \a b ->
@@ -129,18 +127,9 @@ tests = testGroup "ECC.Edwards25519"
         ]
     ]
   where
-    p0 = toPoint s0
-    s0 = smallScalar 0
-    s1 = smallScalar 1
-    s2 = smallScalar 2
-    s4 = smallScalar 4
-    s8 = smallScalar 8
+    p0 = toPoint 0
     sI = throwCryptoError $ scalarDecodeLong ("\236\211\245\\\SUBc\DC2X\214\156\247\162\222\249\222\DC4\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\DLE" :: ByteString)
     sN = throwCryptoError $ scalarDecodeLong ("\237\211\245\\\SUBc\DC2X\214\156\247\162\222\249\222\DC4\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\DLE" :: ByteString)
-
-    s011 = throwCryptoError $ scalarDecodeLong ("\011" :: ByteString)
-    s123 = throwCryptoError $ scalarDecodeLong ("\123" :: ByteString)
-    s134 = throwCryptoError $ scalarDecodeLong ("\134" :: ByteString)
 
     p011 = throwCryptoError $ pointDecode ("\x13\x37\x03\x6a\xc3\x2d\x8f\x30\xd4\x58\x9c\x3c\x1c\x59\x58\x12\xce\x0f\xff\x40\xe3\x7c\x6f\x5a\x97\xab\x21\x3f\x31\x82\x90\xad" :: ByteString)
     p123 = throwCryptoError $ pointDecode ("\xc4\xb8\x00\xc8\x70\x10\xf9\x46\x83\x03\xde\xea\x87\x65\x03\xe8\x86\xbf\xde\x19\x00\xe9\xe8\x46\xfd\x4c\x3c\xd0\x9c\x1c\xbc\x9f" :: ByteString)
