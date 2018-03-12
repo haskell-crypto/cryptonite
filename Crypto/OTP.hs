@@ -26,6 +26,43 @@
 -- >>>
 -- >>> let getOTPTime = getPOSIXTime >>= \t -> return (floor t :: OTPTime)
 --
+-- == Example Usage: Integration with Google Authenticator
+--
+-- Google Authenticator imposes a few restrictions on TOTP, such as only supporting 6 digit codes and 30 second time windows. An implementation would look something like:
+--
+-- 1. Generate a secret key and store it in a database, marking the code as unverified.
+-- 2. Return the encoded secret key to the client.
+-- 3. The client should render a QR code with the data: @otpauth:\/\/totp\/URL_ENCODED_COMPANY_NAME?secret=ENCODED_SECRET&issuer=URL_ENCODED_COMPANY_NAME@
+-- 4. The user should scan the QR code using Google Authenticator, then submit their 6 digit code ('OTP').
+-- 5. Use 'totpVerify' with 'defaultTOTPParams' to validate the code, then mark the code as verified.
+-- 6. Future login attempts should require a new 'OTP' code.
+--
+-- This code demonstrates how to generate the secret key:
+--
+-- > import Control.Monad.IO.Class
+-- > import qualified Data.Text as T
+-- > import qualified Data.Text.Encoding as TE
+-- > import Data.ByteArray (ByteArrayAccess) -- memory package
+-- > import Data.ByteArray.Encoding (convertToBase, Base(Base32))
+-- > import Crypto.Random (getSystemDRG, randomBytesGenerate)
+-- >
+-- > newtype TOTPSecretKey = TOTPSecretKey ByteString
+-- >     deriving (Show, ByteArrayAccess)
+-- > 
+-- > newtype GoogleAuthenticatorEncodedKey = GoogleAuthenticatorEncodedKey Text
+-- >   deriving (Show)
+-- >
+-- > -- Google Authenticator accepts arbitrary length secrets, using 80 bits for its own services.
+-- > -- RFC 4226 recommends a 160 bit (20 byte) secret key https://tools.ietf.org/html/rfc4226#section-4
+-- > randomTOTPSecretKey :: MonadIO m => m (TOTPSecretKey, GoogleAuthenticatorEncodedKey)
+-- > randomTOTPSecretKey = do
+-- >   key <- liftIO $ fst . randomBytesGenerate 20 <$> getSystemDRG
+-- >   return (TOTPSecretKey key, googleAuthenticatorEncode key)
+-- >
+-- > googleAuthenticatorEncode :: ByteString -> GoogleAuthenticatorEncodedKey
+-- > googleAuthenticatorEncode bs = GoogleAuthenticatorEncodedKey $ stripPadding $ TE.decodeUtf8 $ convertToBase Base32 bs
+-- >   where
+-- >     stripPadding t = T.dropWhileEnd (== '=') t
 
 module Crypto.OTP
     ( OTP
