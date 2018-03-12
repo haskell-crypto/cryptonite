@@ -184,6 +184,7 @@ Library
                      Crypto.Error.Types
                      Crypto.Number.Compat
                      Crypto.Hash.Types
+                     Crypto.Hash.Blake2
                      Crypto.Hash.Blake2s
                      Crypto.Hash.Blake2sp
                      Crypto.Hash.Blake2b
@@ -195,6 +196,7 @@ Library
                      Crypto.Hash.SHA512
                      Crypto.Hash.SHA512t
                      Crypto.Hash.SHA3
+                     Crypto.Hash.SHAKE
                      Crypto.Hash.Keccak
                      Crypto.Hash.MD2
                      Crypto.Hash.MD4
@@ -219,14 +221,15 @@ Library
                      Crypto.Internal.CompatPrim
                      Crypto.Internal.DeepSeq
                      Crypto.Internal.Imports
+                     Crypto.Internal.Nat
                      Crypto.Internal.Words
                      Crypto.Internal.WordArray
-  if impl(ghc >= 7.8)
-    Other-modules:   Crypto.Hash.SHAKE
-                     Crypto.Hash.Blake2
-                     Crypto.Internal.Nat
-  Build-depends:     base >= 4.6 && < 5
-                   , bytestring
+  if impl(ghc < 8.0)
+    Buildable: False
+  else
+    Build-depends:   base
+
+  Build-depends:     bytestring
                    , memory >= 0.14.14
                    , basement >= 0.0.6
                    , ghc-prim
@@ -416,7 +419,7 @@ Test-Suite test-cryptonite
                      Salsa
                      Utils
                      XSalsa
-  Build-Depends:     base >= 3 && < 5
+  Build-Depends:     base
                    , bytestring
                    , memory
                    , tasty
@@ -432,7 +435,7 @@ Benchmark bench-cryptonite
   hs-source-dirs:    benchs
   Main-is:           Bench.hs
   Other-modules:     Number.F2m
-  Build-Depends:     base >= 3 && < 5
+  Build-Depends:     base
                    , bytestring
                    , deepseq
                    , memory
