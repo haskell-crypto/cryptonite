@@ -1,6 +1,4 @@
 # compiler supported and their equivalent LTS
-compiler: ghc-7.8 lts-2.22
-compiler: ghc-7.10 lts-6.35
 compiler: ghc-8.0 lts-9.21
 compiler: ghc-8.2 lts-10.4
 compiler: ghc-8.4 ghc-8.4-alpha2
@@ -13,9 +11,7 @@ option: gaugedeps extradep=gauge-0.2.1
 option: basementmin extradep=basement-0.0.6 extradep=foundation-0.0.19 extradep=memory-0.14.14
 
 # builds
-build: ghc-7.8 basementmin gaugedeps nohaddock
 build: ghc-8.2 basementmin gaugedeps
-build: ghc-7.10 basementmin gaugedeps
 build: ghc-8.0 basementmin gaugedeps
 build: ghc-8.0 basementmin gaugedeps os=osx
 build: ghc-8.4 basementmin testdeps gaugedeps extradep=vector-0.12.0.1
