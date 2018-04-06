@@ -28,7 +28,7 @@ data CoprimesAssertionError = CoprimesAssertionError
 
 instance Exception CoprimesAssertionError
 
--- | Compute the modular exponentiation of base^exponant using
+-- | Compute the modular exponentiation of base^exponent using
 -- algorithms design to avoid side channels and timing measurement
 --
 -- Modulo need to be odd otherwise the normal fast modular exponentiation
@@ -42,7 +42,7 @@ instance Exception CoprimesAssertionError
 -- (which is now integer-gmp2), so is has the same security as old
 -- ghc version.
 expSafe :: Integer -- ^ base
-        -> Integer -- ^ exponant
+        -> Integer -- ^ exponent
         -> Integer -- ^ modulo
         -> Integer -- ^ result
 expSafe b e m
@@ -52,14 +52,14 @@ expSafe b e m
     | otherwise = gmpPowModInteger b e m    `onGmpUnsupported`
                   exponentiation b e m
 
--- | Compute the modular exponentiation of base^exponant using
+-- | Compute the modular exponentiation of base^exponent using
 -- the fastest algorithm without any consideration for
 -- hiding parameters.
 --
 -- Use this function when all the parameters are public,
 -- otherwise 'expSafe' should be prefered.
 expFast :: Integer -- ^ base
-        -> Integer -- ^ exponant
+        -> Integer -- ^ exponent
         -> Integer -- ^ modulo
         -> Integer -- ^ result
 expFast b e m = gmpPowModInteger b e m `onGmpUnsupported` exponentiation b e m
