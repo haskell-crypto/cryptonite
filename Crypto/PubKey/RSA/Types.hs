@@ -41,7 +41,7 @@ data Error =
 data PublicKey = PublicKey
     { public_size :: Int      -- ^ size of key in bytes
     , public_n    :: Integer  -- ^ public p*q
-    , public_e    :: Integer  -- ^ public exponant e
+    , public_e    :: Integer  -- ^ public exponent e
     } deriving (Show,Read,Eq,Data,Typeable)
 
 instance NFData PublicKey where
@@ -59,7 +59,7 @@ instance NFData PublicKey where
 --
 data PrivateKey = PrivateKey
     { private_pub  :: PublicKey -- ^ public part of a private key (size, n and e)
-    , private_d    :: Integer   -- ^ private exponant d
+    , private_d    :: Integer   -- ^ private exponent d
     , private_p    :: Integer   -- ^ p prime number
     , private_q    :: Integer   -- ^ q prime number
     , private_dP   :: Integer   -- ^ d mod (p-1)
