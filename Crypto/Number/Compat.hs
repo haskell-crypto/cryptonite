@@ -70,7 +70,9 @@ gmpLog2 _ = GmpUnsupported
 -- | Compute the power modulus using extra security to remain constant
 -- time wise through GMP
 gmpPowModSecInteger :: Integer -> Integer -> Integer -> GmpSupported Integer
-#if MIN_VERSION_integer_gmp(1,0,0)
+#if MIN_VERSION_integer_gmp(1,0,2)
+gmpPowModSecInteger b e m = GmpSupported (powModSecInteger b e m)
+#elif MIN_VERSION_integer_gmp(1,0,0)
 gmpPowModSecInteger _ _ _ = GmpUnsupported
 #elif MIN_VERSION_integer_gmp(0,5,1)
 gmpPowModSecInteger b e m = GmpSupported (powModSecInteger b e m)
