@@ -132,6 +132,7 @@ tests = testGroup "P256"
         , testProperty "lift-to-curve" $ propertyLiftToCurve
         , testProperty "point-add" $ propertyPointAdd
         , testProperty "point-negate" $ propertyPointNegate
+        , testProperty "point-mul" $ propertyPointMul
         , testProperty "infinity" $
             let gN = P256.toPoint P256.scalarN
                 g1 = P256.pointBase
@@ -166,6 +167,15 @@ tests = testGroup "P256"
             pe = ECC.pointMul curve (unP256 r) curveGen
             pR = P256.pointNegate p
          in ECC.pointNegate curve pe `propertyEq` (pointP256ToECC pR)
+
+    propertyPointMul s r =
+        let p     = P256.toPoint (unP256Scalar r)
+            pe    = ECC.pointMul curve (unP256 r) curveGen
+            pR    = P256.toPoint (P256.scalarMul (unP256Scalar s) (unP256Scalar r))
+            peR   = ECC.pointMul curve (unP256 s) pe
+         in propertyHold [ eqTest "p256" pR (P256.pointMul (unP256Scalar s) p)
+                         , eqTest "ecc" peR (pointP256ToECC pR)
+                         ]
 
     i2ospScalar :: Integer -> Bytes
     i2ospScalar i =
