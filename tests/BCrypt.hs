@@ -75,4 +75,8 @@ makeKATs = concatMap maketest (zip3 is passwords hashes)
 tests = testGroup "bcrypt"
     [ testGroup "KATs" makeKATs
     , testCase "Invalid hash length" (assertEqual "" (Left "Invalid hash format") (validatePasswordEither B.empty ("$2a$06$DCq7YPn5Rq63x1Lad4cll.TV4S6ytwfsfvkgY8jIucDrjc8deX1s" :: B.ByteString)))
+    , testCase "Hash and validate" (assertBool "Hashed password should validate" (validatePassword somePassword (bcrypt 5 aSalt somePassword :: B.ByteString)))
     ]
+  where
+    somePassword = "some password" :: B.ByteString
+    aSalt = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f" :: B.ByteString

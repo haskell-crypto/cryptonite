@@ -159,7 +159,7 @@ parseBCryptHash bc = do
     costTens  = fromIntegral (B.index bc 4) - zero
     costUnits = fromIntegral (B.index bc 5) - zero
     version   = chr (fromIntegral (B.index bc 2))
-    cost      = costUnits + (if costTens == 0 then 0 else 10^costTens) :: Int
+    cost      = costUnits + 10*costTens :: Int
 
     decodeSaltHash saltHash = do
         let (s, h) = B.splitAt 22 saltHash
