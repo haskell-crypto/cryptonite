@@ -39,6 +39,9 @@ newtype HMAC a = HMAC { hmacGetDigest :: Digest a }
 instance Eq (HMAC a) where
     (HMAC b1) == (HMAC b2) = B.constEq b1 b2
 
+instance Show (HMAC a) where
+    show = show . hmacGetDigest
+
 -- | compute a MAC using the supplied hashing function
 hmac :: (ByteArrayAccess key, ByteArrayAccess message, HashAlgorithm a)
      => key     -- ^ Secret key
