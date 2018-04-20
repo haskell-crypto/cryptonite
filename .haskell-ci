@@ -1,7 +1,7 @@
 # compiler supported and their equivalent LTS
 compiler: ghc-8.0 lts-9.21
-compiler: ghc-8.2 lts-10.4
-compiler: ghc-8.4 ghc-8.4-alpha2
+compiler: ghc-8.2 lts-11.6
+compiler: ghc-8.4 ghc-8.4.2
 
 # options
 # option: alias x=y z=v
