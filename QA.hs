@@ -26,7 +26,6 @@ allowedExtensions =
     , TypeFamilies, KindSignatures ]
 perModuleAllowedExtensions =
     [ ("Crypto/Hash/Utils.hs", [MagicHash])
-    , ("Crypto/Hash/Algorithms.hs", [CPP])
     , ("Crypto/Hash/SHAKE.hs", [UndecidableInstances,TypeOperators,ConstraintKinds,DataKinds,KindSignatures])
     , ("Crypto/Internal/ByteArray.hs", [MagicHash, UnboxedTuples])
     , ("Crypto/Internal/Memory.hs", [MagicHash, UnboxedTuples])
