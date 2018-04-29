@@ -23,10 +23,10 @@ newtype ModuleName = ModuleName String
 
 allowedExtensions =
     [ ScopedTypeVariables, BangPatterns, ForeignFunctionInterface, DeriveDataTypeable, ViewPatterns, GeneralizedNewtypeDeriving, ExistentialQuantification, EmptyDataDecls
-    , TypeFamilies, KindSignatures ]
+    , TypeFamilies, KindSignatures, DataKinds ]
 perModuleAllowedExtensions =
     [ ("Crypto/Hash/Utils.hs", [MagicHash])
-    , ("Crypto/Hash/SHAKE.hs", [UndecidableInstances,TypeOperators,ConstraintKinds,DataKinds,KindSignatures])
+    , ("Crypto/Hash/SHAKE.hs", [UndecidableInstances,TypeOperators,ConstraintKinds])
     , ("Crypto/Internal/ByteArray.hs", [MagicHash, UnboxedTuples])
     , ("Crypto/Internal/Memory.hs", [MagicHash, UnboxedTuples])
     , ("Crypto/Internal/Compat.hs", [CPP])
@@ -42,8 +42,10 @@ perModuleAllowedExtensions =
     , ("Crypto/Cipher/AES.hs", [CPP])
     , ("Crypto/Cipher/Types/Block.hs", [Rank2Types, MultiParamTypeClasses])
     , ("Crypto/Cipher/Types/AEAD.hs", [Rank2Types])
+    , ("Crypto/Cipher/CAST5/Primitive.hs", [MagicHash])
     , ("Crypto/Cipher/Camellia/Primitive.hs", [MagicHash])
     , ("Crypto/Cipher/DES/Primitive.hs", [FlexibleInstances])
+    , ("Crypto/Cipher/Twofish/Primitive.hs", [MagicHash])
     , ("Crypto/PubKey/Curve25519.hs", [MagicHash])
     , ("Crypto/Number/Compat.hs", [UnboxedTuples,MagicHash,CPP])
     ]

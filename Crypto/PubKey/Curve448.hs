@@ -12,7 +12,6 @@
 -- data types are compatible with the encoding specified in RFC 7748.
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MagicHash #-}
 module Crypto.PubKey.Curve448
     ( SecretKey
     , PublicKey
