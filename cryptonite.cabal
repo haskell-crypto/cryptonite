@@ -272,7 +272,7 @@ Library
                    , cbits/decaf/include
                    , cbits/decaf/p448
 
-  if arch(x86_64)
+  if arch(x86_64) || arch(aarch64)
     C-sources:         cbits/decaf/p448/arch_ref64/f_impl.c
                      , cbits/decaf/p448/f_generic.c
                      , cbits/decaf/p448/f_arithmetic.c
@@ -295,7 +295,7 @@ Library
     include-dirs:      cbits/decaf/include/arch_32
                      , cbits/decaf/p448/arch_32
 
-  if arch(x86_64)
+  if arch(x86_64) || arch(aarch64)
     C-sources: cbits/curve25519/curve25519-donna-c64.c
   else
     C-sources: cbits/curve25519/curve25519-donna.c
