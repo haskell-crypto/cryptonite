@@ -32,7 +32,8 @@ import           Crypto.Internal.Imports
 
 -- | Represent an HMAC that is a phantom type with the hash used to produce the mac.
 --
--- The Eq instance is constant time.
+-- The Eq instance is constant time.  No Show instance is provided, to avoid
+-- printing by mistake.
 newtype HMAC a = HMAC { hmacGetDigest :: Digest a }
     deriving (ByteArrayAccess)
 
