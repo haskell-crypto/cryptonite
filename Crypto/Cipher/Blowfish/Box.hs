@@ -5,15 +5,19 @@
 -- Portability : Good
 {-# LANGUAGE MagicHash #-}
 module Crypto.Cipher.Blowfish.Box
-    ( createKeySchedule
+    (   KeySchedule(..)
+    ,   createKeySchedule
     ) where
 
-import Crypto.Internal.WordArray (mutableArray32FromAddrBE, MutableArray32)
+import           Crypto.Internal.WordArray (MutableArray32,
+                                            mutableArray32FromAddrBE)
+
+newtype KeySchedule = KeySchedule MutableArray32
 
 -- | Create a key schedule mutable array of the pbox followed by
 -- all the sboxes.
-createKeySchedule :: IO MutableArray32
-createKeySchedule = mutableArray32FromAddrBE 1042 "\
+createKeySchedule :: IO KeySchedule
+createKeySchedule = KeySchedule `fmap` mutableArray32FromAddrBE 1042 "\
     \\x24\x3f\x6a\x88\x85\xa3\x08\xd3\x13\x19\x8a\x2e\x03\x70\x73\x44\
     \\xa4\x09\x38\x22\x29\x9f\x31\xd0\x08\x2e\xfa\x98\xec\x4e\x6c\x89\
     \\x45\x28\x21\xe6\x38\xd0\x13\x77\xbe\x54\x66\xcf\x34\xe9\x0c\x6c\
