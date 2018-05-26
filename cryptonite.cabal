@@ -62,6 +62,11 @@ source-repository head
   type: git
   location: https://github.com/haskell-crypto/cryptonite
 
+Flag use-system-library
+  Description: Use system @libargon2@ (via @pkg-config(1)@) and @blake2@ libraries instead of embedded copies
+  Default: False
+  manual: True
+
 Flag support_aesni
   Description:       allow compilation with AESNI on system and architecture that supports it
   Default:           True
@@ -78,7 +83,7 @@ Flag support_pclmuldq
   Manual:            True
 
 Flag support_sse
-  Description:       Use SSE optimized version of (BLAKE2, ARGON2)
+  Description:       Use SSE optimized version of (BLAKE2, ARGON2) (does nothing when using system libraries)
   Default:           False
   Manual:            True
 
@@ -344,11 +349,15 @@ Library
                   , cbits/blake2/ref/blake2bp-ref.c
     include-dirs: cbits/blake2/ref
 
-  if arch(x86_64) || flag(support_sse)
-    CPP-options:    -DSUPPORT_SSE
+  if flag(use-system-library)
+    CC-options:        -DUSE_SYSTEM_LIBRARY
+    PkgConfig-Depends: libargon2
+  else
+    if arch(x86_64) || flag(support_sse)
+      CPP-options:    -DSUPPORT_SSE
 
-  C-sources:      cbits/argon2/argon2.c
-  include-dirs:   cbits/argon2
+    C-sources:      cbits/argon2/argon2.c
+    include-dirs:   cbits/argon2
 
   if os(windows)
     cpp-options:    -DWINDOWS
