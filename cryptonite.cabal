@@ -247,6 +247,7 @@ Library
                    , cbits/cryptonite_cpu.c
                    , cbits/p256/p256.c
                    , cbits/p256/p256_ec.c
+                   , cbits/cryptonite_argon2.c
                    , cbits/cryptonite_blake2s.c
                    , cbits/cryptonite_blake2sp.c
                    , cbits/cryptonite_blake2b.c
