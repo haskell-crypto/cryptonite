@@ -134,7 +134,9 @@ Library
                      Crypto.Number.Nat
                      Crypto.Number.Prime
                      Crypto.Number.Serialize
+                     Crypto.Number.Serialize.LE
                      Crypto.Number.Serialize.Internal
+                     Crypto.Number.Serialize.Internal.LE
                      Crypto.KDF.Argon2
                      Crypto.KDF.PBKDF2
                      Crypto.KDF.Scrypt
