@@ -110,7 +110,8 @@ instance Num Scalar where
     signum = error "Edwards25519.Scalar: signum not implemented"
 
     fromInteger i = throwCryptoError (scalarDecodeLong bs)
-      where bs = i2osp i :: Bytes
+      where bs = i2osp (i `mod` order) :: Bytes
+            order = 2^(252::Int) + 27742317777372353535851937790883648493
 
 pointArraySize :: Int
 pointArraySize = 160 -- maximum [4 * 10 * 4 {- 32 bits -}, 4 * 5 * 8 {- 64 bits -}]
