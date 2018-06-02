@@ -239,7 +239,7 @@ Library
     Build-depends:   base
 
   Build-depends:     bytestring
-                   , memory >= 0.14.14
+                   , memory >= 0.14.18
                    , basement >= 0.0.6
                    , ghc-prim
   ghc-options:       -Wall -fwarn-tabs -optc-O3
