@@ -9,6 +9,7 @@ module Crypto.PubKey.Internal
     ( and'
     , (&&!)
     , dsaTruncHash
+    , dsaTruncHashDigest
     ) where
 
 import Data.Bits (shiftR)
@@ -32,8 +33,12 @@ False &&! False = False
 
 -- | Truncate and hash for DSA and ECDSA.
 dsaTruncHash :: (ByteArrayAccess msg, HashAlgorithm hash) => hash -> msg -> Integer -> Integer
-dsaTruncHash hashAlg m n
+dsaTruncHash hashAlg = dsaTruncHashDigest hashAlg . hashWith hashAlg
+
+-- | Truncate a digest for DSA and ECDSA.
+dsaTruncHashDigest :: HashAlgorithm hash => hash -> Digest hash -> Integer -> Integer
+dsaTruncHashDigest hashAlg digest n
     | d > 0 = shiftR e d
     | otherwise = e
-  where e = os2ip $ hashWith hashAlg m
+  where e = os2ip digest
         d = hashDigestSize hashAlg * 8 - numBits n
