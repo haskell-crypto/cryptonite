@@ -8,6 +8,7 @@
 -- Crypto hash types definitions
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -28,6 +29,7 @@ import           Basement.Block.Mutable (MutableBlock, new, unsafeWrite)
 import           Basement.NormalForm (deepseq)
 import           Basement.Types.OffsetSize (CountOf(..), Offset(..))
 import           GHC.TypeLits (Nat)
+import           Data.Data (Data)
 
 -- | Class representing hashing algorithms.
 --
@@ -76,7 +78,7 @@ newtype Context a = Context Bytes
 -- Creating a digest from a bytearray is also possible with function
 -- 'Crypto.Hash.digestFromByteString'.
 newtype Digest a = Digest (Block Word8)
-    deriving (Eq,Ord,ByteArrayAccess)
+    deriving (Eq,Ord,ByteArrayAccess, Data)
 
 instance NFData (Digest a) where
     rnf (Digest u) = u `deepseq` ()
