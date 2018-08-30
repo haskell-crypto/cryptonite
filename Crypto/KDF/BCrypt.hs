@@ -11,7 +11,7 @@
 -- >>> validatePassword password bcryptHash
 -- >>> True
 -- >>> let otherPassword = B.pack "otherpassword"
--- >>> otherHash <- hashPassword 12 otherPasssword :: IO B.ByteString
+-- >>> otherHash <- hashPassword 12 otherPassword :: IO B.ByteString
 -- >>> validatePassword otherPassword otherHash
 -- >>> True
 --
