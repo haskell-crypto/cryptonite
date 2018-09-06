@@ -15,6 +15,7 @@ module Crypto.Number.ModArithmetic
     -- * Inverse computing
     , inverse
     , inverseCoprimes
+    , jacobi
     ) where
 
 import Control.Exception (throw, Exception)
@@ -95,3 +96,29 @@ inverseCoprimes g m =
     case inverse g m of
         Nothing -> throw CoprimesAssertionError
         Just i  -> i
+
+-- | Computes the Jacobi symbol (a/n).
+-- 0 = a < n; n = 3 and odd.
+--  
+-- The Legendre and Jacobi symbols are indistinguishable exactly when the
+-- lower argument is an odd prime, in which case they have the same value.
+-- 
+-- See algorithm 2.149 in "Handbook of Applied Cryptography" by Alfred J. Menezes et al.
+jacobi :: Integer -> Integer -> Maybe Integer
+jacobi a n
+    | n < 3 || even n  = Nothing
+    | a == 0 || a == 1 = Just a
+    | n <= a           = jacobi (a `mod` n) n       
+    | a < 0            = 
+      let b = if n `mod` 4 == 1 then 1 else -1
+       in fmap (*b) (jacobi (-a) n)
+    | otherwise        =
+      let (e, a1) = asPowerOf2AndOdd a
+          nMod8   = n `mod` 8
+          nMod4   = n `mod` 4
+          a1Mod4  = a1 `mod` 4
+          s'      = if even e || nMod8 == 1 || nMod8 == 7 then 1 else -1
+          s       = if nMod4 == 3 && a1Mod4 == 3 then -s' else s'
+          n1      = n `mod` a1
+       in if a1 == 1 then Just s
+          else fmap (*s) (jacobi n1 a1)

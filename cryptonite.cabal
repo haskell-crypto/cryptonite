@@ -162,6 +162,10 @@ Library
                      Crypto.PubKey.RSA.PSS
                      Crypto.PubKey.RSA.OAEP
                      Crypto.PubKey.RSA.Types
+                     Crypto.PubKey.Rabin.Basic
+                     Crypto.PubKey.Rabin.Modified
+                     Crypto.PubKey.Rabin.RW
+                     Crypto.PubKey.Rabin.Types
                      Crypto.Random
                      Crypto.Random.Types
                      Crypto.Random.Entropy
@@ -231,6 +235,7 @@ Library
 
   Build-depends:     bytestring
                    , memory >= 0.14.14
+				   , random
                    , basement >= 0.0.6
                    , ghc-prim
   ghc-options:       -Wall -fwarn-tabs -optc-O3 -fno-warn-unused-imports
@@ -406,6 +411,7 @@ Test-Suite test-cryptonite
                      KAT_PubKey.OAEP
                      KAT_PubKey.PSS
                      KAT_PubKey.P256
+                     KAT_PubKey.Rabin
                      KAT_PubKey
                      KAT_RC4
                      KAT_Scrypt

@@ -13,7 +13,10 @@ module Crypto.Number.Basic
     , log2
     , numBits
     , numBytes
+    , asPowerOf2AndOdd
     ) where
+
+import Data.Bits
 
 import Crypto.Number.Compat
 
@@ -98,3 +101,16 @@ numBits n = gmpSizeInBits n `onGmpUnsupported` (if n == 0 then 1 else computeBit
 -- | Compute the number of bytes for an integer
 numBytes :: Integer -> Int
 numBytes n = gmpSizeInBytes n `onGmpUnsupported` ((numBits n + 7) `div` 8)
+
+-- | Express an integer as a odd number and a power of 2
+asPowerOf2AndOdd :: Integer -> (Int, Integer)
+asPowerOf2AndOdd a
+    | a == 0       = (0, 0)
+    | odd a        = (0, a)
+    | a < 0        = let (e, a1) = asPowerOf2AndOdd $ abs a in (e, -a1)
+    | isPowerOf2 a = (log2 a, 1)
+    | otherwise    = loop a 0
+        where      
+          isPowerOf2 n = (n /= 0) && ((n .&. (n - 1)) == 0)
+          loop n pw = if n `mod` 2 == 0 then loop (n `div` 2) (pw + 1)
+                      else (pw, n)
