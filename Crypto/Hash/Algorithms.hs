@@ -8,7 +8,7 @@
 -- Definitions of known hash algorithms
 --
 module Crypto.Hash.Algorithms
-    ( HashAlgorithm
+    ( HashAlgorithm(..)
     -- * Hash algorithms
     , Blake2s_160(..)
     , Blake2s_224(..)
@@ -31,6 +31,7 @@ module Crypto.Hash.Algorithms
     , SHA512(..)
     , SHA512t_224(..)
     , SHA512t_256(..)
+    , SHA512Half(..)
     , RIPEMD160(..)
     , Tiger(..)
     , Keccak_224(..)
@@ -54,7 +55,7 @@ module Crypto.Hash.Algorithms
     , Whirlpool(..)
     ) where
 
-import           Crypto.Hash.Types (HashAlgorithm)
+import           Crypto.Hash.Types (HashAlgorithm(..))
 import           Crypto.Hash.Blake2s
 import           Crypto.Hash.Blake2sp
 import           Crypto.Hash.Blake2b
@@ -68,6 +69,7 @@ import           Crypto.Hash.SHA256
 import           Crypto.Hash.SHA384
 import           Crypto.Hash.SHA512
 import           Crypto.Hash.SHA512t
+import           Crypto.Hash.SHA512Half
 import           Crypto.Hash.SHA3
 import           Crypto.Hash.Keccak
 import           Crypto.Hash.RIPEMD160

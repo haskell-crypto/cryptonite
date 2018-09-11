@@ -1,5 +1,5 @@
 Name:                cryptonite
-version:             0.25
+version:             0.26
 Synopsis:            Cryptography Primitives sink
 Description:
     A repository of cryptographic primitives.
@@ -195,6 +195,7 @@ Library
                      Crypto.Hash.SHA384
                      Crypto.Hash.SHA512
                      Crypto.Hash.SHA512t
+                     Crypto.Hash.SHA512Half
                      Crypto.Hash.SHA3
                      Crypto.Hash.SHAKE
                      Crypto.Hash.Keccak

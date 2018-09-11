@@ -56,4 +56,8 @@ void cryptonite_sha512t_init(struct sha512_ctx *ctx, uint32_t hashlen);
 void cryptonite_sha512t_update(struct sha512_ctx *ctx, const uint8_t *data, uint32_t len);
 void cryptonite_sha512t_finalize(struct sha512_ctx *ctx, uint32_t hashlen, uint8_t *out);
 
+void cryptonite_sha512half_init(struct sha512_ctx *ctx);
+void cryptonite_sha512half_update(struct sha512_ctx *ctx, const uint8_t *data, uint32_t len);
+void cryptonite_sha512half_finalize(struct sha512_ctx *ctx, uint8_t *out);
+
 #endif

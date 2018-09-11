@@ -265,3 +265,17 @@ void cryptonite_sha512t_finalize(struct sha512_ctx *ctx, uint32_t hashlen, uint8
 	memcpy(out, intermediate, hashlen / 8);
 }
 
+void cryptonite_sha512half_init(struct sha512_ctx *ctx) {
+	return cryptonite_sha512_init(ctx);
+}
+
+void cryptonite_sha512half_update(struct sha512_ctx *ctx, const uint8_t *data, uint32_t len) {
+	return cryptonite_sha512_update(ctx, data, len);
+}
+
+void cryptonite_sha512half_finalize(struct sha512_ctx *ctx, uint8_t *out) {
+	uint8_t intermediate[SHA512_DIGEST_SIZE];
+
+	cryptonite_sha512_finalize(ctx, intermediate);
+	memcpy(out, intermediate,  SHA512_DIGEST_SIZE>>1);
+}
