@@ -102,7 +102,7 @@ numBits n = gmpSizeInBits n `onGmpUnsupported` (if n == 0 then 1 else computeBit
 numBytes :: Integer -> Int
 numBytes n = gmpSizeInBytes n `onGmpUnsupported` ((numBits n + 7) `div` 8)
 
--- | Express an integer as a odd number and a power of 2
+-- | Express an integer as an odd number and a power of 2
 asPowerOf2AndOdd :: Integer -> (Int, Integer)
 asPowerOf2AndOdd a
     | a == 0       = (0, 0)

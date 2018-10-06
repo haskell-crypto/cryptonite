@@ -162,6 +162,7 @@ Library
                      Crypto.PubKey.RSA.PSS
                      Crypto.PubKey.RSA.OAEP
                      Crypto.PubKey.RSA.Types
+                     Crypto.PubKey.Rabin.OAEP
                      Crypto.PubKey.Rabin.Basic
                      Crypto.PubKey.Rabin.Modified
                      Crypto.PubKey.Rabin.RW

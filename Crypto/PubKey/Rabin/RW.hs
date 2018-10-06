@@ -15,6 +15,7 @@ module Crypto.PubKey.Rabin.RW
     , PrivateKey(..)
     , generate
     , encrypt
+    , encryptWithSeed
     , decrypt
     , sign
     , verify
@@ -25,9 +26,10 @@ import qualified Data.ByteString as B
 import           Data.Data
 
 import           Crypto.Hash
-import           Crypto.Number.Basic (gcde)
+import           Crypto.Number.Basic (numBytes, gcde)
 import           Crypto.Number.ModArithmetic (expSafe, jacobi)
-import           Crypto.Number.Serialize (i2osp, os2ip)
+import           Crypto.Number.Serialize (i2osp, i2ospOf_, os2ip)
+import           Crypto.PubKey.Rabin.OAEP
 import           Crypto.PubKey.Rabin.Types
 import           Crypto.Random.Types
 
@@ -53,61 +55,86 @@ generate :: MonadRandom m
 generate size = do
     (p, q) <- generatePrimes size (\p -> p `mod` 8 == 3) (\q -> q `mod` 8 == 7) 
     return (generateKeys p q)
-    where 
-        generateKeys p q =
-            let n = p*q   
-                d = ((p - 1)*(q - 1) `div` 4 + 1) `div` 2
-                publicKey = PublicKey { public_size = size
-                                      , public_n    = n }
-                privateKey = PrivateKey { private_pub = publicKey
-                                        , private_p   = p
-                                        , private_q   = q
-                                        , private_d   = d }
-             in (publicKey, privateKey)
+  where 
+    generateKeys p q =
+        let n = p*q   
+            d = ((p - 1)*(q - 1) `div` 4 + 1) `div` 2
+            publicKey = PublicKey { public_size = size
+                                    , public_n    = n }
+            privateKey = PrivateKey { private_pub = publicKey
+                                    , private_p   = p
+                                    , private_q   = q
+                                    , private_d   = d }
+            in (publicKey, privateKey)
+
+-- | Encrypt plaintext using public key an a predefined OAEP seed.
+--
+-- See algorithm 8.11 in "Handbook of Applied Cryptography" by Alfred J. Menezes et al.
+encryptWithSeed :: HashAlgorithm hash
+                => ByteString                               -- ^ Seed
+                -> OAEPParams hash ByteString ByteString    -- ^ OAEP padding
+                -> PublicKey                                -- ^ public key
+                -> ByteString                               -- ^ plaintext
+                -> Either Error ByteString
+encryptWithSeed seed oaep pk m =
+    let n = public_n pk
+        k = numBytes n
+     in do
+        m'  <- pad seed oaep k m
+        m'' <- ep1 n $ os2ip m'
+        return $ i2osp $ ep2 n m''
 
 -- | Encrypt plaintext using public key.
-encrypt :: PublicKey    -- ^ public key
-        -> ByteString   -- ^ plaintext
-        -> Either Error ByteString
-encrypt pk m =
-    let n  = public_n pk
-     in case ep1 n $ os2ip m of
-            Right m' -> Right $ i2osp $ ep2 n m'
-            Left err -> Left err
+encrypt :: (HashAlgorithm hash, MonadRandom m)
+        => OAEPParams hash ByteString ByteString    -- ^ OAEP padding parameters
+        -> PublicKey                                -- ^ public key
+        -> ByteString                               -- ^ plaintext 
+        -> m (Either Error ByteString)
+encrypt oaep pk m = do
+    seed <- getRandomBytes hashLen
+    return $ encryptWithSeed seed oaep pk m
+  where
+    hashLen = hashDigestSize (oaepHash oaep)   
 
 -- | Decrypt ciphertext using private key.
-decrypt :: PrivateKey   -- ^ private key
-        -> ByteString   -- ^ ciphertext
-        -> ByteString
-decrypt pk c =
+decrypt :: HashAlgorithm hash
+        => OAEPParams hash ByteString ByteString    -- ^ OAEP padding parameters
+        -> PrivateKey                               -- ^ private key
+        -> ByteString                               -- ^ ciphertext
+        -> Maybe ByteString
+decrypt oaep pk c =
     let d  = private_d pk    
-        n  = public_n $ private_pub pk 
-     in i2osp $ dp2 n $ dp1 d n $ os2ip c
+        n  = public_n $ private_pub pk
+        k  = numBytes n
+        c' = i2ospOf_ k $ dp2 n $ dp1 d n $ os2ip c
+     in case unpad oaep k c' of
+            Left _  -> Nothing
+            Right p -> Just p   
 
 -- | Sign message using hash algorithm and private key.
-sign :: (HashAlgorithm hash)
+sign :: HashAlgorithm hash
      => PrivateKey  -- ^ private key
      -> hash        -- ^ hash function
      -> ByteString  -- ^ message to sign
-     -> Either Error ByteString
+     -> Either Error Integer
 sign pk hashAlg m =
-    let d  = private_d pk
-        n  = public_n $ private_pub pk
-     in case ep1 n $ os2ip $ hashWith hashAlg m of
-            Right m' -> Right (i2osp $ dp1 d n m')
-            Left err -> Left err
+    let d = private_d pk
+        n = public_n $ private_pub pk
+     in do
+        m' <- ep1 n $ os2ip $ hashWith hashAlg m
+        return $ dp1 d n m' 
 
 -- | Verify signature using hash algorithm and public key.
-verify :: (HashAlgorithm hash)
+verify :: HashAlgorithm hash
        => PublicKey     -- ^ public key
        -> hash          -- ^ hash function
        -> ByteString    -- ^ message
-       -> ByteString    -- ^ signature
+       -> Integer       -- ^ signature
        -> Bool
 verify pk hashAlg m s =
     let n  = public_n pk
         h  = os2ip $ hashWith hashAlg m
-        h' = dp2 n $ ep2 n $ os2ip s
+        h' = dp2 n $ ep2 n s
      in h' == h
 
 -- | Encryption primitive 1

@@ -18,6 +18,7 @@ type PrimeCondition = Integer -> Bool
 
 -- | Error possible during encryption, decryption or signing.
 data Error = MessageTooLong       -- ^ the message to encrypt is too long
+           | MessageNotRecognized -- ^ the message decrypted doesn't have a OAEP structure
            | InvalidParameters    -- ^ some parameters lead to breaking assumptions
            deriving (Show, Eq)
 
