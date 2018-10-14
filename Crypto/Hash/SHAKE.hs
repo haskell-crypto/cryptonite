@@ -22,6 +22,7 @@ module Crypto.Hash.SHAKE
 
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
+import           Data.Data
 import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
@@ -37,7 +38,7 @@ import           Crypto.Internal.Nat
 -- correlated (one being a prefix of the other).  Results are unrelated to
 -- 'SHAKE256' results.
 data SHAKE128 (bitlen :: Nat) = SHAKE128
-    deriving (Show, Typeable)
+    deriving (Show, Data, Typeable)
 
 instance (IsDivisibleBy8 bitlen, KnownNat bitlen) => HashAlgorithm (SHAKE128 bitlen) where
     type HashBlockSize           (SHAKE128 bitlen)  = 168
@@ -58,7 +59,7 @@ instance (IsDivisibleBy8 bitlen, KnownNat bitlen) => HashAlgorithm (SHAKE128 bit
 -- correlated (one being a prefix of the other).  Results are unrelated to
 -- 'SHAKE128' results.
 data SHAKE256 (bitlen :: Nat) = SHAKE256
-    deriving (Show, Typeable)
+    deriving (Show, Data, Typeable)
 
 instance (IsDivisibleBy8 bitlen, KnownNat bitlen) => HashAlgorithm (SHAKE256 bitlen) where
     type HashBlockSize           (SHAKE256 bitlen) = 136
