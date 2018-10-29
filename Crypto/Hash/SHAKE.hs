@@ -12,7 +12,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -21,28 +20,31 @@ module Crypto.Hash.SHAKE
     (  SHAKE128 (..), SHAKE256 (..)
     ) where
 
+import           Control.Monad (when)
 import           Crypto.Hash.Types
-import           Foreign.Ptr (Ptr)
+import           Foreign.Ptr (Ptr, castPtr)
+import           Foreign.Storable (Storable(..))
+import           Data.Bits
+import           Data.Data
 import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 import           Data.Proxy (Proxy(..))
-import           GHC.TypeLits (Nat, KnownNat, natVal)
+import           GHC.TypeLits (Nat, KnownNat, type (+))
 import           Crypto.Internal.Nat
 
 -- | SHAKE128 (128 bits) extendable output function.  Supports an arbitrary
--- digest size (multiple of 8 bits), to be specified as a type parameter
--- of kind 'Nat'.
+-- digest size, to be specified as a type parameter of kind 'Nat'.
 --
 -- Note: outputs from @'SHAKE128' n@ and @'SHAKE128' m@ for the same input are
 -- correlated (one being a prefix of the other).  Results are unrelated to
 -- 'SHAKE256' results.
 data SHAKE128 (bitlen :: Nat) = SHAKE128
-    deriving (Show, Typeable)
+    deriving (Show, Data, Typeable)
 
-instance (IsDivisibleBy8 bitlen, KnownNat bitlen) => HashAlgorithm (SHAKE128 bitlen) where
+instance KnownNat bitlen => HashAlgorithm (SHAKE128 bitlen) where
     type HashBlockSize           (SHAKE128 bitlen)  = 168
-    type HashDigestSize          (SHAKE128 bitlen) = Div8 bitlen
+    type HashDigestSize          (SHAKE128 bitlen) = Div8 (bitlen + 7)
     type HashInternalContextSize (SHAKE128 bitlen) = 376
     hashBlockSize  _          = 168
     hashDigestSize _          = byteLen (Proxy :: Proxy bitlen)
@@ -52,18 +54,17 @@ instance (IsDivisibleBy8 bitlen, KnownNat bitlen) => HashAlgorithm (SHAKE128 bit
     hashInternalFinalize      = shakeFinalizeOutput (Proxy :: Proxy bitlen)
 
 -- | SHAKE256 (256 bits) extendable output function.  Supports an arbitrary
--- digest size (multiple of 8 bits), to be specified as a type parameter
--- of kind 'Nat'.
+-- digest size, to be specified as a type parameter of kind 'Nat'.
 --
 -- Note: outputs from @'SHAKE256' n@ and @'SHAKE256' m@ for the same input are
 -- correlated (one being a prefix of the other).  Results are unrelated to
 -- 'SHAKE128' results.
 data SHAKE256 (bitlen :: Nat) = SHAKE256
-    deriving (Show, Typeable)
+    deriving (Show, Data, Typeable)
 
-instance (IsDivisibleBy8 bitlen, KnownNat bitlen) => HashAlgorithm (SHAKE256 bitlen) where
+instance KnownNat bitlen => HashAlgorithm (SHAKE256 bitlen) where
     type HashBlockSize           (SHAKE256 bitlen) = 136
-    type HashDigestSize          (SHAKE256 bitlen) = Div8 bitlen
+    type HashDigestSize          (SHAKE256 bitlen) = Div8 (bitlen + 7)
     type HashInternalContextSize (SHAKE256 bitlen) = 344
     hashBlockSize  _          = 136
     hashDigestSize _          = byteLen (Proxy :: Proxy bitlen)
@@ -72,7 +73,7 @@ instance (IsDivisibleBy8 bitlen, KnownNat bitlen) => HashAlgorithm (SHAKE256 bit
     hashInternalUpdate        = c_sha3_update
     hashInternalFinalize      = shakeFinalizeOutput (Proxy :: Proxy bitlen)
 
-shakeFinalizeOutput :: (IsDivisibleBy8 bitlen, KnownNat bitlen)
+shakeFinalizeOutput :: KnownNat bitlen
                     => proxy bitlen
                     -> Ptr (Context a)
                     -> Ptr (Digest a)
@@ -80,6 +81,16 @@ shakeFinalizeOutput :: (IsDivisibleBy8 bitlen, KnownNat bitlen)
 shakeFinalizeOutput d ctx dig = do
     c_sha3_finalize_shake ctx
     c_sha3_output ctx dig (byteLen d)
+    shakeTruncate d (castPtr dig)
+
+shakeTruncate :: KnownNat bitlen => proxy bitlen -> Ptr Word8 -> IO ()
+shakeTruncate d ptr =
+    when (bits > 0) $ do
+        byte <- peekElemOff ptr index
+        pokeElemOff ptr index (byte .&. mask)
+  where
+    mask = (1 `shiftL` bits) - 1
+    (index, bits) = integralNatVal d `divMod` 8
 
 foreign import ccall unsafe "cryptonite_sha3_init"
     c_sha3_init :: Ptr (Context a) -> Word32 -> IO ()

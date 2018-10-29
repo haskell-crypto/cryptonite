@@ -1,20 +1,20 @@
 # compiler supported and their equivalent LTS
 compiler: ghc-8.0 lts-9.21
-compiler: ghc-8.2 lts-11.6
-compiler: ghc-8.4 ghc-8.4.2
+compiler: ghc-8.2 lts-11.22
+compiler: ghc-8.4 lts-12.15
+compiler: ghc-8.6 nightly-2018-10-21
 
 # options
 # option: alias x=y z=v
-option: testdeps extradep=QuickCheck-2.11.3 extradep=ansi-terminal-0.8.0.1 extradep=async-2.1.1.1 extradep=call-stack-0.1.0 extradep=clock-0.7.2 extradep=optparse-applicative-0.14.0.0 extradep=random-1.1 extradep=tagged-0.8.5 extradep=unbounded-delays-0.1.1.0 extradep=tasty-1.0.0.1 extradep=tasty-hunit-0.10.0.1 extradep=tasty-kat-0.0.3 extradep=tasty-quickcheck-0.9.2 extradep=ansi-wl-pprint-0.6.8.2 extradep=colour-2.3.4 extradep=tf-random-0.5 extradep=transformers-compat-0.5.1.4 extradep=primitive-0.6.3.0 allow-newer
 option: gaugedeps extradep=gauge-0.2.1
-
 option: basementmin extradep=basement-0.0.6 extradep=foundation-0.0.19 extradep=memory-0.14.14
 
 # builds
-build: ghc-8.2 basementmin gaugedeps
+build: ghc-8.2
 build: ghc-8.0 basementmin gaugedeps
 build: ghc-8.0 basementmin gaugedeps os=osx
-build: ghc-8.4 basementmin testdeps gaugedeps extradep=vector-0.12.0.1
+build: ghc-8.4
+build: ghc-8.6
 
 # packages
 package: '.'
