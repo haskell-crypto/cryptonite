@@ -111,8 +111,8 @@ pad len m
 -- | Produce a standard PKCS1.5 padding for signature
 padSignature :: ByteArray signature => Int -> signature -> Either Error signature
 padSignature klen signature
-    | klen < siglen+1 = Left SignatureTooLong
-    | otherwise       = Right (B.pack padding `B.append` signature)
+    | klen < siglen + 11 = Left SignatureTooLong
+    | otherwise          = Right (B.pack padding `B.append` signature)
   where
         siglen    = B.length signature
         padding   = 0 : 1 : (replicate (klen - siglen - 3) 0xff ++ [0])
