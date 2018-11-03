@@ -1,7 +1,7 @@
 -- |
 -- Module      : Crypto.PubKey.Rabin.Types
 -- License     : BSD-style
--- Maintainer  : Carlos Rodrigue-Vega <crodveg@yahoo.es>
+-- Maintainer  : Carlos Rodriguez-Vega <crodveg@yahoo.es>
 -- Stability   : experimental
 -- Portability : unknown
 --
