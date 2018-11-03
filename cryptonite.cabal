@@ -36,7 +36,7 @@ Build-Type:          Simple
 Homepage:            https://github.com/haskell-crypto/cryptonite
 Bug-reports:         https://github.com/haskell-crypto/cryptonite/issues
 Cabal-Version:       >=1.18
-tested-with:         GHC==8.4.2, GHC==8.2.2, GHC==8.0.2
+tested-with:         GHC==8.6.1, GHC==8.4.4, GHC==8.2.2, GHC==8.0.2
 extra-doc-files:     README.md CHANGELOG.md
 extra-source-files:  cbits/*.h
                      cbits/aes/*.h
@@ -412,6 +412,7 @@ Test-Suite test-cryptonite
                      KAT_PubKey.OAEP
                      KAT_PubKey.PSS
                      KAT_PubKey.P256
+                     KAT_PubKey.RSA
                      KAT_PubKey.Rabin
                      KAT_PubKey
                      KAT_RC4

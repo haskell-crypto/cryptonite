@@ -15,8 +15,8 @@ module Crypto.Internal.Nat
 
 import           GHC.TypeLits
 
-byteLen :: (KnownNat bitlen, IsDivisibleBy8 bitlen, Num a) => proxy bitlen -> a
-byteLen d = fromInteger (natVal d `div` 8)
+byteLen :: (KnownNat bitlen, Num a) => proxy bitlen -> a
+byteLen d = fromInteger ((natVal d + 7) `div` 8)
 
 integralNatVal :: (KnownNat bitlen, Num a) => proxy bitlen -> a
 integralNatVal = fromInteger . natVal

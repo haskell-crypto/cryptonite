@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE DataKinds #-}
 module Hash
@@ -9,7 +8,9 @@ module Hash
 import Crypto.Hash
 
 import qualified Data.ByteString as B
+import           Data.ByteArray (convert)
 import qualified Data.ByteArray.Encoding as B (convertToBase, Base(..))
+import           GHC.TypeLits
 import Imports
 
 v0,v1,v2 :: ByteString
@@ -235,7 +236,25 @@ makeTestChunk (hashName, hashAlg, _) =
         runhash hashAlg inp `propertyEq` runhashinc hashAlg (chunkS ckLen inp)
     ]
 
+-- SHAKE128 truncation example with expected byte at final position
+-- <https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Standards-and-Guidelines/documents/examples/ShakeTruncation.pdf>
+shake128TruncationBytes = [0x01, 0x03, 0x07, 0x0f, 0x0f, 0x2f, 0x6f, 0x6f]
+
+makeTestSHAKE128Truncation i byte =
+    testCase (show i) $ xof 4088 `B.snoc` byte @=? xof (4088 + i)
+  where
+    hashEmpty :: KnownNat n => proxy n -> Digest (SHAKE128 n)
+    hashEmpty _ = hash B.empty
+
+    xof n = case someNatVal n of
+                Nothing          -> error ("invalid Nat: " ++ show n)
+                Just (SomeNat p) -> convert (hashEmpty p)
+
 tests = testGroup "hash"
     [ testGroup "KATs" (map makeTestAlg expected)
     , testGroup "Chunking" (concatMap makeTestChunk expected)
+    , testGroup "Truncating"
+        [ testGroup "SHAKE128"
+            (zipWith makeTestSHAKE128Truncation [1..] shake128TruncationBytes)
+        ]
     ]

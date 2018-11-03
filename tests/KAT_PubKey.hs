@@ -16,6 +16,7 @@ import KAT_PubKey.PSS
 import KAT_PubKey.DSA
 import KAT_PubKey.ECC
 import KAT_PubKey.ECDSA
+import KAT_PubKey.RSA
 import KAT_PubKey.Rabin
 import Utils
 import qualified KAT_PubKey.P256 as P256
@@ -36,6 +37,7 @@ vectorsMGF =
 
 tests = testGroup "PubKey"
     [ testGroup "MGF1" $ map doMGFTest (zip [katZero..] vectorsMGF)
+    , rsaTests
     , pssTests
     , oaepTests
     , dsaTests

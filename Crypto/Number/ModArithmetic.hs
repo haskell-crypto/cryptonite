@@ -39,9 +39,8 @@ instance Exception CoprimesAssertionError
 -- from expFast, and thus provide the same unstudied and dubious
 -- timing and side channels claims.
 --
--- with GHC 7.10, the powModSecInteger is missing from integer-gmp
--- (which is now integer-gmp2), so is has the same security as old
--- ghc version.
+-- Before GHC 8.4.2, powModSecInteger is missing from integer-gmp,
+-- so expSafe has the same security as expFast.
 expSafe :: Integer -- ^ base
         -> Integer -- ^ exponent
         -> Integer -- ^ modulo
