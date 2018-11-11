@@ -97,7 +97,7 @@ inverseCoprimes g m =
         Just i  -> i
 
 -- | Computes the Jacobi symbol (a/n).
--- 0 = a < n; n = 3 and odd.
+-- 0 ≤ a < n; n ≥ 3 and odd.
 --  
 -- The Legendre and Jacobi symbols are indistinguishable exactly when the
 -- lower argument is an odd prime, in which case they have the same value.
