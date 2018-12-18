@@ -236,7 +236,6 @@ Library
 
   Build-depends:     bytestring
                    , memory >= 0.14.14
-                   , random
                    , basement >= 0.0.6
                    , ghc-prim
   ghc-options:       -Wall -fwarn-tabs -optc-O3 -fno-warn-unused-imports
