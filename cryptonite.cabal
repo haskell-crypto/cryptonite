@@ -162,6 +162,11 @@ Library
                      Crypto.PubKey.RSA.PSS
                      Crypto.PubKey.RSA.OAEP
                      Crypto.PubKey.RSA.Types
+                     Crypto.PubKey.Rabin.OAEP
+                     Crypto.PubKey.Rabin.Basic
+                     Crypto.PubKey.Rabin.Modified
+                     Crypto.PubKey.Rabin.RW
+                     Crypto.PubKey.Rabin.Types
                      Crypto.Random
                      Crypto.Random.Types
                      Crypto.Random.Entropy
@@ -407,6 +412,7 @@ Test-Suite test-cryptonite
                      KAT_PubKey.PSS
                      KAT_PubKey.P256
                      KAT_PubKey.RSA
+                     KAT_PubKey.Rabin
                      KAT_PubKey
                      KAT_RC4
                      KAT_Scrypt

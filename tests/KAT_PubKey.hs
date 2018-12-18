@@ -17,6 +17,7 @@ import KAT_PubKey.DSA
 import KAT_PubKey.ECC
 import KAT_PubKey.ECDSA
 import KAT_PubKey.RSA
+import KAT_PubKey.Rabin
 import Utils
 import qualified KAT_PubKey.P256 as P256
 
@@ -43,6 +44,7 @@ tests = testGroup "PubKey"
     , eccTests
     , ecdsaTests
     , P256.tests
+    , rabinTests
     ]
 
 --newKats = [ eccKatTests ]

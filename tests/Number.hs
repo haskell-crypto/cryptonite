@@ -52,6 +52,9 @@ tests = testGroup "number"
          in bits == numBits prime
     , testProperty "marshalling" $ \qaInt ->
         getQAInteger qaInt == os2ip (i2osp (getQAInteger qaInt) :: Bytes)
+    , testProperty "as-power-of-2-and-odd" $ \n ->
+        let (e, a1) = asPowerOf2AndOdd n
+         in n == (2^e)*a1
     , testGroup "marshalling-kat-to-bytearray" $ map toSerializationKat $ zip [katZero..] serializationVectors
     , testGroup "marshalling-kat-to-integer" $ map toSerializationKatInteger $ zip [katZero..] serializationVectors
     ]
