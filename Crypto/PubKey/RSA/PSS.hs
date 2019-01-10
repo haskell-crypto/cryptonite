@@ -80,7 +80,7 @@ signDigestWithSalt salt blinder params pk digest
           m'       = B.concat [B.replicate 8 0,mHash,salt]
           h        = B.convert $ hashWith (pssHash params) m'
           db       = B.concat [B.replicate (dbLen - saltLen - 1) 0,B.singleton 1,salt]
-          dbmask   = (pssMaskGenAlg params) h dbLen
+          dbmask   = pssMaskGenAlg params h dbLen
           maskedDB = B.pack $ normalizeToKeySize pubBits $ B.zipWith xor db dbmask
           em       = B.concat [maskedDB, h, B.singleton (pssTrailerField params)]
 
@@ -148,7 +148,7 @@ verify :: HashAlgorithm hash
        -> ByteString -- ^ Message to verify
        -> ByteString -- ^ Signature
        -> Bool
-verify params pk m s = verifyDigest params pk mHash s
+verify params pk m = verifyDigest params pk mHash
   where mHash     = hashWith (pssHash params) m
 
 -- | Verify a signature using the PSS Parameters
@@ -175,7 +175,7 @@ verifyDigest params pk digest s
               em        = ep pk s
               maskedDB  = B.take (B.length em - hashLen - 1) em
               h         = B.take hashLen $ B.drop (B.length maskedDB) em
-              dbmask    = (pssMaskGenAlg params) h dbLen
+              dbmask    = pssMaskGenAlg params h dbLen
               db        = B.pack $ normalizeToKeySize pubBits $ B.zipWith xor maskedDB dbmask
               (ps0,z)   = B.break (== 1) db
               (b1,salt) = B.splitAt 1 z
@@ -186,5 +186,5 @@ normalizeToKeySize :: Int -> [Word8] -> [Word8]
 normalizeToKeySize _    []     = [] -- very unlikely
 normalizeToKeySize bits (x:xs) = x .&. mask : xs
     where mask = if sh > 0 then 0xff `shiftR` (8-sh) else 0xff
-          sh   = ((bits-1) .&. 0x7)
+          sh   = (bits-1) .&. 0x7
 
