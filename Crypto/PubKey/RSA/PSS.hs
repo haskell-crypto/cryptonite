@@ -30,7 +30,7 @@ import           Data.Bits (xor, shiftR, (.&.))
 import           Data.Word
 
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray)
-import qualified Crypto.Internal.ByteArray as B (convert)
+import qualified Crypto.Internal.ByteArray as B (convert, eq)
 
 import           Data.ByteString (ByteString)
 import qualified Data.ByteString as B
@@ -165,7 +165,7 @@ verifyDigest params pk digest s
     | B.last em /= pssTrailerField params = False
     | not (B.all (== 0) ps0)              = False
     | b1 /= B.singleton 1                 = False
-    | otherwise                           = h == B.convert h'
+    | otherwise                           = B.eq h h'
         where -- parameters
               hashLen   = hashDigestSize (pssHash params)
               mHash     = B.convert digest
