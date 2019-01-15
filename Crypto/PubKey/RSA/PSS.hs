@@ -166,7 +166,7 @@ verifyDigest params pk digest s
     | B.length s /= k                     = False
     | B.any (/= 0) pre                    = False
     | B.last em /= pssTrailerField params = False
-    | not (B.all (== 0) ps0)              = False
+    | B.any (/= 0) ps0                    = False
     | b1 /= B.singleton 1                 = False
     | otherwise                           = B.eq h h'
         where -- parameters
