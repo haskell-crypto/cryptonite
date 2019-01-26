@@ -29,17 +29,17 @@ module Crypto.PubKey.DSA
     ) where
 
 import           Crypto.Random.Types
-import           Data.Bits (testBit)
+import qualified Data.Bits as Bits (shiftL, (.|.), shiftR)
 import           Data.Data
 import           Data.Maybe
 import           Crypto.Number.Basic (numBits)
 import           Crypto.Number.ModArithmetic (expFast, expSafe, inverse)
 import           Crypto.Number.Serialize
 import           Crypto.Number.Generate
-import           Crypto.Internal.ByteArray (ByteArrayAccess(length), convert, index, dropView, takeView)
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, ScrubbedBytes, convert, index, dropView, takeView, pack, unpack)
 import           Crypto.Internal.Imports
 import           Crypto.Hash
-import           Prelude hiding (length)
+import           Prelude
 
 -- | DSA Public Number, usually embedded in DSA Public Key
 type PublicNumber = Integer
@@ -126,7 +126,7 @@ signWith k pk hashAlg msg
           x              = private_x pk
           -- compute r,s
           kInv      = fromJust $ inverse k q
-          hm        = os2ip $ hashWith hashAlg msg
+          hm        = dsaHash q hashAlg msg
           r         = expSafe g k p `mod` q
           s         = (kInv * (hm + x * r)) `mod` q
 
@@ -148,11 +148,36 @@ verify hashAlg pk (Signature r s) m
     | otherwise                            = v == r
     where (Params p g q) = public_params pk
           y       = public_y pk
-          hm      = os2ip . truncateHash $ hashWith hashAlg m
+          hm      = dsaHash q hashAlg m
 
           w       = fromJust $ inverse s q
           u1      = (hm*w) `mod` q
           u2      = (r*w) `mod` q
           v       = ((expFast g u1 p) * (expFast y u2 p)) `mod` p `mod` q
-          -- if the hash is larger than the size of q, truncate it; FIXME: deal with the case of a q not evenly divisible by 8
-          truncateHash h = if numBits (os2ip h) > numBits q then takeView h (numBits q `div` 8) else dropView h 0
+
+dsaHash :: (ByteArrayAccess msg, HashAlgorithm hash) => Integer -> hash -> msg -> Integer
+dsaHash q hashAlg msg =
+  -- if the hash is larger than the size of q, truncate it; FIXME: deal with the case of a q not evenly divisible by 8
+  let numDropBits = (hashDigestSize hashAlg)*8 - numBits q
+      rawHash = hashWith hashAlg msg
+  in case compare numDropBits 0 of 
+       GT -> -- hash output is larger than modulus
+          let (nq,nr) = numDropBits `divMod` 8
+          in if nr == 0 -- difference is 0 mod 8 => numBits is 0 `mod` 8
+             then os2ip $ takeView rawHash $ (numBits q) `div` 8
+             else os2ip $ shiftR rawHash numDropBits
+       _ -> os2ip rawHash
+
+-- shift right by a given number of bits, dropping full bytes of leading zeros
+-- based on code from the `bits-bytestring` package 
+shiftR :: (ByteArrayAccess m) => m -> Int -> ScrubbedBytes
+shiftR bs i =
+    let ws = unpack bs
+    in pack $ go 0 $ take (length ws - q) ws
+  where
+    (q,r) = i `divMod` 8
+    go _ [] = []
+    go w1 (w2:wst) = (maskR w1 w2) : go w2 wst
+    -- given [w1,w2], constructs w2', which is  left by j bits to get the
+    -- bottom j bits of w1 || top (8-j) bits of w2
+    maskR w1 w2 = (Bits.shiftL w1 (8-r)) Bits..|. (Bits.shiftR w2 r)
