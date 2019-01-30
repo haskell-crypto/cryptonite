@@ -25,7 +25,7 @@ os2ip bs = unsafeDoIO $ B.withByteArray bs (\p -> Internal.os2ip p (B.length bs)
 
 -- | @i2osp@ converts a positive integer into a byte string.
 --
--- The first byte is MSB (most significant byte); the last byte is the LSB (least significant byte)
+-- The first byte is MSB (most significant byte); the last byte is the LSB (least significant byte).
 i2osp :: B.ByteArray ba => Integer -> ba
 i2osp 0 = B.allocAndFreeze 1  (\p -> Internal.i2osp 0 p 1 >> return ())
 i2osp m = B.allocAndFreeze sz (\p -> Internal.i2osp m p sz >> return ())

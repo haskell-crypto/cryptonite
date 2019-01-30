@@ -29,10 +29,10 @@ import qualified Crypto.Internal.ByteArray as B
 
 -- | Parameters for Scrypt
 data Parameters = Parameters
-    { n            :: Word64 -- ^ Cpu/Memory cost ratio. must be a power of 2 greater than 1. also known as N.
+    { n            :: Word64 -- ^ Cpu/Memory cost ratio. must be a power of 2 greater than 1. Also known as N.
     , r            :: Int    -- ^ Must satisfy r * p < 2^30
     , p            :: Int    -- ^ Must satisfy r * p < 2^30
-    , outputLength :: Int    -- ^ the number of bytes to generate out of Scrypt
+    , outputLength :: Int    -- ^ The number of bytes to generate out of Scrypt
     }
 
 foreign import ccall "cryptonite_scrypt_smix"

@@ -260,11 +260,11 @@ doBlock mode key (Word128 d1 d2) =
     let d1g = d1f `xor` (getKeyKw mode key 3) in
     w64tow128 (d2g, d1g)
 
-{- encryption for 128 bits blocks -}
+{- Encryption for 128 bits blocks -}
 encryptBlock :: Camellia -> Word128 -> Word128
 encryptBlock = doBlock Encrypt
 
-{- decryption for 128 bits blocks -}
+{- Decryption for 128 bits blocks -}
 decryptBlock :: Camellia -> Word128 -> Word128
 decryptBlock = doBlock Decrypt
 

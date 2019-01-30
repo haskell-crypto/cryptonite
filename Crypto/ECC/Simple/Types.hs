@@ -65,14 +65,14 @@ class Curve curve where
     curveParameters :: proxy curve -> CurveParameters curve
     curveType :: proxy curve -> CurveType
 
--- | get the size of the curve in bits
+-- | Get the size of the curve in bits
 curveSizeBits :: Curve curve => proxy curve -> Int
 curveSizeBits proxy =
     case curveType proxy of
         CurvePrime (CurvePrimeParam p)   -> numBits p
         CurveBinary (CurveBinaryParam c) -> numBits c - 1
 
--- | get the size of the curve in bytes
+-- | Get the size of the curve in bytes
 curveSizeBytes :: Curve curve => proxy curve -> Int
 curveSizeBytes proxy = (curveSizeBits proxy + 7) `div` 8
 

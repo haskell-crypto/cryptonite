@@ -28,9 +28,9 @@ import           Crypto.PubKey.Rabin.Types
 
 -- | Parameters for OAEP padding.
 data OAEPParams hash seed output = OAEPParams
-    { oaepHash       :: hash                            -- ^ hash function to use
-    , oaepMaskGenAlg :: MaskGenAlgorithm seed output    -- ^ mask Gen algorithm to use
-    , oaepLabel      :: Maybe ByteString                -- ^ optional label prepended to message
+    { oaepHash       :: hash                            -- ^ Hash function to use
+    , oaepMaskGenAlg :: MaskGenAlgorithm seed output    -- ^ Mask Gen algorithm to use
+    , oaepLabel      :: Maybe ByteString                -- ^ Optional label prepended to message
     }
 
 -- | Default Params with a specified hash function.
@@ -47,7 +47,7 @@ defaultOAEPParams hashAlg =
 pad :: HashAlgorithm hash
     => ByteString                               -- ^ Seed
     -> OAEPParams hash ByteString ByteString    -- ^ OAEP params to use
-    -> Int                                      -- ^ size of public key in bytes
+    -> Int                                      -- ^ Size of public key in bytes
     -> ByteString                               -- ^ Message pad
     -> Either Error ByteString
 pad seed oaep k msg
@@ -72,8 +72,8 @@ pad seed oaep k msg
 -- | Un-pad a OAEP encoded message.
 unpad :: HashAlgorithm hash
       => OAEPParams hash ByteString ByteString  -- ^ OAEP params to use
-      -> Int                                    -- ^ size of public key in bytes
-      -> ByteString                             -- ^ encoded message (not encrypted)
+      -> Int                                    -- ^ Size of public key in bytes
+      -> ByteString                             -- ^ Encoded message (not encrypted)
       -> Either Error ByteString
 unpad oaep k em
     | paddingSuccess = Right msg

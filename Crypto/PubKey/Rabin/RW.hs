@@ -34,20 +34,20 @@ import           Crypto.Random.Types
 
 -- | Represent a Rabin-Williams public key.
 data PublicKey = PublicKey
-    { public_size :: Int      -- ^ size of key in bytes
-    , public_n    :: Integer  -- ^ public p*q
+    { public_size :: Int      -- ^ Size of key in bytes
+    , public_n    :: Integer  -- ^ Public /p*q/
     } deriving (Show, Read, Eq, Data)
 
 -- | Represent a Rabin-Williams private key.
 data PrivateKey = PrivateKey
     { private_pub :: PublicKey
-    , private_p   :: Integer   -- ^ p prime number
-    , private_q   :: Integer   -- ^ q prime number
+    , private_p   :: Integer   -- ^ /p/ prime number
+    , private_q   :: Integer   -- ^ /q/ prime number
     , private_d   :: Integer
     } deriving (Show, Read, Eq, Data)
 
 -- | Generate a pair of (private, public) key of size in bytes.
--- Prime p is congruent 3 mod 8 and prime q is congruent 7 mod 8.
+-- Prime /p/ is congruent 3 mod 8 and prime /q/ is congruent 7 mod 8.
 generate :: MonadRandom m
          => Int           
          -> m (PublicKey, PrivateKey)
@@ -72,8 +72,8 @@ generate size = do
 encryptWithSeed :: HashAlgorithm hash
                 => ByteString                               -- ^ Seed
                 -> OAEPParams hash ByteString ByteString    -- ^ OAEP padding
-                -> PublicKey                                -- ^ public key
-                -> ByteString                               -- ^ plaintext
+                -> PublicKey                                -- ^ Public key
+                -> ByteString                               -- ^ Plaintext
                 -> Either Error ByteString
 encryptWithSeed seed oaep pk m =
     let n = public_n pk
@@ -86,8 +86,8 @@ encryptWithSeed seed oaep pk m =
 -- | Encrypt plaintext using public key.
 encrypt :: (HashAlgorithm hash, MonadRandom m)
         => OAEPParams hash ByteString ByteString    -- ^ OAEP padding parameters
-        -> PublicKey                                -- ^ public key
-        -> ByteString                               -- ^ plaintext 
+        -> PublicKey                                -- ^ Public key
+        -> ByteString                               -- ^ Plaintext
         -> m (Either Error ByteString)
 encrypt oaep pk m = do
     seed <- getRandomBytes hashLen
@@ -98,8 +98,8 @@ encrypt oaep pk m = do
 -- | Decrypt ciphertext using private key.
 decrypt :: HashAlgorithm hash
         => OAEPParams hash ByteString ByteString    -- ^ OAEP padding parameters
-        -> PrivateKey                               -- ^ private key
-        -> ByteString                               -- ^ ciphertext
+        -> PrivateKey                               -- ^ Private key
+        -> ByteString                               -- ^ Ciphertext
         -> Maybe ByteString
 decrypt oaep pk c =
     let d  = private_d pk    
@@ -112,9 +112,9 @@ decrypt oaep pk c =
 
 -- | Sign message using hash algorithm and private key.
 sign :: HashAlgorithm hash
-     => PrivateKey  -- ^ private key
-     -> hash        -- ^ hash function
-     -> ByteString  -- ^ message to sign
+     => PrivateKey  -- ^ Private key
+     -> hash        -- ^ Hash function
+     -> ByteString  -- ^ Message to sign
      -> Either Error Integer
 sign pk hashAlg m =
     let d = private_d pk
@@ -125,10 +125,10 @@ sign pk hashAlg m =
 
 -- | Verify signature using hash algorithm and public key.
 verify :: HashAlgorithm hash
-       => PublicKey     -- ^ public key
-       -> hash          -- ^ hash function
-       -> ByteString    -- ^ message
-       -> Integer       -- ^ signature
+       => PublicKey     -- ^ Public key
+       -> hash          -- ^ Hash function
+       -> ByteString    -- ^ Message
+       -> Integer       -- ^ Signature
        -> Bool
 verify pk hashAlg m s =
     let n  = public_n pk

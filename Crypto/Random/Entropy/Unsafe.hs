@@ -14,13 +14,13 @@ import Data.Word (Word8)
 import Foreign.Ptr (Ptr, plusPtr)
 import Crypto.Random.Entropy.Backend
 
--- | Refill the entropy in a buffer
+-- | Refill the entropy in a buffer.
 --
 -- Call each entropy backend in turn until the buffer has
 -- been replenished.
 --
 -- If the buffer cannot be refill after 3 loopings, this will raise
--- an User Error exception
+-- an User Error exception.
 replenish :: Int -> [EntropyBackend] -> Ptr Word8 -> IO ()
 replenish _        []       _   = fail "cryptonite: random: cannot get any source of entropy on this system"
 replenish poolSize backends ptr = loop 0 backends ptr poolSize

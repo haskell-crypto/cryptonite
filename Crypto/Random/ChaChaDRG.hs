@@ -31,10 +31,10 @@ newtype ChaChaDRG = ChaChaDRG C.StateSimple
 -- the key and the nonce associated.
 initialize :: ByteArrayAccess seed
            => seed        -- ^ 40 bytes of seed
-           -> ChaChaDRG   -- ^ the initial ChaCha state
+           -> ChaChaDRG   -- ^ The initial ChaCha state
 initialize seed = ChaChaDRG $ C.initializeSimple seed
 
--- | Initialize a new ChaCha context from 5-tuple of words64.
+-- | Initialize a new ChaCha context from 5-tuple of 'Word64'.
 -- This interface is useful when creating a RNG out of tests generators (e.g. QuickCheck).
 initializeWords :: (Word64, Word64, Word64, Word64, Word64) -> ChaChaDRG
 initializeWords (a,b,c,d,e) = initialize (B.allocAndFreeze 40 fill :: ScrubbedBytes)

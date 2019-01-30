@@ -52,6 +52,6 @@ openBackend b = fmap EntropyBackend `fmap` callOpen b
 -- | Gather randomness from an open handle
 gatherBackend :: EntropyBackend -- ^ An open Entropy Backend
               -> Ptr Word8      -- ^ Pointer to a buffer to write to
-              -> Int            -- ^ number of bytes to write
-              -> IO Int         -- ^ return the number of bytes actually written
+              -> Int            -- ^ Number of bytes to write
+              -> IO Int         -- ^ Return the number of bytes actually written
 gatherBackend (EntropyBackend backend) ptr n = entropyGather backend ptr n

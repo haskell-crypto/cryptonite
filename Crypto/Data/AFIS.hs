@@ -9,7 +9,7 @@
 -- available in LUKS. <http://clemens.endorphin.org/AFsplitter>
 --
 -- The algorithm bloats an arbitrary secret with many bits that are necessary for
--- the recovery of the key (merge), and allow greater way to permanently
+-- the recovery of the key (merge), and allow a greater way to permanently
 -- destroy a key stored on disk.
 --
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -35,20 +35,21 @@ import           Data.Memory.PtrMethods (memSet, memCopy)
 -- | Split data to diffused data, using a random generator and
 -- an hash algorithm.
 --
--- the diffused data will consist of random data for (expandTimes-1)
+-- The diffused data will consist of random data for (expandTimes - 1)
 -- then the last block will be xor of the accumulated random data diffused by
 -- the hash algorithm.
 --
--- ----------
--- -  orig  -
--- ----------
+-- > ----------
+-- > -  orig  -
+-- > ----------
+-- >
+-- > ---------- ---------- --------------
+-- > - rand1  - - rand2  - - orig ^ acc -
+-- > ---------- ---------- --------------
 --
--- ---------- ---------- --------------
--- - rand1  - - rand2  - - orig ^ acc -
--- ---------- ---------- --------------
+-- where @acc@ is:
 --
--- where acc is :
---   acc(n+1) = hash (n ++ rand(n)) ^ acc(n)
+-- > acc(n+1) = hash (n ++ rand(n)) ^ acc(n)
 --
 split :: (ByteArray ba, HashAlgorithm hash, DRG rng)
       => hash  -- ^ Hash algorithm to use as diffuser
@@ -101,8 +102,9 @@ merge hashAlg expandTimes bs
   where (originalSize,r) = len `quotRem` expandTimes
         len              = B.length bs
 
--- | inplace Xor with an input
--- dst = src `xor` dst
+-- | Inplace Xor with an input
+--
+-- > dst = src `xor` dst
 xorMem :: Ptr Word8 -> Ptr Word8 -> Int -> IO ()
 xorMem src dst sz
     | sz `mod` 64 == 0 = loop 8 (castPtr src :: Ptr Word64) (castPtr dst) sz
@@ -116,8 +118,8 @@ xorMem src dst sz
 
 diffuse :: HashAlgorithm hash
         => hash      -- ^ Hash function to use as diffuser
-        -> Ptr Word8 -- ^ buffer to diffuse, modify in place
-        -> Int       -- ^ length of buffer to diffuse
+        -> Ptr Word8 -- ^ Buffer to diffuse, modify in place
+        -> Int       -- ^ Length of buffer to diffuse
         -> IO ()
 diffuse hashAlg src sz = loop src 0
   where (full,pad) = sz `quotRem` digestSize 

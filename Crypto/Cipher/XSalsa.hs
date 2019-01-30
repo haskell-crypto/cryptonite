@@ -27,10 +27,10 @@ import           Crypto.Cipher.Salsa hiding (initialize)
 -- | Initialize a new XSalsa context with the number of rounds,
 -- the key and the nonce associated.
 initialize :: (ByteArrayAccess key, ByteArrayAccess nonce)
-           => Int    -- ^ number of rounds (8,12,20)
-           -> key    -- ^ the key (256 bits)
-           -> nonce  -- ^ the nonce (192 bits)
-           -> State  -- ^ the initial XSalsa state
+           => Int    -- ^ Number of rounds (8,12,20)
+           -> key    -- ^ The key (256 bits)
+           -> nonce  -- ^ The nonce (192 bits)
+           -> State  -- ^ The initial XSalsa state
 initialize nbRounds key nonce
     | kLen /= 32                      = error "XSalsa: key length should be 256 bits"
     | nonceLen /= 24                  = error "XSalsa: nonce length should be 192 bits"

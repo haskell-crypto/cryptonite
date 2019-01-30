@@ -28,20 +28,20 @@ import           Crypto.Internal.Imports
 data Blinder = Blinder !Integer !Integer
              deriving (Show,Eq)
 
--- | error possible during encryption, decryption or signing.
+-- | Error possible during encryption, decryption or signing.
 data Error =
-      MessageSizeIncorrect -- ^ the message to decrypt is not of the correct size (need to be == private_size)
-    | MessageTooLong       -- ^ the message to encrypt is too long
-    | MessageNotRecognized -- ^ the message decrypted doesn't have a PKCS15 structure (0 2 .. 0 msg)
-    | SignatureTooLong     -- ^ the message's digest is too long
-    | InvalidParameters    -- ^ some parameters lead to breaking assumptions.
+      MessageSizeIncorrect -- ^ The message to decrypt is not of the correct size (need to be == private_size)
+    | MessageTooLong       -- ^ The message to encrypt is too long
+    | MessageNotRecognized -- ^ The message decrypted doesn't have a PKCS15 structure (0 2 .. 0 msg)
+    | SignatureTooLong     -- ^ The message's digest is too long
+    | InvalidParameters    -- ^ Some parameters lead to breaking assumptions.
     deriving (Show,Eq)
 
 -- | Represent a RSA public key
 data PublicKey = PublicKey
-    { public_size :: Int      -- ^ size of key in bytes
-    , public_n    :: Integer  -- ^ public p*q
-    , public_e    :: Integer  -- ^ public exponent e
+    { public_size :: Int      -- ^ Size of key in bytes
+    , public_n    :: Integer  -- ^ Public /p*q/
+    , public_e    :: Integer  -- ^ Public exponent /e/
     } deriving (Show,Read,Eq,Data)
 
 instance NFData PublicKey where
@@ -51,41 +51,41 @@ instance NFData PublicKey where
 -- 
 -- Only the pub, d fields are mandatory to fill.
 --
--- p, q, dP, dQ, qinv are by-product during RSA generation,
+-- /p/, /q/, /dP/, /dQ/, /qinv/ are by-product during RSA generation,
 -- but are useful to record here to speed up massively
 -- the decrypt and sign operation.
 --
--- implementations can leave optional fields to 0.
+-- Implementations can leave optional fields to 0.
 --
 data PrivateKey = PrivateKey
-    { private_pub  :: PublicKey -- ^ public part of a private key (size, n and e)
-    , private_d    :: Integer   -- ^ private exponent d
-    , private_p    :: Integer   -- ^ p prime number
-    , private_q    :: Integer   -- ^ q prime number
-    , private_dP   :: Integer   -- ^ d mod (p-1)
-    , private_dQ   :: Integer   -- ^ d mod (q-1)
-    , private_qinv :: Integer   -- ^ q^(-1) mod p
+    { private_pub  :: PublicKey -- ^ public part of a private key (/size/, /n/, and /e/)
+    , private_d    :: Integer   -- ^ private exponent /d/
+    , private_p    :: Integer   -- ^ /p/ prime number
+    , private_q    :: Integer   -- ^ /q/ prime number
+    , private_dP   :: Integer   -- ^ /d mod (p-1)/
+    , private_dQ   :: Integer   -- ^ /d mod (q-1)/
+    , private_qinv :: Integer   -- ^ /q^(-1) mod p/
     } deriving (Show,Read,Eq,Data)
 
 instance NFData PrivateKey where
     rnf (PrivateKey pub d p q dp dq qinv) =
         rnf pub `seq` rnf d `seq` rnf p `seq` rnf q `seq` rnf dp `seq` rnf dq `seq` qinv `seq` ()
 
--- | get the size in bytes from a private key
+-- | Get the size in bytes from a private key
 private_size :: PrivateKey -> Int
 private_size = public_size . private_pub
 
--- | get n from a private key
+-- | Get n from a private key
 private_n :: PrivateKey -> Integer
 private_n = public_n . private_pub
 
--- | get e from a private key
+-- | Get e from a private key
 private_e :: PrivateKey -> Integer
 private_e = public_e . private_pub
 
 -- | Represent RSA KeyPair
 --
--- note the RSA private key contains already an instance of public key for efficiency
+-- Note the RSA private key already contains an instance of public key for efficiency.
 newtype KeyPair = KeyPair PrivateKey
     deriving (Show,Read,Eq,Data,NFData)
 

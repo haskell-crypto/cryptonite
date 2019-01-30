@@ -5,7 +5,7 @@
 -- Stability   : experimental
 -- Portability : Good
 --
--- Camellia support. only 128 bit variant available for now.
+-- Camellia support. Only the 128 bit variant is available for now.
 
 module Crypto.Cipher.Camellia
     ( Camellia128

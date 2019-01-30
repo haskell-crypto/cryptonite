@@ -5,25 +5,28 @@
 --
 -- >>> import Crypto.KDF.BCrypt (hashPassword, validatePassword)
 -- >>> import qualified Data.ByteString.Char8 as B
--- >>>
--- >>> let bcryptHash = B.pack "$2a$10$MJJifxfaqQmbx1Mhsq3oq.YmMmfNhkyW4s/MS3K5rIMVfB7w0Q/OW"
--- >>> let password = B.pack "password"
+--
+-- >>> bcryptHash = B.pack "$2a$10$MJJifxfaqQmbx1Mhsq3oq.YmMmfNhkyW4s/MS3K5rIMVfB7w0Q/OW"
+-- >>> password = B.pack "password"
 -- >>> validatePassword password bcryptHash
--- >>> True
--- >>> let otherPassword = B.pack "otherpassword"
+-- True
+--
+-- >>> otherPassword = B.pack "otherpassword"
 -- >>> otherHash <- hashPassword 12 otherPassword :: IO B.ByteString
 -- >>> validatePassword otherPassword otherHash
--- >>> True
+-- True
 --
 -- See <https://www.usenix.org/conference/1999-usenix-annual-technical-conference/future-adaptable-password-scheme>
 -- for details of the original algorithm.
 --
--- The functions @hashPassword@ and @validatePassword@ should be all that
+-- The functions 'hashPassword' and 'validatePassword' should be all that
 -- most users need.
 --
 -- Hashes are strings of the form
--- @$2a$10$MJJifxfaqQmbx1Mhsq3oq.YmMmfNhkyW4s/MS3K5rIMVfB7w0Q/OW@ which
--- encode a version number, an integer cost parameter and the concatenated
+--
+-- > $2a$10$MJJifxfaqQmbx1Mhsq3oq.YmMmfNhkyW4s/MS3K5rIMVfB7w0Q/OW
+--
+-- which encodes a version number, an integer cost parameter and the concatenated
 -- salt and hash bytes (each separately Base64 encoded. Incrementing the
 -- cost parameter approximately doubles the time taken to calculate the hash.
 --
@@ -122,7 +125,7 @@ validatePassword password bcHash = either (const False) id (validatePasswordEith
 
 -- | Check a password against a bcrypt hash
 --
--- As for @validatePassword@ but will provide error information if the hash is invalid or
+-- Same as 'validatePassword' but will provide error information if the hash is invalid or
 -- an unsupported version.
 validatePasswordEither :: (ByteArray password, ByteArray hash) => password -> hash -> Either String Bool
 validatePasswordEither password bcHash = do

@@ -5,8 +5,8 @@
 -- Stability   : experimental
 -- Portability : unknown
 --
--- Simple abstraction module to allow compilation without deepseq
--- by defining our own NFData class if not compiling with deepseq
+-- Simple abstraction module to allow compilation without @deepseq@
+-- by defining our own @NFData@ class if not compiling with @deepseq@
 -- support.
 --
 {-# LANGUAGE CPP #-}

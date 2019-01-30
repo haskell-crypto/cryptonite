@@ -25,7 +25,7 @@ import           Foreign.Ptr (plusPtr, Ptr)
 -- that is always guaranteed to contain data.
 data EntropyPool = EntropyPool [EntropyBackend] (MVar Int) ScrubbedBytes
 
--- size of entropy pool by default
+-- | Size of entropy pool by default
 defaultPoolSize :: Int
 defaultPoolSize = 4096
 

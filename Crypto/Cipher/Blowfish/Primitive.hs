@@ -129,18 +129,20 @@ expandKeyWithSalt128 ks@(KeySchedule ma) key salt1 salt2 = do
                 loop (i+2) (n `xor` slt2) slt2 slt1
 
 -- | Encrypt blocks
---
--- Input need to be a multiple of 8 bytes
-encrypt :: ByteArray ba => Context -> ba -> ba
+encrypt :: ByteArray ba
+    => Context
+    -> ba  -- ^ Needs to be a multiple of 8 bytes
+    -> ba
 encrypt ctx ba
     | B.length ba == 0         = B.empty
     | B.length ba `mod` 8 /= 0 = error "invalid data length"
     | otherwise                = B.mapAsWord64 (cipherBlock ctx False) ba
 
 -- | Decrypt blocks
---
--- Input need to be a multiple of 8 bytes
-decrypt :: ByteArray ba => Context -> ba -> ba
+decrypt :: ByteArray ba
+    => Context
+    -> ba  -- ^ Needs to be a multiple of 8 bytes
+    -> ba
 decrypt ctx ba
     | B.length ba == 0         = B.empty
     | B.length ba `mod` 8 /= 0 = error "invalid data length"

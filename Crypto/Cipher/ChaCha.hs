@@ -29,17 +29,17 @@ import           Foreign.C.Types
 newtype State = State ScrubbedBytes
     deriving (NFData)
 
--- | ChaCha context for DRG purpose (see Crypto.Random.ChaChaDRG)
+-- | ChaCha context for DRG purpose (see "Crypto.Random.ChaChaDRG")
 newtype StateSimple = StateSimple ScrubbedBytes -- just ChaCha's state
     deriving (NFData)
 
 -- | Initialize a new ChaCha context with the number of rounds,
 -- the key and the nonce associated.
 initialize :: (ByteArrayAccess key, ByteArrayAccess nonce)
-           => Int   -- ^ number of rounds (8,12,20)
-           -> key   -- ^ the key (128 or 256 bits)
-           -> nonce -- ^ the nonce (64 or 96 bits)
-           -> State -- ^ the initial ChaCha state
+           => Int   -- ^ Number of rounds (8,12,20)
+           -> key   -- ^ The key (128 or 256 bits)
+           -> nonce -- ^ The nonce (64 or 96 bits)
+           -> State -- ^ The initial ChaCha state
 initialize nbRounds key nonce
     | not (kLen `elem` [16,32])       = error "ChaCha: key length should be 128 or 256 bits"
     | not (nonceLen `elem` [8,12])    = error "ChaCha: nonce length should be 64 or 96 bits"
@@ -55,9 +55,9 @@ initialize nbRounds key nonce
 
 -- | Initialize simple ChaCha State
 --
--- The seed need to be at least 40 bytes long
+-- The seed needs to be at least 40 bytes long.
 initializeSimple :: ByteArrayAccess seed
-                 => seed -- ^ a 40 bytes long seed
+                 => seed -- ^ A 40 byte seed
                  -> StateSimple
 initializeSimple seed
     | sLen < 40 = error "ChaCha Random: seed length should be 40 bytes"
@@ -72,8 +72,8 @@ initializeSimple seed
 -- | Combine the chacha output and an arbitrary message with a xor,
 -- and return the combined output and the new state.
 combine :: ByteArray ba
-        => State       -- ^ the current ChaCha state
-        -> ba          -- ^ the source to xor with the generator
+        => State       -- ^ The current ChaCha state
+        -> ba          -- ^ The source to xor with the generator
         -> (ba, State)
 combine prevSt@(State prevStMem) src
     | B.null src = (B.empty, prevSt)
@@ -86,8 +86,8 @@ combine prevSt@(State prevStMem) src
 
 -- | Generate a number of bytes from the ChaCha output directly
 generate :: ByteArray ba
-         => State -- ^ the current ChaCha state
-         -> Int   -- ^ the length of data to generate
+         => State -- ^ The current ChaCha state
+         -> Int   -- ^ The length of data to generate
          -> (ba, State)
 generate prevSt@(State prevStMem) len
     | len <= 0  = (B.empty, prevSt)
@@ -97,7 +97,7 @@ generate prevSt@(State prevStMem) len
                 ccryptonite_chacha_generate dstPtr ctx (fromIntegral len)
         return (out, State st)
 
--- | similar to 'generate' but assume certains values
+-- | Similar to 'generate' but assume certains values
 generateSimple :: ByteArray ba
                => StateSimple
                -> Int

@@ -41,7 +41,7 @@ foreign import ccall unsafe "cryptonite_rc4.h cryptonite_rc4_init"
                -> IO ()
 
 foreign import ccall unsafe "cryptonite_rc4.h cryptonite_rc4_combine"
-    c_rc4_combine :: Ptr State        -- ^ Pointer to the permutation
+    c_rc4_combine :: Ptr State      -- ^ Pointer to the permutation
                   -> Ptr Word8      -- ^ Pointer to the clear text
                   -> Word32         -- ^ Length of the clear text
                   -> Ptr Word8      -- ^ Output buffer
@@ -49,7 +49,7 @@ foreign import ccall unsafe "cryptonite_rc4.h cryptonite_rc4_combine"
 
 -- | RC4 context initialization.
 --
--- seed the context with an initial key. the key size need to be
+-- Seed the context with an initial key. The key size needs to be
 -- adequate otherwise security takes a hit.
 initialize :: ByteArrayAccess key
            => key   -- ^ The key
@@ -59,16 +59,16 @@ initialize key = unsafeDoIO $ do
         B.withByteArray key $ \keyPtr -> c_rc4_init keyPtr (fromIntegral $ B.length key) (castPtr stPtr)
     return $ State st
 
--- | generate the next len bytes of the rc4 stream without combining
+-- | Generate the next len bytes of the RC4 stream without combining
 -- it to anything.
 generate :: ByteArray ba => State -> Int -> (State, ba)
 generate ctx len = combine ctx (B.zero len)
 
--- | RC4 xor combination of the rc4 stream with an input
+-- | RC4 xor combination of the RC4 stream with an input
 combine :: ByteArray ba
-        => State               -- ^ rc4 context
-        -> ba                  -- ^ input
-        -> (State, ba)         -- ^ new rc4 context, and the output
+        => State               -- ^ RC4 context
+        -> ba                  -- ^ Input
+        -> (State, ba)         -- ^ New rc4 context, and the output
 combine (State prevSt) clearText = unsafeDoIO $
     B.allocRet len            $ \outptr ->
     B.withByteArray clearText $ \clearPtr -> do

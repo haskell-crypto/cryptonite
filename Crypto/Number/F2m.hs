@@ -7,7 +7,7 @@
 --
 -- This module provides basic arithmetic operations over F₂m. Performance is
 -- not optimal and it doesn't provide protection against timing
--- attacks. The 'm' parameter is implicitly derived from the irreducible
+-- attacks. The @m@ parameter is implicitly derived from the irreducible
 -- polynomial where applicable.
 
 module Crypto.Number.F2m

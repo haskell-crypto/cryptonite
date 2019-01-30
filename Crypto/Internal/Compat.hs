@@ -19,7 +19,7 @@ import System.IO.Unsafe
 import Data.Word
 import Data.Bits
 
--- | Perform io for hashes that do allocation and FFI.
+-- | Perform IO for hashes that do allocation and FFI.
 -- 'unsafeDupablePerformIO' is used when possible as the
 -- computation is pure and the output is directly linked
 -- to the input. We also do not modify anything after it has

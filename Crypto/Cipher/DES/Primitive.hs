@@ -20,7 +20,7 @@ module Crypto.Cipher.DES.Primitive
 import Data.Word
 import Data.Bits
 
--- | a DES block (64 bits)
+-- | A DES block (64 bits)
 newtype Block = Block { unBlock :: Word64 }
 
 type Rotation = Int

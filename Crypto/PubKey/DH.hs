@@ -50,33 +50,33 @@ newtype PrivateNumber = PrivateNumber Integer
 newtype SharedKey = SharedKey ScrubbedBytes
     deriving (Show,Eq,ByteArrayAccess,NFData)
 
--- | generate params from a specific generator (2 or 5 are common values)
--- we generate a safe prime (a prime number of the form 2p+1 where p is also prime)
+-- | Generate params from a specific generator (2 or 5 are common values).
+-- We generate a safe prime (a prime number of the form 2p+1 where p is also prime)
 generateParams :: MonadRandom m =>
-                  Int                   -- ^ number of bits
-               -> Integer               -- ^ generator
+                  Int                   -- ^ Number of bits
+               -> Integer               -- ^ Generator
                -> m Params
 generateParams bits generator =
     (\p -> Params p generator bits) <$> generateSafePrime bits
 
--- | generate a private number with no specific property
--- this number is usually called X in DH text.
+-- | Generate a private number with no specific property.
+-- This number is usually called X in DH text.
 generatePrivate :: MonadRandom m => Params -> m PrivateNumber
 generatePrivate (Params p _ _) = PrivateNumber <$> generateMax p
 
--- | calculate the public number from the parameters and the private key
--- this number is usually called Y in DH text.
+-- | Calculate the public number from the parameters and the private key.
+-- This number is usually called Y in DH text.
 calculatePublic :: Params -> PrivateNumber -> PublicNumber
 calculatePublic (Params p g _) (PrivateNumber x) = PublicNumber $ expSafe g x p
 
--- | calculate the public number from the parameters and the private key
--- this number is usually called Y in DH text.
+-- | Calculate the public number from the parameters and the private key.
+-- This number is usually called Y in DH text.
 --
--- DEPRECATED use calculatePublic
+-- /DEPRECATED:/ Use 'calculatePublic'.
 generatePublic :: Params -> PrivateNumber -> PublicNumber
 generatePublic = calculatePublic
 -- commented until 0.3 {-# DEPRECATED generatePublic "use calculatePublic" #-}
 
--- | generate a shared key using our private number and the other party public number
+-- | Generate a shared key using our private number and the other party public number
 getShared :: Params -> PrivateNumber -> PublicNumber -> SharedKey
 getShared (Params p _ bits) (PrivateNumber x) (PublicNumber y) = SharedKey $ i2ospOf_ ((bits + 7) `div` 8) $ expSafe y x p

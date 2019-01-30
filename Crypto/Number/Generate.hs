@@ -31,18 +31,18 @@ data GenTopPolicy =
     deriving (Show,Eq)
 
 -- | Generate a number for a specific size of bits,
--- and optionaly set bottom and top bits
+-- and optionally set bottom and top bits.
 --
 -- If the top bit policy is 'Nothing', then nothing is
 -- done on the highest bit (it's whatever the random generator set).
 --
--- If @generateOdd is set to 'True', then the number generated
--- is guaranteed to be odd. Otherwise it will be whatever is generated
+-- If @generateOdd@ is set to 'True', then the number generated
+-- is guaranteed to be odd. Otherwise it will be whatever is generated.
 --
 generateParams :: MonadRandom m
-               => Int                -- ^ number of bits
-               -> Maybe GenTopPolicy -- ^ top bit policy
-               -> Bool               -- ^ force the number to be odd
+               => Int                -- ^ Number of bits
+               -> Maybe GenTopPolicy -- ^ Top bit policy
+               -> Bool               -- ^ Force the number to be odd
                -> m Integer
 generateParams bits genTopPolicy generateOdd
     | bits <= 0 = return 0
@@ -118,6 +118,6 @@ generateMax range
         tries :: Int
         tries = 100
 
--- | generate a number between the inclusive bound [low,high].
+-- | Generate a number between the inclusive bound [low,high].
 generateBetween :: MonadRandom m => Integer -> Integer -> m Integer
 generateBetween low high = (low +) <$> generateMax (high - low + 1)

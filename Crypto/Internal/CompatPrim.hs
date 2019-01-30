@@ -97,7 +97,7 @@ convert4To32 a b c d = or# (or# c1 c2) (or# c3 c4)
 #endif
 
 -- | Simple wrapper to handle pre 7.8 and future, where
--- most comparaison functions don't returns a boolean
+-- most comparison functions don't returns a boolean
 -- anymore.
 #if __GLASGOW_HASKELL__ >= 708
 booleanPrim :: Int# -> Bool

@@ -148,7 +148,7 @@ mkTOTPParams h t0 x d skew = do
     unless (x <= 300) (Left "Time step cannot be greater than 300 seconds")
     return (TP h t0 x d skew)
 
--- | Calculate a totp value for the given time.
+-- | Calculate a TOTP value for the given time.
 totp :: (HashAlgorithm hash, ByteArrayAccess key)
     => TOTPParams hash
     -> key

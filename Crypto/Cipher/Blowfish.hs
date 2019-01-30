@@ -19,7 +19,7 @@ import Crypto.Internal.Imports
 import Crypto.Cipher.Types
 import Crypto.Cipher.Blowfish.Primitive
 
--- | variable keyed blowfish state
+-- | Variable keyed blowfish state
 newtype Blowfish = Blowfish Context
     deriving (NFData)
 

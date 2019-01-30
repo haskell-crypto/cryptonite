@@ -33,7 +33,7 @@ type family IsLE (bitlen :: Nat) (n :: Nat) (c :: Bool) where
     IsLE bitlen n 'False = 'False
 #endif
 
--- | ensure the given `bitlen` is lesser or equal to `n`
+-- | Ensure the given @bitlen@ is lesser or equal to @n@
 --
 type IsAtMost  (bitlen :: Nat) (n :: Nat) = IsLE bitlen n (bitlen <=? n) ~ 'True
 
@@ -48,7 +48,7 @@ type family IsGE (bitlen :: Nat) (n :: Nat) (c :: Bool) where
     IsGE bitlen n 'False = 'False
 #endif
 
--- | ensure the given `bitlen` is greater or equal to `n`
+-- | Ensure the given @bitlen@ is greater or equal to @n@
 --
 type IsAtLeast (bitlen :: Nat) (n :: Nat) = IsGE bitlen n (n <=? bitlen) ~ 'True
 

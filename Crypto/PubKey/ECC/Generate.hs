@@ -7,7 +7,7 @@ import Crypto.PubKey.ECC.ECDSA
 import Crypto.Number.Generate
 import Crypto.PubKey.ECC.Prim
 
--- | Generate Q given d.
+-- | Generate /Q/ given /d/.
 --
 -- /WARNING:/ Vulnerable to timing attacks.
 generateQ :: Curve

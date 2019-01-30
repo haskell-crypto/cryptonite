@@ -81,7 +81,7 @@ class EllipticCurve curve => EllipticCurveDH curve where
     -- This is generally just the .x coordinate of the resulting point, that
     -- is not hashed.
     --
-    -- use `pointSmul` to keep the result in Point format.
+    -- Use 'pointSmul' to keep the result in Point format.
     --
     -- /WARNING:/ Curve implementations may return a special value or an
     -- exception when the public point lies in a subgroup of small order.
@@ -113,7 +113,7 @@ class EllipticCurve curve => EllipticCurveArith curve where
 
 -- | P256 Curve
 --
--- also known as P256
+-- Also known as P256
 data Curve_P256R1 = Curve_P256R1
     deriving (Show,Data)
 

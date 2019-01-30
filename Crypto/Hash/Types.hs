@@ -34,8 +34,8 @@ import           Data.Data (Data)
 -- | Class representing hashing algorithms.
 --
 -- The interface presented here is update in place
--- and lowlevel. the Hash module takes care of
--- hidding the mutable interface properly.
+-- and lowlevel. The Hash module takes care of
+-- hiding the mutable interface properly.
 class HashAlgorithm a where
     -- | Associated type for the block size of the hash algorithm
     type HashBlockSize a :: Nat

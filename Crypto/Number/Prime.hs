@@ -31,7 +31,7 @@ import Data.Bits
 
 -- | Returns if the number is probably prime.
 -- First a list of small primes are implicitely tested for divisibility,
--- then a fermat primality test is used with arbitrary numbers and
+-- then a Fermat primality test is used with arbitrary numbers and
 -- then the Miller Rabin algorithm is used with an accuracy of 30 recursions.
 isProbablyPrime :: Integer -> Bool
 isProbablyPrime !n
@@ -156,17 +156,17 @@ primalityTestMillerRabin tries !n =
 
 -- | Probabilitic Test using Fermat primility test.
 -- Beware of Carmichael numbers that are Fermat liars, i.e. this test
--- is useless for them. always combines with some other test.
-primalityTestFermat :: Int -- ^ number of iterations of the algorithm
-                    -> Integer -- ^ starting a
-                    -> Integer -- ^ number to test for primality
+-- is useless for them. Always combine with some other test.
+primalityTestFermat :: Int -- ^ Number of iterations of the algorithm
+                    -> Integer -- ^ Starting @a@
+                    -> Integer -- ^ Number to test for primality
                     -> Bool
 primalityTestFermat n a p = and $ map expTest [a..(a+fromIntegral n)]
     where !pm1 = p-1
           expTest i = expSafe i pm1 p == 1
 
 -- | Test naively is integer is prime.
--- while naive, we skip even number and stop iteration at i > sqrt(n)
+-- while naive, we skip even number and stop iteration at @i > sqrt(n)@
 primalityTestNaive :: Integer -> Bool
 primalityTestNaive n
     | n <= 1    = False
@@ -179,7 +179,7 @@ primalityTestNaive n
                   | i `divides` n = False
                   | otherwise     = search (i+2)
 
--- | Test is two integer are coprime to each other
+-- | Test whether two integer are coprime to each other
 isCoprime :: Integer -> Integer -> Bool
 isCoprime m n = case gcde m n of (_,_,d) -> d == 1
 

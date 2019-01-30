@@ -85,7 +85,7 @@ drgNewTest = initializeWords
 
 -- | Generate @len random bytes and mapped the bytes to the function @f.
 --
--- This is equivalent to use Control.Arrow 'first' with 'randomBytesGenerate'
+-- This is equivalent to use Control.Arrow 'first' with 'randomBytesGenerate'.
 withRandomBytes :: (ByteArray ba, DRG g) => g -> Int -> (ba -> a) -> (a, g)
 withRandomBytes rng len f = (f bs, rng')
   where (bs, rng') = randomBytesGenerate len rng

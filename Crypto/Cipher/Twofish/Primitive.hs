@@ -65,7 +65,7 @@ mapBlocks operation input
 -- | Encrypts the given ByteString using the given Key
 encrypt :: ByteArray ba
         => Twofish     -- ^ The key to use
-        -> ba           -- ^ The data to encrypt
+        -> ba          -- ^ The data to encrypt
         -> ba
 encrypt cipher = mapBlocks (encryptBlock cipher)
 
@@ -99,7 +99,7 @@ byteIndex xs ind  = arrayRead32 xs $ fromIntegral byte
 -- | Decrypts the given ByteString using the given Key
 decrypt :: ByteArray ba
         => Twofish     -- ^ The key to use
-        -> ba           -- ^ The data to decrypt
+        -> ba          -- ^ The data to decrypt
         -> ba
 decrypt cipher = mapBlocks (decryptBlock cipher)
 

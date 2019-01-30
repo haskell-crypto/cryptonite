@@ -275,7 +275,10 @@ pointMul (Scalar scalar) (Point base) =
 -- @
 --
 -- /WARNING:/ variable time
-pointsMulVarTime :: Scalar -> Scalar -> Point -> Point
+pointsMulVarTime :: Scalar  -- ^ s1
+                 -> Scalar  -- ^ s2
+                 -> Point   -- ^ p
+                 -> Point
 pointsMulVarTime (Scalar s1) (Scalar s2) (Point p) =
     Point $ B.allocAndFreeze pointArraySize $ \out ->
         withByteArray s1 $ \ps1 ->

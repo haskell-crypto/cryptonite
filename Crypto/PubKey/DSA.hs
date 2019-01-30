@@ -101,21 +101,21 @@ toPublicKey (KeyPair params pub _) = PublicKey params pub
 toPrivateKey :: KeyPair -> PrivateKey
 toPrivateKey (KeyPair params _ priv) = PrivateKey params priv
 
--- | generate a private number with no specific property
--- this number is usually called X in DSA text.
+-- | Generate a private number with no specific property.
+-- This number is usually called X in DSA text.
 generatePrivate :: MonadRandom m => Params -> m PrivateNumber
 generatePrivate (Params _ _ q) = generateMax q
 
--- | Calculate the public number from the parameters and the private key
+-- | Calculate the public number from the parameters and the private key.
 calculatePublic :: Params -> PrivateNumber -> PublicNumber
 calculatePublic (Params p g _) x = expSafe g x p
 
--- | sign message using the private key and an explicit k number.
+-- | Sign message using the private key and an explicit k number.
 signWith :: (ByteArrayAccess msg, HashAlgorithm hash)
-         => Integer         -- ^ k random number
-         -> PrivateKey      -- ^ private key
-         -> hash            -- ^ hash function
-         -> msg             -- ^ message to sign
+         => Integer         -- ^ /k/ random number
+         -> PrivateKey      -- ^ Private key
+         -> hash            -- ^ Hash function
+         -> msg             -- ^ Message to sign
          -> Maybe Signature
 signWith k pk hashAlg msg
     | r == 0 || s == 0  = Nothing
@@ -129,7 +129,7 @@ signWith k pk hashAlg msg
           r         = expSafe g k p `mod` q
           s         = (kInv * (hm + x * r)) `mod` q
 
--- | sign message using the private key.
+-- | Sign message using the private key.
 sign :: (ByteArrayAccess msg, HashAlgorithm hash, MonadRandom m) => PrivateKey -> hash -> msg -> m Signature
 sign pk hashAlg msg = do
     k <- generateMax q
@@ -139,7 +139,7 @@ sign pk hashAlg msg = do
   where
     (Params _ _ q) = private_params pk
 
--- | verify a bytestring using the public key.
+-- | Verify a bytestring using the public key.
 verify :: (ByteArrayAccess msg, HashAlgorithm hash) => hash -> PublicKey -> Signature -> msg -> Bool
 verify hashAlg pk (Signature r s) m
     -- Reject the signature if either 0 < r < q or 0 < s < q is not satisfied.

@@ -26,9 +26,9 @@ import           Crypto.Error
 
 -- | Different specifier for key size in bytes
 data KeySizeSpecifier =
-      KeySizeRange Int Int -- ^ in the range [min,max]
-    | KeySizeEnum  [Int]   -- ^ one of the specified values
-    | KeySizeFixed Int     -- ^ a specific size
+      KeySizeRange Int Int -- ^ In the range [min,max]
+    | KeySizeEnum  [Int]   -- ^ One of the specified values
+    | KeySizeFixed Int     -- ^ A specific size
     deriving (Show,Eq)
 
 -- | Offset inside an XTS data unit, measured in block size.
@@ -59,6 +59,6 @@ class Cipher cipher where
     cipherInit    :: ByteArray key => key -> CryptoFailable cipher
     -- | Cipher name
     cipherName    :: cipher -> String
-    -- | return the size of the key required for this cipher.
-    -- Some cipher accept any size for key
+    -- | Return the size of the key required for this cipher.
+    -- Some ciphers accept any size for key.
     cipherKeySize :: cipher -> KeySizeSpecifier

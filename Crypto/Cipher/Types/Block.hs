@@ -49,7 +49,7 @@ import qualified Crypto.Internal.ByteArray as B
 import           Foreign.Ptr
 import           Foreign.Storable
 
--- | an IV parametrized by the cipher
+-- | An IV parametrized by the cipher
 data IV c = forall byteArray . ByteArray byteArray => IV byteArray
 
 instance BlockCipher c => ByteArrayAccess (IV c) where
@@ -72,59 +72,61 @@ class Cipher cipher => BlockCipher cipher where
 
     -- | Encrypt blocks
     --
-    -- the input string need to be multiple of the block size
+    -- The input string needs to be multiple of the block size.
     ecbEncrypt :: ByteArray ba => cipher -> ba -> ba
 
     -- | Decrypt blocks
     --
-    -- the input string need to be multiple of the block size
+    -- The input string needs to be multiple of the block size.
     ecbDecrypt :: ByteArray ba => cipher -> ba -> ba
 
-    -- | encrypt using the CBC mode.
+    -- | Encrypt using the CBC mode.
     --
-    -- input need to be a multiple of the blocksize
+    -- Input needs to be a multiple of the blocksize.
     cbcEncrypt :: ByteArray ba => cipher -> IV cipher -> ba -> ba
     cbcEncrypt = cbcEncryptGeneric
-    -- | decrypt using the CBC mode.
+
+    -- | Decrypt using the CBC mode.
     --
-    -- input need to be a multiple of the blocksize
+    -- Input needs to be a multiple of the blocksize.
     cbcDecrypt :: ByteArray ba => cipher -> IV cipher -> ba -> ba
     cbcDecrypt = cbcDecryptGeneric
 
-    -- | encrypt using the CFB mode.
+    -- | Encrypt using the CFB mode.
     --
-    -- input need to be a multiple of the blocksize
+    -- Input needs to be a multiple of the blocksize.
     cfbEncrypt :: ByteArray ba => cipher -> IV cipher -> ba -> ba
     cfbEncrypt = cfbEncryptGeneric
-    -- | decrypt using the CFB mode.
+
+    -- | Decrypt using the CFB mode.
     --
-    -- input need to be a multiple of the blocksize
+    -- Input needs to be a multiple of the blocksize.
     cfbDecrypt :: ByteArray ba => cipher -> IV cipher -> ba -> ba
     cfbDecrypt = cfbDecryptGeneric
 
-    -- | combine using the CTR mode.
+    -- | Combine using the CTR mode.
     --
     -- CTR mode produce a stream of randomized data that is combined
     -- (by XOR operation) with the input stream.
     --
-    -- encryption and decryption are the same operation.
+    -- Encryption and decryption are the same operation.
     --
-    -- input can be of any size
+    -- Input can be of any size.
     ctrCombine :: ByteArray ba => cipher -> IV cipher -> ba -> ba
     ctrCombine = ctrCombineGeneric
 
     -- | Initialize a new AEAD State
     --
-    -- When Nothing is returns, it means the mode is not handled.
+    -- When @Nothing@ is returned, it means the mode is not handled.
     aeadInit :: ByteArrayAccess iv => AEADMode -> cipher -> iv -> CryptoFailable (AEAD cipher)
     aeadInit _ _ _ = CryptoFailed CryptoError_AEADModeNotSupported
 
--- | class of block cipher with a 128 bits block size
+-- | Class of block cipher with a 128 bit block size
 class BlockCipher cipher => BlockCipher128 cipher where
-    -- | encrypt using the XTS mode.
+    -- | Encrypt using the XTS mode.
     --
-    -- input need to be a multiple of the blocksize, and the cipher
-    -- need to process 128 bits block only
+    -- Input needs to be a multiple of the blocksize, and the cipher
+    -- needs to process 128 bits block only.
     xtsEncrypt :: ByteArray ba
                => (cipher, cipher)
                -> IV cipher        -- ^ Usually represent the Data Unit (e.g. disk sector)
@@ -133,10 +135,10 @@ class BlockCipher cipher => BlockCipher128 cipher where
                -> ba               -- ^ Ciphertext
     xtsEncrypt = xtsEncryptGeneric
 
-    -- | decrypt using the XTS mode.
+    -- | Decrypt using the XTS mode.
     --
-    -- input need to be a multiple of the blocksize, and the cipher
-    -- need to process 128 bits block only
+    -- Input needs to be a multiple of the blocksize, and the cipher
+    -- needs to process 128 bits block only.
     xtsDecrypt :: ByteArray ba
                => (cipher, cipher)
                -> IV cipher        -- ^ Usually represent the Data Unit (e.g. disk sector)

@@ -23,11 +23,12 @@ import           Foreign.Storable
 
 -- | Fill a pointer with the big endian binary representation of an integer
 --
--- If the room available @ptrSz is less than the number of bytes needed,
+-- If the room available /ptrSz/ is less than the number of bytes needed,
 -- 0 is returned. Likewise if a parameter is invalid, 0 is returned.
---
--- Returns the number of bytes written
-i2osp :: Integer -> Ptr Word8 -> Int -> IO Int
+i2osp :: Integer
+      -> Ptr Word8
+      -> Int        -- ^ /ptrSz/
+      -> IO Int     -- ^ Returns the number of bytes written.
 i2osp m ptr ptrSz
     | ptrSz <= 0 = return 0
     | m < 0      = return 0

@@ -29,7 +29,7 @@ data CoprimesAssertionError = CoprimesAssertionError
 instance Exception CoprimesAssertionError
 
 -- | Compute the modular exponentiation of base^exponent using
--- algorithms design to avoid side channels and timing measurement
+-- algorithms design to avoid side channels and timing measurement.
 --
 -- Modulo need to be odd otherwise the normal fast modular exponentiation
 -- is used.
@@ -39,11 +39,11 @@ instance Exception CoprimesAssertionError
 -- timing and side channels claims.
 --
 -- Before GHC 8.4.2, powModSecInteger is missing from integer-gmp,
--- so expSafe has the same security as expFast.
-expSafe :: Integer -- ^ base
-        -> Integer -- ^ exponent
-        -> Integer -- ^ modulo
-        -> Integer -- ^ result
+-- so @expSafe@ has the same security as 'expFast'.
+expSafe :: Integer -- ^ Base
+        -> Integer -- ^ Exponent
+        -> Integer -- ^ Modulo
+        -> Integer -- ^ Result
 expSafe b e m
     | odd m     = gmpPowModSecInteger b e m `onGmpUnsupported`
                   (gmpPowModInteger b e m   `onGmpUnsupported`
@@ -57,13 +57,13 @@ expSafe b e m
 --
 -- Use this function when all the parameters are public,
 -- otherwise 'expSafe' should be prefered.
-expFast :: Integer -- ^ base
-        -> Integer -- ^ exponent
-        -> Integer -- ^ modulo
-        -> Integer -- ^ result
+expFast :: Integer -- ^ Base
+        -> Integer -- ^ Exponent
+        -> Integer -- ^ Modulo
+        -> Integer -- ^ Result
 expFast b e m = gmpPowModInteger b e m `onGmpUnsupported` exponentiation b e m
 
--- | @exponentiation@ computes modular exponentiation as /b^e mod m/
+-- | Compute modular exponentiation as /b^e mod m/
 -- using repetitive squaring.
 exponentiation :: Integer -> Integer -> Integer -> Integer
 exponentiation b e m
@@ -74,7 +74,7 @@ exponentiation b e m
                    in (p^(2::Integer)) `mod` m
     | otherwise = (b * exponentiation b (e-1) m) `mod` m
 
--- | @inverse@ computes the modular inverse as in /g^(-1) mod m/.
+-- | Compute the modular inverse as in /g^(-1) mod m/.
 inverse :: Integer -> Integer -> Maybe Integer
 inverse g m = gmpInverse g m `onGmpUnsupported` v
   where

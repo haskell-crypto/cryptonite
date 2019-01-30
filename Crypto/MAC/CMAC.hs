@@ -31,11 +31,11 @@ newtype CMAC a = CMAC Bytes
 instance Eq (CMAC a) where
   CMAC b1 == CMAC b2  =  B.constEq b1 b2
 
--- | compute a MAC using the supplied cipher
+-- | Compute a MAC using the supplied cipher
 cmac :: (ByteArrayAccess bin, BlockCipher cipher)
-     => cipher      -- ^ key to compute CMAC with
-     -> bin         -- ^ input message
-     -> CMAC cipher -- ^ output tag
+     => cipher      -- ^ Key to compute CMAC with
+     -> bin         -- ^ Input message
+     -> CMAC cipher -- ^ Output tag
 cmac k msg =
     CMAC $ foldl' (\c m -> ecbEncrypt k $ bxor c m) zeroV ms
   where
@@ -56,17 +56,17 @@ cmacChunks k k1 k2  =  rec'  where
           (hd, tl) = B.splitAt bytes msg
           lack = bytes - B.length hd
 
--- | make sub-keys used in CMAC
+-- | Make sub-keys used in CMAC
 subKeys :: (BlockCipher k, ByteArray ba)
-        => k         -- ^ key to compute CMAC with
-        -> (ba, ba)  -- ^ sub-keys to compute CMAC
+        => k         -- ^ Key to compute CMAC with
+        -> (ba, ba)  -- ^ Sub-keys to compute CMAC
 subKeys k = (k1, k2)   where
     ipt = cipherIPT k
     k0 = ecbEncrypt k $ B.replicate (blockSize k) 0
     k1 = subKey ipt k0
     k2 = subKey ipt k1
 
--- polynomial multiply operation to culculate subkey
+-- Polynomial multiply operation to culculate subkey
 subKey :: (ByteArray ba) => [Word8] -> ba -> ba
 subKey ipt ws  =  case B.unpack ws of
     []                  ->  B.empty
@@ -121,9 +121,9 @@ expandIPT bytes = expandIPT' bytes ipt  where
     nb = bytes * 8
 
 -- Expand a tail bit pattern of irreducible binary polynomial
-expandIPT' :: Int         -- ^ width in byte
-           -> IPolynomial -- ^ irreducible binary polynomial definition
-           -> [Word8]     -- ^ result bit pattern
+expandIPT' :: Int         -- ^ Width in bytes
+           -> IPolynomial -- ^ Irreducible binary polynomial definition
+           -> [Word8]     -- ^ Result bit pattern
 expandIPT' bytes (Q x y z) =
     reverse . setB x . setB y . setB z . setB 0 $ replicate bytes 0
   where

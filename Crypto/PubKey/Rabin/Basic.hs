@@ -36,15 +36,15 @@ import           Crypto.Random (MonadRandom, getRandomBytes)
 
 -- | Represent a Rabin public key.
 data PublicKey = PublicKey
-    { public_size :: Int      -- ^ size of key in bytes
-    , public_n    :: Integer  -- ^ public p*q
+    { public_size :: Int      -- ^ Size of key in bytes
+    , public_n    :: Integer  -- ^ Public /p*q/
     } deriving (Show, Read, Eq, Data)
 
 -- | Represent a Rabin private key.
 data PrivateKey = PrivateKey
     { private_pub :: PublicKey
-    , private_p   :: Integer   -- ^ p prime number
-    , private_q   :: Integer   -- ^ q prime number
+    , private_p   :: Integer   -- ^ /p/ prime number
+    , private_q   :: Integer   -- ^ /q/ prime number
     , private_a   :: Integer
     , private_b   :: Integer
     } deriving (Show, Read, Eq, Data)
@@ -81,8 +81,8 @@ generate size = do
 encryptWithSeed :: HashAlgorithm hash
                 => ByteString                               -- ^ Seed
                 -> OAEPParams hash ByteString ByteString    -- ^ OAEP padding
-                -> PublicKey                                -- ^ public key
-                -> ByteString                               -- ^ plaintext
+                -> PublicKey                                -- ^ Public key
+                -> ByteString                               -- ^ Plaintext
                 -> Either Error ByteString
 encryptWithSeed seed oaep pk m =
     let n  = public_n pk
@@ -95,8 +95,8 @@ encryptWithSeed seed oaep pk m =
 -- | Encrypt plaintext using public key.
 encrypt :: (HashAlgorithm hash, MonadRandom m)
         => OAEPParams hash ByteString ByteString    -- ^ OAEP padding parameters
-        -> PublicKey                                -- ^ public key
-        -> ByteString                               -- ^ plaintext 
+        -> PublicKey                                -- ^ Public key
+        -> ByteString                               -- ^ Plaintext
         -> m (Either Error ByteString)
 encrypt oaep pk m = do
     seed <- getRandomBytes hashLen
@@ -109,8 +109,8 @@ encrypt oaep pk m = do
 -- See algorithm 8.12 in "Handbook of Applied Cryptography" by Alfred J. Menezes et al.
 decrypt :: HashAlgorithm hash
         => OAEPParams hash ByteString ByteString    -- ^ OAEP padding parameters
-        -> PrivateKey                               -- ^ private key
-        -> ByteString                               -- ^ ciphertext
+        -> PrivateKey                               -- ^ Private key
+        -> ByteString                               -- ^ Ciphertext
         -> Maybe ByteString
 decrypt oaep pk c =
     let p  = private_p pk 
@@ -171,10 +171,10 @@ sign pk hashAlg m = do
 -- | Calculate hash of message and padding.
 -- If the padding is valid, then the result of the hash operation is returned, otherwise an error.
 calculateHash :: HashAlgorithm hash
-              => ByteString    -- ^ padding
-              -> PrivateKey    -- ^ private key
-              -> hash          -- ^ hash function
-              -> ByteString    -- ^ message to sign
+              => ByteString    -- ^ Padding
+              -> PrivateKey    -- ^ Private key
+              -> hash          -- ^ Hash function
+              -> ByteString    -- ^ Message to sign
               -> Either Error Integer
 calculateHash padding pk hashAlg m = 
     let p = private_p pk
@@ -188,10 +188,10 @@ calculateHash padding pk hashAlg m =
 --
 -- See <https://en.wikipedia.org/wiki/Rabin_signature_algorithm>.
 verify :: HashAlgorithm hash
-       => PublicKey     -- ^ private key
-       -> hash          -- ^ hash function
-       -> ByteString    -- ^ message
-       -> Signature     -- ^ signature
+       => PublicKey     -- ^ Private key
+       -> hash          -- ^ Hash function
+       -> ByteString    -- ^ Message
+       -> Signature     -- ^ Signature
        -> Bool
 verify pk hashAlg m (Signature (padding, s)) =
     let n  = public_n pk
@@ -205,7 +205,7 @@ verify pk hashAlg m (Signature (padding, s)) =
 --
 -- See algorithm 3.36 in "Handbook of Applied Cryptography" by Alfred J. Menezes et al.
 sqroot :: Integer
-       -> Integer   -- ^ prime p
+       -> Integer   -- ^ Prime /p/
        -> (Integer, Integer)
 sqroot a p =
     let r = expSafe a ((p + 1) `div` 4) p
@@ -216,11 +216,11 @@ sqroot a p =
 -- 
 -- See algorithm 3.44 in "Handbook of Applied Cryptography" by Alfred J. Menezes et al.
 sqroot' :: Integer 
-        -> Integer  -- ^ prime p
-        -> Integer  -- ^ prime q
-        -> Integer  -- ^ c such that c*p + d*q = 1
-        -> Integer  -- ^ d such that c*p + d*q = 1
-        -> Integer  -- ^ n = p*q
+        -> Integer  -- ^ Prime /p/
+        -> Integer  -- ^ Prime /q/
+        -> Integer  -- ^ /c/ such that /c*p + d*q = 1/
+        -> Integer  -- ^ /d/ such that /c*p + d*q = 1/
+        -> Integer  -- ^ /n = p*q/
         -> (Integer, Integer, Integer, Integer)
 sqroot' a p q c d n =
     let (r, _) = sqroot a p

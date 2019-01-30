@@ -81,8 +81,8 @@ encryptWithSeed seed oaep pk msg
 
 -- | Encrypt a message using OAEP
 encrypt :: (HashAlgorithm hash, MonadRandom m)
-        => OAEPParams hash ByteString ByteString -- ^ OAEP params to use for encryption.
-        -> PublicKey       -- ^ Public key.
+        => OAEPParams hash ByteString ByteString -- ^ OAEP params to use for encryption
+        -> PublicKey       -- ^ Public key
         -> ByteString      -- ^ Message to encrypt
         -> m (Either Error ByteString)
 encrypt oaep pk msg = do
@@ -97,7 +97,7 @@ encrypt oaep pk msg = do
 unpad :: HashAlgorithm hash
       => OAEPParams hash ByteString ByteString -- ^ OAEP params to use
       -> Int             -- ^ size of the key in bytes
-      -> ByteString      -- ^ encoded message (not encrypted)
+      -> ByteString      -- ^ Encoded message (not encrypted)
       -> Either Error ByteString
 unpad oaep k em
     | paddingSuccess = Right msg
@@ -126,9 +126,9 @@ unpad oaep k em
 -- | Decrypt a ciphertext using OAEP
 --
 -- When the signature is not in a context where an attacker could gain
--- information from the timing of the operation, the blinder can be set to None.
+-- information from the timing of the operation, the blinder can be set to @None@.
 --
--- If unsure always set a blinder or use decryptSafer
+-- If unsure always set a blinder or use 'decryptSafer'.
 decrypt :: HashAlgorithm hash
         => Maybe Blinder   -- ^ Optional blinder
         -> OAEPParams hash ByteString ByteString -- ^ OAEP params to use for decryption

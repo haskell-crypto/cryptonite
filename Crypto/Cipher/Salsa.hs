@@ -28,10 +28,10 @@ newtype State = State ScrubbedBytes
 -- | Initialize a new Salsa context with the number of rounds,
 -- the key and the nonce associated.
 initialize :: (ByteArrayAccess key, ByteArrayAccess nonce)
-           => Int    -- ^ number of rounds (8,12,20)
-           -> key    -- ^ the key (128 or 256 bits)
-           -> nonce  -- ^ the nonce (64 or 96 bits)
-           -> State  -- ^ the initial Salsa state
+           => Int    -- ^ Number of rounds (8,12,20)
+           -> key    -- ^ The key (128 or 256 bits)
+           -> nonce  -- ^ The nonce (64 or 96 bits)
+           -> State  -- ^ The initial Salsa state
 initialize nbRounds key nonce
     | not (kLen `elem` [16,32])       = error "Salsa: key length should be 128 or 256 bits"
     | not (nonceLen `elem` [8,12])    = error "Salsa: nonce length should be 64 or 96 bits"
@@ -62,8 +62,8 @@ combine prevSt@(State prevStMem) src
 
 -- | Generate a number of bytes from the Salsa output directly
 generate :: ByteArray ba
-         => State -- ^ the current Salsa state
-         -> Int   -- ^ the length of data to generate
+         => State -- ^ The current Salsa state
+         -> Int   -- ^ The length of data to generate
          -> (ba, State)
 generate prevSt@(State prevStMem) len
     | len <= 0  = (B.empty, prevSt)

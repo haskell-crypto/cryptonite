@@ -17,17 +17,17 @@ import Crypto.Random.Types
 type PrimeCondition = Integer -> Bool
 
 -- | Error possible during encryption, decryption or signing.
-data Error = MessageTooLong       -- ^ the message to encrypt is too long
-           | MessageNotRecognized -- ^ the message decrypted doesn't have a OAEP structure
-           | InvalidParameters    -- ^ some parameters lead to breaking assumptions
+data Error = MessageTooLong       -- ^ The message to encrypt is too long
+           | MessageNotRecognized -- ^ The message decrypted doesn't have a OAEP structure
+           | InvalidParameters    -- ^ Some parameters lead to breaking assumptions
            deriving (Show, Eq)
 
--- | Generate primes p & q
+-- | Generate primes /p/ & /q/
 generatePrimes :: MonadRandom m 
-               => Int                   -- ^ size in bytes          
-               -> PrimeCondition        -- ^ condition prime p must satisfy
-               -> PrimeCondition        -- ^ condition prime q must satisfy
-               -> m (Integer, Integer)  -- ^ chosen distinct primes p and q
+               => Int                   -- ^ Size in bytes
+               -> PrimeCondition        -- ^ Condition prime /p/ must satisfy
+               -> PrimeCondition        -- ^ Condition prime /q/ must satisfy
+               -> m (Integer, Integer)  -- ^ Chosen distinct primes /p/ and /q/
 generatePrimes size pCond qCond =
     let pBits = (8*(size `div` 2))
         qBits = (8*(size - (size `div` 2)))

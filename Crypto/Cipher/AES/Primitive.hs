@@ -194,31 +194,31 @@ initAES k
         aesInit ptr = withByteArray k $ \ikey ->
             c_aes_init (castPtr ptr) (castPtr ikey) (fromIntegral len)
 
--- | encrypt using Electronic Code Book (ECB)
+-- | Encrypt using Electronic Code Book (ECB)
 {-# NOINLINE encryptECB #-}
 encryptECB :: ByteArray ba => AES -> ba -> ba
 encryptECB = doECB c_aes_encrypt_ecb
 
--- | encrypt using Cipher Block Chaining (CBC)
+-- | Encrypt using Cipher Block Chaining (CBC)
 {-# NOINLINE encryptCBC #-}
 encryptCBC :: ByteArray ba
            => AES        -- ^ AES Context
            -> IV AES     -- ^ Initial vector of AES block size
-           -> ba         -- ^ plaintext
-           -> ba         -- ^ ciphertext
+           -> ba         -- ^ Plaintext
+           -> ba         -- ^ Ciphertext
 encryptCBC = doCBC c_aes_encrypt_cbc
 
--- | generate a counter mode pad. this is generally xor-ed to an input
+-- | Generate a counter mode pad. This is generally xor-ed to an input
 -- to make the standard counter mode block operations.
 --
--- if the length requested is not a multiple of the block cipher size,
+-- If the length requested is not a multiple of the block cipher size,
 -- more data will be returned, so that the returned bytearray is
 -- a multiple of the block cipher size.
 {-# NOINLINE genCTR #-}
 genCTR :: ByteArray ba
-       => AES    -- ^ Cipher Key.
-       -> IV AES -- ^ usually a 128 bit integer.
-       -> Int    -- ^ length of bytes required.
+       => AES    -- ^ Cipher key
+       -> IV AES -- ^ Usually a 128 bit integer
+       -> Int    -- ^ Length of bytes required
        -> ba
 genCTR ctx (IV iv) len
     | len <= 0  = B.empty
@@ -227,14 +227,14 @@ genCTR ctx (IV iv) len
         (nbBlocks',r) = len `quotRem` 16
         nbBlocks = if r == 0 then nbBlocks' else nbBlocks' + 1
 
--- | generate a counter mode pad. this is generally xor-ed to an input
+-- | Generate a counter mode pad. This is generally xor-ed to an input
 -- to make the standard counter mode block operations.
 --
--- if the length requested is not a multiple of the block cipher size,
+-- If the length requested is not a multiple of the block cipher size,
 -- more data will be returned, so that the returned bytearray is
 -- a multiple of the block cipher size.
 --
--- Similiar to 'genCTR' but also return the next IV for continuation
+-- Similiar to 'genCTR' but also returns the next IV for continuation.
 {-# NOINLINE genCounter #-}
 genCounter :: ByteArray ba
            => AES
@@ -257,15 +257,15 @@ genCounter ctx iv len
  - RULES "snd . genCounter" forall ctx iv len .  snd (genCounter ctx iv len) = genCTR ctx iv len
  -}
 
--- | encrypt using Counter mode (CTR)
+-- | Encrypt using Counter mode (CTR)
 --
--- in CTR mode encryption and decryption is the same operation.
+-- In CTR mode encryption and decryption is the same operation.
 {-# NOINLINE encryptCTR #-}
 encryptCTR :: ByteArray ba
            => AES        -- ^ AES Context
-           -> IV AES     -- ^ initial vector of AES block size (usually representing a 128 bit integer)
-           -> ba         -- ^ plaintext input
-           -> ba         -- ^ ciphertext output
+           -> IV AES     -- ^ Initial vector of AES block size (usually representing a 128 bit integer)
+           -> ba         -- ^ Plaintext input
+           -> ba         -- ^ Ciphertext output
 encryptCTR ctx iv input
     | len <= 0          = B.empty
     | B.length iv /= 16 = error $ "AES error: IV length must be block size (16). Its length is: " ++ (show $ B.length iv)
@@ -274,47 +274,47 @@ encryptCTR ctx iv input
                       c_aes_encrypt_ctr (castPtr o) k v i (fromIntegral len)
         len = B.length input
 
--- | encrypt using XTS
+-- | Encrypt using XTS
 --
--- the first key is the normal block encryption key
--- the second key is used for the initial block tweak
+-- The first key is the normal block encryption key.
+-- The second key is used for the initial block tweak.
 {-# NOINLINE encryptXTS #-}
 encryptXTS :: ByteArray ba
            => (AES,AES)  -- ^ AES cipher and tweak context
-           -> IV AES     -- ^ a 128 bits IV, typically a sector or a block offset in XTS
-           -> Word32     -- ^ number of rounds to skip, also seen a 16 byte offset in the sector or block.
-           -> ba         -- ^ input to encrypt
-           -> ba         -- ^ output encrypted
+           -> IV AES     -- ^ A 128 bit IV, typically a sector or a block offset in XTS
+           -> Word32     -- ^ Number of rounds to skip, also seen a 16 byte offset in the sector or block
+           -> ba         -- ^ Input to encrypt
+           -> ba         -- ^ Output encrypted
 encryptXTS = doXTS c_aes_encrypt_xts
 
--- | decrypt using Electronic Code Book (ECB)
+-- | Decrypt using Electronic Code Book (ECB)
 {-# NOINLINE decryptECB #-}
 decryptECB :: ByteArray ba => AES -> ba -> ba
 decryptECB = doECB c_aes_decrypt_ecb
 
--- | decrypt using Cipher block chaining (CBC)
+-- | Decrypt using Cipher block chaining (CBC)
 {-# NOINLINE decryptCBC #-}
 decryptCBC :: ByteArray ba => AES -> IV AES -> ba -> ba
 decryptCBC = doCBC c_aes_decrypt_cbc
 
--- | decrypt using Counter mode (CTR).
+-- | Decrypt using Counter mode (CTR)
 --
--- in CTR mode encryption and decryption is the same operation.
+-- In CTR mode encryption and decryption is the same operation.
 decryptCTR :: ByteArray ba
            => AES        -- ^ AES Context
-           -> IV AES     -- ^ initial vector, usually representing a 128 bit integer
-           -> ba         -- ^ ciphertext input
-           -> ba         -- ^ plaintext output
+           -> IV AES     -- ^ Initial vector, usually representing a 128 bit integer
+           -> ba         -- ^ Ciphertext input
+           -> ba         -- ^ Plaintext output
 decryptCTR = encryptCTR
 
--- | decrypt using XTS
+-- | Decrypt using XTS
 {-# NOINLINE decryptXTS #-}
 decryptXTS :: ByteArray ba
            => (AES,AES)  -- ^ AES cipher and tweak context
-           -> IV AES     -- ^ a 128 bits IV, typically a sector or a block offset in XTS
-           -> Word32     -- ^ number of rounds to skip, also seen a 16 byte offset in the sector or block.
-           -> ba         -- ^ input to decrypt
-           -> ba         -- ^ output decrypted
+           -> IV AES     -- ^ A 128 bit IV, typically a sector or a block offset in XTS
+           -> Word32     -- ^ Number of rounds to skip, also seen a 16 byte offset in the sector or block
+           -> ba         -- ^ Input to decrypt
+           -> ba         -- ^ Output decrypted
 decryptXTS = doXTS c_aes_decrypt_xts
 
 {-# INLINE doECB #-}
@@ -366,7 +366,7 @@ doXTS f (key1,key2) iv spoint input
 -- GCM
 ------------------------------------------------------------------------
 
--- | initialize a gcm context
+-- | Initialize a GCM context
 {-# NOINLINE gcmInit #-}
 gcmInit :: ByteArrayAccess iv => AES -> iv -> AESGCM
 gcmInit ctx iv = unsafeDoIO $ do
@@ -375,9 +375,9 @@ gcmInit ctx iv = unsafeDoIO $ do
             c_aes_gcm_init (castPtr gcmStPtr) k v (fromIntegral $ B.length iv)
     return $ AESGCM sm
 
--- | append data which is only going to be authenticated to the GCM context.
+-- | Append data which is only going to be authenticated to the GCM context.
 --
--- needs to happen after initialization and before appending encryption/decryption data.
+-- Needs to happen after initialization and before appending encryption/decryption data.
 {-# NOINLINE gcmAppendAAD #-}
 gcmAppendAAD :: ByteArrayAccess aad => AESGCM -> aad -> AESGCM
 gcmAppendAAD gcmSt input = unsafeDoIO doAppend
@@ -386,10 +386,10 @@ gcmAppendAAD gcmSt input = unsafeDoIO doAppend
             withByteArray input $ \i ->
             c_aes_gcm_aad gcmStPtr i (fromIntegral $ B.length input)
 
--- | append data to encrypt and append to the GCM context
+-- | Append data to encrypt and append to the GCM context.
 --
--- the bytearray needs to be a multiple of AES block size, unless it's the last call to this function.
--- needs to happen after AAD appending, or after initialization if no AAD data.
+-- The bytearray needs to be a multiple of AES block size, unless it's the last call to this function.
+-- Needs to happen after AAD appending, or after initialization if no AAD data.
 {-# NOINLINE gcmAppendEncrypt #-}
 gcmAppendEncrypt :: ByteArray ba => AES -> AESGCM -> ba -> (ba, AESGCM)
 gcmAppendEncrypt ctx gcm input = unsafeDoIO $ withGCMKeyAndCopySt ctx gcm doEnc
@@ -399,10 +399,10 @@ gcmAppendEncrypt ctx gcm input = unsafeDoIO $ withGCMKeyAndCopySt ctx gcm doEnc
             withByteArray input $ \i ->
             c_aes_gcm_encrypt (castPtr o) gcmStPtr aesPtr i (fromIntegral len)
 
--- | append data to decrypt and append to the GCM context
+-- | Append data to decrypt and append to the GCM context
 --
--- the bytearray needs to be a multiple of AES block size, unless it's the last call to this function.
--- needs to happen after AAD appending, or after initialization if no AAD data.
+-- The bytearray needs to be a multiple of AES block size, unless it's the last call to this function.
+-- Needs to happen after AAD appending, or after initialization if no AAD data.
 {-# NOINLINE gcmAppendDecrypt #-}
 gcmAppendDecrypt :: ByteArray ba => AES -> AESGCM -> ba -> (ba, AESGCM)
 gcmAppendDecrypt ctx gcm input = unsafeDoIO $ withGCMKeyAndCopySt ctx gcm doDec
@@ -423,7 +423,7 @@ gcmFinish ctx gcm taglen = AuthTag $ B.take taglen computeTag
 -- OCB v3
 ------------------------------------------------------------------------
 
--- | initialize an ocb context
+-- | Initialize an OCB context
 {-# NOINLINE ocbInit #-}
 ocbInit :: ByteArrayAccess iv => AES -> iv -> AESOCB
 ocbInit ctx iv = unsafeDoIO $ do
@@ -432,9 +432,9 @@ ocbInit ctx iv = unsafeDoIO $ do
             c_aes_ocb_init (castPtr ocbStPtr) k v (fromIntegral $ B.length iv)
     return $ AESOCB sm
 
--- | append data which is going to just be authenticated to the OCB context.
+-- | Append data which is going to just be authenticated to the OCB context.
 --
--- need to happen after initialization and before appending encryption/decryption data.
+-- Needs to happen after initialization and before appending encryption/decryption data.
 {-# NOINLINE ocbAppendAAD #-}
 ocbAppendAAD :: ByteArrayAccess aad => AES -> AESOCB -> aad -> AESOCB
 ocbAppendAAD ctx ocb input = unsafeDoIO (snd `fmap` withOCBKeyAndCopySt ctx ocb doAppend)
@@ -442,10 +442,10 @@ ocbAppendAAD ctx ocb input = unsafeDoIO (snd `fmap` withOCBKeyAndCopySt ctx ocb 
             withByteArray input $ \i ->
             c_aes_ocb_aad ocbStPtr aesPtr i (fromIntegral $ B.length input)
 
--- | append data to encrypt and append to the OCB context
+-- | Append data to encrypt and append to the OCB context.
 --
--- the bytearray needs to be a multiple of the AES block size, unless it's the last call to this function.
--- need to happen after AAD appending, or after initialization if no AAD data.
+-- The bytearray needs to be a multiple of the AES block size, unless it's the last call to this function.
+-- Needs to happen after AAD appending, or after initialization if no AAD data.
 {-# NOINLINE ocbAppendEncrypt #-}
 ocbAppendEncrypt :: ByteArray ba => AES -> AESOCB -> ba -> (ba, AESOCB)
 ocbAppendEncrypt ctx ocb input = unsafeDoIO $ withOCBKeyAndCopySt ctx ocb doEnc
@@ -455,10 +455,10 @@ ocbAppendEncrypt ctx ocb input = unsafeDoIO $ withOCBKeyAndCopySt ctx ocb doEnc
             withByteArray input $ \i ->
             c_aes_ocb_encrypt (castPtr o) ocbStPtr aesPtr i (fromIntegral len)
 
--- | append data to decrypt and append to the OCB context
+-- | Append data to decrypt and append to the OCB context.
 --
--- the bytearray needs to be a multiple of the AES block size, unless it's the last call to this function.
--- need to happen after AAD appending, or after initialization if no AAD data.
+-- The bytearray needs to be a multiple of the AES block size, unless it's the last call to this function.
+-- Need to happen after AAD appending, or after initialization if no AAD data.
 {-# NOINLINE ocbAppendDecrypt #-}
 ocbAppendDecrypt :: ByteArray ba => AES -> AESOCB -> ba -> (ba, AESOCB)
 ocbAppendDecrypt ctx ocb input = unsafeDoIO $ withOCBKeyAndCopySt ctx ocb doDec
@@ -491,7 +491,7 @@ ccmGetL l = case l of
   CCM_L3 -> 3
   CCM_L4 -> 4
 
--- | initialize a ccm context
+-- | Initialize a CCM context
 {-# NOINLINE ccmInit #-}
 ccmInit :: ByteArrayAccess iv => AES -> iv -> Int -> CCM_M -> CCM_L -> CryptoFailable AESCCM
 ccmInit ctx iv n m l
@@ -505,19 +505,19 @@ ccmInit ctx iv n m l
     mi = ccmGetM m
     li = ccmGetL l
 
--- | append data which is only going to be authenticated to the CCM context.
+-- | Append data which is only going to be authenticated to the CCM context.
 --
--- needs to happen after initialization and before appending encryption/decryption data.
+-- Needs to happen after initialization and before appending encryption/decryption data.
 {-# NOINLINE ccmAppendAAD #-}
 ccmAppendAAD :: ByteArrayAccess aad => AES -> AESCCM -> aad -> AESCCM
 ccmAppendAAD ctx ccm input = unsafeDoIO $ snd <$> withCCMKeyAndCopySt ctx ccm doAppend
   where doAppend ccmStPtr aesPtr =
             withByteArray input $ \i -> c_aes_ccm_aad ccmStPtr aesPtr i (fromIntegral $ B.length input)
 
--- | append data to encrypt and append to the CCM context
+-- | Append data to encrypt and append to the CCM context
 --
--- the bytearray needs to be a multiple of AES block size, unless it's the last call to this function.
--- needs to happen after AAD appending, or after initialization if no AAD data.
+-- The bytearray needs to be a multiple of AES block size, unless it's the last call to this function.
+-- Needs to happen after AAD appending, or after initialization if no AAD data.
 {-# NOINLINE ccmEncrypt #-}
 ccmEncrypt :: ByteArray ba => AES -> AESCCM -> ba -> (ba, AESCCM)
 ccmEncrypt ctx ccm input = unsafeDoIO $ withCCMKeyAndCopySt ctx ccm cbcmacAndIv
@@ -527,10 +527,10 @@ ccmEncrypt ctx ccm input = unsafeDoIO $ withCCMKeyAndCopySt ctx ccm cbcmacAndIv
             withByteArray input $ \i ->
             c_aes_ccm_encrypt (castPtr o) ccmStPtr aesPtr i (fromIntegral len)
 
--- | append data to decrypt and append to the CCM context
+-- | Append data to decrypt and append to the CCM context.
 --
--- the bytearray needs to be a multiple of AES block size, unless it's the last call to this function.
--- needs to happen after AAD appending, or after initialization if no AAD data.
+-- The bytearray needs to be a multiple of AES block size, unless it's the last call to this function.
+-- Needs to happen after AAD appending, or after initialization if no AAD data.
 {-# NOINLINE ccmDecrypt #-}
 ccmDecrypt :: ByteArray ba => AES -> AESCCM -> ba -> (ba, AESCCM)
 ccmDecrypt ctx ccm input = unsafeDoIO $ withCCMKeyAndCopySt ctx ccm cbcmacAndIv

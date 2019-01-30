@@ -15,7 +15,7 @@ import           Crypto.Cipher.CAST5.Primitive
 import           Crypto.Internal.ByteArray (ByteArrayAccess)
 import qualified Crypto.Internal.ByteArray as B
 
--- | CAST5 block cipher (also known as CAST-128).  Key is between
+-- | CAST5 block cipher (also known as CAST-128). Key is between
 -- 40 and 128 bits.
 newtype CAST5 = CAST5 Key
 

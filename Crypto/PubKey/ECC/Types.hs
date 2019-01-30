@@ -162,7 +162,7 @@ curvesOIDs =
     ]
 -}
 
--- | get the size of the curve in bits
+-- | Get the size of the curve in bits
 curveSizeBits :: Curve -> Int
 curveSizeBits (CurveFP  c) = numBits (ecc_p  c)
 curveSizeBits (CurveF2m c) = numBits (ecc_fx c) - 1

@@ -115,7 +115,7 @@ pointNegate a = withNewPoint $ \dx dy ->
 
 -- | Multiply a point by a scalar
 --
--- warning: variable time
+-- /WARNING:/ Variable time
 pointMul :: Scalar -> Point -> Point
 pointMul scalar p = withNewPoint $ \dx dy ->
     withScalar scalar $ \n -> withPoint p $ \px py -> withScalarZero $ \nzero ->
@@ -130,11 +130,11 @@ pointDh scalar p =
             ccryptonite_p256_points_mul_vartime nzero n px py dx dy
         ccryptonite_p256_to_bin (castPtr dx) dst
 
--- | multiply the point @p with @n2 and add a lifted to curve value @n1
+-- | Multiply the point @p with @n2 and add a lifted to curve value @n1
 --
 -- > n1 * G + n2 * p
 --
--- warning: variable time
+-- /WARNING:/ Variable time
 pointsMulVarTime :: Scalar -> Scalar -> Point -> Point
 pointsMulVarTime n1 n2 p = withNewPoint $ \dx dy ->
     withScalar n1 $ \pn1 -> withScalar n2 $ \pn2 -> withPoint p $ \px py ->
@@ -255,7 +255,7 @@ scalarSub a b =
 --
 -- > 1 / a
 --
--- warning: variable time
+-- /WARNING:/ Variable time
 scalarInv :: Scalar -> Scalar
 scalarInv a =
     withNewScalarFreeze $ \b -> withScalar a $ \pa ->
@@ -268,7 +268,7 @@ scalarCmp a b = unsafeDoIO $
         v <- ccryptonite_p256_cmp pa pb
         return $ compare v 0
 
--- | convert a scalar from binary
+-- | Convert a scalar from binary
 scalarFromBinary :: ByteArrayAccess ba => ba -> CryptoFailable Scalar
 scalarFromBinary ba
     | B.length ba /= scalarSize = CryptoFailed $ CryptoError_SecretKeySizeInvalid
@@ -277,7 +277,7 @@ scalarFromBinary ba
             ccryptonite_p256_from_bin b p
 {-# NOINLINE scalarFromBinary #-}
 
--- | convert a scalar to binary
+-- | Convert a scalar to binary
 scalarToBinary :: ByteArray ba => Scalar -> ba
 scalarToBinary s = B.unsafeCreate scalarSize $ \b -> withScalar s $ \p ->
     ccryptonite_p256_to_bin p b

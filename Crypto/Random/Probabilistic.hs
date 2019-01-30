@@ -18,7 +18,7 @@ import Crypto.Random
 -- this can have unexpected random for.
 -- 
 -- This is useful for probabilistic algorithm like Miller Rabin
--- probably prime algorithm, given appropriate choice of the heuristic
+-- probably prime algorithm, given appropriate choice of the heuristic.
 --
 -- Generally, it's advised not to use this function.
 probabilistic :: MonadPseudoRandom ChaChaDRG a -> a

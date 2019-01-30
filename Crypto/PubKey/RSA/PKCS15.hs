@@ -131,32 +131,32 @@ unpad packed
                               , B.length ps >= 8
                               ]
 
--- | decrypt message using the private key.
+-- | Decrypt message using the private key.
 --
 -- When the decryption is not in a context where an attacker could gain
--- information from the timing of the operation, the blinder can be set to None.
+-- information from the timing of the operation, the blinder can be set to @None@.
 --
--- If unsure always set a blinder or use decryptSafer
+-- If unsure always set a blinder or use 'decryptSafer'.
 --
--- The message is returned un-padded.
-decrypt :: Maybe Blinder -- ^ optional blinder
+-- The message is returned unpadded.
+decrypt :: Maybe Blinder -- ^ Optional blinder
         -> PrivateKey    -- ^ RSA private key
-        -> ByteString    -- ^ cipher text
+        -> ByteString    -- ^ Cipher text
         -> Either Error ByteString
 decrypt blinder pk c
     | B.length c /= (private_size pk) = Left MessageSizeIncorrect
     | otherwise                       = unpad $ dp blinder pk c
 
--- | decrypt message using the private key and by automatically generating a blinder.
+-- | Decrypt message using the private key and by automatically generating a blinder.
 decryptSafer :: MonadRandom m
              => PrivateKey -- ^ RSA private key
-             -> ByteString -- ^ cipher text
+             -> ByteString -- ^ Cipher text
              -> m (Either Error ByteString)
 decryptSafer pk b = do
     blinder <- generateBlinder (private_n pk)
     return (decrypt (Just blinder) pk b)
 
--- | encrypt a bytestring using the public key.
+-- | Encrypt a bytestring using the public key.
 --
 -- The message needs to be smaller than the key size - 11.
 -- The message should not be padded.
@@ -167,31 +167,31 @@ encrypt pk m = do
         Left err -> return $ Left err
         Right em -> return $ Right (ep pk em)
 
--- | sign message using private key, a hash and its ASN1 description
+-- | Sign message using private key, a hash and its ASN1 description
 --
 -- When the signature is not in a context where an attacker could gain
 -- information from the timing of the operation, the blinder can be set to None.
 --
 -- If unsure always set a blinder or use signSafer
 sign :: HashAlgorithmASN1 hashAlg
-     => Maybe Blinder -- ^ optional blinder
-     -> Maybe hashAlg -- ^ hash algorithm
-     -> PrivateKey    -- ^ private key
-     -> ByteString    -- ^ message to sign
+     => Maybe Blinder -- ^ Optional blinder
+     -> Maybe hashAlg -- ^ Hash algorithm
+     -> PrivateKey    -- ^ Private key
+     -> ByteString    -- ^ Message to sign
      -> Either Error ByteString
 sign blinder hashDescr pk m = dp blinder pk `fmap` makeSignature hashDescr (private_size pk) m
 
--- | sign message using the private key and by automatically generating a blinder.
+-- | Sign message using the private key and by automatically generating a blinder.
 signSafer :: (HashAlgorithmASN1 hashAlg, MonadRandom m)
           => Maybe hashAlg -- ^ Hash algorithm
-          -> PrivateKey    -- ^ private key
-          -> ByteString    -- ^ message to sign
+          -> PrivateKey    -- ^ Private key
+          -> ByteString    -- ^ Message to sign
           -> m (Either Error ByteString)
 signSafer hashAlg pk m = do
     blinder <- generateBlinder (private_n pk)
     return (sign (Just blinder) hashAlg pk m)
 
--- | verify message with the signed message
+-- | Verify message with the signed message
 verify :: HashAlgorithmASN1 hashAlg
        => Maybe hashAlg
        -> PublicKey
@@ -203,9 +203,9 @@ verify hashAlg pk m sm =
         Left _  -> False
         Right s -> s == (ep pk sm)
 
--- | make signature digest, used in 'sign' and 'verify'
+-- | Make signature digest, used in 'sign' and 'verify'
 makeSignature :: HashAlgorithmASN1 hashAlg
-              => Maybe hashAlg -- ^ optional hashing algorithm
+              => Maybe hashAlg -- ^ Optional hashing algorithm
               -> Int
               -> ByteString
               -> Either Error ByteString

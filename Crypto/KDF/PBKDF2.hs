@@ -35,8 +35,8 @@ import           Data.Memory.PtrMethods
 
 -- | The PRF used for PBKDF2
 type PRF password =
-       password -- ^ the password parameters
-    -> Bytes    -- ^ the content
+       password -- ^ The password parameters
+    -> Bytes    -- ^ The content
     -> Bytes    -- ^ prf(password,content)
 
 -- | PRF for PBKDF2 using HMAC with the hash algorithm as parameter
@@ -49,11 +49,11 @@ prfHMAC alg k = hmacIncr alg (HMAC.initialize k)
 
 -- | Parameters for PBKDF2
 data Parameters = Parameters
-    { iterCounts   :: Int -- ^ the number of user-defined iterations for the algorithms. e.g. WPA2 uses 4000.
-    , outputLength :: Int -- ^ the number of bytes to generate out of PBKDF2
+    { iterCounts   :: Int -- ^ The number of user-defined iterations for the algorithms. e.g. WPA2 uses 4000.
+    , outputLength :: Int -- ^ The number of bytes to generate out of PBKDF2
     }
 
--- | generate the pbkdf2 key derivation function from the output
+-- | Generate the PBKDF2 key derivation function from the output
 generate :: (ByteArrayAccess password, ByteArrayAccess salt, ByteArray ba)
          => PRF password
          -> Parameters

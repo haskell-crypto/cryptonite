@@ -42,19 +42,19 @@ toPositive int
 
 -- | Generate a key pair given p and q.
 --
--- p and q need to be distinct prime numbers.
+-- /p/ and /q/ need to be distinct prime numbers.
 --
--- e need to be coprime to phi=(p-1)*(q-1). If that's not the
+-- /e/ need to be coprime to /phi=(p-1)*(q-1)/. If that's not the
 -- case, the function will not return a key pair.
 -- A small hamming weight results in better performance.
 --
--- * e=0x10001 is a popular choice
+-- * /e=0x10001/ is a popular choice
 --
--- * e=3 is popular as well, but proven to not be as secure for some cases.
+-- * /e=3/ is popular as well, but proven to not be as secure for some cases.
 --
-generateWith :: (Integer, Integer) -- ^ chosen distinct primes p and q
-             -> Int                -- ^ size in bytes
-             -> Integer            -- ^ RSA public exponent 'e'
+generateWith :: (Integer, Integer) -- ^ Chosen distinct primes /p/ and /q/
+             -> Int                -- ^ Size in bytes
+             -> Integer            -- ^ RSA public exponent /e/
              -> Maybe (PublicKey, PrivateKey)
 generateWith (p,q) size e =
     case inverse e phi of
@@ -77,10 +77,10 @@ generateWith (p,q) size e =
                             , private_qinv = qinv
                             }
 
--- | generate a pair of (private, public) key of size in bytes.
+-- | Generate a pair of (private, public) key of size in bytes.
 generate :: MonadRandom m
-         => Int     -- ^ size in bytes
-         -> Integer -- ^ RSA public exponent 'e'
+         => Int     -- ^ Size in bytes
+         -> Integer -- ^ RSA public exponent /e/
          -> m (PublicKey, PrivateKey)
 generate size e = loop
   where
@@ -97,9 +97,9 @@ generate size e = loop
         q <- generatePrime (8 * (size - (size `div` 2)))
         if p == q then generateQ p else return q
 
--- | Generate a blinder to use with decryption and signing operation
+-- | Generate a blinder to use with decryption and signing operation.
 --
--- the unique parameter apart from the random number generator is the
+-- The unique parameter apart from the random number generator is the
 -- public key value N.
 generateBlinder :: MonadRandom m
                 => Integer -- ^ RSA public N parameter.

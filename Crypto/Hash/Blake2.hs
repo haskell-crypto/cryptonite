@@ -12,19 +12,19 @@
 --
 -- Please consider the following when chosing a hash:
 --
---      Algorithm     | Target | Collision | Digest Size |
---         Identifier |  Arch  |  Security |   in bytes  |
---     ---------------+--------+-----------+-------------+
---      id-blake2b160 | 64-bit |   2**80   |         20  |
---      id-blake2b256 | 64-bit |   2**128  |         32  |
---      id-blake2b384 | 64-bit |   2**192  |         48  |
---      id-blake2b512 | 64-bit |   2**256  |         64  |
---     ---------------+--------+-----------+-------------+
---      id-blake2s128 | 32-bit |   2**64   |         16  |
---      id-blake2s160 | 32-bit |   2**80   |         20  |
---      id-blake2s224 | 32-bit |   2**112  |         28  |
---      id-blake2s256 | 32-bit |   2**128  |         32  |
---     ---------------+--------+-----------+-------------+
+-- >  Algorithm     | Target | Collision | Digest Size |
+-- >     Identifier |  Arch  |  Security |   in bytes  |
+-- > ---------------+--------+-----------+-------------+
+-- >  id-blake2b160 | 64-bit |   2**80   |         20  |
+-- >  id-blake2b256 | 64-bit |   2**128  |         32  |
+-- >  id-blake2b384 | 64-bit |   2**192  |         48  |
+-- >  id-blake2b512 | 64-bit |   2**256  |         64  |
+-- > ---------------+--------+-----------+-------------+
+-- >  id-blake2s128 | 32-bit |   2**64   |         16  |
+-- >  id-blake2s160 | 32-bit |   2**80   |         20  |
+-- >  id-blake2s224 | 32-bit |   2**112  |         28  |
+-- >  id-blake2s256 | 32-bit |   2**128  |         32  |
+-- > ---------------+--------+-----------+-------------+
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveDataTypeable #-}

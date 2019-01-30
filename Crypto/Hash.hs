@@ -66,7 +66,7 @@ hashInit :: forall a . HashAlgorithm a => Context a
 hashInit = Context $ B.allocAndFreeze (hashInternalContextSize (undefined :: a)) $ \(ptr :: Ptr (Context a)) ->
     hashInternalInit ptr
 
--- | run hashUpdates on one single bytestring and return the updated context.
+-- | Run hashUpdates on one single bytestring and return the updated context.
 hashUpdate :: (ByteArrayAccess ba, HashAlgorithm a) => Context a -> ba -> Context a
 hashUpdate ctx b
     | B.null b  = ctx

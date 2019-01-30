@@ -56,17 +56,12 @@ data CryptoError =
 
 instance E.Exception CryptoError
 
--- | A simple Either like type to represent a computation that can fail
---
--- 2 possibles values are:
---
--- * 'CryptoPassed' : The computation succeeded, and contains the result of the computation
---
--- * 'CryptoFailed' : The computation failed, and contains the cryptographic error associated
---
+-- | A simple @Either@-like type to represent a computation that can fail.
 data CryptoFailable a =
       CryptoPassed a
+        -- ^ The computation succeeded, and contains the result of the computation.
     | CryptoFailed CryptoError
+        -- ^ The computation failed, and contains the cryptographic error associated.
     deriving (Show)
 
 instance Eq a => Eq (CryptoFailable a) where
@@ -92,28 +87,28 @@ instance MonadFailure CryptoFailable where
     type Failure CryptoFailable = CryptoError
     mFail = CryptoFailed
 
--- | Throw an CryptoError as exception on CryptoFailed result,
--- otherwise return the computed value
+-- | Throw an 'CryptoError' as exception on 'CryptoFailed' result,
+-- otherwise return the computed value.
 throwCryptoErrorIO :: CryptoFailable a -> IO a
 throwCryptoErrorIO (CryptoFailed e) = E.throwIO e
 throwCryptoErrorIO (CryptoPassed r) = return r
 
--- | Same as 'throwCryptoErrorIO' but throw the error asynchronously.
+-- | Same as 'throwCryptoErrorIO', but throws the error asynchronously.
 throwCryptoError :: CryptoFailable a -> a
 throwCryptoError (CryptoFailed e) = E.throw e
 throwCryptoError (CryptoPassed r) = r
 
--- | Simple 'either' like combinator for CryptoFailable type
+-- | Simple 'either'-like combinator for 'CryptoFailable' type.
 onCryptoFailure :: (CryptoError -> r) -> (a -> r) -> CryptoFailable a -> r
 onCryptoFailure onError _         (CryptoFailed e) = onError e
 onCryptoFailure _       onSuccess (CryptoPassed r) = onSuccess r
 
--- | Transform a CryptoFailable to an Either
+-- | Transform a @CryptoFailable@ to an @Either@.
 eitherCryptoError :: CryptoFailable a -> Either CryptoError a
 eitherCryptoError (CryptoFailed e) = Left e
 eitherCryptoError (CryptoPassed a) = Right a
 
--- | Transform a CryptoFailable to a Maybe
+-- | Transform a @CryptoFailable@ to a @Maybe@.
 maybeCryptoError :: CryptoFailable a -> Maybe a
 maybeCryptoError (CryptoFailed _) = Nothing
 maybeCryptoError (CryptoPassed r) = Just r

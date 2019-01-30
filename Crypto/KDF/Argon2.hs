@@ -74,8 +74,8 @@ data Options = Options
     { iterations  :: !TimeCost
     , memory      :: !MemoryCost
     , parallelism :: !Parallelism
-    , variant     :: !Variant     -- ^ Which variant of Argon2 to use.
-    , version     :: !Version     -- ^ Which version of Argon2 to use.
+    , variant     :: !Variant     -- ^ Which variant of Argon2 to use
+    , version     :: !Version     -- ^ Which version of Argon2 to use
     }
     deriving (Eq,Ord,Read,Show)
 
@@ -85,8 +85,8 @@ saltMinLength = 8
 outputMinLength :: Int
 outputMinLength = 4
 
--- specification allows up to 2^32-1 but this is too big for a signed Int
--- on a 32-bit architecture, so we limit tag length to 2^31-1 bytes
+-- Specification allows up to 2^32-1 but this is too big for a signed Int
+-- on a 32-bit architecture, so we limit tag length to 2^31-1 bytes.
 outputMaxLength :: Int
 outputMaxLength = 0x7fffffff
 

@@ -18,8 +18,8 @@ import qualified Crypto.Internal.ByteArray as B
 
 -- | Represent a mask generation algorithm
 type MaskGenAlgorithm seed output =
-       seed   -- ^ seed
-    -> Int    -- ^ length to generate
+       seed   -- ^ Seed
+    -> Int    -- ^ Length to generate
     -> output
 
 -- | Mask generation algorithm MGF1

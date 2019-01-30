@@ -6,7 +6,7 @@
 -- Portability : unknown
 --
 -- Various cryptographic padding commonly used for block ciphers
--- or assymetric systems.
+-- or asymmetric systems.
 --
 module Crypto.Data.Padding
     ( Format(..)
@@ -21,7 +21,7 @@ import qualified Data.ByteArray as B
 data Format =
       PKCS5     -- ^ PKCS5: PKCS7 with hardcoded size of 8
     | PKCS7 Int -- ^ PKCS7 with padding size between 1 and 255
-    | ZERO Int  -- ^ zero padding with block size
+    | ZERO Int  -- ^ Zero padding with block size
     deriving (Show, Eq)
 
 -- | Apply some pad to a bytearray

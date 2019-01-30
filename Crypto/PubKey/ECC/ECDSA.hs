@@ -60,13 +60,13 @@ toPublicKey (KeyPair curve pub _) = PublicKey curve pub
 toPrivateKey :: KeyPair -> PrivateKey
 toPrivateKey (KeyPair curve _ priv) = PrivateKey curve priv
 
--- | Sign digest using the private key and an explicit k number.
+-- | Sign digest using the private key and an explicit /k/ number.
 --
 -- /WARNING:/ Vulnerable to timing attacks.
 signDigestWith :: HashAlgorithm hash
-               => Integer     -- ^ k random number
-               -> PrivateKey  -- ^ private key
-               -> Digest hash -- ^ digest to sign
+               => Integer     -- ^ /k/ random number
+               -> PrivateKey  -- ^ Private key
+               -> Digest hash -- ^ Digest to sign
                -> Maybe Signature
 signDigestWith k (PrivateKey curve d) digest = do
     let z = dsaTruncHashDigest digest n

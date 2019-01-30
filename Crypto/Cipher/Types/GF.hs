@@ -22,7 +22,7 @@ import           Data.Bits
 
 -- | Compute the gfmul with the XTS polynomial
 --
--- block size need to be 128 bits.
+-- Block size need to be 128 bits.
 --
 -- FIXME: add support for big endian.
 xtsGFMul :: ByteArray ba => ba -> ba

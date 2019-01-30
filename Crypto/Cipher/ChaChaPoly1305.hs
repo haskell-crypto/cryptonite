@@ -12,9 +12,9 @@
 -- returns a new State.
 --
 -- Authenticated Data need to be added before any call to 'encrypt' or 'decrypt',
--- and once all the data has been added, then 'finalizeAAD' need to be called.
+-- and once all the data has been added, then 'finalizeAAD' needs to be called.
 --
--- Once 'finalizeAAD' has been called, no further 'appendAAD' call should be make.
+-- Once 'finalizeAAD' has been called, no further 'appendAAD' call should be made.
 --
 -- >import Data.ByteString.Char8 as B
 -- >import Data.ByteArray
@@ -63,7 +63,7 @@ import           Foreign.Storable
 
 -- | A ChaChaPoly1305 State.
 --
--- The state is immutable, and only new state can be created
+-- The state is immutable, and only new state can be created.
 data State = State !ChaCha.State
                    !Poly1305.State
                    !Word64 -- AAD length
@@ -71,7 +71,7 @@ data State = State !ChaCha.State
 
 -- | Valid Nonce for ChaChaPoly1305.
 --
--- It can be created with 'nonce8' or 'nonce12'
+-- It can be created with 'nonce8' or 'nonce12'.
 data Nonce = Nonce8 Bytes | Nonce12 Bytes
 
 instance ByteArrayAccess Nonce where
@@ -107,10 +107,10 @@ nonce12 iv
     | B.length iv /= 12 = CryptoFailed CryptoError_IvSizeInvalid
     | otherwise         = CryptoPassed . Nonce12 . B.convert $ iv
 
--- | 8 bytes IV, nonce constructor
+-- | 8 byte IV, nonce constructor
 nonce8 :: ByteArrayAccess ba
-       => ba -- ^ 4 bytes constant
-       -> ba -- ^ 8 bytes IV
+       => ba -- ^ 4 byte constant
+       -> ba -- ^ 8 byte IV
        -> CryptoFailable Nonce
 nonce8 constant iv
     | B.length constant /= 4 = CryptoFailed CryptoError_IvSizeInvalid
@@ -137,7 +137,7 @@ incrementNonce' b offset = B.copyAndFreeze b $ \s ->
 -- | Initialize a new ChaChaPoly1305 State
 --
 -- The key length need to be 256 bits, and the nonce
--- procured using either `nonce8` or `nonce12`
+-- procured using either 'nonce8' or 'nonce12'.
 initialize :: ByteArrayAccess key
            => key -> Nonce -> CryptoFailable State
 initialize key (Nonce8  nonce) = initialize' key nonce
@@ -156,8 +156,8 @@ initialize' key nonce
 -- | Append Authenticated Data to the State and return
 -- the new modified State.
 --
--- Once no further call to this function need to be make,
--- the user should call 'finalizeAAD'
+-- Once no further call to this function needs to be made,
+-- the user should call 'finalizeAAD'.
 appendAAD :: ByteArrayAccess ba => ba -> State -> State
 appendAAD ba (State encState macState aadLength plainLength) =
     State encState newMacState newLength plainLength

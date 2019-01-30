@@ -63,12 +63,14 @@ pointAdd (CurveF2m (CurveBinary fx cc)) (Point xp yp) (Point xq yq)
 --
 -- /WARNING:/ Vulnerable to timing attacks.
 --
--- This perform the following calculation:
+-- This performs the following calculation:
+--
 -- > lambda = (3 * xp ^ 2 + a) / 2 yp
 -- > xr = lambda ^ 2 - 2 xp
 -- > yr = lambda (xp - xr) - yp
 --
 -- With binary curve:
+--
 -- > xp == 0   => P = O
 -- > otherwise =>
 -- >    s = xp + (yp / xp)
@@ -142,9 +144,9 @@ isPointAtInfinity :: Point -> Bool
 isPointAtInfinity PointO = True
 isPointAtInfinity _      = False
 
--- | check if a point is on specific curve
+-- | Check if a point is on specific curve
 --
--- This perform three checks:
+-- This performs three checks:
 --
 -- * x is not out of range
 -- * y is not out of range
