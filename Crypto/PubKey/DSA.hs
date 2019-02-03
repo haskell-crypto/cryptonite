@@ -28,16 +28,17 @@ module Crypto.PubKey.DSA
     , toPrivateKey
     ) where
 
-import           Crypto.Random.Types
-import           Data.Data
-import           Data.Maybe
-import           Crypto.Number.ModArithmetic (expFast, expSafe, inverse)
-import           Crypto.Number.Generate
-import           Crypto.Internal.ByteArray (ByteArrayAccess)
-import           Crypto.Internal.Imports
-import           Crypto.Hash
-import           Crypto.PubKey.Internal (dsaTruncHash)
-import           Prelude
+
+import Data.Data
+import Data.Maybe
+
+import Crypto.Number.ModArithmetic (expFast, expSafe, inverse)
+import Crypto.Number.Generate
+import Crypto.Internal.ByteArray (ByteArrayAccess)
+import Crypto.Internal.Imports
+import Crypto.Hash
+import Crypto.PubKey.Internal (dsaTruncHash)
+import Crypto.Random.Types
 
 -- | DSA Public Number, usually embedded in DSA Public Key
 type PublicNumber = Integer

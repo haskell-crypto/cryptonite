@@ -16,6 +16,8 @@ module Crypto.PubKey.ECC.ECDSA
     ) where
 
 import Control.Monad
+import Data.Data
+
 import Crypto.Hash
 import Crypto.Internal.ByteArray (ByteArrayAccess)
 import Crypto.Number.ModArithmetic (inverse)
@@ -24,7 +26,6 @@ import Crypto.PubKey.ECC.Types
 import Crypto.PubKey.ECC.Prim
 import Crypto.PubKey.Internal (dsaTruncHash)
 import Crypto.Random.Types
-import Data.Data
 
 -- | Represent a ECDSA signature namely R and S.
 data Signature = Signature

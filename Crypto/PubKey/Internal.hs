@@ -11,12 +11,13 @@ module Crypto.PubKey.Internal
     , dsaTruncHash
     ) where
 
+import Data.Bits (shiftR)
+import Data.List (foldl')
+
 import Crypto.Hash
 import Crypto.Internal.ByteArray (ByteArrayAccess)
 import Crypto.Number.Basic (numBits)
 import Crypto.Number.Serialize
-import Data.Bits (shiftR)
-import Data.List (foldl')
 
 -- | This is a strict version of and
 and' :: [Bool] -> Bool
