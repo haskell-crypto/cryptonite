@@ -8,6 +8,7 @@
 module Crypto.PubKey.Internal
     ( and'
     , (&&!)
+    , dsaTruncHash
     ) where
 
 import Data.List (foldl')
@@ -22,3 +23,11 @@ True  &&! True  = True
 True  &&! False = False
 False &&! True  = False
 False &&! False = False
+
+-- | Truncate and hash for DSA and ECDSA.
+dsaTruncHash :: (ByteArrayAccess msg, HashAlgorithm hash) => hash -> msg -> Integer -> Integer
+dsaTruncHash hashAlg m n
+    | d > 0 = shiftR e d
+    | otherwise = e
+  where e = os2ip $ hashWith hashAlg m
+        d = hashDigestSize hashAlg * 8 - numBits n

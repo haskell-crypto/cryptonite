@@ -26,6 +26,7 @@ import Crypto.Number.Serialize
 import Crypto.Number.Generate
 import Crypto.PubKey.ECC.Types
 import Crypto.PubKey.ECC.Prim
+import Crypto.PubKey.Internal (dsaTruncHash)
 import Crypto.Hash
 import Crypto.Hash.Types (hashDigestSize)
 
@@ -69,7 +70,7 @@ signWith :: (ByteArrayAccess msg, HashAlgorithm hash)
          -> msg        -- ^ message to sign
          -> Maybe Signature
 signWith k (PrivateKey curve d) hashAlg msg = do
-    let z = tHash hashAlg msg n
+    let z = dsaTruncHash hashAlg msg n
         CurveCommon _ _ g n _ = common_curve curve
     let point = pointMul curve k g
     r <- case point of
@@ -99,7 +100,7 @@ verify hashAlg pk@(PublicKey curve q) (Signature r s) msg
     | r < 1 || r >= n || s < 1 || s >= n = False
     | otherwise = maybe False (r ==) $ do
         w <- inverse s n
-        let z  = tHash hashAlg msg n
+        let z  = dsaTruncHash hashAlg msg n
             u1 = z * w `mod` n
             u2 = r * w `mod` n
             x  = pointAddTwoMuls curve u1 g u2 q
@@ -109,11 +110,3 @@ verify hashAlg pk@(PublicKey curve q) (Signature r s) msg
   where n = ecc_n cc
         g = ecc_g cc
         cc = common_curve $ public_curve pk
-
--- | Truncate and hash.
-tHash :: (ByteArrayAccess msg, HashAlgorithm hash) => hash -> msg -> Integer -> Integer
-tHash hashAlg m n
-    | d > 0 = shiftR e d
-    | otherwise = e
-  where e = os2ip $ hashWith hashAlg m
-        d = hashDigestSize hashAlg * 8 - numBits n
