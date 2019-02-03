@@ -16,19 +16,15 @@ module Crypto.PubKey.ECC.ECDSA
     ) where
 
 import Control.Monad
-import Crypto.Random.Types
-import Data.Bits (shiftR)
+import Crypto.Hash
 import Crypto.Internal.ByteArray (ByteArrayAccess)
-import Data.Data
-import Crypto.Number.Basic (numBits)
 import Crypto.Number.ModArithmetic (inverse)
-import Crypto.Number.Serialize
 import Crypto.Number.Generate
 import Crypto.PubKey.ECC.Types
 import Crypto.PubKey.ECC.Prim
 import Crypto.PubKey.Internal (dsaTruncHash)
-import Crypto.Hash
-import Crypto.Hash.Types (hashDigestSize)
+import Crypto.Random.Types
+import Data.Data
 
 -- | Represent a ECDSA signature namely R and S.
 data Signature = Signature

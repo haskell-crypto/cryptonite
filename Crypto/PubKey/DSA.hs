@@ -29,14 +29,11 @@ module Crypto.PubKey.DSA
     ) where
 
 import           Crypto.Random.Types
-import qualified Data.Bits as Bits (shiftL, (.|.), shiftR)
 import           Data.Data
 import           Data.Maybe
-import           Crypto.Number.Basic (numBits)
 import           Crypto.Number.ModArithmetic (expFast, expSafe, inverse)
-import           Crypto.Number.Serialize
 import           Crypto.Number.Generate
-import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, ScrubbedBytes, convert, index, dropView, takeView, pack, unpack)
+import           Crypto.Internal.ByteArray (ByteArrayAccess)
 import           Crypto.Internal.Imports
 import           Crypto.Hash
 import           Crypto.PubKey.Internal (dsaTruncHash)
