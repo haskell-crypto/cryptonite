@@ -28,18 +28,17 @@ module Crypto.PubKey.DSA
     , toPrivateKey
     ) where
 
-import           Crypto.Random.Types
-import           Data.Bits (testBit)
-import           Data.Data
-import           Data.Maybe
-import           Crypto.Number.Basic (numBits)
-import           Crypto.Number.ModArithmetic (expFast, expSafe, inverse)
-import           Crypto.Number.Serialize
-import           Crypto.Number.Generate
-import           Crypto.Internal.ByteArray (ByteArrayAccess(length), convert, index, dropView, takeView)
-import           Crypto.Internal.Imports
-import           Crypto.Hash
-import           Prelude hiding (length)
+
+import Data.Data
+import Data.Maybe
+
+import Crypto.Number.ModArithmetic (expFast, expSafe, inverse)
+import Crypto.Number.Generate
+import Crypto.Internal.ByteArray (ByteArrayAccess)
+import Crypto.Internal.Imports
+import Crypto.Hash
+import Crypto.PubKey.Internal (dsaTruncHash)
+import Crypto.Random.Types
 
 -- | DSA Public Number, usually embedded in DSA Public Key
 type PublicNumber = Integer
@@ -126,7 +125,7 @@ signWith k pk hashAlg msg
           x              = private_x pk
           -- compute r,s
           kInv      = fromJust $ inverse k q
-          hm        = os2ip $ hashWith hashAlg msg
+          hm        = dsaTruncHash hashAlg msg q
           r         = expSafe g k p `mod` q
           s         = (kInv * (hm + x * r)) `mod` q
 
@@ -148,11 +147,8 @@ verify hashAlg pk (Signature r s) m
     | otherwise                            = v == r
     where (Params p g q) = public_params pk
           y       = public_y pk
-          hm      = os2ip . truncateHash $ hashWith hashAlg m
-
+          hm      = dsaTruncHash hashAlg m q
           w       = fromJust $ inverse s q
           u1      = (hm*w) `mod` q
           u2      = (r*w) `mod` q
           v       = ((expFast g u1 p) * (expFast y u2 p)) `mod` p `mod` q
-          -- if the hash is larger than the size of q, truncate it; FIXME: deal with the case of a q not evenly divisible by 8
-          truncateHash h = if numBits (os2ip h) > numBits q then takeView h (numBits q `div` 8) else dropView h 0
