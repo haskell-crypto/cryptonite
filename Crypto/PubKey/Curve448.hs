@@ -28,7 +28,6 @@ module Crypto.PubKey.Curve448
 
 import           Data.Word
 import           Foreign.Ptr
-import           GHC.Ptr
 
 import           Crypto.Error
 import           Crypto.Random

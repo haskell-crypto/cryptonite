@@ -19,13 +19,12 @@ module Crypto.Hash.Blake2b
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
 import           Data.Data
-import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 
 -- | Blake2b (160 bits) cryptographic hash algorithm
 data Blake2b_160 = Blake2b_160
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm Blake2b_160 where
     type HashBlockSize           Blake2b_160 = 128
@@ -40,7 +39,7 @@ instance HashAlgorithm Blake2b_160 where
 
 -- | Blake2b (224 bits) cryptographic hash algorithm
 data Blake2b_224 = Blake2b_224
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm Blake2b_224 where
     type HashBlockSize           Blake2b_224 = 128
@@ -55,7 +54,7 @@ instance HashAlgorithm Blake2b_224 where
 
 -- | Blake2b (256 bits) cryptographic hash algorithm
 data Blake2b_256 = Blake2b_256
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm Blake2b_256 where
     type HashBlockSize           Blake2b_256 = 128
@@ -70,7 +69,7 @@ instance HashAlgorithm Blake2b_256 where
 
 -- | Blake2b (384 bits) cryptographic hash algorithm
 data Blake2b_384 = Blake2b_384
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm Blake2b_384 where
     type HashBlockSize           Blake2b_384 = 128
@@ -85,7 +84,7 @@ instance HashAlgorithm Blake2b_384 where
 
 -- | Blake2b (512 bits) cryptographic hash algorithm
 data Blake2b_512 = Blake2b_512
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm Blake2b_512 where
     type HashBlockSize           Blake2b_512 = 128

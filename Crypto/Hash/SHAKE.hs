@@ -26,7 +26,6 @@ import           Foreign.Ptr (Ptr, castPtr)
 import           Foreign.Storable (Storable(..))
 import           Data.Bits
 import           Data.Data
-import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 import           Data.Proxy (Proxy(..))
@@ -40,7 +39,7 @@ import           Crypto.Internal.Nat
 -- correlated (one being a prefix of the other).  Results are unrelated to
 -- 'SHAKE256' results.
 data SHAKE128 (bitlen :: Nat) = SHAKE128
-    deriving (Show, Data, Typeable)
+    deriving (Show, Data)
 
 instance KnownNat bitlen => HashAlgorithm (SHAKE128 bitlen) where
     type HashBlockSize           (SHAKE128 bitlen)  = 168
@@ -60,7 +59,7 @@ instance KnownNat bitlen => HashAlgorithm (SHAKE128 bitlen) where
 -- correlated (one being a prefix of the other).  Results are unrelated to
 -- 'SHAKE128' results.
 data SHAKE256 (bitlen :: Nat) = SHAKE256
-    deriving (Show, Data, Typeable)
+    deriving (Show, Data)
 
 instance KnownNat bitlen => HashAlgorithm (SHAKE256 bitlen) where
     type HashBlockSize           (SHAKE256 bitlen) = 136

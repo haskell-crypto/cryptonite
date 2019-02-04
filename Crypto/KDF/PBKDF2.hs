@@ -24,7 +24,7 @@ import           Data.Word
 import           Data.Bits
 import           Foreign.Marshal.Alloc
 import           Foreign.Ptr (plusPtr, Ptr)
-import           Foreign.C.Types (CUInt(..), CInt(..), CSize(..))
+import           Foreign.C.Types (CUInt(..), CSize(..))
 
 import           Crypto.Hash (HashAlgorithm)
 import qualified Crypto.MAC.HMAC as HMAC
@@ -54,7 +54,7 @@ data Parameters = Parameters
     }
 
 -- | generate the pbkdf2 key derivation function from the output
-generate :: (ByteArrayAccess password, ByteArrayAccess salt, ByteArray ba)
+generate :: (ByteArrayAccess salt, ByteArray ba)
          => PRF password
          -> Parameters
          -> password

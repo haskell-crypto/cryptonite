@@ -19,13 +19,12 @@ module Crypto.Hash.Blake2bp
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
 import           Data.Data
-import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 
 -- | Blake2bp (512 bits) cryptographic hash algorithm
 data Blake2bp_512 = Blake2bp_512
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm Blake2bp_512 where
     type HashBlockSize           Blake2bp_512 = 128

@@ -17,12 +17,11 @@ module Crypto.Hash.Tiger ( Tiger (..) ) where
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
 import           Data.Data
-import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 -- | Tiger cryptographic hash algorithm
 data Tiger = Tiger
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm Tiger where
     type HashBlockSize           Tiger = 64

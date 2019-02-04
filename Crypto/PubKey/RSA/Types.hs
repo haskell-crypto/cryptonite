@@ -42,7 +42,7 @@ data PublicKey = PublicKey
     { public_size :: Int      -- ^ size of key in bytes
     , public_n    :: Integer  -- ^ public p*q
     , public_e    :: Integer  -- ^ public exponent e
-    } deriving (Show,Read,Eq,Data,Typeable)
+    } deriving (Show,Read,Eq,Data)
 
 instance NFData PublicKey where
     rnf (PublicKey sz n e) = rnf n `seq` rnf e `seq` sz `seq` ()
@@ -65,7 +65,7 @@ data PrivateKey = PrivateKey
     , private_dP   :: Integer   -- ^ d mod (p-1)
     , private_dQ   :: Integer   -- ^ d mod (q-1)
     , private_qinv :: Integer   -- ^ q^(-1) mod p
-    } deriving (Show,Read,Eq,Data,Typeable)
+    } deriving (Show,Read,Eq,Data)
 
 instance NFData PrivateKey where
     rnf (PrivateKey pub d p q dp dq qinv) =
@@ -87,7 +87,7 @@ private_e = public_e . private_pub
 --
 -- note the RSA private key contains already an instance of public key for efficiency
 newtype KeyPair = KeyPair PrivateKey
-    deriving (Show,Read,Eq,Data,Typeable,NFData)
+    deriving (Show,Read,Eq,Data,NFData)
 
 -- | Public key of a RSA KeyPair
 toPublicKey :: KeyPair -> PublicKey

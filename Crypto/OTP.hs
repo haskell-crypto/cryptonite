@@ -42,15 +42,14 @@ module Crypto.OTP
     )
 where
 
-import           Data.Bits (shiftL, shiftR, (.&.), (.|.))
+import           Data.Bits (shiftL, (.&.), (.|.))
 import           Data.ByteArray.Mapping (fromW64BE)
 import           Data.List (elemIndex)
 import           Data.Word
-import           Foreign.Storable (poke)
 import           Control.Monad (unless)
 import           Crypto.Hash (HashAlgorithm, SHA1(..))
 import           Crypto.MAC.HMAC
-import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, Bytes)
+import           Crypto.Internal.ByteArray (ByteArrayAccess, Bytes)
 import qualified Crypto.Internal.ByteArray as B
 
 
@@ -130,8 +129,8 @@ defaultTOTPParams :: TOTPParams SHA1
 defaultTOTPParams = TP SHA1 0 30 OTP6 TwoSteps
 
 -- | Create a TOTP configuration with customized parameters.
-mkTOTPParams :: (HashAlgorithm hash)
-    => hash
+mkTOTPParams ::
+    hash
     -> OTPTime
     -- ^ The T0 parameter in seconds. This is the Unix time from which to start
     -- counting steps (default 0). Must be before the current time.

@@ -77,7 +77,7 @@ split hashAlg rng expandTimes src
             diffuse hashAlg lastBlock blockSize
         fillRandomBlock g blockPtr = do
             let (rand :: Bytes, g') = randomBytesGenerate blockSize g
-            B.withByteArray rand $ \randPtr -> memCopy blockPtr randPtr (fromIntegral blockSize)
+            B.withByteArray rand $ \randPtr -> memCopy blockPtr randPtr blockSize
             return g'
 
 -- | Merge previously diffused data back to the original data.

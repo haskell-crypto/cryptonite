@@ -23,7 +23,6 @@ import qualified Control.Exception as E
 import           Data.Data
 
 import           Basement.Monad (MonadFailure(..))
-import           Crypto.Internal.Imports
 
 -- | Enumeration of all possible errors that can be found in this library
 data CryptoError =
@@ -53,7 +52,7 @@ data CryptoError =
     | CryptoError_SaltTooSmall
     | CryptoError_OutputLengthTooSmall
     | CryptoError_OutputLengthTooBig
-    deriving (Show,Eq,Enum,Data,Typeable)
+    deriving (Show,Eq,Enum,Data)
 
 instance E.Exception CryptoError
 
@@ -83,7 +82,7 @@ instance Applicative CryptoFailable where
     pure a     = CryptoPassed a
     (<*>) fm m = fm >>= \p -> m >>= \r2 -> return (p r2)
 instance Monad CryptoFailable where
-    return a = CryptoPassed a
+    return = pure
     (>>=) m1 m2 = do
         case m1 of
             CryptoPassed a -> m2 a

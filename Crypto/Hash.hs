@@ -44,7 +44,6 @@ module Crypto.Hash
 import           Basement.Types.OffsetSize (CountOf (..))
 import           Basement.Block (Block, unsafeFreeze)
 import           Basement.Block.Mutable (copyFromPtr, new)
-import           Control.Monad
 import           Crypto.Internal.Compat (unsafeDoIO)
 import           Crypto.Hash.Types
 import           Crypto.Hash.Algorithms
@@ -110,7 +109,7 @@ hashWith _ = hash
 digestFromByteString :: forall a ba . (HashAlgorithm a, ByteArrayAccess ba) => ba -> Maybe (Digest a)
 digestFromByteString = from undefined
   where
-        from :: HashAlgorithm a => a -> ba -> Maybe (Digest a)
+        from :: a -> ba -> Maybe (Digest a)
         from alg bs
             | B.length bs == (hashDigestSize alg) = Just $ Digest $ unsafeDoIO $ copyBytes bs
             | otherwise                           = Nothing

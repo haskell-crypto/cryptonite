@@ -24,11 +24,10 @@ module Crypto.MAC.HMAC
 import           Crypto.Hash hiding (Context)
 import qualified Crypto.Hash as Hash (Context)
 import           Crypto.Hash.IO
-import           Crypto.Internal.ByteArray (ScrubbedBytes, ByteArray, ByteArrayAccess)
+import           Crypto.Internal.ByteArray (ScrubbedBytes, ByteArrayAccess)
 import qualified Crypto.Internal.ByteArray as B
 import           Data.Memory.PtrMethods
 import           Crypto.Internal.Compat
-import           Crypto.Internal.Imports
 
 -- | Represent an HMAC that is a phantom type with the hash used to produce the mac.
 --

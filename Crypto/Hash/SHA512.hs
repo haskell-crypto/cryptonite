@@ -17,12 +17,11 @@ module Crypto.Hash.SHA512 ( SHA512 (..) ) where
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
 import           Data.Data
-import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 -- | SHA512 cryptographic hash algorithm
 data SHA512 = SHA512
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm SHA512 where
     type HashBlockSize           SHA512 = 128

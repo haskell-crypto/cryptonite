@@ -6,7 +6,6 @@ import           Crypto.ConstructHash.MiyaguchiPreneel as MiyaguchiPreneel
 
 import           Imports
 
-import           Data.Char (digitToInt)
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteArray as B
 import Data.ByteArray.Encoding (Base (Base16), convertFromBase)

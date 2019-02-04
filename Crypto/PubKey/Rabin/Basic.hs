@@ -27,9 +27,8 @@ import           Data.Data
 import           Data.Either (rights)
 
 import           Crypto.Hash
-import           Crypto.Number.Basic (gcde, numBytes, asPowerOf2AndOdd)
+import           Crypto.Number.Basic (gcde, numBytes)
 import           Crypto.Number.ModArithmetic (expSafe, jacobi)
-import           Crypto.Number.Prime (isProbablyPrime)
 import           Crypto.Number.Serialize (i2osp, i2ospOf_, os2ip)
 import           Crypto.PubKey.Rabin.OAEP 
 import           Crypto.PubKey.Rabin.Types
@@ -39,7 +38,7 @@ import           Crypto.Random (MonadRandom, getRandomBytes)
 data PublicKey = PublicKey
     { public_size :: Int      -- ^ size of key in bytes
     , public_n    :: Integer  -- ^ public p*q
-    } deriving (Show, Read, Eq, Data, Typeable)
+    } deriving (Show, Read, Eq, Data)
 
 -- | Represent a Rabin private key.
 data PrivateKey = PrivateKey
@@ -48,10 +47,10 @@ data PrivateKey = PrivateKey
     , private_q   :: Integer   -- ^ q prime number
     , private_a   :: Integer
     , private_b   :: Integer
-    } deriving (Show, Read, Eq, Data, Typeable)
+    } deriving (Show, Read, Eq, Data)
 
 -- | Rabin Signature.
-data Signature = Signature (Integer, Integer) deriving (Show, Read, Eq, Data, Typeable)
+data Signature = Signature (Integer, Integer) deriving (Show, Read, Eq, Data)
 
 -- | Generate a pair of (private, public) key of size in bytes.
 -- Primes p and q are both congruent 3 mod 4.

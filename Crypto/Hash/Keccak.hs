@@ -19,13 +19,12 @@ module Crypto.Hash.Keccak
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
 import           Data.Data
-import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 
 -- | Keccak (224 bits) cryptographic hash algorithm
 data Keccak_224 = Keccak_224
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm Keccak_224 where
     type HashBlockSize           Keccak_224 = 144
@@ -40,7 +39,7 @@ instance HashAlgorithm Keccak_224 where
 
 -- | Keccak (256 bits) cryptographic hash algorithm
 data Keccak_256 = Keccak_256
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm Keccak_256 where
     type HashBlockSize           Keccak_256 = 136
@@ -55,7 +54,7 @@ instance HashAlgorithm Keccak_256 where
 
 -- | Keccak (384 bits) cryptographic hash algorithm
 data Keccak_384 = Keccak_384
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm Keccak_384 where
     type HashBlockSize           Keccak_384 = 104
@@ -70,7 +69,7 @@ instance HashAlgorithm Keccak_384 where
 
 -- | Keccak (512 bits) cryptographic hash algorithm
 data Keccak_512 = Keccak_512
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm Keccak_512 where
     type HashBlockSize           Keccak_512 = 72

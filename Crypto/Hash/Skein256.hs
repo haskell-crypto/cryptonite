@@ -19,13 +19,12 @@ module Crypto.Hash.Skein256
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
 import           Data.Data
-import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 
 -- | Skein256 (224 bits) cryptographic hash algorithm
 data Skein256_224 = Skein256_224
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm Skein256_224 where
     type HashBlockSize           Skein256_224 = 32
@@ -40,7 +39,7 @@ instance HashAlgorithm Skein256_224 where
 
 -- | Skein256 (256 bits) cryptographic hash algorithm
 data Skein256_256 = Skein256_256
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm Skein256_256 where
     type HashBlockSize           Skein256_256 = 32

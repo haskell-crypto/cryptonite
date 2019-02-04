@@ -73,15 +73,12 @@ module Crypto.ECC.Edwards25519
     , pointsMulVarTime
     ) where
 
-import           Data.Bits
 import           Data.Word
 import           Foreign.C.Types
 import           Foreign.Ptr
-import           Foreign.Storable
 
 import           Crypto.Error
-import           Crypto.Internal.ByteArray (ByteArrayAccess, Bytes,
-                                            ScrubbedBytes, withByteArray)
+import           Crypto.Internal.ByteArray (Bytes, ScrubbedBytes, withByteArray)
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
