@@ -1,3 +1,7 @@
+## 0.26
+
+* Update blake2 to latest upstream version
+
 ## 0.25
 
 * Improve digest binary conversion efficiency
