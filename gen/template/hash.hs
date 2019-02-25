@@ -5,7 +5,7 @@
 -- Stability   : experimental
 -- Portability : unknown
 --
--- module containing the binding functions to work with the
+-- Module containing the binding functions to work with the
 -- %%MODULENAME%% cryptographic hash.
 --
 {-# LANGUAGE ForeignFunctionInterface #-}
@@ -17,12 +17,11 @@ module Crypto.Hash.%%MODULENAME%% ( %%MODULENAME%% (..) ) where
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
 import           Data.Data
-import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 -- | %%MODULENAME%% cryptographic hash algorithm
 data %%MODULENAME%% = %%MODULENAME%%
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm %%MODULENAME%% where
     type HashBlockSize           %%MODULENAME%% = %%BLOCK_SIZE_BYTES%%
