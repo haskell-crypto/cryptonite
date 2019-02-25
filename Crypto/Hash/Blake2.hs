@@ -57,7 +57,7 @@ import           Crypto.Internal.Nat
 -- * Blake2s 256
 --
 data Blake2s (bitlen :: Nat) = Blake2s
-  deriving (Show)
+    deriving (Show,Data)
 
 instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost bitlen 256)
       => HashAlgorithm (Blake2s bitlen)
@@ -92,7 +92,7 @@ foreign import ccall unsafe "cryptonite_blake2s_finalize"
 -- * Blake2b 512
 --
 data Blake2b (bitlen :: Nat) = Blake2b
-  deriving (Show)
+    deriving (Show,Data)
 
 instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost bitlen 512)
       => HashAlgorithm (Blake2b bitlen)
@@ -115,7 +115,7 @@ foreign import ccall unsafe "cryptonite_blake2b_finalize"
     c_blake2b_finalize :: Ptr (Context a) -> Word32 -> Ptr (Digest a) -> IO ()
 
 data Blake2sp (bitlen :: Nat) = Blake2sp
-  deriving (Show)
+    deriving (Show,Data)
 
 instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost bitlen 256)
       => HashAlgorithm (Blake2sp bitlen)
@@ -138,7 +138,7 @@ foreign import ccall unsafe "cryptonite_blake2sp_finalize"
     c_blake2sp_finalize :: Ptr (Context a) -> Word32 -> Ptr (Digest a) -> IO ()
 
 data Blake2bp (bitlen :: Nat) = Blake2bp
-  deriving (Show)
+    deriving (Show,Data)
 
 instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost bitlen 512)
       => HashAlgorithm (Blake2bp bitlen)
