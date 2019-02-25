@@ -19,13 +19,12 @@ module Crypto.Hash.Blake2sp
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
 import           Data.Data
-import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 
 -- | Blake2sp (224 bits) cryptographic hash algorithm
 data Blake2sp_224 = Blake2sp_224
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm Blake2sp_224 where
     type HashBlockSize           Blake2sp_224 = 64
@@ -40,7 +39,7 @@ instance HashAlgorithm Blake2sp_224 where
 
 -- | Blake2sp (256 bits) cryptographic hash algorithm
 data Blake2sp_256 = Blake2sp_256
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm Blake2sp_256 where
     type HashBlockSize           Blake2sp_256 = 64

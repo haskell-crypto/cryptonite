@@ -31,23 +31,23 @@ import Crypto.Random.Types
 data Signature = Signature
     { sign_r :: Integer -- ^ ECDSA r
     , sign_s :: Integer -- ^ ECDSA s
-    } deriving (Show,Read,Eq,Data,Typeable)
+    } deriving (Show,Read,Eq,Data)
 
 -- | ECDSA Private Key.
 data PrivateKey = PrivateKey
     { private_curve :: Curve
     , private_d     :: PrivateNumber
-    } deriving (Show,Read,Eq,Data,Typeable)
+    } deriving (Show,Read,Eq,Data)
 
 -- | ECDSA Public Key.
 data PublicKey = PublicKey
     { public_curve :: Curve
     , public_q     :: PublicPoint
-    } deriving (Show,Read,Eq,Data,Typeable)
+    } deriving (Show,Read,Eq,Data)
 
 -- | ECDSA Key Pair.
 data KeyPair = KeyPair Curve PublicPoint PrivateNumber
-    deriving (Show,Read,Eq,Data,Typeable)
+    deriving (Show,Read,Eq,Data)
 
 -- | Public key of a ECDSA Key pair.
 toPublicKey :: KeyPair -> PublicKey

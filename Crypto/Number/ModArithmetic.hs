@@ -19,13 +19,12 @@ module Crypto.Number.ModArithmetic
     ) where
 
 import Control.Exception (throw, Exception)
-import Data.Typeable
 import Crypto.Number.Basic
 import Crypto.Number.Compat
 
 -- | Raised when two numbers are supposed to be coprimes but are not.
 data CoprimesAssertionError = CoprimesAssertionError
-    deriving (Show,Typeable)
+    deriving (Show)
 
 instance Exception CoprimesAssertionError
 

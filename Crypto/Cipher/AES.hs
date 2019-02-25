@@ -19,8 +19,6 @@ import Crypto.Cipher.Types.Block
 import Crypto.Cipher.AES.Primitive
 import Crypto.Internal.Imports
 
-import Data.ByteArray as BA
-
 -- | AES with 128 bit key
 newtype AES128 = AES128 AES
     deriving (NFData)

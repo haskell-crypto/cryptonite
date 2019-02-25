@@ -38,10 +38,9 @@ import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Number.Serialize (i2ospOf_, os2ip)
 import qualified Crypto.PubKey.Curve25519 as X25519
 import qualified Crypto.PubKey.Curve448 as X448
-import           Data.Function (on)
 import           Data.ByteArray (convert)
 import           Data.Data (Data())
-import           Data.Typeable (Typeable())
+import           Data.Kind (Type)
 
 -- | An elliptic curve key pair composed of the private part (a scalar), and
 -- the associated point.
@@ -55,10 +54,10 @@ newtype SharedSecret = SharedSecret ScrubbedBytes
 
 class EllipticCurve curve where
     -- | Point on an Elliptic Curve
-    type Point curve  :: *
+    type Point curve  :: Type
 
     -- | Scalar in the Elliptic Curve domain
-    type Scalar curve :: *
+    type Scalar curve :: Type
 
     -- | Generate a new random scalar on the curve.
     -- The scalar will represent a number between 1 and the order of the curve non included
@@ -116,7 +115,7 @@ class EllipticCurve curve => EllipticCurveArith curve where
 --
 -- also known as P256
 data Curve_P256R1 = Curve_P256R1
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance EllipticCurve Curve_P256R1 where
     type Point Curve_P256R1 = P256.Point
@@ -150,7 +149,7 @@ instance EllipticCurveDH Curve_P256R1 where
     ecdh  prx s p = checkNonZeroDH (ecdhRaw prx s p)
 
 data Curve_P384R1 = Curve_P384R1
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance EllipticCurve Curve_P384R1 where
     type Point Curve_P384R1 = Simple.Point Simple.SEC_p384r1
@@ -173,7 +172,7 @@ instance EllipticCurveDH Curve_P384R1 where
         prx = Proxy :: Proxy Simple.SEC_p384r1
 
 data Curve_P521R1 = Curve_P521R1
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance EllipticCurve Curve_P521R1 where
     type Point Curve_P521R1 = Simple.Point Simple.SEC_p521r1
@@ -196,7 +195,7 @@ instance EllipticCurveDH Curve_P521R1 where
         prx = Proxy :: Proxy Simple.SEC_p521r1
 
 data Curve_X25519 = Curve_X25519
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance EllipticCurve Curve_X25519 where
     type Point Curve_X25519 = X25519.PublicKey
@@ -215,7 +214,7 @@ instance EllipticCurveDH Curve_X25519 where
     ecdh prx s p = checkNonZeroDH (ecdhRaw prx s p)
 
 data Curve_X448 = Curve_X448
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance EllipticCurve Curve_X448 where
     type Point Curve_X448 = X448.PublicKey
@@ -234,7 +233,7 @@ instance EllipticCurveDH Curve_X448 where
     ecdh prx s p = checkNonZeroDH (ecdhRaw prx s p)
 
 data Curve_Edwards25519 = Curve_Edwards25519
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance EllipticCurve Curve_Edwards25519 where
     type Point Curve_Edwards25519 = Edwards25519.Point

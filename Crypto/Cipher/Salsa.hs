@@ -40,7 +40,7 @@ initialize nbRounds key nonce
         stPtr <- B.alloc 132 $ \stPtr ->
             B.withByteArray nonce $ \noncePtr  ->
             B.withByteArray key   $ \keyPtr ->
-                ccryptonite_salsa_init stPtr (fromIntegral nbRounds) kLen keyPtr nonceLen noncePtr
+                ccryptonite_salsa_init stPtr nbRounds kLen keyPtr nonceLen noncePtr
         return $ State stPtr
   where kLen     = B.length key
         nonceLen = B.length nonce

@@ -17,13 +17,11 @@ module Crypto.Cipher.XSalsa
     , State
     ) where
 
-import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, ScrubbedBytes)
+import           Crypto.Internal.ByteArray (ByteArrayAccess)
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
 import           Foreign.Ptr
-import           Foreign.Storable
-import           Foreign.C.Types
 import           Crypto.Cipher.Salsa hiding (initialize)
 
 -- | Initialize a new XSalsa context with the number of rounds,
@@ -41,7 +39,7 @@ initialize nbRounds key nonce
         stPtr <- B.alloc 132 $ \stPtr ->
             B.withByteArray nonce $ \noncePtr  ->
             B.withByteArray key   $ \keyPtr ->
-                ccryptonite_xsalsa_init stPtr (fromIntegral nbRounds) kLen keyPtr nonceLen noncePtr
+                ccryptonite_xsalsa_init stPtr nbRounds kLen keyPtr nonceLen noncePtr
         return $ State stPtr
   where kLen     = B.length key
         nonceLen = B.length nonce

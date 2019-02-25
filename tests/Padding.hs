@@ -3,7 +3,6 @@ module Padding (tests) where
 
 import qualified Data.ByteString as B
 import Imports
-import Crypto.Error
 
 import Crypto.Data.Padding
 

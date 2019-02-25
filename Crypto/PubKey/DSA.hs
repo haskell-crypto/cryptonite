@@ -51,7 +51,7 @@ data Params = Params
     { params_p :: Integer -- ^ DSA p
     , params_g :: Integer -- ^ DSA g
     , params_q :: Integer -- ^ DSA q
-    } deriving (Show,Read,Eq,Data,Typeable)
+    } deriving (Show,Read,Eq,Data)
 
 instance NFData Params where
     rnf (Params p g q) = p `seq` g `seq` q `seq` ()
@@ -60,7 +60,7 @@ instance NFData Params where
 data Signature = Signature
     { sign_r :: Integer -- ^ DSA r
     , sign_s :: Integer -- ^ DSA s
-    } deriving (Show,Read,Eq,Data,Typeable)
+    } deriving (Show,Read,Eq,Data)
 
 instance NFData Signature where
     rnf (Signature r s) = r `seq` s `seq` ()
@@ -69,7 +69,7 @@ instance NFData Signature where
 data PublicKey = PublicKey
     { public_params :: Params       -- ^ DSA parameters
     , public_y      :: PublicNumber -- ^ DSA public Y
-    } deriving (Show,Read,Eq,Data,Typeable)
+    } deriving (Show,Read,Eq,Data)
 
 instance NFData PublicKey where
     rnf (PublicKey params y) = y `seq` params `seq` ()
@@ -81,14 +81,14 @@ instance NFData PublicKey where
 data PrivateKey = PrivateKey
     { private_params :: Params        -- ^ DSA parameters
     , private_x      :: PrivateNumber -- ^ DSA private X
-    } deriving (Show,Read,Eq,Data,Typeable)
+    } deriving (Show,Read,Eq,Data)
 
 instance NFData PrivateKey where
     rnf (PrivateKey params x) = x `seq` params `seq` ()
 
 -- | Represent a DSA key pair
 data KeyPair = KeyPair Params PublicNumber PrivateNumber
-    deriving (Show,Read,Eq,Data,Typeable)
+    deriving (Show,Read,Eq,Data)
 
 instance NFData KeyPair where
     rnf (KeyPair params y x) = x `seq` y `seq` params `seq` ()

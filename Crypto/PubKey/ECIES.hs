@@ -27,7 +27,6 @@ module Crypto.PubKey.ECIES
 import           Crypto.ECC
 import           Crypto.Error
 import           Crypto.Random
-import           Crypto.Internal.Proxy
 
 -- | Generate random a new Shared secret and the associated point
 -- to do a ECIES style encryption

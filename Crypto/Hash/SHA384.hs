@@ -17,12 +17,11 @@ module Crypto.Hash.SHA384 ( SHA384 (..) ) where
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
 import           Data.Data
-import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 -- | SHA384 cryptographic hash algorithm
 data SHA384 = SHA384
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm SHA384 where
     type HashBlockSize           SHA384 = 128

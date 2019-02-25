@@ -37,7 +37,6 @@ module Crypto.Cipher.Types.Block
     ) where
 
 import           Data.Word
-import           Data.Monoid
 import           Crypto.Error
 import           Crypto.Cipher.Types.Base
 import           Crypto.Cipher.Types.GF
@@ -164,7 +163,7 @@ nullIV = toIV undefined
 -- | Increment an IV by a number.
 --
 -- Assume the IV is in Big Endian format.
-ivAdd :: BlockCipher c => IV c -> Int -> IV c
+ivAdd :: IV c -> Int -> IV c
 ivAdd (IV b) i = IV $ copy b
   where copy :: ByteArray bs => bs -> bs
         copy bs = B.copyAndFreeze bs $ loop i (B.length bs - 1)

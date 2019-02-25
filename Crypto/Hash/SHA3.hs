@@ -19,13 +19,12 @@ module Crypto.Hash.SHA3
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
 import           Data.Data
-import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 
 -- | SHA3 (224 bits) cryptographic hash algorithm
 data SHA3_224 = SHA3_224
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm SHA3_224 where
     type HashBlockSize           SHA3_224 = 144
@@ -40,7 +39,7 @@ instance HashAlgorithm SHA3_224 where
 
 -- | SHA3 (256 bits) cryptographic hash algorithm
 data SHA3_256 = SHA3_256
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm SHA3_256 where
     type HashBlockSize           SHA3_256 = 136
@@ -55,7 +54,7 @@ instance HashAlgorithm SHA3_256 where
 
 -- | SHA3 (384 bits) cryptographic hash algorithm
 data SHA3_384 = SHA3_384
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm SHA3_384 where
     type HashBlockSize           SHA3_384 = 104
@@ -70,7 +69,7 @@ instance HashAlgorithm SHA3_384 where
 
 -- | SHA3 (512 bits) cryptographic hash algorithm
 data SHA3_512 = SHA3_512
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm SHA3_512 where
     type HashBlockSize           SHA3_512 = 72

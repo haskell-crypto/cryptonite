@@ -33,7 +33,7 @@ import           GHC.Ptr
 import           Crypto.Error
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
-import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, ScrubbedBytes, Bytes, withByteArray)
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ScrubbedBytes, Bytes, withByteArray)
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Error (CryptoFailable(..))
 import           Crypto.Random

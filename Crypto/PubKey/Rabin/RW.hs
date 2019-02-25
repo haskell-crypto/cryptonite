@@ -22,11 +22,10 @@ module Crypto.PubKey.Rabin.RW
     ) where
 
 import           Data.ByteString
-import qualified Data.ByteString as B
 import           Data.Data
 
 import           Crypto.Hash
-import           Crypto.Number.Basic (numBytes, gcde)
+import           Crypto.Number.Basic (numBytes)
 import           Crypto.Number.ModArithmetic (expSafe, jacobi)
 import           Crypto.Number.Serialize (i2osp, i2ospOf_, os2ip)
 import           Crypto.PubKey.Rabin.OAEP
@@ -37,7 +36,7 @@ import           Crypto.Random.Types
 data PublicKey = PublicKey
     { public_size :: Int      -- ^ size of key in bytes
     , public_n    :: Integer  -- ^ public p*q
-    } deriving (Show, Read, Eq, Data, Typeable)
+    } deriving (Show, Read, Eq, Data)
 
 -- | Represent a Rabin-Williams private key.
 data PrivateKey = PrivateKey
@@ -45,7 +44,7 @@ data PrivateKey = PrivateKey
     , private_p   :: Integer   -- ^ p prime number
     , private_q   :: Integer   -- ^ q prime number
     , private_d   :: Integer
-    } deriving (Show, Read, Eq, Data, Typeable)
+    } deriving (Show, Read, Eq, Data)
 
 -- | Generate a pair of (private, public) key of size in bytes.
 -- Prime p is congruent 3 mod 8 and prime q is congruent 7 mod 8.

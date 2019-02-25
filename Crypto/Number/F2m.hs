@@ -23,7 +23,6 @@ module Crypto.Number.F2m
 
 import Data.Bits (xor, shift, testBit, setBit)
 import Data.List
-import Crypto.Internal.Imports
 import Crypto.Number.Basic
 
 -- | Binary Polynomial represented by an integer

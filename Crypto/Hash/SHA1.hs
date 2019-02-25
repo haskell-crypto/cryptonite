@@ -17,12 +17,11 @@ module Crypto.Hash.SHA1 ( SHA1 (..) ) where
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
 import           Data.Data
-import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 -- | SHA1 cryptographic hash algorithm
 data SHA1 = SHA1
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm SHA1 where
     type HashBlockSize           SHA1 = 64

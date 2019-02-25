@@ -22,7 +22,7 @@ integralNatVal :: (KnownNat bitlen, Num a) => proxy bitlen -> a
 integralNatVal = fromInteger . natVal
 
 type family IsLE (bitlen :: Nat) (n :: Nat) (c :: Bool) where
-    IsLE bitlen n 'True  = 'True
+    IsLE _ _ 'True  = 'True
 #if MIN_VERSION_base(4,9,0)
     IsLE bitlen n 'False = TypeError
       (     ('Text "bitlen " ':<>: 'ShowType bitlen ':<>: 'Text " is greater than " ':<>: 'ShowType n)
@@ -37,7 +37,7 @@ type family IsLE (bitlen :: Nat) (n :: Nat) (c :: Bool) where
 type IsAtMost  (bitlen :: Nat) (n :: Nat) = IsLE bitlen n (bitlen <=? n) ~ 'True
 
 type family IsGE (bitlen :: Nat) (n :: Nat) (c :: Bool) where
-    IsGE bitlen n 'True  = 'True
+    IsGE _ _ 'True  = 'True
 #if MIN_VERSION_base(4,9,0)
     IsGE bitlen n 'False = TypeError
       (     ('Text "bitlen " ':<>: 'ShowType bitlen ':<>: 'Text " is lesser than " ':<>: 'ShowType n)
@@ -120,7 +120,7 @@ type family Div8 (bitLen :: Nat) where
     Div8 n  = 8 + Div8 (n - 64)
 
 type family IsDiv8 (bitLen :: Nat) (n :: Nat) where
-    IsDiv8 bitLen 0 = 'True
+    IsDiv8 _ 0 = 'True
 #if MIN_VERSION_base(4,9,0)
     IsDiv8 bitLen 1 = TypeError ('Text "bitLen " ':<>: 'ShowType bitLen ':<>: 'Text " is not divisible by 8")
     IsDiv8 bitLen 2 = TypeError ('Text "bitLen " ':<>: 'ShowType bitLen ':<>: 'Text " is not divisible by 8")
@@ -130,15 +130,15 @@ type family IsDiv8 (bitLen :: Nat) (n :: Nat) where
     IsDiv8 bitLen 6 = TypeError ('Text "bitLen " ':<>: 'ShowType bitLen ':<>: 'Text " is not divisible by 8")
     IsDiv8 bitLen 7 = TypeError ('Text "bitLen " ':<>: 'ShowType bitLen ':<>: 'Text " is not divisible by 8")
 #else
-    IsDiv8 bitLen 1 = 'False
-    IsDiv8 bitLen 2 = 'False
-    IsDiv8 bitLen 3 = 'False
-    IsDiv8 bitLen 4 = 'False
-    IsDiv8 bitLen 5 = 'False
-    IsDiv8 bitLen 6 = 'False
-    IsDiv8 bitLen 7 = 'False
+    IsDiv8 _ 1 = 'False
+    IsDiv8 _ 2 = 'False
+    IsDiv8 _ 3 = 'False
+    IsDiv8 _ 4 = 'False
+    IsDiv8 _ 5 = 'False
+    IsDiv8 _ 6 = 'False
+    IsDiv8 _ 7 = 'False
 #endif
-    IsDiv8 bitLen n = IsDiv8 n (Mod8 n)
+    IsDiv8 _ n = IsDiv8 n (Mod8 n)
 
 type family Mod8 (n :: Nat) where
     Mod8 0 = 0

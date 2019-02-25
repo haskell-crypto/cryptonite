@@ -15,7 +15,6 @@ module Crypto.Random.Types
 
 import Crypto.Random.Entropy
 import Crypto.Internal.ByteArray
-import Crypto.Internal.Imports
 
 -- | A monad constraint that allows to generate random bytes
 class (Functor m, Monad m) => MonadRandom m where
@@ -47,7 +46,7 @@ instance DRG gen => Applicative (MonadPseudoRandom gen) where
          in (f a, g3)
 
 instance DRG gen => Monad (MonadPseudoRandom gen) where
-    return a    = MonadPseudoRandom $ \g -> (a, g)
+    return      = pure
     (>>=) m1 m2 = MonadPseudoRandom $ \g1 ->
         let (a, g2) = runPseudoRandom m1 g1
          in runPseudoRandom (m2 a) g2

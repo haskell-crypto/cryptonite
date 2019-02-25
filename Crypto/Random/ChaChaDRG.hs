@@ -29,7 +29,7 @@ newtype ChaChaDRG = ChaChaDRG C.StateSimple
 
 -- | Initialize a new ChaCha context with the number of rounds,
 -- the key and the nonce associated.
-initialize :: B.ByteArrayAccess seed
+initialize :: ByteArrayAccess seed
            => seed        -- ^ 40 bytes of seed
            -> ChaChaDRG   -- ^ the initial ChaCha state
 initialize seed = ChaChaDRG $ C.initializeSimple seed

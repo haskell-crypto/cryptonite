@@ -94,9 +94,9 @@ tests = testGroup "OTP"
         ]
     , testGroup "TOTP"
         [ testGroup "KATs"
-            [ testGroup "SHA1" (makeKATs (totp totpSHA1Params otpKey . fromIntegral) totpSHA1Expected)
-            , testGroup "SHA256" (makeKATs (totp totpSHA256Params totpSHA256Key . fromIntegral) totpSHA256Expected)
-            , testGroup "SHA512" (makeKATs (totp totpSHA512Params totpSHA512Key . fromIntegral) totpSHA512Expected)
+            [ testGroup "SHA1" (makeKATs (totp totpSHA1Params otpKey) totpSHA1Expected)
+            , testGroup "SHA256" (makeKATs (totp totpSHA256Params totpSHA256Key) totpSHA256Expected)
+            , testGroup "SHA512" (makeKATs (totp totpSHA512Params totpSHA512Key) totpSHA512Expected)
             ]
         ]
     ]
