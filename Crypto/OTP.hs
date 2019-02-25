@@ -129,8 +129,8 @@ defaultTOTPParams :: TOTPParams SHA1
 defaultTOTPParams = TP SHA1 0 30 OTP6 TwoSteps
 
 -- | Create a TOTP configuration with customized parameters.
-mkTOTPParams ::
-    hash
+mkTOTPParams :: (HashAlgorithm hash)
+    => hash
     -> OTPTime
     -- ^ The T0 parameter in seconds. This is the Unix time from which to start
     -- counting steps (default 0). Must be before the current time.

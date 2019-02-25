@@ -56,5 +56,5 @@ instance DRG gen => MonadRandom (MonadPseudoRandom gen) where
 
 -- | Run a pure computation with a Deterministic Random Generator
 -- in the 'MonadPseudoRandom'
-withDRG :: gen -> MonadPseudoRandom gen a -> (a, gen)
+withDRG :: DRG gen => gen -> MonadPseudoRandom gen a -> (a, gen)
 withDRG gen m = runPseudoRandom m gen

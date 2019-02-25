@@ -54,7 +54,7 @@ data Parameters = Parameters
     }
 
 -- | generate the pbkdf2 key derivation function from the output
-generate :: (ByteArrayAccess salt, ByteArray ba)
+generate :: (ByteArrayAccess password, ByteArrayAccess salt, ByteArray ba)
          => PRF password
          -> Parameters
          -> password

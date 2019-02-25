@@ -307,7 +307,7 @@ generateIvAEAD :: Gen B.ByteString
 generateIvAEAD = choose (12,90) >>= \sz -> (B.pack <$> replicateM sz arbitrary)
 
 -- | Generate a plaintext multiple of blocksize bytes
-generatePlaintextMultipleBS :: Gen (PlaintextBS a)
+generatePlaintextMultipleBS :: BlockCipher a => Gen (PlaintextBS a)
 generatePlaintextMultipleBS = choose (1,128) >>= \size -> replicateM (size * 16) arbitrary >>= return . PlaintextBS . B.pack
 
 -- | Generate any sized plaintext
@@ -474,7 +474,7 @@ testBlockCipher kats cipher = testGroup (cipherName cipher)
     ++ testModes cipher ++ testIvArith cipher
     )
 
-cipherMakeKey :: cipher -> ByteString -> Key cipher
+cipherMakeKey :: Cipher cipher => cipher -> ByteString -> Key cipher
 cipherMakeKey _ bs = Key bs
 
 cipherMakeIV :: BlockCipher cipher => cipher -> ByteString -> IV cipher
