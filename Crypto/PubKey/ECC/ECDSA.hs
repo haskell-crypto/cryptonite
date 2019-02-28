@@ -10,10 +10,10 @@ module Crypto.PubKey.ECC.ECDSA
     , KeyPair(..)
     , toPublicKey
     , toPrivateKey
-    , signWithDigest
     , signWith
-    , signDigest
+    , signDigestWith
     , sign
+    , signDigest
     , verify
     , verifyDigest
     ) where
@@ -63,13 +63,13 @@ toPrivateKey (KeyPair curve _ priv) = PrivateKey curve priv
 -- | Sign digest using the private key and an explicit k number.
 --
 -- /WARNING:/ Vulnerable to timing attacks.
-signWithDigest :: HashAlgorithm hash
+signDigestWith :: HashAlgorithm hash
          => Integer     -- ^ k random number
          -> PrivateKey  -- ^ private key
          -> hash        -- ^ hash function
          -> Digest hash -- ^ digest to sign
          -> Maybe Signature
-signWithDigest k (PrivateKey curve d) hashAlg digest = do
+signDigestWith k (PrivateKey curve d) hashAlg digest = do
     let z = dsaTruncHashDigest hashAlg digest n
         CurveCommon _ _ g n _ = common_curve curve
     let point = pointMul curve k g
@@ -90,16 +90,16 @@ signWith :: (ByteArrayAccess msg, HashAlgorithm hash)
          -> hash       -- ^ hash function
          -> msg        -- ^ message to sign
          -> Maybe Signature
-signWith k pk hashAlg msg = signWithDigest k pk hashAlg (hashWith hashAlg msg)
+signWith k pk hashAlg msg = signDigestWith k pk hashAlg (hashWith hashAlg msg)
 
--- | Sign digst using the private key.
+-- | Sign digest using the private key.
 --
 -- /WARNING:/ Vulnerable to timing attacks.
 signDigest :: (HashAlgorithm hash, MonadRandom m)
      => PrivateKey -> hash -> Digest hash -> m Signature
 signDigest pk hashAlg digest = do
     k <- generateBetween 1 (n - 1)
-    case signWithDigest k pk hashAlg digest of
+    case signDigestWith k pk hashAlg digest of
          Nothing  -> signDigest pk hashAlg digest
          Just sig -> return sig
   where n = ecc_n . common_curve $ private_curve pk
