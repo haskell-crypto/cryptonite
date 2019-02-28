@@ -64,13 +64,12 @@ toPrivateKey (KeyPair curve _ priv) = PrivateKey curve priv
 --
 -- /WARNING:/ Vulnerable to timing attacks.
 signDigestWith :: HashAlgorithm hash
-         => Integer     -- ^ k random number
-         -> PrivateKey  -- ^ private key
-         -> hash        -- ^ hash function
-         -> Digest hash -- ^ digest to sign
-         -> Maybe Signature
-signDigestWith k (PrivateKey curve d) hashAlg digest = do
-    let z = dsaTruncHashDigest hashAlg digest n
+               => Integer     -- ^ k random number
+               -> PrivateKey  -- ^ private key
+               -> Digest hash -- ^ digest to sign
+               -> Maybe Signature
+signDigestWith k (PrivateKey curve d) digest = do
+    let z = dsaTruncHashDigest digest n
         CurveCommon _ _ g n _ = common_curve curve
     let point = pointMul curve k g
     r <- case point of
@@ -90,17 +89,17 @@ signWith :: (ByteArrayAccess msg, HashAlgorithm hash)
          -> hash       -- ^ hash function
          -> msg        -- ^ message to sign
          -> Maybe Signature
-signWith k pk hashAlg msg = signDigestWith k pk hashAlg (hashWith hashAlg msg)
+signWith k pk hashAlg msg = signDigestWith k pk (hashWith hashAlg msg)
 
 -- | Sign digest using the private key.
 --
 -- /WARNING:/ Vulnerable to timing attacks.
 signDigest :: (HashAlgorithm hash, MonadRandom m)
-     => PrivateKey -> hash -> Digest hash -> m Signature
-signDigest pk hashAlg digest = do
+           => PrivateKey -> Digest hash -> m Signature
+signDigest pk digest = do
     k <- generateBetween 1 (n - 1)
-    case signDigestWith k pk hashAlg digest of
-         Nothing  -> signDigest pk hashAlg digest
+    case signDigestWith k pk digest of
+         Nothing  -> signDigest pk digest
          Just sig -> return sig
   where n = ecc_n . common_curve $ private_curve pk
 
@@ -109,16 +108,16 @@ signDigest pk hashAlg digest = do
 -- /WARNING:/ Vulnerable to timing attacks.
 sign :: (ByteArrayAccess msg, HashAlgorithm hash, MonadRandom m)
      => PrivateKey -> hash -> msg -> m Signature
-sign pk hashAlg msg = signDigest pk hashAlg (hashWith hashAlg msg)
+sign pk hashAlg msg = signDigest pk (hashWith hashAlg msg)
 
 -- | Verify a digest using the public key.
-verifyDigest :: HashAlgorithm hash => hash -> PublicKey -> Signature -> Digest hash -> Bool
-verifyDigest _       (PublicKey _ PointO) _ _ = False
-verifyDigest hashAlg pk@(PublicKey curve q) (Signature r s) digest
+verifyDigest :: HashAlgorithm hash => PublicKey -> Signature -> Digest hash -> Bool
+verifyDigest (PublicKey _ PointO) _ _ = False
+verifyDigest pk@(PublicKey curve q) (Signature r s) digest
     | r < 1 || r >= n || s < 1 || s >= n = False
     | otherwise = maybe False (r ==) $ do
         w <- inverse s n
-        let z  = dsaTruncHashDigest hashAlg digest n
+        let z  = dsaTruncHashDigest digest n
             u1 = z * w `mod` n
             u2 = r * w `mod` n
             x  = pointAddTwoMuls curve u1 g u2 q
@@ -131,4 +130,4 @@ verifyDigest hashAlg pk@(PublicKey curve q) (Signature r s) digest
 
 -- | Verify a bytestring using the public key.
 verify :: (ByteArrayAccess msg, HashAlgorithm hash) => hash -> PublicKey -> Signature -> msg -> Bool
-verify hashAlg pk sig msg = verifyDigest hashAlg pk sig (hashWith hashAlg msg)
+verify hashAlg pk sig msg = verifyDigest pk sig (hashWith hashAlg msg)

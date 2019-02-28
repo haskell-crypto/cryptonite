@@ -33,12 +33,15 @@ False &&! False = False
 
 -- | Truncate and hash for DSA and ECDSA.
 dsaTruncHash :: (ByteArrayAccess msg, HashAlgorithm hash) => hash -> msg -> Integer -> Integer
-dsaTruncHash hashAlg = dsaTruncHashDigest hashAlg . hashWith hashAlg
+dsaTruncHash hashAlg = dsaTruncHashDigest . hashWith hashAlg
 
 -- | Truncate a digest for DSA and ECDSA.
-dsaTruncHashDigest :: HashAlgorithm hash => hash -> Digest hash -> Integer -> Integer
-dsaTruncHashDigest hashAlg digest n
+dsaTruncHashDigest :: HashAlgorithm hash => Digest hash -> Integer -> Integer
+dsaTruncHashDigest digest n
     | d > 0 = shiftR e d
     | otherwise = e
   where e = os2ip digest
-        d = hashDigestSize hashAlg * 8 - numBits n
+        d = hashDigestSize (getHashAlg digest) * 8 - numBits n
+
+getHashAlg :: Digest hash -> hash
+getHashAlg _ = undefined
