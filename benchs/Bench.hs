@@ -15,6 +15,7 @@ import           Crypto.Cipher.Types
 import           Crypto.ECC
 import           Crypto.Error
 import           Crypto.Hash
+import qualified Crypto.KDF.BCrypt as BCrypt
 import qualified Crypto.KDF.PBKDF2 as PBKDF2
 import           Crypto.Number.Basic (numBits)
 import           Crypto.Number.Generate
@@ -104,6 +105,19 @@ benchPBKDF2 =
 
         params n iter = PBKDF2.Parameters iter n
 
+benchBCrypt =
+    [ bench "cryptonite-BCrypt-4"  $ nf bcrypt 4
+    , bench "cryptonite-BCrypt-5"  $ nf bcrypt 5
+    , bench "cryptonite-BCrypt-7"  $ nf bcrypt 7
+    , bench "cryptonite-BCrypt-11" $ nf bcrypt 11
+    ]
+  where
+        bcrypt :: Int -> B.ByteString
+        bcrypt cost = BCrypt.bcrypt cost mysalt mypass
+
+        mypass, mysalt :: B.ByteString
+        mypass = "password"
+        mysalt = "saltsaltsaltsalt"
 
 benchBlockCipher =
     [ bgroup "ECB" benchECB
@@ -233,6 +247,7 @@ main = defaultMain
     , bgroup "block-cipher" benchBlockCipher
     , bgroup "AE" benchAE
     , bgroup "pbkdf2" benchPBKDF2
+    , bgroup "bcrypt" benchBCrypt
     , bgroup "ECC" benchECC
     , bgroup "DH"
           [ bgroup "FFDH" benchFFDH
