@@ -11,7 +11,7 @@
 --      Crypto.Cipher.Blowfish.Primitive, copyright (c) 2012 Stijn van Drongelen
 --      based on: BlowfishAux.hs (C) 2002 HardCore SoftWare, Doug Hoyte
 --           (as found in Crypto-4.2.4)
-
+{-# LANGUAGE BangPatterns #-}
 module Crypto.Cipher.Blowfish.Primitive
     ( Context
     , initBlowfish
@@ -154,7 +154,7 @@ cipherBlock (Context ar) inverse input = doRound input 0
     where
     -- | Transform the input over 16 rounds
     doRound :: Word64 -> Int -> Word64
-    doRound i roundIndex
+    doRound !i roundIndex
         | roundIndex == 16 =
             let final = (fromIntegral (p 16) `shiftL` 32) .|. fromIntegral (p 17)
              in rotateL (i `xor` final) 32
@@ -187,7 +187,7 @@ cipherBlockMutable :: KeySchedule -> Word64 -> IO Word64
 cipherBlockMutable (KeySchedule ma) input = doRound input 0
     where
     -- | Transform the input over 16 rounds
-    doRound i roundIndex
+    doRound !i roundIndex
         | roundIndex == 16 = do
             pVal1 <- mutableArrayRead32 ma 16
             pVal2 <- mutableArrayRead32 ma 17
