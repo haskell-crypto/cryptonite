@@ -52,11 +52,16 @@ module Crypto.KDF.BCrypt
     )
 where
 
-import           Control.Monad (unless, when)
-import           Crypto.Cipher.Blowfish.Primitive (eksBlowfish, encrypt)
-import           Crypto.Random (MonadRandom, getRandomBytes)
-import           Data.ByteArray (ByteArrayAccess, ByteArray, Bytes)
-import qualified Data.ByteArray as B
+import           Control.Monad                    (forM_, unless, when)
+import           Crypto.Cipher.Blowfish.Primitive (Context, createKeySchedule,
+                                                   encrypt, expandKey,
+                                                   expandKeyWithSalt,
+                                                   freezeKeySchedule)
+import           Crypto.Internal.Compat
+import           Crypto.Random                    (MonadRandom, getRandomBytes)
+import           Data.ByteArray                   (ByteArray, ByteArrayAccess,
+                                                   Bytes)
+import qualified Data.ByteArray                   as B
 import           Data.ByteArray.Encoding
 import           Data.Char
 
@@ -136,7 +141,7 @@ rawHash _ cost salt password = B.take 23 hash -- Another compatibility bug. Igno
     -- Truncate the password if necessary and append a null byte for C compatibility
     key = B.snoc (B.take 72 password) 0
 
-    ctx = eksBlowfish cost salt key
+    ctx = expensiveBlowfishContext key salt cost
 
     -- The BCrypt plaintext: "OrpheanBeholderScryDoubt"
     orpheanBeholder = B.pack [79,114,112,104,101,97,110,66,101,104,111,108,100,101,114,83,99,114,121,68,111,117,98,116]
@@ -166,3 +171,19 @@ parseBCryptHash bc = do
         salt <- convertFromBase Base64OpenBSD s
         hash <- convertFromBase Base64OpenBSD h
         return (salt, hash)
+
+-- | Create a key schedule for the BCrypt "EKS" version.
+--
+-- Salt must be a 128-bit byte array.
+-- Cost must be between 4 and 31 inclusive
+-- See <https://www.usenix.org/conference/1999-usenix-annual-technical-conference/future-adaptable-password-scheme>
+expensiveBlowfishContext :: (ByteArrayAccess key, ByteArrayAccess salt) => key-> salt -> Int -> Context
+expensiveBlowfishContext keyBytes saltBytes cost
+  | B.length saltBytes /= 16 = error "bcrypt salt must be 16 bytes"
+  | otherwise = unsafeDoIO $ do
+        ks <- createKeySchedule
+        expandKeyWithSalt ks keyBytes saltBytes
+        forM_ [1..2^cost :: Int] $ \_ -> do
+            expandKey ks keyBytes
+            expandKey ks saltBytes
+        freezeKeySchedule ks
