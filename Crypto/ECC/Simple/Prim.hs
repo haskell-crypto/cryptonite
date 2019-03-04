@@ -17,7 +17,7 @@ module Crypto.ECC.Simple.Prim
     ) where
 
 import Data.Maybe
-import Crypto.Internal.Proxy
+import Data.Proxy
 import Crypto.Number.ModArithmetic
 import Crypto.Number.F2m
 import Crypto.Number.Generate (generateBetween)

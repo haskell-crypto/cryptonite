@@ -9,6 +9,7 @@ module Crypto.Internal.Nat
     , type IsAtMost, type IsAtLeast
     , byteLen
     , integralNatVal
+    , type IsDiv8
     , type Div8
     , type Mod8
     ) where
@@ -207,4 +208,6 @@ type family Mod8 (n :: Nat) where
     Mod8 63 = 7
     Mod8 n = Mod8 (n - 64)
 
+-- | ensure the given `bitlen` is divisible by 8
+--
 type IsDivisibleBy8 bitLen = IsDiv8 bitLen bitLen ~ 'True

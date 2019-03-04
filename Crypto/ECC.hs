@@ -31,7 +31,6 @@ import qualified Crypto.ECC.Simple.Types as Simple
 import qualified Crypto.ECC.Simple.Prim as Simple
 import           Crypto.Random
 import           Crypto.Error
-import           Crypto.Internal.Proxy
 import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArray, ByteArrayAccess, ScrubbedBytes)
 import qualified Crypto.Internal.ByteArray as B
@@ -41,6 +40,7 @@ import qualified Crypto.PubKey.Curve448 as X448
 import           Data.ByteArray (convert)
 import           Data.Data (Data())
 import           Data.Kind (Type)
+import           Data.Proxy
 
 -- | An elliptic curve key pair composed of the private part (a scalar), and
 -- the associated point.

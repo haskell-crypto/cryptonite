@@ -130,6 +130,7 @@ Library
                      Crypto.Number.F2m
                      Crypto.Number.Generate
                      Crypto.Number.ModArithmetic
+                     Crypto.Number.Nat
                      Crypto.Number.Prime
                      Crypto.Number.Serialize
                      Crypto.Number.Serialize.Internal
@@ -220,7 +221,6 @@ Library
                      Crypto.PubKey.ElGamal
                      Crypto.ECC.Simple.Types
                      Crypto.ECC.Simple.Prim
-                     Crypto.Internal.Proxy
                      Crypto.Internal.ByteArray
                      Crypto.Internal.Compat
                      Crypto.Internal.CompatPrim
