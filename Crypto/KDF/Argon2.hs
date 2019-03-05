@@ -90,6 +90,19 @@ outputMinLength = 4
 outputMaxLength :: Int
 outputMaxLength = 0x7fffffff
 
+-- | Default 'Options' for hashing
+--
+-- @
+-- 'defaultOptions' :: 'Options'
+-- 'defaultOptions' =
+--     'Options' { 'iterations'  = 1
+--             , 'memory'      = 2 ^ (17 :: Int)
+--             , 'parallelism' = 4
+--             , 'variant'     = Argon2i
+--             , 'version'     = Version13
+--             }
+-- @
+--
 defaultOptions :: Options
 defaultOptions =
     Options { iterations  = 1
