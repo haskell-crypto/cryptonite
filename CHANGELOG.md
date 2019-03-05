@@ -1,6 +1,8 @@
 ## 0.26
 
 * Update blake2 to latest upstream version
+* Update argon2 to latest upstream version
+* Haddock improvements to the Argon module
 
 ## 0.25
 
