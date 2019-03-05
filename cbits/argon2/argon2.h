@@ -4,7 +4,7 @@
  * Copyright 2015
  * Daniel Dinu, Dmitry Khovratovich, Jean-Philippe Aumasson, and Samuel Neves
  *
- * You may use this work under the terms of a Creative Commons CC0 1.0 
+ * You may use this work under the terms of a Creative Commons CC0 1.0
  * License/Waiver or the Apache Public License 2.0, at your option. The terms of
  * these licenses can be found at:
  *
@@ -29,10 +29,13 @@ extern "C" {
 /* Symbols visibility control */
 #ifdef A2_VISCTL
 #define ARGON2_PUBLIC __attribute__((visibility("default")))
+#define ARGON2_LOCAL __attribute__ ((visibility ("hidden")))
 #elif _MSC_VER
 #define ARGON2_PUBLIC __declspec(dllexport)
+#define ARGON2_LOCAL
 #else
 #define ARGON2_PUBLIC
+#define ARGON2_LOCAL
 #endif
 
 /*
@@ -236,8 +239,6 @@ typedef enum Argon2_version {
 ARGON2_PUBLIC int cryptonite_argon2_ctx(argon2_context *context, argon2_type type);
 
 /**
- * Hashes a password with Argon2i, producing a raw hash by allocating memory at
- * @hash
  * @param t_cost Number of iterations
  * @param m_cost Sets memory usage to m_cost kibibytes
  * @param parallelism Number of threads and compute lanes

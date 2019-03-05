@@ -4,7 +4,7 @@
  * Copyright 2015
  * Daniel Dinu, Dmitry Khovratovich, Jean-Philippe Aumasson, and Samuel Neves
  *
- * You may use this work under the terms of a Creative Commons CC0 1.0 
+ * You may use this work under the terms of a Creative Commons CC0 1.0
  * License/Waiver or the Apache Public License 2.0, at your option. The terms of
  * these licenses can be found at:
  *
@@ -20,6 +20,7 @@
 #include <stdio.h>
 
 #include "argon2.h"
+#include "ref.c"
 #include "core.c"
 
 int cryptonite_argon2_ctx(argon2_context *context, argon2_type type) {
@@ -58,6 +59,10 @@ int cryptonite_argon2_ctx(argon2_context *context, argon2_type type) {
     instance.threads = context->threads;
     instance.type = type;
 
+    if (instance.threads > instance.lanes) {
+        instance.threads = instance.lanes;
+    }
+
     /* 3. Initialization: Hashing inputs, allocating memory, filling first
      * blocks
      */
@@ -88,6 +93,14 @@ int cryptonite_argon2_hash(const uint32_t t_cost, const uint32_t m_cost,
     argon2_context context;
     int result;
     uint8_t *out;
+
+    if (pwdlen > ARGON2_MAX_PWD_LENGTH) {
+        return ARGON2_PWD_TOO_LONG;
+    }
+
+    if (saltlen > ARGON2_MAX_SALT_LENGTH) {
+        return ARGON2_SALT_TOO_LONG;
+    }
 
     if (hashlen > ARGON2_MAX_OUTLEN) {
         return ARGON2_OUTPUT_TOO_LONG;
@@ -139,4 +152,3 @@ int cryptonite_argon2_hash(const uint32_t t_cost, const uint32_t m_cost,
 
     return ARGON2_OK;
 }
-

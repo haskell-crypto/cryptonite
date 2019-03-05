@@ -4,7 +4,7 @@
  * Copyright 2015
  * Daniel Dinu, Dmitry Khovratovich, Jean-Philippe Aumasson, and Samuel Neves
  *
- * You may use this work under the terms of a Creative Commons CC0 1.0 
+ * You may use this work under the terms of a Creative Commons CC0 1.0
  * License/Waiver or the Apache Public License 2.0, at your option. The terms of
  * these licenses can be found at:
  *
@@ -27,8 +27,17 @@
 #include "blake2.h"
 
 
+/*
+ * Function fills a new memory block and optionally XORs the old block over the new one.
+ * @next_block must be initialized.
+ * @param prev_block Pointer to the previous block
+ * @param ref_block Pointer to the reference block
+ * @param next_block Pointer to the block to be constructed
+ * @param with_xor Whether to XOR into the new block (1) or just overwrite (0)
+ * @pre all block pointers must be valid
+ */
 static void fill_block(const block *prev_block, const block *ref_block,
-                block *next_block, int with_xor) {
+                       block *next_block, int with_xor) {
     block blockR, block_tmp;
     unsigned i;
 

@@ -4,7 +4,7 @@
  * Copyright 2015
  * Daniel Dinu, Dmitry Khovratovich, Jean-Philippe Aumasson, and Samuel Neves
  *
- * You may use this work under the terms of a Creative Commons CC0 1.0 
+ * You may use this work under the terms of a Creative Commons CC0 1.0
  * License/Waiver or the Apache Public License 2.0, at your option. The terms of
  * these licenses can be found at:
  *
@@ -25,7 +25,6 @@
 #endif
 #define VC_GE_2005(version) (version >= 1400)
 
-#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,12 +36,6 @@
 
 #ifdef GENKAT
 #include "genkat.h"
-#endif
-
-#ifdef SUPPORT_SSE
-#include "opt.c"
-#else
-#include "ref.c"
 #endif
 
 #if defined(__clang__)
@@ -149,8 +142,8 @@ static void store_block(void *output, const block *src) {
 }
 
 /***************Memory functions*****************/
-static 
-int allocate_memory(const argon2_context *context, uint8_t **memory,
+
+static int allocate_memory(const argon2_context *context, uint8_t **memory,
                     size_t num, size_t size) {
     size_t memory_size = num*size;
     if (memory == NULL) {
@@ -175,8 +168,8 @@ int allocate_memory(const argon2_context *context, uint8_t **memory,
 
     return ARGON2_OK;
 }
-static 
-void free_memory(const argon2_context *context, uint8_t *memory,
+
+static void free_memory(const argon2_context *context, uint8_t *memory,
                  size_t num, size_t size) {
     size_t memory_size = num*size;
     clear_internal_memory(memory, memory_size);
@@ -425,8 +418,8 @@ fail:
 }
 
 #endif /* ARGON2_NO_THREADS */
-static 
-int fill_memory_blocks(argon2_instance_t *instance) {
+
+static int fill_memory_blocks(argon2_instance_t *instance) {
 	if (instance == NULL || instance->lanes == 0) {
 	    return ARGON2_INCORRECT_PARAMETER;
     }
@@ -437,8 +430,8 @@ int fill_memory_blocks(argon2_instance_t *instance) {
 			fill_memory_blocks_st(instance) : fill_memory_blocks_mt(instance);
 #endif
 }
-static 
-int validate_inputs(const argon2_context *context) {
+
+static int validate_inputs(const argon2_context *context) {
     if (NULL == context) {
         return ARGON2_INCORRECT_PARAMETER;
     }
@@ -564,11 +557,11 @@ int validate_inputs(const argon2_context *context) {
 
     return ARGON2_OK;
 }
-static 
-void fill_first_blocks(uint8_t *blockhash, const argon2_instance_t *instance) {
+
+static void fill_first_blocks(uint8_t *blockhash, const argon2_instance_t *instance) {
     uint32_t l;
-    /* Make the first and second block in each lane as G(H0||i||0) or
-       G(H0||i||1) */
+    /* Make the first and second block in each lane as G(H0||0||i) or
+       G(H0||1||i) */
     uint8_t blockhash_bytes[ARGON2_BLOCK_SIZE];
     for (l = 0; l < instance->lanes; ++l) {
 
@@ -587,8 +580,8 @@ void fill_first_blocks(uint8_t *blockhash, const argon2_instance_t *instance) {
     }
     clear_internal_memory(blockhash_bytes, ARGON2_BLOCK_SIZE);
 }
-static 
-void initial_hash(uint8_t *blockhash, argon2_context *context,
+
+static void initial_hash(uint8_t *blockhash, argon2_context *context,
                   argon2_type type) {
     blake2b_state BlakeHash;
     uint8_t value[sizeof(uint32_t)];
@@ -661,8 +654,8 @@ void initial_hash(uint8_t *blockhash, argon2_context *context,
 
     blake2b_final(&BlakeHash, blockhash, ARGON2_PREHASH_DIGEST_LENGTH);
 }
-static 
-int initialize(argon2_instance_t *instance, argon2_context *context) {
+
+static int initialize(argon2_instance_t *instance, argon2_context *context) {
     uint8_t blockhash[ARGON2_PREHASH_SEED_LENGTH];
     int result = ARGON2_OK;
 
