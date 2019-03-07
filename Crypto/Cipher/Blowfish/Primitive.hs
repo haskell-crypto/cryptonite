@@ -31,12 +31,11 @@ import           Data.Word
 
 import           Crypto.Cipher.Blowfish.Box
 import           Crypto.Error
-import           Crypto.Internal.ByteArray  (ByteArray, ByteArrayAccess, Bytes)
+import           Crypto.Internal.ByteArray  (ByteArray, ByteArrayAccess)
 import qualified Crypto.Internal.ByteArray  as B
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
 import           Crypto.Internal.WordArray
-import           Crypto.Internal.Words
 
 newtype Context = Context Array32
 
@@ -179,8 +178,8 @@ cipherBlock (Context ar) inverse input = doRound input 0
     s2 i            = arrayRead32 ar (fromIntegral i + 530)
     s3 i            = arrayRead32 ar (fromIntegral i + 786)
     p              :: Int -> Word32
-    p i | inverse   = arrayRead32 ar (17 - fromIntegral i)
-        | otherwise = arrayRead32 ar (fromIntegral i)
+    p i | inverse   = arrayRead32 ar (17 - i)
+        | otherwise = arrayRead32 ar i
 
 -- | Blowfish encrypt a Word using the current state of the key schedule
 cipherBlockMutable :: KeySchedule -> Word64 -> IO Word64
