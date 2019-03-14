@@ -22,6 +22,7 @@ module Crypto.Cipher.Blowfish.Primitive
     , freezeKeySchedule
     , expandKey
     , expandKeyWithSalt
+    , cipherBlockMutable
     ) where
 
 import           Control.Monad              (when)

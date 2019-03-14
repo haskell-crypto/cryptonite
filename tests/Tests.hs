@@ -6,6 +6,7 @@ import Imports
 import qualified Number
 import qualified Number.F2m
 import qualified BCrypt
+import qualified BCryptPBKDF
 import qualified ECC
 import qualified ECC.Edwards25519
 import qualified Hash
@@ -63,6 +64,7 @@ tests = testGroup "cryptonite"
         [ KAT_PBKDF2.tests
         , KAT_Scrypt.tests
         , BCrypt.tests
+        , BCryptPBKDF.tests
         , KAT_HKDF.tests
         , KAT_Argon2.tests
         ]
