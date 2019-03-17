@@ -12,7 +12,7 @@ Description:
     .
     * Asymmetric crypto: DSA, RSA, DH, ECDH, ECDSA, ECC, Curve25519, Curve448, Ed25519, Ed448
     .
-    * Key Derivation Function: PBKDF2, Scrypt, HKDF, Argon2
+    * Key Derivation Function: PBKDF2, Scrypt, HKDF, Argon2, BCrypt, BCryptPBKDF
     .
     * Cryptographic Random generation: System Entropy, Deterministic Random Generator
     .
@@ -138,6 +138,7 @@ Library
                      Crypto.KDF.PBKDF2
                      Crypto.KDF.Scrypt
                      Crypto.KDF.BCrypt
+                     Crypto.KDF.BCryptPBKDF
                      Crypto.KDF.HKDF
                      Crypto.Hash
                      Crypto.Hash.IO
@@ -378,6 +379,7 @@ Test-Suite test-cryptonite
   Other-modules:     BlockCipher
                      ChaCha
                      BCrypt
+                     BCryptPBKDF
                      ECC
                      ECC.Edwards25519
                      Hash

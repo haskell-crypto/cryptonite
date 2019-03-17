@@ -7,12 +7,26 @@
 module Crypto.Cipher.Blowfish.Box
     (   KeySchedule(..)
     ,   createKeySchedule
+    ,   copyKeySchedule
     ) where
 
 import           Crypto.Internal.WordArray (MutableArray32,
-                                            mutableArray32FromAddrBE)
+                                            mutableArray32FromAddrBE,
+                                            mutableArrayRead32,
+                                            mutableArrayWrite32)
 
 newtype KeySchedule = KeySchedule MutableArray32
+
+-- | Copy the state of one key schedule into the other.
+--   The first parameter is the destination and the second the source.
+copyKeySchedule :: KeySchedule -> KeySchedule -> IO ()
+copyKeySchedule (KeySchedule dst) (KeySchedule src) = loop 0
+  where
+    loop 1042 = return ()
+    loop i    = do
+        w32 <-mutableArrayRead32 src i
+        mutableArrayWrite32 dst i w32
+        loop (i + 1)
 
 -- | Create a key schedule mutable array of the pbox followed by
 -- all the sboxes.
