@@ -45,7 +45,6 @@ module Crypto.PubKey.ECC.P256
 import           Data.Word
 import           Foreign.Ptr
 import           Foreign.C.Types
-import           Control.Monad
 
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
