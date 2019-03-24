@@ -391,18 +391,20 @@ void cryptonite_p256_to_bin(const cryptonite_p256_int* src, uint8_t dst[P256_NBY
   "p256e" functions are not part of the original source
 */
 
+#define MSB_COMPLEMENT(x) (((x) >> (P256_BITSPERDIGIT - 1)) - 1)
+
 // c = a + b mod MOD
 void cryptonite_p256e_modadd(const cryptonite_p256_int* MOD, const cryptonite_p256_int* a, const cryptonite_p256_int* b, cryptonite_p256_int* c) {
-  int carry = cryptonite_p256_add(a, b, c);
-
-  // same as cryptonite_p256_mod, but with top = carry
-  addM(MOD, 0, P256_DIGITS(c), subM(MOD, carry, P256_DIGITS(c), -1));
+  cryptonite_p256_digit top = cryptonite_p256_add(a, b, c);
+  top = subM(MOD, top, P256_DIGITS(c), -1);
+  top = subM(MOD, top, P256_DIGITS(c), MSB_COMPLEMENT(top));
+  addM(MOD, 0, P256_DIGITS(c), top);
 }
 
 // c = a - b mod MOD
 void cryptonite_p256e_modsub(const cryptonite_p256_int* MOD, const cryptonite_p256_int* a, const cryptonite_p256_int* b, cryptonite_p256_int* c) {
-  int borrow = cryptonite_p256_sub(a, b, c);
-
-  // use borrow as mask in order to make difference positive when necessary
-  addM(MOD, 0, P256_DIGITS(c), borrow);
+  cryptonite_p256_digit top = cryptonite_p256_sub(a, b, c);
+  top = addM(MOD, top, P256_DIGITS(c), ~MSB_COMPLEMENT(top));
+  top = subM(MOD, top, P256_DIGITS(c), MSB_COMPLEMENT(top));
+  addM(MOD, 0, P256_DIGITS(c), top);
 }
