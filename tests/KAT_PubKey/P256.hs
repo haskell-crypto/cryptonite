@@ -79,11 +79,6 @@ tests = testGroup "P256"
             let v = unP256 r `mod` curveN
                 v' = P256.scalarAdd (unP256Scalar r) P256.scalarZero
              in v `propertyEq` p256ScalarToInteger v'
-        , testProperty "add-n-1" $ \r ->
-            let nm1 = throwCryptoError $ P256.scalarFromInteger (curveN - 1)
-                v   = unP256 r `mod` curveN
-                v'  = P256.scalarAdd (unP256Scalar r) nm1
-             in (((curveN - 1) + v) `mod` curveN) `propertyEq` p256ScalarToInteger v'
         , testProperty "sub" $ \r1 r2 ->
             let r = (unP256 r1 - unP256 r2) `mod` curveN
                 r' = P256.scalarSub (unP256Scalar r1) (unP256Scalar r2)
@@ -93,11 +88,10 @@ tests = testGroup "P256"
                     [ eqTest "r1-r2" r (p256ScalarToInteger r')
                     , eqTest "r2-r1" v (p256ScalarToInteger v')
                     ]
-        , testProperty "sub-n-1" $ \r ->
-            let nm1 = throwCryptoError $ P256.scalarFromInteger (curveN - 1)
-                v = unP256 r
-                v' = P256.scalarSub (unP256Scalar r) nm1
-             in ((v - (curveN - 1)) `mod` curveN) `propertyEq` p256ScalarToInteger v'
+        , testProperty "sub0" $ \r ->
+            let v = unP256 r `mod` curveN
+                v' = P256.scalarSub (unP256Scalar r) P256.scalarZero
+             in v `propertyEq` p256ScalarToInteger v'
         , testProperty "inv" $ \r' ->
             let inv  = inverseCoprimes (unP256 r') curveN
                 inv' = P256.scalarInv (unP256Scalar r')
