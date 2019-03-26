@@ -38,18 +38,18 @@ curveGen = ECC.ecc_g . ECC.common_curve $ curve
 pointP256ToECC :: P256.Point -> ECC.Point
 pointP256ToECC = uncurry ECC.Point . P256.pointToIntegers
 
+i2ospScalar :: Integer -> Bytes
+i2ospScalar i =
+    case i2ospOf 32 i of
+        Nothing -> error "invalid size of P256 scalar"
+        Just b  -> b
+
 unP256Scalar :: P256Scalar -> P256.Scalar
 unP256Scalar (P256Scalar r) =
     let rBytes = i2ospScalar r
      in case P256.scalarFromBinary rBytes of
                     CryptoFailed err    -> error ("cannot convert scalar: " ++ show err)
                     CryptoPassed scalar -> scalar
-  where
-    i2ospScalar :: Integer -> Bytes
-    i2ospScalar i =
-        case i2ospOf 32 i of
-            Nothing -> error "invalid size of P256 scalar"
-            Just b  -> b
 
 unP256 :: P256Scalar -> Integer
 unP256 (P256Scalar r) = r
@@ -147,9 +147,3 @@ tests = testGroup "P256"
             pe = ECC.pointMul curve (unP256 r) curveGen
             pR = P256.pointNegate p
          in ECC.pointNegate curve pe `propertyEq` (pointP256ToECC pR)
-
-    i2ospScalar :: Integer -> Bytes
-    i2ospScalar i =
-        case i2ospOf 32 i of
-            Nothing -> error "invalid size of P256 scalar"
-            Just b  -> b
