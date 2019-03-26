@@ -2,7 +2,6 @@
 module Utils where
 
 import Control.Applicative
-import Control.Monad (replicateM)
 import Data.Char
 import Data.Word
 import Data.List
@@ -28,13 +27,13 @@ newtype ChunkingLen = ChunkingLen [Int]
     deriving (Show,Eq)
 
 instance Arbitrary ChunkingLen where
-    arbitrary = ChunkingLen `fmap` replicateM 16 (choose (0,14))
+    arbitrary = ChunkingLen `fmap` vectorOf 16 (choose (0,14))
 
 newtype ChunkingLen0_127 = ChunkingLen0_127 [Int]
     deriving (Show,Eq)
 
 instance Arbitrary ChunkingLen0_127 where
-    arbitrary = ChunkingLen0_127 `fmap` replicateM 16 (choose (0,127))
+    arbitrary = ChunkingLen0_127 `fmap` vectorOf 16 (choose (0,127))
 
 
 newtype ArbitraryBS0_2901 = ArbitraryBS0_2901 ByteString
@@ -63,7 +62,7 @@ instance Arbitrary QAInteger where
     arbitrary = oneof
         [ QAInteger . fromIntegral <$> (choose (0, 65536) :: Gen Int)  -- small integer
         , larger <$> choose (0,4096) <*> choose (0, 65536) -- medium integer
-        , QAInteger . os2ip . B.pack <$> (choose (0,32) >>= \n -> replicateM n arbitrary) -- [ 0 .. 2^32 ] sized integer
+        , QAInteger . os2ip <$> arbitraryBSof 0 32 -- [ 0 .. 2^32 ] sized integer
         ]
       where
         larger :: Int -> Int -> QAInteger
@@ -73,10 +72,10 @@ instance Arbitrary QAInteger where
         somePrime = 18446744073709551557
 
 arbitraryBS :: Int -> Gen ByteString
-arbitraryBS n = B.pack `fmap` replicateM n arbitrary
+arbitraryBS = fmap B.pack . vector
 
 arbitraryBSof :: Int -> Int -> Gen ByteString
-arbitraryBSof minSize maxSize = choose (minSize, maxSize) >>= \n -> (B.pack `fmap` replicateM n arbitrary)
+arbitraryBSof minSize maxSize = choose (minSize, maxSize) >>= arbitraryBS
 
 chunkS :: ChunkingLen -> ByteString -> [ByteString]
 chunkS (ChunkingLen originalChunks) = loop originalChunks
