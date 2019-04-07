@@ -27,10 +27,13 @@ import qualified Crypto.Hash as H
 import           Crypto.Hash.SHAKE (HashSHAKE(..))
 import           Crypto.Hash.Types (HashAlgorithm(..), Digest(..))
 import qualified Crypto.Hash.Types as H
-import           Crypto.Number.Serialize
-import           Foreign.Ptr (Ptr)
+import           Foreign.Ptr (Ptr, plusPtr)
+import           Foreign.Storable (poke)
+import           Data.Bits (shiftR)
 import           Data.ByteArray (ByteArray, ByteArrayAccess)
 import qualified Data.ByteArray as B
+import           Data.Word (Word8)
+import           Data.Memory.PtrMethods (memSet)
 
 
 -- cSHAKE
@@ -43,8 +46,8 @@ cshakeInit n s = H.Context $ B.allocAndFreeze c $ \(ptr :: Ptr (H.Context a)) ->
   where
     c = hashInternalContextSize (undefined :: a)
     w = hashBlockSize (undefined :: a)
-    x = encodeString n `B.append` encodeString s :: B.Bytes
-    b = bytepad x w
+    x = encodeString n <+> encodeString s
+    b = builderAllocAndFreeze (bytepad x w) :: B.Bytes
 
 cshakeUpdate :: (HashSHAKE a, ByteArrayAccess ba)
              => H.Context a -> ba -> H.Context a
@@ -88,11 +91,11 @@ newtype Context a = Context (H.Context a)
 -- string and key.
 initialize :: forall a string key . (HashSHAKE a, ByteArrayAccess string, ByteArrayAccess key)
            => string -> key -> Context a
-initialize str key = Context $ cshakeUpdate (cshakeInit n str) prefix
+initialize str key = Context $ cshakeUpdate (cshakeInit n str) p
   where
     n = B.pack [75,77,65,67] :: B.Bytes  -- "KMAC"
     w = hashBlockSize (undefined :: a)
-    prefix = bytepad (encodeString key) w :: B.Bytes
+    p = builderAllocAndFreeze (bytepad (encodeString key) w) :: B.ScrubbedBytes
 
 -- | Incrementally update a KMAC context.
 update :: (HashSHAKE a, ByteArrayAccess ba) => Context a -> ba -> Context a
@@ -107,28 +110,56 @@ finalize :: forall a . HashSHAKE a => Context a -> KMAC a
 finalize (Context ctx) = KMAC $ cshakeFinalize $ cshakeUpdate ctx suffix
   where
     l = cshakeOutputLength (undefined :: a)
-    suffix = rightEncode l :: B.Bytes
+    suffix = builderAllocAndFreeze (rightEncode l) :: B.Bytes
 
 
 -- Utilities
 
-bytepad :: ByteArray ba => ba -> Int -> ba
-bytepad x w = B.concat [ prefix, x, B.zero padLen ]
+bytepad :: Builder -> Int -> Builder
+bytepad x w = prefix <+> x <+> zero padLen
   where
     prefix = leftEncode w
-    padLen = (w - B.length prefix - B.length x) `mod` w
+    padLen = (w - builderLength prefix - builderLength x) `mod` w
 
-encodeString :: (ByteArrayAccess bin, ByteArray bout) => bin -> bout
-encodeString s = leftEncode (8 * B.length s) `B.append` B.convert s
+encodeString :: ByteArrayAccess bin => bin -> Builder
+encodeString s = leftEncode (8 * B.length s) <+> bytes s
 
-leftEncode :: ByteArray ba => Int -> ba
-leftEncode x = B.cons len digits
+leftEncode :: Int -> Builder
+leftEncode x = byte len <+> digits
   where
-    digits = i2osp (toInteger x)
-    len    = fromIntegral (B.length digits)
+    digits = i2osp x
+    len    = fromIntegral (builderLength digits)
 
-rightEncode :: ByteArray ba => Int -> ba
-rightEncode x = B.snoc digits len
+rightEncode :: Int -> Builder
+rightEncode x = digits <+> byte len
   where
-    digits = i2osp (toInteger x)
-    len    = fromIntegral (B.length digits)
+    digits = i2osp x
+    len    = fromIntegral (builderLength digits)
+
+i2osp :: Int -> Builder
+i2osp i | i >= 256  = i2osp (shiftR i 8) <+> byte (fromIntegral i)
+        | otherwise = byte (fromIntegral i)
+
+
+-- Delaying and merging ByteArray allocations
+
+data Builder = Builder !Int (Ptr Word8 -> IO ())  -- size and initializer
+
+(<+>) :: Builder -> Builder -> Builder
+(Builder s1 f1) <+> (Builder s2 f2) = Builder (s1 + s2) f
+  where f p = f1 p >> f2 (p `plusPtr` s1)
+
+builderLength :: Builder -> Int
+builderLength (Builder s _) = s
+
+builderAllocAndFreeze :: ByteArray ba => Builder -> ba
+builderAllocAndFreeze (Builder s f) = B.allocAndFreeze s f
+
+byte :: Word8 -> Builder
+byte !b = Builder 1 (`poke` b)
+
+bytes :: ByteArrayAccess ba => ba -> Builder
+bytes bs = Builder (B.length bs) (B.copyByteArrayToPtr bs)
+
+zero :: Int -> Builder
+zero s = Builder s (\p -> memSet p 0 s)
