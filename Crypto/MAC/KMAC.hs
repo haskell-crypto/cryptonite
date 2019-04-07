@@ -38,11 +38,12 @@ import           Data.Memory.PtrMethods (memSet)
 
 -- cSHAKE
 
-cshakeInit :: forall a name string . (HashSHAKE a, ByteArrayAccess name, ByteArrayAccess string)
-           => name -> string -> H.Context a
-cshakeInit n s = H.Context $ B.allocAndFreeze c $ \(ptr :: Ptr (H.Context a)) -> do
+cshakeInit :: forall a name string prefix . (HashSHAKE a, ByteArrayAccess name, ByteArrayAccess string, ByteArrayAccess prefix)
+           => name -> string -> prefix -> H.Context a
+cshakeInit n s p = H.Context $ B.allocAndFreeze c $ \(ptr :: Ptr (H.Context a)) -> do
     hashInternalInit ptr
     B.withByteArray b $ \d -> hashInternalUpdate ptr d (fromIntegral $ B.length b)
+    B.withByteArray p $ \d -> hashInternalUpdate ptr d (fromIntegral $ B.length p)
   where
     c = hashInternalContextSize (undefined :: a)
     w = hashBlockSize (undefined :: a)
@@ -91,7 +92,7 @@ newtype Context a = Context (H.Context a)
 -- string and key.
 initialize :: forall a string key . (HashSHAKE a, ByteArrayAccess string, ByteArrayAccess key)
            => string -> key -> Context a
-initialize str key = Context $ cshakeUpdate (cshakeInit n str) p
+initialize str key = Context $ cshakeInit n str p
   where
     n = B.pack [75,77,65,67] :: B.Bytes  -- "KMAC"
     w = hashBlockSize (undefined :: a)
