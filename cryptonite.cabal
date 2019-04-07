@@ -8,7 +8,7 @@ Description:
     .
     * Hash: SHA1, SHA2, SHA3, SHAKE, MD2, MD4, MD5, Keccak, Skein, Ripemd, Tiger, Whirlpool, Blake2
     .
-    * MAC: HMAC, Poly1305
+    * MAC: HMAC, KMAC, Poly1305
     .
     * Asymmetric crypto: DSA, RSA, DH, ECDH, ECDSA, ECC, Curve25519, Curve448, Ed25519, Ed448
     .
@@ -126,6 +126,7 @@ Library
                      Crypto.MAC.CMAC
                      Crypto.MAC.Poly1305
                      Crypto.MAC.HMAC
+                     Crypto.MAC.KMAC
                      Crypto.Number.Basic
                      Crypto.Number.F2m
                      Crypto.Number.Generate
@@ -404,6 +405,7 @@ Test-Suite test-cryptonite
                      KAT_CMAC
                      KAT_HKDF
                      KAT_HMAC
+                     KAT_KMAC
                      KAT_MiyaguchiPreneel
                      KAT_PBKDF2
                      KAT_OTP

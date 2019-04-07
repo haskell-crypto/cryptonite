@@ -18,6 +18,7 @@ import qualified ChaChaPoly1305
 import qualified KAT_MiyaguchiPreneel
 import qualified KAT_CMAC
 import qualified KAT_HMAC
+import qualified KAT_KMAC
 import qualified KAT_HKDF
 import qualified KAT_Argon2
 import qualified KAT_PBKDF2
@@ -53,6 +54,7 @@ tests = testGroup "cryptonite"
         [ Poly1305.tests
         , KAT_CMAC.tests
         , KAT_HMAC.tests
+        , KAT_KMAC.tests
         ]
     , KAT_Curve25519.tests
     , KAT_Curve448.tests
