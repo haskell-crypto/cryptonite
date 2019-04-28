@@ -17,7 +17,19 @@ newtype P256Scalar = P256Scalar Integer
     deriving (Show,Eq,Ord)
 
 instance Arbitrary P256Scalar where
-    arbitrary = P256Scalar . getQAInteger <$> arbitrary
+    -- Cover the full range up to 2^256-1 except 0 and curveN.  To test edge
+    -- cases with arithmetic functions, some values close to 0, curveN and
+    -- 2^256 are given higher frequency.
+    arbitrary = P256Scalar <$> oneof
+        [ choose (1, w)
+        , choose (w + 1, curveN - w - 1)
+        , choose (curveN - w, curveN - 1)
+        , choose (curveN + 1, curveN + w)
+        , choose (curveN + w + 1, high - w - 1)
+        , choose (high - w, high - 1)
+        ]
+      where high = 2^(256 :: Int)
+            w    = 100
 
 curve  = ECC.getCurveByName ECC.SEC_p256r1
 curveN = ECC.ecc_n . ECC.common_curve $ curve
@@ -26,22 +38,21 @@ curveGen = ECC.ecc_g . ECC.common_curve $ curve
 pointP256ToECC :: P256.Point -> ECC.Point
 pointP256ToECC = uncurry ECC.Point . P256.pointToIntegers
 
+i2ospScalar :: Integer -> Bytes
+i2ospScalar i =
+    case i2ospOf 32 i of
+        Nothing -> error "invalid size of P256 scalar"
+        Just b  -> b
+
 unP256Scalar :: P256Scalar -> P256.Scalar
-unP256Scalar (P256Scalar r') =
-    let r = if r' == 0 then 0x2901 else (r' `mod` curveN)
-        rBytes = i2ospScalar r
+unP256Scalar (P256Scalar r) =
+    let rBytes = i2ospScalar r
      in case P256.scalarFromBinary rBytes of
                     CryptoFailed err    -> error ("cannot convert scalar: " ++ show err)
                     CryptoPassed scalar -> scalar
-  where
-    i2ospScalar :: Integer -> Bytes
-    i2ospScalar i =
-        case i2ospOf 32 i of
-            Nothing -> error "invalid size of P256 scalar"
-            Just b  -> b
 
 unP256 :: P256Scalar -> Integer
-unP256 (P256Scalar r') = if r' == 0 then 0x2901 else (r' `mod` curveN)
+unP256 (P256Scalar r) = r
 
 p256ScalarToInteger :: P256.Scalar -> Integer
 p256ScalarToInteger s = os2ip (P256.scalarToBinary s :: Bytes)
@@ -55,9 +66,8 @@ yR = 0x8d585cbb2e1327d75241a8a122d7620dc33b13315aa5c9d46d013011744ac264
 
 tests = testGroup "P256"
     [ testGroup "scalar"
-        [ testProperty "marshalling" $ \(QAInteger r') ->
-            let r = r' `mod` curveN
-                rBytes = i2ospScalar r
+        [ testProperty "marshalling" $ \(QAInteger r) ->
+            let rBytes = i2ospScalar r
              in case P256.scalarFromBinary rBytes of
                     CryptoFailed err    -> error (show err)
                     CryptoPassed scalar -> rBytes `propertyEq` P256.scalarToBinary scalar
@@ -66,14 +76,9 @@ tests = testGroup "P256"
                 r' = P256.scalarAdd (unP256Scalar r1) (unP256Scalar r2)
              in r `propertyEq` p256ScalarToInteger r'
         , testProperty "add0" $ \r ->
-            let v = unP256 r
+            let v = unP256 r `mod` curveN
                 v' = P256.scalarAdd (unP256Scalar r) P256.scalarZero
              in v `propertyEq` p256ScalarToInteger v'
-        , testProperty "add-n-1" $ \r ->
-            let nm1 = throwCryptoError $ P256.scalarFromInteger (curveN - 1)
-                v   = unP256 r
-                v'  = P256.scalarAdd (unP256Scalar r) nm1
-             in (((curveN - 1) + v) `mod` curveN) `propertyEq` p256ScalarToInteger v'
         , testProperty "sub" $ \r1 r2 ->
             let r = (unP256 r1 - unP256 r2) `mod` curveN
                 r' = P256.scalarSub (unP256Scalar r1) (unP256Scalar r2)
@@ -83,11 +88,10 @@ tests = testGroup "P256"
                     [ eqTest "r1-r2" r (p256ScalarToInteger r')
                     , eqTest "r2-r1" v (p256ScalarToInteger v')
                     ]
-        , testProperty "sub-n-1" $ \r ->
-            let nm1 = throwCryptoError $ P256.scalarFromInteger (curveN - 1)
-                v = unP256 r
-                v' = P256.scalarSub (unP256Scalar r) nm1
-             in ((v - (curveN - 1)) `mod` curveN) `propertyEq` p256ScalarToInteger v'
+        , testProperty "sub0" $ \r ->
+            let v = unP256 r `mod` curveN
+                v' = P256.scalarSub (unP256Scalar r) P256.scalarZero
+             in v `propertyEq` p256ScalarToInteger v'
         , testProperty "inv" $ \r' ->
             let inv  = inverseCoprimes (unP256 r') curveN
                 inv' = P256.scalarInv (unP256Scalar r')
@@ -133,7 +137,8 @@ tests = testGroup "P256"
             pe2   = ECC.pointMul curve (unP256 r2) curveGen
             pR    = P256.toPoint (P256.scalarAdd (unP256Scalar r1) (unP256Scalar r2))
             peR   = ECC.pointAdd curve pe1 pe2
-         in propertyHold [ eqTest "p256" pR (P256.pointAdd p1 p2)
+         in (unP256 r1 + unP256 r2) `mod` curveN /= 0 ==>
+            propertyHold [ eqTest "p256" pR (P256.pointAdd p1 p2)
                          , eqTest "ecc" peR (pointP256ToECC pR)
                          ]
 
@@ -142,9 +147,3 @@ tests = testGroup "P256"
             pe = ECC.pointMul curve (unP256 r) curveGen
             pR = P256.pointNegate p
          in ECC.pointNegate curve pe `propertyEq` (pointP256ToECC pR)
-
-    i2ospScalar :: Integer -> Bytes
-    i2ospScalar i =
-        case i2ospOf 32 i of
-            Nothing -> error "invalid size of P256 scalar"
-            Just b  -> b
