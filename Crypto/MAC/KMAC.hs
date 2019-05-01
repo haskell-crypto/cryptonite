@@ -58,10 +58,13 @@ cshakeUpdates :: (HashSHAKE a, ByteArrayAccess ba)
               => H.Context a -> [ba] -> H.Context a
 cshakeUpdates = H.hashUpdates
 
-cshakeFinalize :: forall a . HashSHAKE a => H.Context a -> Digest a
-cshakeFinalize !c =
+cshakeFinalize :: forall a suffix . (HashSHAKE a, ByteArrayAccess suffix)
+               => H.Context a -> suffix -> Digest a
+cshakeFinalize !c s =
     Digest $ B.allocAndFreeze (hashDigestSize (undefined :: a)) $ \dig -> do
-        ((!_) :: B.Bytes) <- B.copy c $ \(ctx :: Ptr (H.Context a)) ->
+        ((!_) :: B.Bytes) <- B.copy c $ \(ctx :: Ptr (H.Context a)) -> do
+            B.withByteArray s $ \d ->
+                hashInternalUpdate ctx d (fromIntegral $ B.length s)
             cshakeInternalFinalize ctx dig
         return ()
 
@@ -108,7 +111,7 @@ updates (Context ctx) = Context . cshakeUpdates ctx
 
 -- | Finalize a KMAC context and return the KMAC.
 finalize :: forall a . HashSHAKE a => Context a -> KMAC a
-finalize (Context ctx) = KMAC $ cshakeFinalize $ cshakeUpdate ctx suffix
+finalize (Context ctx) = KMAC $ cshakeFinalize ctx suffix
   where
     l = cshakeOutputLength (undefined :: a)
     suffix = builderAllocAndFreeze (rightEncode l) :: B.Bytes
