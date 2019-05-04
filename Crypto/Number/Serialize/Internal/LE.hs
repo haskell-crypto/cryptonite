@@ -68,7 +68,7 @@ os2ip ptr ptrSz
     | otherwise  = gmpImportIntegerLE ptrSz ptr `onGmpUnsupported` loop 0 (ptrSz-1) ptr
   where
     loop :: Integer -> Int -> Ptr Word8 -> IO Integer
-    loop !acc i p
+    loop !acc i !p
         | i < 0      = return acc
         | otherwise  = do
             w <- peekByteOff p i :: IO Word8
