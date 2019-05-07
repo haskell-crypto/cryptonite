@@ -31,7 +31,7 @@ i2osp :: Integer -> Ptr Word8 -> Int -> IO Int
 i2osp m ptr ptrSz
     | ptrSz <= 0 = return 0
     | m < 0      = return 0
-    | m == 0     = pokeByteOff ptr (sz-1) (0 :: Word8) >> return 1
+    | m == 0     = pokeByteOff ptr 0 (0 :: Word8) >> return 1
     | ptrSz < sz = return 0
     | otherwise  = fillPtr ptr sz m >> return sz
   where
