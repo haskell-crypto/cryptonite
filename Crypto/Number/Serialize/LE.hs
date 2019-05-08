@@ -35,6 +35,7 @@ i2osp m = B.allocAndFreeze sz (\p -> Internal.i2osp m p sz >> return ())
 -- | Just like 'i2osp', but takes an extra parameter for size.
 -- If the number is too big to fit in @len@ bytes, 'Nothing' is returned
 -- otherwise the number is padded with 0 to fit the @len@ required.
+{-# INLINABLE i2ospOf #-}
 i2ospOf :: B.ByteArray ba => Int -> Integer -> Maybe ba
 i2ospOf len m
     | len <= 0  = Nothing
