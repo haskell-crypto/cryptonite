@@ -1,6 +1,22 @@
 ## 0.26
 
+* Add Rabin cryptosystem (and variants)
+* Add bcrypt_pbkdf key derivation function
+* Optimize Blowfish implementation
+* Add KMAC (Keccak Message Authentication Code)
+* Add ECDSA sign/verify digest APIs
+* Hash algorithms with runtime output length
 * Update blake2 to latest upstream version
+* RSA-PSS with arbitrary key size
+* SHAKE with output length not divisible by 8
+* Add Read and Data instances for Digest type
+* Improve P256 scalar primitives
+* Fix hash truncation bug in DSA
+* Fix cost parsing for bcrypt
+* Fix ECC failures on arm64
+* Correction to PKCS#1 v1.5 padding
+* Use powModSecInteger when available
+* Drop GHC 7.8 and GHC 7.10 support, refer to pkg-guidelines
 
 ## 0.25
 
