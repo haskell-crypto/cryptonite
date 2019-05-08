@@ -7,7 +7,6 @@ import           Crypto.Error
 import qualified Crypto.ECC as ECC
 
 import           Data.ByteArray.Encoding
-import           Data.ByteString (ByteString)
 
 import Imports
 

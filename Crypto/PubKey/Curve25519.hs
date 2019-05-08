@@ -35,7 +35,6 @@ import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ScrubbedBytes, Bytes, withByteArray)
 import qualified Crypto.Internal.ByteArray as B
-import           Crypto.Error (CryptoFailable(..))
 import           Crypto.Random
 
 -- | A Curve25519 Secret key

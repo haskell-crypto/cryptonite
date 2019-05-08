@@ -28,7 +28,6 @@ import           Data.Bits
 import           Data.Data
 import           Data.Word (Word8, Word32)
 
-import           Data.Proxy (Proxy(..))
 import           GHC.TypeLits (Nat, KnownNat, type (+))
 import           Crypto.Internal.Nat
 

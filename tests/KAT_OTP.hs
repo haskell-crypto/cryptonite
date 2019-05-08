@@ -8,7 +8,6 @@ where
 
 import Crypto.Hash.Algorithms (SHA1(..), SHA256(..), SHA512(..))
 import Crypto.OTP
-import Data.ByteString (ByteString)
 import Imports
 
 -- | Test values from Appendix D of http://tools.ietf.org/html/rfc4226
