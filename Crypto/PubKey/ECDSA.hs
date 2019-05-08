@@ -37,8 +37,11 @@ module Crypto.PubKey.ECDSA
     , signatureToIntegers
     -- * Generation and verification
     , signWith
+    , signDigestWith
     , sign
+    , signDigest
     , verify
+    , verifyDigest
     ) where
 
 import           Control.Monad
@@ -162,11 +165,11 @@ toPublic :: EllipticCurveECDSA curve
          => proxy curve -> PrivateKey curve -> PublicKey curve
 toPublic = pointBaseSmul
 
--- | Sign message using the private key and an explicit k scalar.
-signWith :: (EllipticCurveECDSA curve, ByteArrayAccess msg, HashAlgorithm hash)
-         => proxy curve -> Scalar curve -> PrivateKey curve -> hash -> msg -> Maybe (Signature curve)
-signWith prx k d hashAlg msg = do
-    let z = tHash prx hashAlg msg
+-- | Sign digest using the private key and an explicit k scalar.
+signDigestWith :: (EllipticCurveECDSA curve, HashAlgorithm hash)
+               => proxy curve -> Scalar curve -> PrivateKey curve -> Digest hash -> Maybe (Signature curve)
+signDigestWith prx k d digest = do
+    let z = tHashDigest prx digest
         point = pointBaseSmul prx k
     r <- pointX prx point
     kInv <- scalarInv prx k
@@ -174,24 +177,34 @@ signWith prx k d hashAlg msg = do
     when (scalarIsZero prx r || scalarIsZero prx s) Nothing
     return $ Signature r s
 
+-- | Sign message using the private key and an explicit k scalar.
+signWith :: (EllipticCurveECDSA curve, ByteArrayAccess msg, HashAlgorithm hash)
+         => proxy curve -> Scalar curve -> PrivateKey curve -> hash -> msg -> Maybe (Signature curve)
+signWith prx k d hashAlg msg = signDigestWith prx k d (hashWith hashAlg msg)
+
+-- | Sign a digest using hash and private key.
+signDigest :: (EllipticCurveECDSA curve, MonadRandom m, HashAlgorithm hash)
+           => proxy curve -> PrivateKey curve -> Digest hash -> m (Signature curve)
+signDigest prx pk digest = do
+    k <- curveGenerateScalar prx
+    case signDigestWith prx k pk digest of
+        Nothing  -> signDigest prx pk digest
+        Just sig -> return sig
+
 -- | Sign a message using hash and private key.
 sign :: (EllipticCurveECDSA curve, MonadRandom m, ByteArrayAccess msg, HashAlgorithm hash)
      => proxy curve -> PrivateKey curve -> hash -> msg -> m (Signature curve)
-sign prx pk hashAlg msg = do
-    k <- curveGenerateScalar prx
-    case signWith prx k pk hashAlg msg of
-        Nothing  -> sign prx pk hashAlg msg
-        Just sig -> return sig
+sign prx pk hashAlg msg = signDigest prx pk (hashWith hashAlg msg)
 
--- | Verify a signature using hash and public key.
-verify :: (EllipticCurveECDSA curve, ByteArrayAccess msg, HashAlgorithm hash)
-       => proxy curve -> hash -> PublicKey curve -> Signature curve -> msg -> Bool
-verify prx hashAlg q (Signature r s) msg
+-- | Verify a digest using hash and public key.
+verifyDigest :: (EllipticCurveECDSA curve, HashAlgorithm hash)
+       => proxy curve -> PublicKey curve -> Signature curve -> Digest hash -> Bool
+verifyDigest prx q (Signature r s) digest
     | not (scalarIsValid prx r) = False
     | not (scalarIsValid prx s) = False
     | otherwise = maybe False (r ==) $ do
         w <- scalarInv prx s
-        let z  = tHash prx hashAlg msg
+        let z  = tHashDigest prx digest
             u1 = scalarMul prx z w
             u2 = scalarMul prx r w
             x  = pointsSmulVarTime prx u1 u2 q
@@ -199,13 +212,21 @@ verify prx hashAlg q (Signature r s) msg
     -- Note: precondition q /= PointO is not tested because we assume
     -- point decoding never decodes point at infinity.
 
--- | Truncate and hash.
-tHash :: (EllipticCurveECDSA curve, ByteArrayAccess msg, HashAlgorithm hash)
-      => proxy curve -> hash -> msg -> Scalar curve
-tHash prx hashAlg m =
+-- | Verify a signature using hash and public key.
+verify :: (EllipticCurveECDSA curve, ByteArrayAccess msg, HashAlgorithm hash)
+       => proxy curve -> hash -> PublicKey curve -> Signature curve -> msg -> Bool
+verify prx hashAlg q sig msg = verifyDigest prx q sig (hashWith hashAlg msg)
+
+-- | Truncate a digest based on curve order size.
+tHashDigest :: (EllipticCurveECDSA curve, HashAlgorithm hash)
+            => proxy curve -> Digest hash -> Scalar curve
+tHashDigest prx digest =
     throwCryptoError $ scalarFromInteger prx (if d > 0 then shiftR e d else e)
-  where e = os2ip $ hashWith hashAlg m
-        d = hashDigestSize hashAlg * 8 - curveOrderBits prx
+  where e = os2ip digest
+        d = hashDigestSize (getHashAlg digest) * 8 - curveOrderBits prx
+
+getHashAlg :: Digest hash -> hash
+getHashAlg _ = undefined
 
 
 ecScalarIsValid :: Simple.Curve c => proxy c -> Simple.Scalar c -> Bool
