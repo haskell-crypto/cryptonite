@@ -15,6 +15,7 @@
 -- Signature operations with P-384 and P-521 may leak the private key.
 --
 -- Signature verification should be safe for all curves.
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -50,15 +51,19 @@ import           Crypto.ECC
 import qualified Crypto.ECC.Simple.Types as Simple
 import           Crypto.Error
 import           Crypto.Hash
+import           Crypto.Hash.Types
 import           Crypto.Internal.ByteArray (ByteArray, ByteArrayAccess)
 import           Crypto.Internal.Imports
 import           Crypto.Number.ModArithmetic (inverseFermat)
-import           Crypto.Number.Serialize
 import qualified Crypto.PubKey.ECC.P256 as P256
 import           Crypto.Random.Types
 
-import           Data.Bits (shiftR)
+import           Data.Bits
+import qualified Data.ByteArray as B
 import           Data.Data
+
+import           Foreign.Ptr (Ptr)
+import           Foreign.Storable (peekByteOff, pokeByteOff)
 
 -- | Represent a ECDSA signature namely R and S.
 data Signature curve = Signature
@@ -220,13 +225,28 @@ verify prx hashAlg q sig msg = verifyDigest prx q sig (hashWith hashAlg msg)
 -- | Truncate a digest based on curve order size.
 tHashDigest :: (EllipticCurveECDSA curve, HashAlgorithm hash)
             => proxy curve -> Digest hash -> Scalar curve
-tHashDigest prx digest =
-    throwCryptoError $ scalarFromInteger prx (if d > 0 then shiftR e d else e)
-  where e = os2ip digest
-        d = hashDigestSize (getHashAlg digest) * 8 - curveOrderBits prx
+tHashDigest prx (Digest digest) = throwCryptoError $ decodeScalar prx encoded
+  where m      = curveOrderBits prx
+        d      = m - B.length digest * 8
+        (n, r) = m `divMod` 8
+        n'     = if r > 0 then succ n else n
 
-getHashAlg :: Digest hash -> hash
-getHashAlg _ = undefined
+        encoded
+            | d >  0    = B.zero (n' - B.length digest) `B.append` digest
+            | d == 0    = digest
+            | r == 0    = B.take n digest
+            | otherwise = shiftBytes digest
+
+        shiftBytes bs = B.allocAndFreeze n' $ \dst ->
+            B.withByteArray bs $ \src -> go dst src 0 0
+
+        go :: Ptr Word8 -> Ptr Word8 -> Word8 -> Int -> IO ()
+        go dst src !a i
+            | i >= n'   = return ()
+            | otherwise = do
+                b <- peekByteOff src i
+                pokeByteOff dst i (unsafeShiftR b (8 - r) .|. unsafeShiftL a r)
+                go dst src b (succ i)
 
 
 ecScalarIsValid :: Simple.Curve c => proxy c -> Simple.Scalar c -> Bool
