@@ -35,6 +35,7 @@
 #include <string.h>
 #include <cryptonite_aes.h>
 #include <cryptonite_cpu.h>
+#include <aes/gf.h>
 #include <aes/x86ni.h>
 #include <aes/block128.h>
 
@@ -157,28 +158,6 @@ static __m128i gfmulx(__m128i v)
 	return v;
 }
 
-static void unopt_gf_mul(block128 *a, block128 *b)
-{
-	uint64_t a0, a1, v0, v1;
-	int i, j;
-
-	a0 = a1 = 0;
-	v0 = cpu_to_be64(a->q[0]);
-	v1 = cpu_to_be64(a->q[1]);
-
-	for (i = 0; i < 16; i++)
-		for (j = 0x80; j != 0; j >>= 1) {
-			uint8_t x = b->b[i] & j;
-			a0 ^= x ? v0 : 0;
-			a1 ^= x ? v1 : 0;
-			x = (uint8_t) v1 & 1;
-			v1 = (v1 >> 1) | (v0 << 63);
-			v0 = (v0 >> 1) ^ (x ? (0xe1ULL << 56) : 0);
-		}
-	a->q[0] = cpu_to_be64(a0);
-	a->q[1] = cpu_to_be64(a1);
-}
-
 static __m128i ghash_add(__m128i tag, __m128i h, __m128i m)
 {
 	aes_block _t, _h;
@@ -186,7 +165,7 @@ static __m128i ghash_add(__m128i tag, __m128i h, __m128i m)
 
 	_mm_store_si128((__m128i *) &_t, tag);
 	_mm_store_si128((__m128i *) &_h, h);
-	unopt_gf_mul(&_t, &_h);
+	cryptonite_gf_mul(&_t, &_h);
 	tag = _mm_load_si128((__m128i *) &_t);
 	return tag;
 }
