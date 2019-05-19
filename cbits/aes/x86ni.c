@@ -158,16 +158,101 @@ static __m128i gfmulx(__m128i v)
 	return v;
 }
 
-static __m128i ghash_add(__m128i tag, __m128i h, __m128i m)
+static __m128i gfmul_generic(__m128i tag, __m128i h)
 {
 	aes_block _t, _h;
-	tag = _mm_xor_si128(tag, m);
-
 	_mm_store_si128((__m128i *) &_t, tag);
 	_mm_store_si128((__m128i *) &_h, h);
-	cryptonite_gf_mul(&_t, &_h);
+	cryptonite_aes_generic_gf_mul(&_t, &_h);
 	tag = _mm_load_si128((__m128i *) &_t);
 	return tag;
+}
+
+#ifdef WITH_PCLMUL
+
+__m128i (*gfmul_branch_ptr)(__m128i a, __m128i b) = gfmul_generic;
+#define gfmul(a,b) ((*gfmul_branch_ptr)(a,b))
+
+/* See Intel carry-less-multiplication-instruction-in-gcm-mode-paper.pdf
+ *
+ * Adapted from figure 5, with additional byte swapping so that interface
+ * is simimar to cryptonite_aes_generic_gf_mul.
+ */
+static __m128i gfmul_pclmuldq(__m128i a, __m128i b)
+{
+	__m128i tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9;
+	__m128i bswap_mask = _mm_set_epi8(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15);
+
+	a = _mm_shuffle_epi8(a, bswap_mask);
+	b = _mm_shuffle_epi8(b, bswap_mask);
+
+	tmp3 = _mm_clmulepi64_si128(a, b, 0x00);
+	tmp4 = _mm_clmulepi64_si128(a, b, 0x10);
+	tmp5 = _mm_clmulepi64_si128(a, b, 0x01);
+	tmp6 = _mm_clmulepi64_si128(a, b, 0x11);
+
+	tmp4 = _mm_xor_si128(tmp4, tmp5);
+	tmp5 = _mm_slli_si128(tmp4, 8);
+	tmp4 = _mm_srli_si128(tmp4, 8);
+	tmp3 = _mm_xor_si128(tmp3, tmp5);
+	tmp6 = _mm_xor_si128(tmp6, tmp4);
+
+	tmp7 = _mm_srli_epi32(tmp3, 31);
+	tmp8 = _mm_srli_epi32(tmp6, 31);
+	tmp3 = _mm_slli_epi32(tmp3, 1);
+	tmp6 = _mm_slli_epi32(tmp6, 1);
+
+	tmp9 = _mm_srli_si128(tmp7, 12);
+	tmp8 = _mm_slli_si128(tmp8, 4);
+	tmp7 = _mm_slli_si128(tmp7, 4);
+	tmp3 = _mm_or_si128(tmp3, tmp7);
+	tmp6 = _mm_or_si128(tmp6, tmp8);
+	tmp6 = _mm_or_si128(tmp6, tmp9);
+
+	tmp7 = _mm_slli_epi32(tmp3, 31);
+	tmp8 = _mm_slli_epi32(tmp3, 30);
+	tmp9 = _mm_slli_epi32(tmp3, 25);
+
+	tmp7 = _mm_xor_si128(tmp7, tmp8);
+	tmp7 = _mm_xor_si128(tmp7, tmp9);
+	tmp8 = _mm_srli_si128(tmp7, 4);
+	tmp7 = _mm_slli_si128(tmp7, 12);
+	tmp3 = _mm_xor_si128(tmp3, tmp7);
+
+	tmp2 = _mm_srli_epi32(tmp3, 1);
+	tmp4 = _mm_srli_epi32(tmp3, 2);
+	tmp5 = _mm_srli_epi32(tmp3, 7);
+	tmp2 = _mm_xor_si128(tmp2, tmp4);
+	tmp2 = _mm_xor_si128(tmp2, tmp5);
+	tmp2 = _mm_xor_si128(tmp2, tmp8);
+	tmp3 = _mm_xor_si128(tmp3, tmp2);
+	tmp6 = _mm_xor_si128(tmp6, tmp3);
+
+	return _mm_shuffle_epi8(tmp6, bswap_mask);
+}
+
+void cryptonite_aesni_gf_mul(block128 *a, block128 *b)
+{
+	__m128i _a, _b, _c;
+	_a = _mm_loadu_si128((__m128i *) a);
+	_b = _mm_loadu_si128((__m128i *) b);
+	_c = gfmul_pclmuldq(_a, _b);
+	_mm_storeu_si128((__m128i *) a, _c);
+}
+
+void cryptonite_aesni_init_pclmul()
+{
+	gfmul_branch_ptr = gfmul_pclmuldq;
+}
+
+#else
+#define gfmul(a,b) (gfmul_generic(a,b))
+#endif
+
+static inline __m128i ghash_add(__m128i tag, __m128i h, __m128i m)
+{
+	tag = _mm_xor_si128(tag, m);
+	return gfmul(tag, h);
 }
 
 #define PRELOAD_ENC_KEYS128(k) \

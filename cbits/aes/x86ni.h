@@ -72,7 +72,10 @@ void cryptonite_aesni_encrypt_xts256(aes_block *out, aes_key *key1, aes_key *key
 void cryptonite_aesni_gcm_encrypt128(uint8_t *out, aes_gcm *gcm, aes_key *key, uint8_t *in, uint32_t length);
 void cryptonite_aesni_gcm_encrypt256(uint8_t *out, aes_gcm *gcm, aes_key *key, uint8_t *in, uint32_t length);
 
-void gf_mul_x86ni(block128 *res, block128 *a_, block128 *b_);
+#ifdef WITH_PCLMUL
+void cryptonite_aesni_init_pclmul();
+void cryptonite_aesni_gf_mul(block128 *a, block128 *b);
+#endif
 
 #endif
 
