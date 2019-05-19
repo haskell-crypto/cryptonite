@@ -4,9 +4,11 @@ module Number (tests) where
 import Imports
 
 import Data.ByteArray (Bytes)
+import qualified Data.ByteArray as B
 import Crypto.Number.Basic
 import Crypto.Number.Generate
-import Crypto.Number.Serialize
+import qualified Crypto.Number.Serialize    as BE
+import qualified Crypto.Number.Serialize.LE as LE
 import Crypto.Number.Prime
 import Data.Bits
 
@@ -50,14 +52,24 @@ tests = testGroup "number"
             bits = 6 + baseBits
             prime = withTestDRG testDRG $ generateSafePrime bits
          in bits == numBits prime
-    , testProperty "marshalling" $ \qaInt ->
-        getQAInteger qaInt == os2ip (i2osp (getQAInteger qaInt) :: Bytes)
     , testProperty "as-power-of-2-and-odd" $ \n ->
         let (e, a1) = asPowerOf2AndOdd n
          in n == (2^e)*a1
+    , testProperty "marshalling-be" $ \qaInt ->
+        getQAInteger qaInt == BE.os2ip (BE.i2osp (getQAInteger qaInt) :: Bytes)
+    , testProperty "marshalling-le" $ \qaInt ->
+        getQAInteger qaInt == LE.os2ip (LE.i2osp (getQAInteger qaInt) :: Bytes)
+    , testProperty "be-rev-le" $ \qaInt ->
+        getQAInteger qaInt == LE.os2ip (B.reverse (BE.i2osp (getQAInteger qaInt) :: Bytes))
+    , testProperty "be-rev-le-40" $ \qaInt ->
+        getQAInteger qaInt == LE.os2ip (B.reverse (BE.i2ospOf_ 40 (getQAInteger qaInt) :: Bytes))
+    , testProperty "le-rev-be" $ \qaInt ->
+        getQAInteger qaInt == BE.os2ip (B.reverse (LE.i2osp (getQAInteger qaInt) :: Bytes))
+    , testProperty "le-rev-be-40" $ \qaInt ->
+        getQAInteger qaInt == BE.os2ip (B.reverse (LE.i2ospOf_ 40 (getQAInteger qaInt) :: Bytes))
     , testGroup "marshalling-kat-to-bytearray" $ map toSerializationKat $ zip [katZero..] serializationVectors
     , testGroup "marshalling-kat-to-integer" $ map toSerializationKatInteger $ zip [katZero..] serializationVectors
     ]
   where
-    toSerializationKat (i, (sz, n, ba)) = testCase (show i) (ba @=? i2ospOf_ sz n)
-    toSerializationKatInteger (i, (_, n, ba)) = testCase (show i) (n @=? os2ip ba)
+    toSerializationKat (i, (sz, n, ba)) = testCase (show i) (ba @=? BE.i2ospOf_ sz n)
+    toSerializationKatInteger (i, (_, n, ba)) = testCase (show i) (n @=? BE.os2ip ba)

@@ -2,15 +2,15 @@
 compiler: ghc-8.0 lts-9.21
 compiler: ghc-8.2 lts-11.22
 compiler: ghc-8.4 lts-12.26
-compiler: ghc-8.6 lts-13.3
+compiler: ghc-8.6 lts-13.21
 
 # options
 # option: alias x=y z=v
 option: gaugedeps extradep=gauge-0.2.1
-option: basementmin extradep=basement-0.0.6 extradep=foundation-0.0.19 extradep=memory-0.14.14
+option: basementmin extradep=basement-0.0.8 extradep=memory-0.14.18
 
 # builds
-build: ghc-8.2
+build: ghc-8.2 basementmin
 build: ghc-8.0 basementmin gaugedeps
 build: ghc-8.0 basementmin gaugedeps os=osx
 build: ghc-8.4
