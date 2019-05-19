@@ -81,6 +81,8 @@ enum {
 	/* ccm */
 	ENCRYPT_CCM_128, ENCRYPT_CCM_192, ENCRYPT_CCM_256,
 	DECRYPT_CCM_128, DECRYPT_CCM_192, DECRYPT_CCM_256,
+	/* ghash */
+	GHASH_GF_MUL,
 };
 
 void *cryptonite_aes_branch_table[] = {
@@ -141,6 +143,8 @@ void *cryptonite_aes_branch_table[] = {
 	[DECRYPT_CCM_128]   = cryptonite_aes_generic_ccm_decrypt,
 	[DECRYPT_CCM_192]   = cryptonite_aes_generic_ccm_decrypt,
 	[DECRYPT_CCM_256]   = cryptonite_aes_generic_ccm_decrypt,
+	/* GHASH */
+	[GHASH_GF_MUL]      = cryptonite_aes_generic_gf_mul,
 };
 
 typedef void (*init_f)(aes_key *, uint8_t *, uint8_t);
@@ -152,6 +156,7 @@ typedef void (*gcm_crypt_f)(uint8_t *output, aes_gcm *gcm, aes_key *key, uint8_t
 typedef void (*ocb_crypt_f)(uint8_t *output, aes_ocb *ocb, aes_key *key, uint8_t *input, uint32_t length);
 typedef void (*ccm_crypt_f)(uint8_t *output, aes_ccm *ccm, aes_key *key, uint8_t *input, uint32_t length);
 typedef void (*block_f)(aes_block *output, aes_key *key, aes_block *input);
+typedef void (*gf_mul_f)(aes_block *a, aes_block *b);
 
 #ifdef WITH_AESNI
 #define GET_INIT(strength) \
@@ -186,6 +191,8 @@ typedef void (*block_f)(aes_block *output, aes_key *key, aes_block *input);
 	(((block_f) (cryptonite_aes_branch_table[ENCRYPT_BLOCK_128 + k->strength]))(o,k,i))
 #define cryptonite_aes_decrypt_block(o,k,i) \
 	(((block_f) (cryptonite_aes_branch_table[DECRYPT_BLOCK_128 + k->strength]))(o,k,i))
+#define cryptonite_gf_mul(a,b) \
+	(((gf_mul_f) (cryptonite_aes_branch_table[GHASH_GF_MUL]))(a,b))
 #else
 #define GET_INIT(strenght) cryptonite_aes_generic_init
 #define GET_ECB_ENCRYPT(strength) cryptonite_aes_generic_encrypt_ecb
@@ -203,6 +210,7 @@ typedef void (*block_f)(aes_block *output, aes_key *key, aes_block *input);
 #define GET_CCM_DECRYPT(strength) cryptonite_aes_generic_ccm_decrypt
 #define cryptonite_aes_encrypt_block(o,k,i) cryptonite_aes_generic_encrypt_block(o,k,i)
 #define cryptonite_aes_decrypt_block(o,k,i) cryptonite_aes_generic_decrypt_block(o,k,i)
+#define cryptonite_gf_mul(a,b) cryptonite_aes_generic_gf_mul(a,b)
 #endif
 
 #if defined(ARCH_X86) && defined(WITH_AESNI)
@@ -241,6 +249,13 @@ static void initialize_table_ni(int aesni, int pclmul)
 	cryptonite_aes_branch_table[ENCRYPT_OCB_128] = cryptonite_aesni_ocb_encrypt128;
 	cryptonite_aes_branch_table[ENCRYPT_OCB_256] = cryptonite_aesni_ocb_encrypt256;
 	*/
+#ifdef WITH_PCLMUL
+	if (!pclmul)
+		return;
+	/* GHASH */
+	cryptonite_aes_branch_table[GHASH_GF_MUL]    = cryptonite_aesni_gf_mul;
+	cryptonite_aesni_init_pclmul();
+#endif
 }
 #endif
 
@@ -761,9 +776,9 @@ void cryptonite_aes_generic_encrypt_xts(aes_block *output, aes_key *k1, aes_key 
 
 	/* TO OPTIMISE: this is really inefficient way to do that */
 	while (spoint-- > 0)
-		cryptonite_gf_mulx(&tweak);
+		cryptonite_aes_generic_gf_mulx(&tweak);
 
-	for ( ; nb_blocks-- > 0; input++, output++, cryptonite_gf_mulx(&tweak)) {
+	for ( ; nb_blocks-- > 0; input++, output++, cryptonite_aes_generic_gf_mulx(&tweak)) {
 		block128_vxor(&block, input, &tweak);
 		cryptonite_aes_encrypt_block(&block, k1, &block);
 		block128_vxor(output, &block, &tweak);
@@ -781,9 +796,9 @@ void cryptonite_aes_generic_decrypt_xts(aes_block *output, aes_key *k1, aes_key 
 
 	/* TO OPTIMISE: this is really inefficient way to do that */
 	while (spoint-- > 0)
-		cryptonite_gf_mulx(&tweak);
+		cryptonite_aes_generic_gf_mulx(&tweak);
 
-	for ( ; nb_blocks-- > 0; input++, output++, cryptonite_gf_mulx(&tweak)) {
+	for ( ; nb_blocks-- > 0; input++, output++, cryptonite_aes_generic_gf_mulx(&tweak)) {
 		block128_vxor(&block, input, &tweak);
 		cryptonite_aes_decrypt_block(&block, k1, &block);
 		block128_vxor(output, &block, &tweak);

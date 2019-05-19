@@ -32,7 +32,7 @@
 
 #include "aes/block128.h"
 
-void cryptonite_gf_mul(block128 *a, block128 *b);
-void cryptonite_gf_mulx(block128 *a);
+void cryptonite_aes_generic_gf_mul(block128 *a, block128 *b);
+void cryptonite_aes_generic_gf_mulx(block128 *a);
 
 #endif
