@@ -162,14 +162,27 @@ benchBlockCipher =
         iv16 = maybe (error "iv size 16") id $ makeIV key16
 
 benchAE =
-    [ bench "ChaChaPoly1305" $ nf (run key32) (input64, input1024)
+    [ bench "ChaChaPoly1305" $ nf (cp key32) (input64, input1024)
+    , bench "AES-GCM" $ nf (gcm key32) (input64, input1024)
+    , bench "AES-CCM" $ nf (ccm key32) (input64, input1024)
     ]
-  where run k (ini, plain) =
+  where cp k (ini, plain) =
             let iniState            = throwCryptoError $ CP.initialize k (throwCryptoError $ CP.nonce12 nonce12)
                 afterAAD            = CP.finalizeAAD (CP.appendAAD ini iniState)
                 (out, afterEncrypt) = CP.encrypt plain afterAAD
                 outtag              = CP.finalize afterEncrypt
-             in (out, outtag)
+             in (outtag, out)
+
+        gcm k (ini, plain) =
+            let ctx = throwCryptoError (cipherInit k) :: AES256
+                state = throwCryptoError $ aeadInit AEAD_GCM ctx nonce12
+             in aeadSimpleEncrypt state ini plain 16
+
+        ccm k (ini, plain) =
+            let ctx = throwCryptoError (cipherInit k) :: AES256
+                mode = AEAD_CCM 1024 CCM_M16 CCM_L3
+                state = throwCryptoError $ aeadInit mode ctx nonce12
+             in aeadSimpleEncrypt state ini plain 16
 
         input64 = B.replicate 64 0
         input1024 = B.replicate 1024 0

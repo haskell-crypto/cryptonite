@@ -22,6 +22,7 @@ module Crypto.Cipher.Types.Base
 import           Data.Word
 import           Crypto.Internal.ByteArray (Bytes, ByteArrayAccess, ByteArray)
 import qualified Crypto.Internal.ByteArray as B
+import           Crypto.Internal.DeepSeq
 import           Crypto.Error
 
 -- | Different specifier for key size in bytes
@@ -36,7 +37,7 @@ type DataUnitOffset = Word32
 
 -- | Authentication Tag for AE cipher mode
 newtype AuthTag = AuthTag { unAuthTag :: Bytes }
-    deriving (Show, ByteArrayAccess)
+    deriving (Show, ByteArrayAccess, NFData)
 
 instance Eq AuthTag where
     (AuthTag a) == (AuthTag b) = B.constEq a b
