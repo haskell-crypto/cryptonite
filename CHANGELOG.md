@@ -17,6 +17,8 @@
 * Correction to PKCS#1 v1.5 padding
 * Use powModSecInteger when available
 * Drop GHC 7.8 and GHC 7.10 support, refer to pkg-guidelines
+* Optimise GCM mode
+* Add little endian serialization of integer
 
 ## 0.25
 

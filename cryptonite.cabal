@@ -1,5 +1,5 @@
 Name:                cryptonite
-version:             0.25
+version:             0.26
 Synopsis:            Cryptography Primitives sink
 Description:
     A repository of cryptographic primitives.
@@ -35,7 +35,7 @@ Stability:           experimental
 Build-Type:          Simple
 Homepage:            https://github.com/haskell-crypto/cryptonite
 Bug-reports:         https://github.com/haskell-crypto/cryptonite/issues
-Cabal-Version:       >=1.18
+Cabal-Version:       1.18
 tested-with:         GHC==8.6.5, GHC==8.4.4, GHC==8.2.2, GHC==8.0.2
 extra-doc-files:     README.md CHANGELOG.md
 extra-source-files:  cbits/*.h
@@ -432,7 +432,7 @@ Test-Suite test-cryptonite
                      Salsa
                      Utils
                      XSalsa
-  Build-Depends:     base
+  Build-Depends:     base >= 0 && < 10
                    , bytestring
                    , memory
                    , tasty
