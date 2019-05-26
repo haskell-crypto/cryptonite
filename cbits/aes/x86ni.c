@@ -180,7 +180,7 @@ __m128i (*gfmul_branch_ptr)(__m128i a, __m128i b) = gfmul_generic;
  */
 static __m128i gfmul_pclmuldq(__m128i a, __m128i b)
 {
-	__m128i tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9;
+	__m128i tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9;
 	__m128i bswap_mask = _mm_set_epi8(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15);
 
 	a = _mm_shuffle_epi8(a, bswap_mask);
