@@ -156,7 +156,7 @@ typedef void (*gcm_crypt_f)(uint8_t *output, aes_gcm *gcm, aes_key *key, uint8_t
 typedef void (*ocb_crypt_f)(uint8_t *output, aes_ocb *ocb, aes_key *key, uint8_t *input, uint32_t length);
 typedef void (*ccm_crypt_f)(uint8_t *output, aes_ccm *ccm, aes_key *key, uint8_t *input, uint32_t length);
 typedef void (*block_f)(aes_block *output, aes_key *key, aes_block *input);
-typedef void (*gf_mul_f)(aes_block *a, aes_block *b);
+typedef void (*gf_mul_f)(aes_block *a, const aes_block *b);
 
 #ifdef WITH_AESNI
 #define GET_INIT(strength) \

@@ -39,7 +39,7 @@
  * to speed up the multiplication.
  * TODO: optimise with tables
  */
-void cryptonite_aes_generic_gf_mul(block128 *a, block128 *b)
+void cryptonite_aes_generic_gf_mul(block128 *a, const block128 *b)
 {
 	uint64_t a0, a1, v0, v1;
 	int i, j;

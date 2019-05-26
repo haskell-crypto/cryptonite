@@ -73,8 +73,8 @@ void cryptonite_aesni_gcm_encrypt128(uint8_t *out, aes_gcm *gcm, aes_key *key, u
 void cryptonite_aesni_gcm_encrypt256(uint8_t *out, aes_gcm *gcm, aes_key *key, uint8_t *in, uint32_t length);
 
 #ifdef WITH_PCLMUL
-void cryptonite_aesni_init_pclmul();
-void cryptonite_aesni_gf_mul(block128 *a, block128 *b);
+void cryptonite_aesni_init_pclmul(void);
+void cryptonite_aesni_gf_mul(block128 *a, const block128 *b);
 #endif
 
 #endif

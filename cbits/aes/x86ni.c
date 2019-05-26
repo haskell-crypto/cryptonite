@@ -231,7 +231,7 @@ static __m128i gfmul_pclmuldq(__m128i a, __m128i b)
 	return _mm_shuffle_epi8(tmp6, bswap_mask);
 }
 
-void cryptonite_aesni_gf_mul(block128 *a, block128 *b)
+void cryptonite_aesni_gf_mul(block128 *a, const block128 *b)
 {
 	__m128i _a, _b, _c;
 	_a = _mm_loadu_si128((__m128i *) a);
@@ -240,7 +240,7 @@ void cryptonite_aesni_gf_mul(block128 *a, block128 *b)
 	_mm_storeu_si128((__m128i *) a, _c);
 }
 
-void cryptonite_aesni_init_pclmul()
+void cryptonite_aesni_init_pclmul(void)
 {
 	gfmul_branch_ptr = gfmul_pclmuldq;
 }
