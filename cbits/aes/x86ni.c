@@ -158,33 +158,32 @@ static __m128i gfmulx(__m128i v)
 	return v;
 }
 
-static __m128i gfmul_generic(__m128i tag, __m128i h)
+static __m128i gfmul_generic(__m128i tag, const table_4bit htable)
 {
-	aes_block _t, _h;
+	aes_block _t;
 	_mm_store_si128((__m128i *) &_t, tag);
-	_mm_store_si128((__m128i *) &_h, h);
-	cryptonite_aes_generic_gf_mul(&_t, &_h);
+	cryptonite_aes_generic_gf_mul(&_t, htable);
 	tag = _mm_load_si128((__m128i *) &_t);
 	return tag;
 }
 
 #ifdef WITH_PCLMUL
 
-__m128i (*gfmul_branch_ptr)(__m128i a, __m128i b) = gfmul_generic;
-#define gfmul(a,b) ((*gfmul_branch_ptr)(a,b))
+__m128i (*gfmul_branch_ptr)(__m128i a, const table_4bit t) = gfmul_generic;
+#define gfmul(a,t) ((*gfmul_branch_ptr)(a,t))
 
 /* See Intel carry-less-multiplication-instruction-in-gcm-mode-paper.pdf
  *
  * Adapted from figure 5, with additional byte swapping so that interface
  * is simimar to cryptonite_aes_generic_gf_mul.
  */
-static __m128i gfmul_pclmuldq(__m128i a, __m128i b)
+static __m128i gfmul_pclmuldq(__m128i a, const table_4bit htable)
 {
-	__m128i tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9;
+	__m128i b, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9;
 	__m128i bswap_mask = _mm_set_epi8(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15);
 
 	a = _mm_shuffle_epi8(a, bswap_mask);
-	b = _mm_shuffle_epi8(b, bswap_mask);
+	b = _mm_loadu_si128((__m128i *) htable);
 
 	tmp3 = _mm_clmulepi64_si128(a, b, 0x00);
 	tmp4 = _mm_clmulepi64_si128(a, b, 0x10);
@@ -231,13 +230,22 @@ static __m128i gfmul_pclmuldq(__m128i a, __m128i b)
 	return _mm_shuffle_epi8(tmp6, bswap_mask);
 }
 
-void cryptonite_aesni_gf_mul(block128 *a, const block128 *b)
+void cryptonite_aesni_hinit_pclmul(table_4bit htable, const block128 *h)
 {
-	__m128i _a, _b, _c;
+	/* When pclmul is active we don't need to fill the table.  Instead we just
+	 * store H at index 0.  It is written in reverse order, so function
+	 * gfmul_pclmuldq will not byte-swap this value.
+	 */
+	htable->q[0] = bitfn_swap64(h->q[1]);
+	htable->q[1] = bitfn_swap64(h->q[0]);
+}
+
+void cryptonite_aesni_gf_mul_pclmul(block128 *a, const table_4bit htable)
+{
+	__m128i _a, _b;
 	_a = _mm_loadu_si128((__m128i *) a);
-	_b = _mm_loadu_si128((__m128i *) b);
-	_c = gfmul_pclmuldq(_a, _b);
-	_mm_storeu_si128((__m128i *) a, _c);
+	_b = gfmul_pclmuldq(_a, htable);
+	_mm_storeu_si128((__m128i *) a, _b);
 }
 
 void cryptonite_aesni_init_pclmul(void)
@@ -246,13 +254,13 @@ void cryptonite_aesni_init_pclmul(void)
 }
 
 #else
-#define gfmul(a,b) (gfmul_generic(a,b))
+#define gfmul(a,t) (gfmul_generic(a,t))
 #endif
 
-static inline __m128i ghash_add(__m128i tag, __m128i h, __m128i m)
+static inline __m128i ghash_add(__m128i tag, const table_4bit htable, __m128i m)
 {
 	tag = _mm_xor_si128(tag, m);
-	return gfmul(tag, h);
+	return gfmul(tag, htable);
 }
 
 #define PRELOAD_ENC_KEYS128(k) \

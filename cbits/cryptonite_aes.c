@@ -82,7 +82,7 @@ enum {
 	ENCRYPT_CCM_128, ENCRYPT_CCM_192, ENCRYPT_CCM_256,
 	DECRYPT_CCM_128, DECRYPT_CCM_192, DECRYPT_CCM_256,
 	/* ghash */
-	GHASH_GF_MUL,
+	GHASH_HINIT, GHASH_GF_MUL,
 };
 
 void *cryptonite_aes_branch_table[] = {
@@ -144,6 +144,7 @@ void *cryptonite_aes_branch_table[] = {
 	[DECRYPT_CCM_192]   = cryptonite_aes_generic_ccm_decrypt,
 	[DECRYPT_CCM_256]   = cryptonite_aes_generic_ccm_decrypt,
 	/* GHASH */
+	[GHASH_HINIT]       = cryptonite_aes_generic_hinit,
 	[GHASH_GF_MUL]      = cryptonite_aes_generic_gf_mul,
 };
 
@@ -156,7 +157,8 @@ typedef void (*gcm_crypt_f)(uint8_t *output, aes_gcm *gcm, aes_key *key, uint8_t
 typedef void (*ocb_crypt_f)(uint8_t *output, aes_ocb *ocb, aes_key *key, uint8_t *input, uint32_t length);
 typedef void (*ccm_crypt_f)(uint8_t *output, aes_ccm *ccm, aes_key *key, uint8_t *input, uint32_t length);
 typedef void (*block_f)(aes_block *output, aes_key *key, aes_block *input);
-typedef void (*gf_mul_f)(aes_block *a, const aes_block *b);
+typedef void (*hinit_f)(table_4bit htable, const block128 *h);
+typedef void (*gf_mul_f)(block128 *a, const table_4bit htable);
 
 #ifdef WITH_AESNI
 #define GET_INIT(strength) \
@@ -191,8 +193,10 @@ typedef void (*gf_mul_f)(aes_block *a, const aes_block *b);
 	(((block_f) (cryptonite_aes_branch_table[ENCRYPT_BLOCK_128 + k->strength]))(o,k,i))
 #define cryptonite_aes_decrypt_block(o,k,i) \
 	(((block_f) (cryptonite_aes_branch_table[DECRYPT_BLOCK_128 + k->strength]))(o,k,i))
-#define cryptonite_gf_mul(a,b) \
-	(((gf_mul_f) (cryptonite_aes_branch_table[GHASH_GF_MUL]))(a,b))
+#define cryptonite_hinit(t,h) \
+	(((hinit_f) (cryptonite_aes_branch_table[GHASH_HINIT]))(t,h))
+#define cryptonite_gf_mul(a,t) \
+	(((gf_mul_f) (cryptonite_aes_branch_table[GHASH_GF_MUL]))(a,t))
 #else
 #define GET_INIT(strenght) cryptonite_aes_generic_init
 #define GET_ECB_ENCRYPT(strength) cryptonite_aes_generic_encrypt_ecb
@@ -210,7 +214,8 @@ typedef void (*gf_mul_f)(aes_block *a, const aes_block *b);
 #define GET_CCM_DECRYPT(strength) cryptonite_aes_generic_ccm_decrypt
 #define cryptonite_aes_encrypt_block(o,k,i) cryptonite_aes_generic_encrypt_block(o,k,i)
 #define cryptonite_aes_decrypt_block(o,k,i) cryptonite_aes_generic_decrypt_block(o,k,i)
-#define cryptonite_gf_mul(a,b) cryptonite_aes_generic_gf_mul(a,b)
+#define cryptonite_hinit(t,h) cryptonite_aes_generic_hinit(t,h)
+#define cryptonite_gf_mul(a,t) cryptonite_aes_generic_gf_mul(a,t)
 #endif
 
 #if defined(ARCH_X86) && defined(WITH_AESNI)
@@ -253,7 +258,8 @@ static void initialize_table_ni(int aesni, int pclmul)
 	if (!pclmul)
 		return;
 	/* GHASH */
-	cryptonite_aes_branch_table[GHASH_GF_MUL]    = cryptonite_aesni_gf_mul;
+	cryptonite_aes_branch_table[GHASH_HINIT]     = cryptonite_aesni_hinit_pclmul,
+	cryptonite_aes_branch_table[GHASH_GF_MUL]    = cryptonite_aesni_gf_mul_pclmul,
 	cryptonite_aesni_init_pclmul();
 #endif
 }
@@ -382,20 +388,22 @@ void cryptonite_aes_ocb_decrypt(uint8_t *output, aes_ocb *ocb, aes_key *key, uin
 static void gcm_ghash_add(aes_gcm *gcm, block128 *b)
 {
 	block128_xor(&gcm->tag, b);
-	cryptonite_gf_mul(&gcm->tag, &gcm->h);
+	cryptonite_gf_mul(&gcm->tag, gcm->htable);
 }
 
 void cryptonite_aes_gcm_init(aes_gcm *gcm, aes_key *key, uint8_t *iv, uint32_t len)
 {
+	block128 h;
 	gcm->length_aad = 0;
 	gcm->length_input = 0;
 
-	block128_zero(&gcm->h);
+	block128_zero(&h);
 	block128_zero(&gcm->tag);
 	block128_zero(&gcm->iv);
 
 	/* prepare H : encrypt_K(0^128) */
-	cryptonite_aes_encrypt_block(&gcm->h, key, &gcm->h);
+	cryptonite_aes_encrypt_block(&h, key, &h);
+	cryptonite_hinit(gcm->htable, &h);
 
 	if (len == 12) {
 		block128_copy_bytes(&gcm->iv, iv, 12);
@@ -405,15 +413,15 @@ void cryptonite_aes_gcm_init(aes_gcm *gcm, aes_key *key, uint8_t *iv, uint32_t l
 		int i;
 		for (; len >= 16; len -= 16, iv += 16) {
 			block128_xor(&gcm->iv, (block128 *) iv);
-			cryptonite_gf_mul(&gcm->iv, &gcm->h);
+			cryptonite_gf_mul(&gcm->iv, gcm->htable);
 		}
 		if (len > 0) {
 			block128_xor_bytes(&gcm->iv, iv, len);
-			cryptonite_gf_mul(&gcm->iv, &gcm->h);
+			cryptonite_gf_mul(&gcm->iv, gcm->htable);
 		}
 		for (i = 15; origlen; --i, origlen >>= 8)
 			gcm->iv.b[i] ^= (uint8_t) origlen;
-		cryptonite_gf_mul(&gcm->iv, &gcm->h);
+		cryptonite_gf_mul(&gcm->iv, gcm->htable);
 	}
 
 	block128_copy_aligned(&gcm->civ, &gcm->iv);

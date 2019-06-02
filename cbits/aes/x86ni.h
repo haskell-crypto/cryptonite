@@ -74,7 +74,8 @@ void cryptonite_aesni_gcm_encrypt256(uint8_t *out, aes_gcm *gcm, aes_key *key, u
 
 #ifdef WITH_PCLMUL
 void cryptonite_aesni_init_pclmul(void);
-void cryptonite_aesni_gf_mul(block128 *a, const block128 *b);
+void cryptonite_aesni_hinit_pclmul(table_4bit htable, const block128 *h);
+void cryptonite_aesni_gf_mul_pclmul(block128 *a, const table_4bit htable);
 #endif
 
 #endif

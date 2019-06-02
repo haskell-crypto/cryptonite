@@ -191,7 +191,6 @@ void SIZED(cryptonite_aesni_gcm_encrypt)(uint8_t *output, aes_gcm *gcm, aes_key 
 
 	gcm->length_input += length;
 
-	__m128i h  = _mm_loadu_si128((__m128i *) &gcm->h);
 	__m128i tag = _mm_loadu_si128((__m128i *) &gcm->tag);
 	__m128i iv = _mm_loadu_si128((__m128i *) &gcm->civ);
 	iv = _mm_shuffle_epi8(iv, bswap_mask);
@@ -209,7 +208,7 @@ void SIZED(cryptonite_aesni_gcm_encrypt)(uint8_t *output, aes_gcm *gcm, aes_key 
 		__m128i m = _mm_loadu_si128((__m128i *) input);
 		m = _mm_xor_si128(m, tmp);
 
-		tag = ghash_add(tag, h, m);
+		tag = ghash_add(tag, gcm->htable, m);
 
 		/* store it out */
 		_mm_storeu_si128((__m128i *) output, m);
@@ -250,7 +249,7 @@ void SIZED(cryptonite_aesni_gcm_encrypt)(uint8_t *output, aes_gcm *gcm, aes_key 
 		m = _mm_xor_si128(m, tmp);
 		m = _mm_shuffle_epi8(m, mask);
 
-		tag = ghash_add(tag, h, m);
+		tag = ghash_add(tag, gcm->htable, m);
 
 		/* make output */
 		_mm_storeu_si128((__m128i *) &block.b, m);
