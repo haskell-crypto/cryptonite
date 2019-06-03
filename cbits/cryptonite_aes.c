@@ -515,7 +515,7 @@ static void ccm_encode_ctr(block128* out, aes_ccm* ccm, unsigned int cnt)
 static void ccm_cbcmac_add(aes_ccm* ccm, aes_key* key, block128* bi)
 {
 	block128_xor_aligned(&ccm->xi, bi);
-	cryptonite_aes_generic_encrypt_block(&ccm->xi, key, &ccm->xi);
+	cryptonite_aes_encrypt_block(&ccm->xi, key, &ccm->xi);
 }
 
 /* even though it is possible to support message size as large as 2^64, we support up to 2^32 only */
