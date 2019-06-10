@@ -177,6 +177,7 @@ Library
                      Crypto.Random.Entropy
                      Crypto.Random.EntropyPool
                      Crypto.Random.Entropy.Unsafe
+                     Crypto.System.CPU
                      Crypto.Tutorial
   Other-modules:     Crypto.Cipher.AES.Primitive
                      Crypto.Cipher.Blowfish.Box

@@ -218,11 +218,19 @@ typedef void (*gf_mul_f)(block128 *a, const table_4bit htable);
 #define cryptonite_gf_mul(a,t) cryptonite_aes_generic_gf_mul(a,t)
 #endif
 
+#define CPU_AESNI        0
+#define CPU_PCLMUL       1
+#define CPU_OPTION_COUNT 2
+
+static uint8_t cryptonite_aes_cpu_options[CPU_OPTION_COUNT] = {};
+
 #if defined(ARCH_X86) && defined(WITH_AESNI)
 static void initialize_table_ni(int aesni, int pclmul)
 {
 	if (!aesni)
 		return;
+	cryptonite_aes_cpu_options[CPU_AESNI] = 1;
+
 	cryptonite_aes_branch_table[INIT_128] = cryptonite_aesni_init;
 	cryptonite_aes_branch_table[INIT_256] = cryptonite_aesni_init;
 
@@ -257,6 +265,8 @@ static void initialize_table_ni(int aesni, int pclmul)
 #ifdef WITH_PCLMUL
 	if (!pclmul)
 		return;
+	cryptonite_aes_cpu_options[CPU_PCLMUL] = 1;
+
 	/* GHASH */
 	cryptonite_aes_branch_table[GHASH_HINIT]     = cryptonite_aesni_hinit_pclmul,
 	cryptonite_aes_branch_table[GHASH_GF_MUL]    = cryptonite_aesni_gf_mul_pclmul,
@@ -265,6 +275,14 @@ static void initialize_table_ni(int aesni, int pclmul)
 }
 #endif
 
+uint8_t *cryptonite_aes_cpu_init(void)
+{
+#if defined(ARCH_X86) && defined(WITH_AESNI)
+	cryptonite_aesni_initialize_hw(initialize_table_ni);
+#endif
+	return cryptonite_aes_cpu_options;
+}
+
 void cryptonite_aes_initkey(aes_key *key, uint8_t *origkey, uint8_t size)
 {
 	switch (size) {
@@ -272,9 +290,7 @@ void cryptonite_aes_initkey(aes_key *key, uint8_t *origkey, uint8_t size)
 	case 24: key->nbr = 12; key->strength = 1; break;
 	case 32: key->nbr = 14; key->strength = 2; break;
 	}
-#if defined(ARCH_X86) && defined(WITH_AESNI)
-	cryptonite_aesni_initialize_hw(initialize_table_ni);
-#endif
+	cryptonite_aes_cpu_init();
 	init_f _init = GET_INIT(key->strength);
 	_init(key, origkey, size);
 }
