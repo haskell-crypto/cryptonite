@@ -3,6 +3,8 @@ module Main where
 
 import Imports
 
+import Crypto.System.CPU
+
 import qualified Number
 import qualified Number.F2m
 import qualified BCrypt
@@ -43,7 +45,10 @@ import qualified KAT_AFIS
 import qualified Padding
 
 tests = testGroup "cryptonite"
-    [ Number.tests
+    [ testGroup "runtime"
+        [ testCaseInfo "CPU" (return $ show processorOptions)
+        ]
+    , Number.tests
     , Number.F2m.tests
     , Hash.tests
     , Padding.tests
