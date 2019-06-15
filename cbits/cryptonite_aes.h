@@ -45,10 +45,10 @@ typedef struct {
 	uint8_t data[16*14*2];
 } aes_key;
 
-/* size = 4*16+2*8= 80 */
+/* size = 19*16+2*8= 320 */
 typedef struct {
 	aes_block tag;
-	aes_block h;
+	aes_block htable[16];
 	aes_block iv;
 	aes_block civ;
 	uint64_t length_aad;

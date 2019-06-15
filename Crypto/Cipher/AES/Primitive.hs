@@ -128,7 +128,7 @@ newtype AESCCM = AESCCM ScrubbedBytes
     deriving (NFData)
 
 sizeGCM :: Int
-sizeGCM = 80
+sizeGCM = 320
 
 sizeOCB :: Int
 sizeOCB = 160

@@ -32,7 +32,11 @@
 
 #include "aes/block128.h"
 
-void cryptonite_aes_generic_gf_mul(block128 *a, block128 *b);
+typedef block128 table_4bit[16];
+
 void cryptonite_aes_generic_gf_mulx(block128 *a);
+
+void cryptonite_aes_generic_hinit(table_4bit htable, const block128 *h);
+void cryptonite_aes_generic_gf_mul(block128 *a, const table_4bit htable);
 
 #endif
