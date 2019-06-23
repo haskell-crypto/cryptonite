@@ -115,4 +115,6 @@ void cryptonite_aes_ccm_encrypt(uint8_t *output, aes_ccm *ccm, aes_key *key, uin
 void cryptonite_aes_ccm_decrypt(uint8_t *output, aes_ccm *ccm, aes_key *key, uint8_t *input, uint32_t length);
 void cryptonite_aes_ccm_finish(uint8_t *tag, aes_ccm *ccm, aes_key *key);
 
+uint8_t *cryptonite_aes_cpu_init(void);
+
 #endif
