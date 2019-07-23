@@ -30,6 +30,7 @@ import qualified Data.ByteString as B
 
 import qualified Crypto.PubKey.ECC.P256 as P256
 
+import Number.F2m
 
 data HashAlg = forall alg . HashAlgorithm alg => HashAlg alg
 
