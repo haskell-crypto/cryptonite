@@ -30,7 +30,6 @@ import qualified Data.ByteString as B
 
 import qualified Crypto.PubKey.ECC.P256 as P256
 
-import Number.F2m
 
 data HashAlg = forall alg . HashAlgorithm alg => HashAlg alg
 
@@ -208,34 +207,26 @@ benchECC =
         run_d (n, p) = ECC.pointMul c n p
 
         c  = ECC.getCurveByName ECC.SEC_p256r1
-        r1 = 7
-        r2 = 11
-        -- p1 = ECC.pointBaseMul c r1
-        -- p2 = ECC.pointBaseMul c r2
         p1 = ECC.pointBaseMul c n1
         p2 = ECC.pointBaseMul c n2
         n1 = 0x2ba9daf2363b2819e69b34a39cf496c2458a9b2a21505ea9e7b7cbca42dc7435
         n2 = 0xf054a7f60d10b8c2cf847ee90e9e029f8b0e971b09ca5f55c4d49921a11fadc1
 
 benchP256 =
-    [ bench "pointAddTwoMuls-P256"  $ nf run_p (n1, s, n2, t)
-    , bench "pointAdd-P256"  $ nf run_q (s, t) 
-    , bench "pointMul-P256"  $ nf run_t (n1, s) 
+    [ bench "pointAddTwoMuls-P256"  $ nf run_p (n1, p1, n2, p2)
+    , bench "pointAdd-P256"  $ nf run_q (p1, p2) 
+    , bench "pointMul-P256"  $ nf run_t (n1, p1) 
     ]
-  where run_p (n1, s, n2, t) = P256.pointAdd (P256.pointMul n1 s) (P256.pointMul n2 t)
-        run_q (s, t) = P256.pointAdd s t
-        run_t (n1, s) = P256.pointMul n1 s
+  where run_p (n, p, k, q) = P256.pointAdd (P256.pointMul n p) (P256.pointMul k q)
+        run_q (p, q) = P256.pointAdd p q
+        run_t (n, p) = P256.pointMul n p
 
         xS = 0xde2444bebc8d36e682edd27e0f271508617519b3221a8fa0b77cab3989da97c9
         yS = 0xc093ae7ff36e5380fc01a5aad1e66659702de80f53cec576b6350b243042a256
         xT = 0x55a8b00f8da1d44e62f6b3b25316212e39540dc861c89575bb8cf92e35e0986b
         yT = 0x5421c3209c2d6c704835d82ac4c3dd90f61a8a52598b9e7ab656e9d8c8b24316
-        s = P256.pointFromIntegers (xS, yS)
-        t = P256.pointFromIntegers (xT, yT)
-        r1 = throwCryptoError $ P256.scalarFromInteger 7
-        r2 = throwCryptoError $ P256.scalarFromInteger 11
-        -- s = P256.pointMul r1 P256.pointBase
-        -- t = P256.pointMul r2 P256.pointBase  
+        p1 = P256.pointFromIntegers (xS, yS)
+        p2 = P256.pointFromIntegers (xT, yT)
         n1 = throwCryptoError $ P256.scalarFromInteger 0x2ba9daf2363b2819e69b34a39cf496c2458a9b2a21505ea9e7b7cbca42dc7435
         n2 = throwCryptoError $ P256.scalarFromInteger 0xf054a7f60d10b8c2cf847ee90e9e029f8b0e971b09ca5f55c4d49921a11fadc1
 
