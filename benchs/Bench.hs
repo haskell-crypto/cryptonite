@@ -125,7 +125,7 @@ benchBlockCipher =
     [ bgroup "ECB" benchECB
     , bgroup "CBC" benchCBC
     ]
-  where 
+  where
         benchECB =
             [ bench "DES-input=1024" $ nf (run (undefined :: DES) cipherInit key8) input1024
             , bench "Blowfish128-input=1024" $ nf (run (undefined :: Blowfish128) cipherInit key16) input1024
@@ -215,8 +215,8 @@ benchECC =
 
 benchP256 =
     [ bench "pointAddTwoMuls-P256"  $ nf run_p (n1, p1, n2, p2)
-    , bench "pointAdd-P256"  $ nf run_q (p1, p2) 
-    , bench "pointMul-P256"  $ nf run_t (n1, p1) 
+    , bench "pointAdd-P256"  $ nf run_q (p1, p2)
+    , bench "pointMul-P256"  $ nf run_t (n1, p1)
     ]
   where run_p (n, p, k, q) = P256.pointAdd (P256.pointMul n p) (P256.pointMul k q)
         run_q (p, q) = P256.pointAdd p q
