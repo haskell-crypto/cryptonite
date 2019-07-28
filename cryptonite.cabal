@@ -19,7 +19,7 @@ Description:
     * Data related: Anti-Forensic Information Splitter (AFIS)
     .
     If anything cryptographic related is missing from here, submit
-    a pull request to have it added. This package strive to be a
+    a pull request to have it added. This package strives to be a
     cryptographic kitchen sink that provides cryptography for everyone.
     .
     Evaluate the security related to your requirements before using.
