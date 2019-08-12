@@ -48,6 +48,7 @@ perModuleAllowedExtensions =
     , ("Crypto/Cipher/Twofish/Primitive.hs", [MagicHash])
     , ("Crypto/PubKey/Curve25519.hs", [MagicHash])
     , ("Crypto/Number/Compat.hs", [UnboxedTuples,MagicHash,CPP])
+    , ("Crypto/System/CPU.hs", [CPP])
     ]
 
 disallowedModules =
