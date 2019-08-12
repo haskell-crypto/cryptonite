@@ -98,7 +98,6 @@ void cryptonite_chacha_init_core(cryptonite_chacha_state *st,
                                  uint32_t ivlen, const uint8_t *iv)
 {
 	const uint8_t *constants = (keylen == 32) ? sigma : tau;
-	int i;
 
 	ASSERT_ALIGNMENT(constants, 4);
 
