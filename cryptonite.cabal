@@ -158,6 +158,7 @@ Library
                      Crypto.PubKey.ECC.DH
                      Crypto.PubKey.ECC.ECDSA
                      Crypto.PubKey.ECC.P256
+                     Crypto.PubKey.ECC.P256K1
                      Crypto.PubKey.ECC.Types
                      Crypto.PubKey.ECIES
                      Crypto.PubKey.Ed25519
@@ -178,6 +179,7 @@ Library
                      Crypto.Random.Entropy
                      Crypto.Random.EntropyPool
                      Crypto.Random.Entropy.Unsafe
+                     Crypto.Random.ChaChaDRG
                      Crypto.System.CPU
                      Crypto.Tutorial
   Other-modules:     Crypto.Cipher.AES.Primitive
@@ -220,7 +222,6 @@ Library
                      Crypto.Hash.Whirlpool
                      Crypto.Random.Entropy.Source
                      Crypto.Random.Entropy.Backend
-                     Crypto.Random.ChaChaDRG
                      Crypto.Random.SystemDRG
                      Crypto.Random.Probabilistic
                      Crypto.PubKey.Internal
@@ -244,6 +245,7 @@ Library
                    , memory >= 0.14.18
                    , basement >= 0.0.6
                    , ghc-prim
+                   , base16-bytestring
   ghc-options:       -Wall -fwarn-tabs -optc-O3
   if os(linux)
     extra-libraries: pthread
@@ -387,6 +389,7 @@ Test-Suite test-cryptonite
                      BCryptPBKDF
                      ECC
                      ECC.Edwards25519
+                     ECC.P256K1
                      Hash
                      Imports
                      KAT_AES.KATCBC
@@ -443,6 +446,7 @@ Test-Suite test-cryptonite
                    , tasty-hunit
                    , tasty-kat
                    , cryptonite
+                   , secp256k1-haskell
   ghc-options:       -Wall -fno-warn-orphans -fno-warn-missing-signatures -rtsopts
   default-language:  Haskell2010
 

@@ -11,6 +11,7 @@ import qualified BCrypt
 import qualified BCryptPBKDF
 import qualified ECC
 import qualified ECC.Edwards25519
+import qualified ECC.P256K1
 import qualified Hash
 import qualified Poly1305
 import qualified Salsa
@@ -96,6 +97,7 @@ tests = testGroup "cryptonite"
     , KAT_AFIS.tests
     , ECC.tests
     , ECC.Edwards25519.tests
+    , ECC.P256K1.tests
     ]
 
 main = defaultMain tests

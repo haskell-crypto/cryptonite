@@ -13,6 +13,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Crypto.ECC
     ( Curve_P256R1(..)
+    , Curve_P256K1(..)
     , Curve_P384R1(..)
     , Curve_P521R1(..)
     , Curve_X25519(..)
@@ -26,6 +27,7 @@ module Crypto.ECC
     ) where
 
 import qualified Crypto.PubKey.ECC.P256 as P256
+import qualified Crypto.PubKey.ECC.P256K1 as P256K1
 import qualified Crypto.ECC.Edwards25519 as Edwards25519
 import qualified Crypto.ECC.Simple.Types as Simple
 import qualified Crypto.ECC.Simple.Prim as Simple
@@ -146,6 +148,40 @@ instance EllipticCurveArith Curve_P256R1 where
 
 instance EllipticCurveDH Curve_P256R1 where
     ecdhRaw _ s p = SharedSecret $ P256.pointDh s p
+    ecdh  prx s p = checkNonZeroDH (ecdhRaw prx s p)
+
+data Curve_P256K1 = Curve_P256K1
+    deriving (Show,Data)
+
+instance EllipticCurve Curve_P256K1 where
+    type Point Curve_P256K1 = P256K1.Point
+    type Scalar Curve_P256K1 = P256K1.Scalar
+    curveSizeBits _ = 256
+    curveGenerateScalar _ = P256K1.scalarGenerate
+    curveGenerateKeyPair _ = toKeyPair <$> P256K1.scalarGenerate
+      where toKeyPair scalar = KeyPair (P256K1.toPoint scalar) scalar
+    encodePoint _ p = mxy
+      where
+        mxy :: forall bs. ByteArray bs => bs
+        mxy = B.concat [uncompressed, xy]
+          where
+            uncompressed, xy :: bs
+            uncompressed = B.singleton 4
+            xy = P256K1.pointToBinary p
+    decodePoint _ mxy = case B.uncons mxy of
+        Nothing -> CryptoFailed $ CryptoError_PointSizeInvalid
+        Just (m,xy)
+            -- uncompressed
+            | m == 4 -> P256K1.pointFromBinary xy
+            | otherwise -> CryptoFailed $ CryptoError_PointFormatInvalid
+
+instance EllipticCurveArith Curve_P256K1 where
+    pointAdd  _ a b = P256K1.pointAdd a b
+    pointNegate _ p = P256K1.pointNegate p
+    pointSmul _ s p = P256K1.pointMul s p
+
+instance EllipticCurveDH Curve_P256K1 where
+    ecdhRaw _ s p = SharedSecret $ P256K1.pointDh s p
     ecdh  prx s p = checkNonZeroDH (ecdhRaw prx s p)
 
 data Curve_P384R1 = Curve_P384R1
