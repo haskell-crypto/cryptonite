@@ -199,7 +199,7 @@ void SIZED(cryptonite_aesni_gcm_encrypt)(uint8_t *output, aes_gcm *gcm, aes_key 
 
 	for (; nb_blocks-- > 0; output += 16, input += 16) {
 		/* iv += 1 */
-		iv = _mm_add_epi64(iv, one);
+		iv = _mm_add_epi32(iv, one);
 
 		/* put back iv in big endian, encrypt it,
 		 * and xor it to input */
@@ -239,7 +239,7 @@ void SIZED(cryptonite_aesni_gcm_encrypt)(uint8_t *output, aes_gcm *gcm, aes_key 
 		block128_copy_bytes(&block, input, part_block_len);
 
 		/* iv += 1 */
-		iv = _mm_add_epi64(iv, one);
+		iv = _mm_add_epi32(iv, one);
 
 		/* put back iv in big endian mode, encrypt it and xor it with input */
 		__m128i tmp = _mm_shuffle_epi8(iv, bswap_mask);

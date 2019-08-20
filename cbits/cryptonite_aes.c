@@ -835,7 +835,7 @@ void cryptonite_aes_generic_gcm_encrypt(uint8_t *output, aes_gcm *gcm, aes_key *
 
 	gcm->length_input += length;
 	for (; length >= 16; input += 16, output += 16, length -= 16) {
-		block128_inc_be(&gcm->civ);
+		block128_inc32_be(&gcm->civ);
 
 		cryptonite_aes_encrypt_block(&out, key, &gcm->civ);
 		block128_xor(&out, (block128 *) input);
@@ -846,7 +846,7 @@ void cryptonite_aes_generic_gcm_encrypt(uint8_t *output, aes_gcm *gcm, aes_key *
 		aes_block tmp;
 		int i;
 
-		block128_inc_be(&gcm->civ);
+		block128_inc32_be(&gcm->civ);
 		/* create e(civ) in out */
 		cryptonite_aes_encrypt_block(&out, key, &gcm->civ);
 		/* initialize a tmp as input and xor it to e(civ) */
@@ -868,7 +868,7 @@ void cryptonite_aes_generic_gcm_decrypt(uint8_t *output, aes_gcm *gcm, aes_key *
 
 	gcm->length_input += length;
 	for (; length >= 16; input += 16, output += 16, length -= 16) {
-		block128_inc_be(&gcm->civ);
+		block128_inc32_be(&gcm->civ);
 
 		cryptonite_aes_encrypt_block(&out, key, &gcm->civ);
 		gcm_ghash_add(gcm, (block128 *) input);
@@ -879,7 +879,7 @@ void cryptonite_aes_generic_gcm_decrypt(uint8_t *output, aes_gcm *gcm, aes_key *
 		aes_block tmp;
 		int i;
 
-		block128_inc_be(&gcm->civ);
+		block128_inc32_be(&gcm->civ);
 
 		block128_zero(&tmp);
 		block128_copy_bytes(&tmp, input, length);
