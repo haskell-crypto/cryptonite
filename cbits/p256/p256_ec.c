@@ -1287,19 +1287,16 @@ void cryptonite_p256e_point_add(
     const cryptonite_p256_int *in_x2, const cryptonite_p256_int *in_y2,
     cryptonite_p256_int *out_x, cryptonite_p256_int *out_y)
 {
-    felem x1, y1, z1, x2, y2, z2, px1, py1, px2, py2;
-    const cryptonite_p256_int one = P256_ONE;
+    felem x, y, z, px1, py1, px2, py2;
 
     to_montgomery(px1, in_x1);
     to_montgomery(py1, in_y1);
     to_montgomery(px2, in_x2);
     to_montgomery(py2, in_y2);
 
-    scalar_mult(x1, y1, z1, px1, py1, &one);
-    scalar_mult(x2, y2, z2, px2, py2, &one);
-    point_add_or_double_vartime(x1, y1, z1, x1, y1, z1, x2, y2, z2);
+    point_add_or_double_vartime(x, y, z, px1, py1, kOne, px2, py2, kOne);
 
-    point_to_affine(px1, py1, x1, y1, z1);
+    point_to_affine(px1, py1, x, y, z);
     from_montgomery(out_x, px1);
     from_montgomery(out_y, py1);
 }
