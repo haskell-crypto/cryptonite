@@ -21,6 +21,7 @@
 module Crypto.Cipher.AESGCMSIV
     ( Nonce
     , nonce
+    , generateNonce
     , encrypt
     , decrypt
     ) where
@@ -42,6 +43,7 @@ import Crypto.Cipher.AES.Primitive
 import Crypto.Cipher.Types
 import Crypto.Error
 import Crypto.Internal.Compat (unsafeDoIO)
+import Crypto.Random
 
 
 -- 12-byte nonces
@@ -54,6 +56,10 @@ nonce :: ByteArrayAccess iv => iv -> CryptoFailable Nonce
 nonce iv
     | B.length iv == 12 = CryptoPassed (Nonce $ B.convert iv)
     | otherwise         = CryptoFailed CryptoError_IvSizeInvalid
+
+-- | Generate a random nonce for use with AES-GCM-SIV.
+generateNonce :: MonadRandom m => m Nonce
+generateNonce = Nonce <$> getRandomBytes 12
 
 
 -- POLYVAL (mutable context)
