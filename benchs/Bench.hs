@@ -6,6 +6,7 @@ module Main where
 import Gauge.Main
 
 import           Crypto.Cipher.AES
+import qualified Crypto.Cipher.AESGCMSIV as AESGCMSIV
 import           Crypto.Cipher.Blowfish
 import           Crypto.Cipher.CAST5
 import qualified Crypto.Cipher.ChaChaPoly1305 as CP
@@ -167,6 +168,7 @@ benchAE =
     [ bench "ChaChaPoly1305" $ nf (cp key32) (input64, input1024)
     , bench "AES-GCM" $ nf (gcm key32) (input64, input1024)
     , bench "AES-CCM" $ nf (ccm key32) (input64, input1024)
+    , bench "AES-GCM-SIV" $ nf (gcmsiv key32) (input64, input1024)
     ]
   where cp k (ini, plain) =
             let iniState            = throwCryptoError $ CP.initialize k (throwCryptoError $ CP.nonce12 nonce12)
@@ -185,6 +187,11 @@ benchAE =
                 mode = AEAD_CCM 1024 CCM_M16 CCM_L3
                 state = throwCryptoError $ aeadInit mode ctx nonce12
              in aeadSimpleEncrypt state ini plain 16
+
+        gcmsiv k (ini, plain) =
+            let ctx = throwCryptoError (cipherInit k) :: AES256
+                iv = throwCryptoError (AESGCMSIV.nonce nonce12)
+             in AESGCMSIV.encrypt ctx iv ini plain
 
         input64 = B.replicate 64 0
         input1024 = B.replicate 1024 0
