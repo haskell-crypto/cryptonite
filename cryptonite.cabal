@@ -104,6 +104,7 @@ Flag check_alignment
 
 Library
   Exposed-modules:   Crypto.Cipher.AES
+                     Crypto.Cipher.AESGCMSIV
                      Crypto.Cipher.Blowfish
                      Crypto.Cipher.CAST5
                      Crypto.Cipher.Camellia

@@ -1055,3 +1055,55 @@ void cryptonite_aes_generic_ocb_decrypt(uint8_t *output, aes_ocb *ocb, aes_key *
 {
 	ocb_generic_crypt(output, ocb, key, input, length, 0);
 }
+
+static inline void gf_mulx_rev(block128 *a, const block128 *h)
+{
+	uint64_t v1 = cpu_to_le64(h->q[0]);
+	uint64_t v0 = cpu_to_le64(h->q[1]);
+	a->q[1] = cpu_to_be64(v1 >> 1 | v0 << 63);
+	a->q[0] = cpu_to_be64(v0 >> 1 ^ ((0-(v1 & 1)) & 0xe100000000000000ULL));
+}
+
+void cryptonite_aes_polyval_init(aes_polyval *ctx, const aes_block *h)
+{
+	aes_block r;
+
+	/* ByteReverse(S_0) = 0 */
+	block128_zero(&ctx->s);
+
+	/* ByteReverse(H) * x */
+	gf_mulx_rev(&r, h);
+	cryptonite_hinit(ctx->htable, &r);
+}
+
+void cryptonite_aes_polyval_update(aes_polyval *ctx, const uint8_t *input, uint32_t length)
+{
+	aes_block r;
+	const uint8_t *p;
+	uint32_t sz;
+
+	/* This automatically pads with zeros if input is not a multiple of the
+	   block size. */
+	for (p = input; length > 0; p += 16, length -= sz)
+	{
+		sz = length < 16 ? length : 16;
+
+		/* ByteReverse(X_j) */
+		block128_zero(&r);
+		memcpy(&r, p, sz);
+		block128_byte_reverse(&r);
+
+		/* ByteReverse(S_{j-1}) + ByteReverse(X_j) */
+		block128_xor_aligned(&ctx->s, &r);
+
+		/* ByteReverse(S_j) */
+		cryptonite_gf_mul(&ctx->s, ctx->htable);
+	}
+}
+
+void cryptonite_aes_polyval_finalize(aes_polyval *ctx, aes_block *dst)
+{
+	/* S_s */
+	block128_copy_aligned(dst, &ctx->s);
+	block128_byte_reverse(dst);
+}
