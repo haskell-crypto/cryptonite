@@ -123,6 +123,11 @@ static inline void block128_inc32_be(block128 *b)
 	b->d[3] = cpu_to_be32(be32_to_cpu(b->d[3]) + 1);
 }
 
+static inline void block128_inc32_le(block128 *b)
+{
+	b->d[0] = cpu_to_le32(le32_to_cpu(b->d[0]) + 1);
+}
+
 #ifdef IMPL_DEBUG
 #include <stdio.h>
 static inline void block128_print(block128 *b)

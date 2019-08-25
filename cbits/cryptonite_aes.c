@@ -44,6 +44,7 @@ void cryptonite_aes_generic_decrypt_ecb(aes_block *output, aes_key *key, aes_blo
 void cryptonite_aes_generic_encrypt_cbc(aes_block *output, aes_key *key, aes_block *iv, aes_block *input, uint32_t nb_blocks);
 void cryptonite_aes_generic_decrypt_cbc(aes_block *output, aes_key *key, aes_block *iv, aes_block *input, uint32_t nb_blocks);
 void cryptonite_aes_generic_encrypt_ctr(uint8_t *output, aes_key *key, aes_block *iv, uint8_t *input, uint32_t length);
+void cryptonite_aes_generic_encrypt_c32(uint8_t *output, aes_key *key, aes_block *iv, uint8_t *input, uint32_t length);
 void cryptonite_aes_generic_encrypt_xts(aes_block *output, aes_key *k1, aes_key *k2, aes_block *dataunit,
                              uint32_t spoint, aes_block *input, uint32_t nb_blocks);
 void cryptonite_aes_generic_decrypt_xts(aes_block *output, aes_key *k1, aes_key *k2, aes_block *dataunit,
@@ -69,6 +70,8 @@ enum {
 	DECRYPT_CBC_128, DECRYPT_CBC_192, DECRYPT_CBC_256,
 	/* ctr */
 	ENCRYPT_CTR_128, ENCRYPT_CTR_192, ENCRYPT_CTR_256,
+	/* ctr with 32-bit wrapping */
+	ENCRYPT_C32_128, ENCRYPT_C32_192, ENCRYPT_C32_256,
 	/* xts */
 	ENCRYPT_XTS_128, ENCRYPT_XTS_192, ENCRYPT_XTS_256,
 	DECRYPT_XTS_128, DECRYPT_XTS_192, DECRYPT_XTS_256,
@@ -115,6 +118,10 @@ void *cryptonite_aes_branch_table[] = {
 	[ENCRYPT_CTR_128]   = cryptonite_aes_generic_encrypt_ctr,
 	[ENCRYPT_CTR_192]   = cryptonite_aes_generic_encrypt_ctr,
 	[ENCRYPT_CTR_256]   = cryptonite_aes_generic_encrypt_ctr,
+	/* CTR with 32-bit wrapping */
+	[ENCRYPT_C32_128]   = cryptonite_aes_generic_encrypt_c32,
+	[ENCRYPT_C32_192]   = cryptonite_aes_generic_encrypt_c32,
+	[ENCRYPT_C32_256]   = cryptonite_aes_generic_encrypt_c32,
 	/* XTS */
 	[ENCRYPT_XTS_128]   = cryptonite_aes_generic_encrypt_xts,
 	[ENCRYPT_XTS_192]   = cryptonite_aes_generic_encrypt_xts,
@@ -173,6 +180,8 @@ typedef void (*gf_mul_f)(block128 *a, const table_4bit htable);
 	((cbc_f) (cryptonite_aes_branch_table[DECRYPT_CBC_128 + strength]))
 #define GET_CTR_ENCRYPT(strength) \
 	((ctr_f) (cryptonite_aes_branch_table[ENCRYPT_CTR_128 + strength]))
+#define GET_C32_ENCRYPT(strength) \
+	((ctr_f) (cryptonite_aes_branch_table[ENCRYPT_C32_128 + strength]))
 #define GET_XTS_ENCRYPT(strength) \
 	((xts_f) (cryptonite_aes_branch_table[ENCRYPT_XTS_128 + strength]))
 #define GET_XTS_DECRYPT(strength) \
@@ -204,6 +213,7 @@ typedef void (*gf_mul_f)(block128 *a, const table_4bit htable);
 #define GET_CBC_ENCRYPT(strength) cryptonite_aes_generic_encrypt_cbc
 #define GET_CBC_DECRYPT(strength) cryptonite_aes_generic_decrypt_cbc
 #define GET_CTR_ENCRYPT(strength) cryptonite_aes_generic_encrypt_ctr
+#define GET_C32_ENCRYPT(strength) cryptonite_aes_generic_encrypt_c32
 #define GET_XTS_ENCRYPT(strength) cryptonite_aes_generic_encrypt_xts
 #define GET_XTS_DECRYPT(strength) cryptonite_aes_generic_decrypt_xts
 #define GET_GCM_ENCRYPT(strength) cryptonite_aes_generic_gcm_encrypt
@@ -251,6 +261,9 @@ static void initialize_table_ni(int aesni, int pclmul)
 	/* CTR */
 	cryptonite_aes_branch_table[ENCRYPT_CTR_128] = cryptonite_aesni_encrypt_ctr128;
 	cryptonite_aes_branch_table[ENCRYPT_CTR_256] = cryptonite_aesni_encrypt_ctr256;
+	/* CTR with 32-bit wrapping */
+	cryptonite_aes_branch_table[ENCRYPT_C32_128] = cryptonite_aesni_encrypt_c32_128;
+	cryptonite_aes_branch_table[ENCRYPT_C32_256] = cryptonite_aesni_encrypt_c32_256;
 	/* XTS */
 	cryptonite_aes_branch_table[ENCRYPT_XTS_128] = cryptonite_aesni_encrypt_xts128;
 	cryptonite_aes_branch_table[ENCRYPT_XTS_256] = cryptonite_aesni_encrypt_xts256;
@@ -349,6 +362,12 @@ void cryptonite_aes_gen_ctr_cont(aes_block *output, aes_key *key, aes_block *iv,
 void cryptonite_aes_encrypt_ctr(uint8_t *output, aes_key *key, aes_block *iv, uint8_t *input, uint32_t len)
 {
 	ctr_f e = GET_CTR_ENCRYPT(key->strength);
+	e(output, key, iv, input, len);
+}
+
+void cryptonite_aes_encrypt_c32(uint8_t *output, aes_key *key, aes_block *iv, uint8_t *input, uint32_t len)
+{
+	ctr_f e = GET_C32_ENCRYPT(key->strength);
 	e(output, key, iv, input, len);
 }
 
@@ -775,6 +794,30 @@ void cryptonite_aes_generic_encrypt_ctr(uint8_t *output, aes_key *key, aes_block
 	block128_copy(&block, iv);
 
 	for ( ; nb_blocks-- > 0; block128_inc_be(&block), output += 16, input += 16) {
+		cryptonite_aes_encrypt_block(&o, key, &block);
+		block128_vxor((block128 *) output, &o, (block128 *) input);
+	}
+
+	if ((len % 16) != 0) {
+		cryptonite_aes_encrypt_block(&o, key, &block);
+		for (i = 0; i < (len % 16); i++) {
+			*output = ((uint8_t *) &o)[i] ^ *input;
+			output++;
+			input++;
+		}
+	}
+}
+
+void cryptonite_aes_generic_encrypt_c32(uint8_t *output, aes_key *key, aes_block *iv, uint8_t *input, uint32_t len)
+{
+	aes_block block, o;
+	uint32_t nb_blocks = len / 16;
+	int i;
+
+	/* preload IV in block */
+	block128_copy(&block, iv);
+
+	for ( ; nb_blocks-- > 0; block128_inc32_le(&block), output += 16, input += 16) {
 		cryptonite_aes_encrypt_block(&o, key, &block);
 		block128_vxor((block128 *) output, &o, (block128 *) input);
 	}

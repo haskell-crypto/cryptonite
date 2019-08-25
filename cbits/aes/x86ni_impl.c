@@ -151,6 +151,47 @@ void SIZED(cryptonite_aesni_encrypt_ctr)(uint8_t *output, aes_key *key, aes_bloc
 	return ;
 }
 
+void SIZED(cryptonite_aesni_encrypt_c32_)(uint8_t *output, aes_key *key, aes_block *_iv, uint8_t *input, uint32_t len)
+{
+	__m128i *k = (__m128i *) key->data;
+	__m128i one        = _mm_set_epi32(0,0,0,1);
+	uint32_t nb_blocks = len / 16;
+	uint32_t part_block_len = len % 16;
+
+	/* get the IV */
+	__m128i iv = _mm_loadu_si128((__m128i *) _iv);
+
+	PRELOAD_ENC(k);
+
+	for (; nb_blocks-- > 0; output += 16, input += 16) {
+		/* encrypt the iv and and xor it the input block */
+		__m128i tmp = iv;
+		DO_ENC_BLOCK(tmp);
+		__m128i m = _mm_loadu_si128((__m128i *) input);
+		m = _mm_xor_si128(m, tmp);
+
+		_mm_storeu_si128((__m128i *) output, m);
+		/* iv += 1 */
+		iv = _mm_add_epi32(iv, one);
+	}
+
+	if (part_block_len != 0) {
+		aes_block block;
+		memset(&block.b, 0, 16);
+		memcpy(&block.b, input, part_block_len);
+
+		__m128i m = _mm_loadu_si128((__m128i *) &block);
+		__m128i tmp = iv;
+
+		DO_ENC_BLOCK(tmp);
+		m = _mm_xor_si128(m, tmp);
+		_mm_storeu_si128((__m128i *) &block.b, m);
+		memcpy(output, &block.b, part_block_len);
+	}
+
+	return ;
+}
+
 void SIZED(cryptonite_aesni_encrypt_xts)(aes_block *out, aes_key *key1, aes_key *key2,
                                aes_block *_tweak, uint32_t spoint, aes_block *in, uint32_t blocks)
 {

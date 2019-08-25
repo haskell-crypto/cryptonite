@@ -64,6 +64,8 @@ void cryptonite_aesni_decrypt_cbc128(aes_block *out, aes_key *key, aes_block *_i
 void cryptonite_aesni_decrypt_cbc256(aes_block *out, aes_key *key, aes_block *_iv, aes_block *in, uint32_t blocks);
 void cryptonite_aesni_encrypt_ctr128(uint8_t *out, aes_key *key, aes_block *_iv, uint8_t *in, uint32_t length);
 void cryptonite_aesni_encrypt_ctr256(uint8_t *out, aes_key *key, aes_block *_iv, uint8_t *in, uint32_t length);
+void cryptonite_aesni_encrypt_c32_128(uint8_t *out, aes_key *key, aes_block *_iv, uint8_t *in, uint32_t length);
+void cryptonite_aesni_encrypt_c32_256(uint8_t *out, aes_key *key, aes_block *_iv, uint8_t *in, uint32_t length);
 void cryptonite_aesni_encrypt_xts128(aes_block *out, aes_key *key1, aes_key *key2,
                            aes_block *_tweak, uint32_t spoint, aes_block *in, uint32_t blocks);
 void cryptonite_aesni_encrypt_xts256(aes_block *out, aes_key *key1, aes_key *key2,
