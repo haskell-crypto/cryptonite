@@ -33,6 +33,7 @@ import qualified KAT_PubKey
 import qualified KAT_Scrypt
 -- symmetric cipher --------------------
 import qualified KAT_AES
+import qualified KAT_AESGCMSIV
 import qualified KAT_Blowfish
 import qualified KAT_CAST5
 import qualified KAT_Camellia
@@ -77,6 +78,7 @@ tests = testGroup "cryptonite"
         ]
     , testGroup "block-cipher"
         [ KAT_AES.tests
+        , KAT_AESGCMSIV.tests
         , KAT_Blowfish.tests
         , KAT_CAST5.tests
         , KAT_Camellia.tests
