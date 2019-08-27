@@ -20,6 +20,7 @@ module Crypto.PubKey.ECC.ECDSA
 
 import Control.Monad
 import Data.Data
+import Data.Bits (shiftR)
 
 import Crypto.Hash
 import Crypto.Internal.ByteArray (ByteArrayAccess)
@@ -76,7 +77,9 @@ signDigestWith k (PrivateKey curve d) digest = do
               PointO    -> Nothing
               Point x _ -> return $ x `mod` n
     kInv <- inverse k n
-    let s = kInv * (z + r * d) `mod` n
+    let s1 = kInv * (z + r * d) `mod` n
+    let halforder = shiftR n 1
+    let s = if (s1 > halforder) then n - s1 `mod` n else s1
     when (r == 0 || s == 0) Nothing
     return $ Signature r s
 

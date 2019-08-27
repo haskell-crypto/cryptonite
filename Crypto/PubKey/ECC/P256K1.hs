@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, CApiFFI #-}
 module Crypto.PubKey.ECC.P256K1
   (Point(..),
    Scalar(..),
@@ -231,11 +231,22 @@ parseDer bs =
     BS.useAsCStringLen bs $ \(d, dl) -> alloca $ \s -> do
       ret <- ecdsaSignatureParseDer ctx s (castPtr d) (fromIntegral dl)
       if isSuccess ret then do
-        b64 <- peek s
-        let (r, s) = BS.splitAt 32 $ fromShort $ getBytes64 b64
-        return $ Just $ Signature (os2ip r) (os2ip s)
+        alloca $ \pc -> do
+            ret <- ecdsaSignatureSerializeCompact ctx pc s
+            unless (isSuccess ret) $ error "Could not obtain compact signature"
+            b64 <- peek pc
+            let (r, s) = BS.splitAt 32 $ fromShort $ getBytes64 b64
+            return $ Just $ Signature (os2ip r) (os2ip s)
       else do
         return Nothing
+
+foreign import ccall
+    "secp256k1.h secp256k1_ecdsa_signature_serialize_compact"
+    ecdsaSignatureSerializeCompact
+    :: Ptr Ctx
+    -> Ptr Bytes64 -- output compact sig
+    -> Ptr Bytes64 -- sig
+    -> IO CInt
 
 foreign import ccall
     "secp256k1.h secp256k1_ecdsa_signature_parse_der"
@@ -277,16 +288,23 @@ rfc6979 digest (PrivateKey _ pk) counter =
               bs <- packByteString (nonce32, 32)
               return $ os2ip $ bs
 
-foreign import ccall
-  "secp256k1.h secp256k1_nonce_function_rfc6979"
-  secp256k1_rfc6979
-  :: Ptr Bytes32 -- nonce output (32 bytes)
+type RFC6979Fun =
+     Ptr Bytes32 -- nonce output (32 bytes)
   -> Ptr Bytes32 -- msg hash input (32 bytes)
   -> Ptr Bytes32 -- key input (32 bytes)
   -> Ptr CUChar -- algo (can be null)
   -> Ptr CUChar -- data void pointer (can be null)
   -> CUInt
   -> IO CInt
+
+foreign import capi
+  "secp256k1.h value secp256k1_nonce_function_rfc6979"
+  ptr_secp256k1_rfc6979
+  :: FunPtr RFC6979Fun
+
+foreign import ccall "dynamic" mkInner :: FunPtr RFC6979Fun -> RFC6979Fun
+
+secp256k1_rfc6979 = mkInner ptr_secp256k1_rfc6979
 
 --foreign import ccall
 --  "secp256k1.h secp256k1_scalar_set_b32"
