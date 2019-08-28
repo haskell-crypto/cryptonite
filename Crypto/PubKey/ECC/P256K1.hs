@@ -17,10 +17,9 @@ module Crypto.PubKey.ECC.P256K1
 --import Crypto.Internal.Imports
 import System.IO.Unsafe (unsafeDupablePerformIO, unsafePerformIO)
 import Control.Monad (unless)
-import Data.ByteArray (ByteArrayAccess, ByteArray, ScrubbedBytes, convert)
+import Data.ByteArray (ByteArrayAccess, ByteArray, convert)
 import Crypto.Random (MonadRandom, getRandomBytes)
 import Crypto.Random.Entropy (getEntropy)
-import Control.DeepSeq (NFData)
 import Crypto.Error.Types (CryptoFailable(..), CryptoError(..),)
 import Foreign.C
 import Foreign
@@ -28,11 +27,8 @@ import Data.ByteString.Short (ShortByteString, toShort, fromShort)
 import qualified Data.ByteString as BS
 import Data.ByteString (ByteString)
 import Crypto.PubKey.ECC.ECDSA (Signature(Signature), PrivateKey(PrivateKey))
-import Crypto.Hash (Digest)
+import Crypto.Hash (Digest, SHA256)
 import Crypto.Number.Serialize (os2ip, i2osp)
-import Crypto.Hash.Algorithms (SHA256(SHA256))
-import Data.ByteString.Base16 as B16
-import Data.ByteString.Char8 (pack)
 
 newtype Scalar = Scalar (ForeignPtr Bytes32)
 -- Scalar ScrubbedBytes
@@ -100,7 +96,7 @@ pointToBinary (Point ptr) = withContext $ \ctx ->
     c = 0x0102 :: CUInt -- compressed
     z = 33 -- length of compressed pubkey
 
-data Ctx = Ctx
+data Ctx
 
 foreign import ccall
     "secp256k1.h secp256k1_ec_pubkey_serialize"
@@ -263,7 +259,7 @@ foreign import ccall
 rfc6979 :: Digest SHA256 -> PrivateKey -> CUInt -> Integer 
 rfc6979 digest (PrivateKey _ pk) counter =
   unsafePerformIO $ do
-    let digestbs = fst $ B16.decode $ pack $ show digest
+    let digestbs = convert digest
     unless (32 == BS.length digestbs) $ error "digest length wrong"
     fpd <- mallocForeignPtr
     withForeignPtr fpd $ \digest32 -> do

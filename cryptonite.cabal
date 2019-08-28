@@ -245,7 +245,6 @@ Library
                    , memory >= 0.14.18
                    , basement >= 0.0.6
                    , ghc-prim
-                   , base16-bytestring
   ghc-options:       -Wall -fwarn-tabs -optc-O3
   if os(linux)
     extra-libraries: pthread secp256k1
