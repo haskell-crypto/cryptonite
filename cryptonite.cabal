@@ -248,7 +248,7 @@ Library
                    , base16-bytestring
   ghc-options:       -Wall -fwarn-tabs -optc-O3
   if os(linux)
-    extra-libraries: pthread
+    extra-libraries: pthread secp256k1
   default-language:  Haskell2010
   cc-options:        -std=gnu99
   if flag(old_toolchain_inliner)
