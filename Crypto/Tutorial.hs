@@ -8,6 +8,9 @@ module Crypto.Tutorial
 
       -- * Symmetric block ciphers
       -- $symmetric_block_ciphers
+
+      -- * Combining primitives
+      -- $combining_primitives
     ) where
 
 -- $api_design
@@ -147,3 +150,46 @@ module Crypto.Tutorial
 -- >           putStrLn $ "Original Message: " ++ show msg
 -- >           putStrLn $ "Message after encryption: " ++ show eMsg
 -- >           putStrLn $ "Message after decryption: " ++ show dMsg
+
+-- $combining_primitives
+--
+-- This example shows how to use Curve25519, XSalsa and Poly1305 primitives to
+-- emulate NaCl's @crypto_box@ construct.
+--
+-- > import qualified Data.ByteArray as BA
+-- > import           Data.ByteString (ByteString)
+-- > import qualified Data.ByteString as B
+-- >
+-- > import qualified Crypto.Cipher.XSalsa as XSalsa
+-- > import qualified Crypto.MAC.Poly1305 as Poly1305
+-- > import qualified Crypto.PubKey.Curve25519 as X25519
+-- >
+-- > -- | Build a @crypto_box@ packet encrypting the specified content with a
+-- > -- 192-bit nonce, receiver public key and sender private key.
+-- > crypto_box content nonce pk sk = BA.convert tag `B.append` c
+-- >   where
+-- >     zero         = B.replicate 16 0
+-- >     shared       = X25519.dh pk sk
+-- >     (iv0, iv1)   = B.splitAt 8 nonce
+-- >     state0       = XSalsa.initialize 20 shared (zero `B.append` iv0)
+-- >     state1       = XSalsa.derive state0 iv1
+-- >     (rs, state2) = XSalsa.generate state1 32
+-- >     (c, _)       = XSalsa.combine state2 content
+-- >     tag          = Poly1305.auth (rs :: ByteString) c
+-- >
+-- > -- | Try to open a @crypto_box@ packet and recover the content using the
+-- > -- 192-bit nonce, sender public key and receiver private key.
+-- > crypto_box_open packet nonce pk sk
+-- >     | B.length packet < 16 = Nothing
+-- >     | BA.constEq tag' tag  = Just content
+-- >     | otherwise            = Nothing
+-- >   where
+-- >     (tag', c)    = B.splitAt 16 packet
+-- >     zero         = B.replicate 16 0
+-- >     shared       = X25519.dh pk sk
+-- >     (iv0, iv1)   = B.splitAt 8 nonce
+-- >     state0       = XSalsa.initialize 20 shared (zero `B.append` iv0)
+-- >     state1       = XSalsa.derive state0 iv1
+-- >     (rs, state2) = XSalsa.generate state1 32
+-- >     (content, _) = XSalsa.combine state2 c
+-- >     tag          = Poly1305.auth (rs :: ByteString) c
