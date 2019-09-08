@@ -77,6 +77,12 @@ typedef struct {
 	block128 li[4];
 } aes_ocb;
 
+/* size = 17*16= 272 */
+typedef struct {
+	aes_block htable[16];
+	aes_block s;
+} aes_polyval;
+
 /* in bytes: either 16,24,32 */
 void cryptonite_aes_initkey(aes_key *ctx, uint8_t *key, uint8_t size);
 
@@ -116,5 +122,9 @@ void cryptonite_aes_ccm_decrypt(uint8_t *output, aes_ccm *ccm, aes_key *key, uin
 void cryptonite_aes_ccm_finish(uint8_t *tag, aes_ccm *ccm, aes_key *key);
 
 uint8_t *cryptonite_aes_cpu_init(void);
+
+void cryptonite_aes_polyval_init(aes_polyval *ctx, const aes_block *h);
+void cryptonite_aes_polyval_update(aes_polyval *ctx, const uint8_t *input, uint32_t length);
+void cryptonite_aes_polyval_finalize(aes_polyval *ctx, aes_block *dst);
 
 #endif

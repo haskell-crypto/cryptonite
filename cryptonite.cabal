@@ -104,6 +104,7 @@ Flag check_alignment
 
 Library
   Exposed-modules:   Crypto.Cipher.AES
+                     Crypto.Cipher.AESGCMSIV
                      Crypto.Cipher.Blowfish
                      Crypto.Cipher.CAST5
                      Crypto.Cipher.Camellia
@@ -395,6 +396,7 @@ Test-Suite test-cryptonite
                      KAT_AES.KATOCB3
                      KAT_AES.KATXTS
                      KAT_AES
+                     KAT_AESGCMSIV
                      KAT_AFIS
                      KAT_Argon2
                      KAT_Blowfish
