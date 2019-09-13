@@ -13,7 +13,7 @@ module Crypto.PubKey.ECC.P256K1 (
     rfc6979,
     compactPubKeyToPoint,
     pointFromTPoint,
-    secretFromInteger
+    scalarFromInteger
 ) where
 
 import Control.Monad (unless)
@@ -49,11 +49,13 @@ toPoint (Scalar fk) =
 scalarGenerate :: MonadRandom randomly => randomly Scalar
 scalarGenerate = do
     bs <- getRandomBytes 32
-    return $ secretFromInteger $ os2ip (bs :: ByteString)
+    case scalarFromInteger $ os2ip (bs :: ByteString) of
+        CryptoPassed scalar -> return scalar
+        CryptoFailed _ -> scalarGenerate
 
 -- based on secKey
-secretFromInteger :: Integer -> Scalar
-secretFromInteger int =
+scalarFromInteger :: Integer -> CryptoFailable Scalar
+scalarFromInteger int =
     withContext $ \ctx -> do
         fp <- mallocForeignPtr
         ret <-
@@ -62,8 +64,8 @@ secretFromInteger int =
                 poke p (Bytes32 (toShort bs))
                 ecSecKeyVerify ctx p
         if isSuccess ret
-            then return $ Scalar fp
-            else throwCryptoError $ CryptoFailed CryptoError_EcScalarOutOfBounds
+            then return $ CryptoPassed $ Scalar fp
+            else return $ CryptoFailed CryptoError_EcScalarOutOfBounds
 
 -- based on importPubKey
 pointFromBinary :: ByteArrayAccess ba => ba -> CryptoFailable Point
@@ -74,7 +76,7 @@ pointFromBinary ba = do
         ret <- withForeignPtr fp $ \p -> ecPubKeyParse ctx p b l
         if isSuccess ret
             then return $ CryptoPassed $ Point fp
-            else return $ CryptoFailed CryptoError_PointCoordinatesInvalid
+            else return $ CryptoFailed CryptoError_PointFormatInvalid
 
 -- | Based on exportPubKey
 pointToBinary :: ByteArray bs1 => Point -> bs1
@@ -82,7 +84,7 @@ pointToBinary (Point ptr) = withContext $ \ctx ->
     withForeignPtr ptr $ \p -> alloca $ \l -> allocaBytes z $ \o -> do
         poke l (fromIntegral z)
         ret <- ecPubKeySerialize ctx o l p c
-        unless (isSuccess ret) $ throwCryptoError $ CryptoFailed CryptoError_PointCoordinatesInvalid
+        unless (isSuccess ret) $ throwCryptoError $ CryptoFailed CryptoError_InternalAssumptionFailed
         n <- peek l
         bs <- packByteString (o, n)
         return $ convert bs
@@ -107,7 +109,7 @@ fctx = unsafePerformIO $ do
     x <- contextCreate 0x0301 -- signVerify
     e <- getEntropy 32
     ret <- alloca $ \s -> poke s (Bytes32 (toShort e)) >> contextRandomize x s
-    unless (isSuccess ret) $ throwCryptoError $ CryptoFailed CryptoError_FailedToRandomize
+    unless (isSuccess ret) $ throwCryptoError $ CryptoFailed CryptoError_InternalAssumptionFailed
     newForeignPtr contextDestroy x
 
 {-# INLINE withContext #-}
@@ -117,7 +119,7 @@ withContext f = unsafeDupablePerformIO (withForeignPtr fctx f)
 isSuccess :: CInt -> Bool
 isSuccess (CInt 0) = False
 isSuccess (CInt 1) = True
-isSuccess _ = undefined
+isSuccess _ = throwCryptoError $ CryptoFailed CryptoError_InternalAssumptionFailed
 
 packByteString :: (Ptr a, CSize) -> IO BS.ByteString
 packByteString (b, l) = BS.packCStringLen (castPtr b, fromIntegral l)
@@ -217,39 +219,44 @@ pointFromTPoint (T.Point x y) = withContext $ \ctx ->
             ret <- ecPubKeyParse ctx p buf 65
             if isSuccess ret
                 then return $ Point fp
-                else throwCryptoError $ CryptoFailed CryptoError_PointFormatInvalid
+                else throwCryptoError $ CryptoFailed CryptoError_InternalAssumptionFailed
     where
         Just bx = i2ospOf 32 x
         Just by = i2ospOf 32 y
         bs = BS.concat [BS.pack [0x04], bx, by]
 
-compactPubKeyToPoint :: ByteArray binary => binary -> Maybe T.Point
+compactPubKeyToPoint :: ByteArray binary => binary -> CryptoFailable T.Point
 compactPubKeyToPoint binary = withContext $ \ctx ->
     if BS.length bs /= 33
-        then throwCryptoError $ CryptoFailed CryptoError_PointFormatInvalid
+        then return $ CryptoFailed CryptoError_PointFormatInvalid
         else useByteString bs $ \(buf, _) -> do
             fp <- mallocForeignPtr
             withForeignPtr fp $ \p -> do
                 ret <- ecPubKeyParse ctx p buf 33
-                if isSuccess ret
-                    then alloca $ \outputlen -> allocaBytes z $ \o -> do
+                if not $ isSuccess ret then
+                    return $ CryptoFailed CryptoError_PointFormatInvalid
+                else
+                    alloca $ \outputlen -> allocaBytes z $ \o -> do
                         poke outputlen (fromIntegral z)
                         ret2 <- ecPubKeySerialize ctx o outputlen p flags
-                        unless (isSuccess ret2) $ throwCryptoError $ CryptoFailed CryptoError_PointFormatInvalid
-                        n <- peek outputlen
-                        unless (n == 65) $ throwCryptoError $ CryptoFailed CryptoError_PointFormatInvalid
-                        outbs <- packByteString (o, n)
-                        let (_, coords) = BS.splitAt 1 outbs
-                        let (bx, by) = BS.splitAt 32 coords
-                        return $ Just $ T.Point (os2ip bx) (os2ip by)
-                    else return Nothing
+                        if not $ isSuccess ret2 then
+                            return $ CryptoFailed CryptoError_InternalAssumptionFailed
+                        else do
+                            n <- peek outputlen
+                            if n /= 65 then
+                                return $ CryptoFailed CryptoError_InternalAssumptionFailed
+                            else do
+                                outbs <- packByteString (o, n)
+                                let (_, coords) = BS.splitAt 1 outbs
+                                let (bx, by) = BS.splitAt 32 coords
+                                return $ CryptoPassed $ T.Point (os2ip bx) (os2ip by)
     where
         bs = convert binary
         flags = 0x0002 :: CUInt -- uncompressed
         z = 65 -- length of uncompressed pubkey
 
 -- stolen from secp256k1-haskell test suite
-parseDer :: ByteString -> Maybe Signature
+parseDer :: ByteString -> CryptoFailable Signature
 parseDer bs =
     withContext $ \ctx ->
         BS.useAsCStringLen bs $ \(d, dl) -> alloca $ \sigbuf -> do
@@ -259,12 +266,12 @@ parseDer bs =
                     alloca $ \pc -> do
                         ret2 <- ecdsaSignatureSerializeCompact ctx pc sigbuf
                         unless (isSuccess ret2) $ throwCryptoError $
-                            CryptoFailed CryptoError_SignatureCouldntSerialize
+                            CryptoFailed CryptoError_InternalAssumptionFailed
                         b64 <- peek pc
                         let (r, s) = BS.splitAt 32 $ fromShort $ getBytes64 b64
-                        return $ Just $ Signature (os2ip r) (os2ip s)
+                        return $ CryptoPassed $ Signature (os2ip r) (os2ip s)
                 else do
-                    return Nothing
+                    return $ CryptoFailed CryptoError_SignatureInvalid
 
 foreign import ccall "secp256k1.h secp256k1_ecdsa_signature_serialize_compact"
     ecdsaSignatureSerializeCompact

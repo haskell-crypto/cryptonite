@@ -53,8 +53,8 @@ data CryptoError =
     | CryptoError_OutputLengthTooSmall
     | CryptoError_OutputLengthTooBig
     -- libsecp256k1
-    | CryptoError_FailedToRandomize
-    | CryptoError_SignatureCouldntSerialize
+    | CryptoError_InternalAssumptionFailed -- thrown in cases so unlikely that it is probably a bug in the library or toolchain
+    | CryptoError_SignatureInvalid
     deriving (Show,Eq,Enum,Data)
 
 instance E.Exception CryptoError

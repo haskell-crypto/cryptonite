@@ -16,6 +16,7 @@ module Crypto.PubKey.ECC.ECDSA
     , signDigest
     , verify
     , verifyDigest
+    , ensureLowS
     ) where
 
 import Control.Monad
@@ -61,6 +62,15 @@ toPublicKey (KeyPair curve pub _) = PublicKey curve pub
 toPrivateKey :: KeyPair -> PrivateKey
 toPrivateKey (KeyPair curve _ priv) = PrivateKey curve priv
 
+ensureLowS :: Curve -> Signature -> Signature
+ensureLowS curve (Signature r potentially_high_s) = do
+    let halforder = shiftR n 1
+        CurveCommon _ _ g n _ = common_curve curve
+    if potentially_high_s > halforder then
+        Signature r $ n - potentially_high_s
+    else
+        Signature r potentially_high_s
+
 -- | Sign digest using the private key and an explicit k number.
 --
 -- /WARNING:/ Vulnerable to timing attacks.
@@ -77,9 +87,7 @@ signDigestWith k (PrivateKey curve d) digest = do
               PointO    -> Nothing
               Point x _ -> return $ x `mod` n
     kInv <- inverse k n
-    let s1 = kInv * (z + r * d) `mod` n
-    let halforder = shiftR n 1
-    let s = if (s1 > halforder) then n - s1 else s1
+    let s = kInv * (z + r * d) `mod` n
     when (r == 0 || s == 0) Nothing
     return $ Signature r s
 
