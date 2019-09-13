@@ -18,7 +18,6 @@ instance Show Curve where
 instance Arbitrary Curve where
     arbitrary = elements
         [ Curve ECC.Curve_P256R1
-        , Curve ECC.Curve_P256K1
         , Curve ECC.Curve_P384R1
         , Curve ECC.Curve_P521R1
         , Curve ECC.Curve_X25519

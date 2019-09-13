@@ -175,15 +175,6 @@ instance EllipticCurve Curve_P256K1 where
             | m == 4 -> P256K1.pointFromBinary xy
             | otherwise -> CryptoFailed $ CryptoError_PointFormatInvalid
 
-instance EllipticCurveArith Curve_P256K1 where
-    pointAdd  _ a b = P256K1.pointAdd a b
-    pointNegate _ p = P256K1.pointNegate p
-    pointSmul _ s p = P256K1.pointMul s p
-
-instance EllipticCurveDH Curve_P256K1 where
-    ecdhRaw _ s p = SharedSecret $ P256K1.pointDh s p
-    ecdh  prx s p = checkNonZeroDH (ecdhRaw prx s p)
-
 data Curve_P384R1 = Curve_P384R1
     deriving (Show,Data)
 

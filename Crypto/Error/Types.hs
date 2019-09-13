@@ -52,6 +52,9 @@ data CryptoError =
     | CryptoError_SaltTooSmall
     | CryptoError_OutputLengthTooSmall
     | CryptoError_OutputLengthTooBig
+    -- libsecp256k1
+    | CryptoError_FailedToRandomize
+    | CryptoError_SignatureCouldntSerialize
     deriving (Show,Eq,Enum,Data)
 
 instance E.Exception CryptoError

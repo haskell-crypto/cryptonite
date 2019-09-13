@@ -79,7 +79,7 @@ signDigestWith k (PrivateKey curve d) digest = do
     kInv <- inverse k n
     let s1 = kInv * (z + r * d) `mod` n
     let halforder = shiftR n 1
-    let s = if (s1 > halforder) then n - s1 `mod` n else s1
+    let s = if (s1 > halforder) then n - s1 else s1
     when (r == 0 || s == 0) Nothing
     return $ Signature r s
 
