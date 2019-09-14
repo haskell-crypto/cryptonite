@@ -65,7 +65,7 @@ toPrivateKey (KeyPair curve _ priv) = PrivateKey curve priv
 ensureLowS :: Curve -> Signature -> Signature
 ensureLowS curve (Signature r potentially_high_s) = do
     let halforder = shiftR n 1
-        CurveCommon _ _ g n _ = common_curve curve
+        CurveCommon _ _ _ n _ = common_curve curve
     if potentially_high_s > halforder then
         Signature r $ n - potentially_high_s
     else
