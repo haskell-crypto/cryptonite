@@ -33,6 +33,7 @@ import Foreign
 import Foreign.C
 import System.IO.Unsafe (unsafeDupablePerformIO, unsafePerformIO)
 
+-- A pub key in libsecp256k1 takes up 64 bytes, so we can use this
 newtype Bytes64 = Bytes64 {getBytes64 :: ShortByteString}
     deriving (Read, Show, Eq, Ord)
 
@@ -43,6 +44,7 @@ instance Storable Bytes64 where
     poke p (Bytes64 k) = useByteString (fromShort k)
         $ \(b, _) -> copyArray (castPtr p) b 64
 
+-- A scalar in libsecp256k1 takes up 32 bytes, so we can use this
 newtype Bytes32 = Bytes32 {getBytes32 :: ShortByteString}
     deriving (Read, Show, Eq, Ord)
 
@@ -53,20 +55,25 @@ instance Storable Bytes32 where
     poke p (Bytes32 k) = useByteString (fromShort k)
         $ \(b, _) -> copyArray (castPtr p) b 32
 
+-- private keys are scalars
 newtype Scalar = Scalar (ForeignPtr Bytes32)
 
-scalarToBinary :: ByteArray binary => Scalar -> binary
-scalarToBinary (Scalar fk) = convert $ fromShort $ getBytes32 $ unsafePerformIO $ withForeignPtr fk peek
-
+-- public keys are points
 newtype Point = Point (ForeignPtr Bytes64)
 
+-- secp256k1 needs a context, we use this opaque type to represent it
 data Ctx
 
 instance Eq Point where
     a == b = (pointToBinary a :: ByteString) == pointToBinary b
 
--- private key to public key
--- Based on derivePubKey
+-- length of retured ByteArray is 32
+scalarToBinary :: ByteArray binary => Scalar -> binary
+scalarToBinary (Scalar fk) = convert $ fromShort $ getBytes32 $ unsafePerformIO $ withForeignPtr fk peek
+
+-- | This can be used to derive the public key corresponding to a given private key.
+-- | Should never return CryptoFailed since it is not possible to construct an invalid Scalar.
+-- Based on derivePubKey in secp256k1-haskell
 scalarToPoint :: Scalar -> CryptoFailable Point
 scalarToPoint (Scalar fk) =
     withContext $ \ctx -> withForeignPtr fk $ \k -> do
@@ -77,6 +84,8 @@ scalarToPoint (Scalar fk) =
         else
             return $ CryptoFailed CryptoError_EcScalarOutOfBounds
 
+-- | Randomly generate a new scalar.
+-- | Will keep retrying until valid results are found.
 scalarGenerate :: MonadRandom randomly => randomly Scalar
 scalarGenerate = do
     bs <- getRandomBytes 32
@@ -84,7 +93,10 @@ scalarGenerate = do
         CryptoPassed scalar -> return scalar
         CryptoFailed _ -> scalarGenerate
 
--- based on secKey
+-- | secp256k1 scalar from given integer.
+-- | Returns EcScalarOutOfBounds when passed scalar deemed
+-- | to be invalid by libsecp256k1.
+-- Based on secKey in secp256k1-haskell
 scalarFromInteger :: Integer -> CryptoFailable Scalar
 scalarFromInteger int =
     withContext $ \ctx -> do
@@ -98,7 +110,10 @@ scalarFromInteger int =
             then return $ CryptoPassed $ Scalar fp
             else return $ CryptoFailed CryptoError_EcScalarOutOfBounds
 
--- based on importPubKey
+-- | Point (public key) from given ByteArrayAccess.
+-- | Public key must be encoded in compressed Bitcoin format (33 bytes).
+-- | Returns CryptoFailed if invalid compressed point is passed.
+-- Based on importPubKey in secp256k1-haskell
 pointFromBinary :: ByteArrayAccess ba => ba -> CryptoFailable Point
 pointFromBinary ba = do
     let bs = convert ba
@@ -109,7 +124,10 @@ pointFromBinary ba = do
             then return $ CryptoPassed $ Point fp
             else return $ CryptoFailed CryptoError_PointFormatInvalid
 
--- | Based on exportPubKey
+-- | Compressed public key serialization from given point (public key)
+-- | Result is 33 bytes in length.
+-- | Throws when unable to serialize, which should never happen.
+-- Based on exportPubKey in secp256k1-haskell
 pointToBinary :: ByteArray bs1 => Point -> bs1
 pointToBinary (Point ptr) = withContext $ \ctx ->
     withForeignPtr ptr $ \p -> alloca $ \l -> allocaBytes z $ \o -> do
@@ -148,6 +166,9 @@ useByteString :: ByteString -> ((Ptr CUChar, CSize) -> IO a) -> IO a
 useByteString bs f =
     BS.useAsCStringLen bs $ \(b, l) -> f (castPtr b, fromIntegral l)
 
+-- | ECDH shared secret from given Scalar (private key) and
+-- | given Point (public key).
+-- | Returns a ByteArray of 32 bytes.
 pointDh :: ByteArray binary => Scalar -> Point -> binary
 pointDh (Scalar sfp) (Point pfp) =
     withContext $ \ctx ->
@@ -162,6 +183,8 @@ pointDh (Scalar sfp) (Point pfp) =
                     bs <- packByteString (o, 32)
                     return $ convert bs
 
+-- | Convenience method for converting from the generic Point type to a libsecp256k1 point.
+-- | Throws if the point is not valid on secp256k1, for example when passed the PointO.
 pointFromTPoint :: T.Point -> Point
 pointFromTPoint T.PointO = throwCryptoError $ CryptoFailed CryptoError_PointCoordinatesInvalid
 pointFromTPoint (T.Point x y) = withContext $ \ctx ->
@@ -177,6 +200,10 @@ pointFromTPoint (T.Point x y) = withContext $ \ctx ->
         Just by = i2ospOf 32 y
         bs = BS.concat [BS.pack [0x04], bx, by]
 
+-- | Convenience method for converting from the secp256k1 specific Point type
+-- | to the generic Point type.
+-- | Returns CryptoFailed (failure) when unable to serialize. Should never happen.
+-- | Returns CryptoPassed (success) otherwise.
 pointToTPoint :: Point -> CryptoFailable T.Point
 pointToTPoint (Point fp) = withContext $ \ctx ->
     withForeignPtr fp $ \p ->
@@ -198,6 +225,10 @@ pointToTPoint (Point fp) = withContext $ \ctx ->
         flags = 0x0002 :: CUInt -- uncompressed
         z = 65 -- length of uncompressed pubkey
 
+-- | Parse DER-encoded signature. It's length is 71 bytes in average.
+-- | Returns CryptoFailed if the signature is in an invalid format.
+-- | The signature returns is in a generic format with r and s values easily
+-- | accessible.
 -- stolen from secp256k1-haskell test suite
 parseDerSignature :: ByteString -> CryptoFailable Signature
 parseDerSignature bs =
@@ -218,8 +249,13 @@ parseDerSignature bs =
                     return $ CryptoFailed CryptoError_SignatureInvalid
 
 
--- counter (CUInt) is included here because signing
--- could fail with the returned k
+-- | Calculate nonce according to RFC 6979 with HMAC-SHA256.
+-- | Takes
+-- | * a message digest,
+-- | * a private key (generic format),
+-- | * a counter (CUInt)
+-- | The counter is usually set to 0, but can be incremented if the resulting nonce
+-- | cannot be used for producing a valid signature.
 -- see src/secp256k1.c revision e541a90 line 475
 rfc6979 :: Digest SHA256 -> PrivateKey -> CUInt -> Integer
 rfc6979 digest (PrivateKey _ pk) counter =
