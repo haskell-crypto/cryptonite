@@ -6,15 +6,15 @@ module Crypto.PubKey.ECC.P256K1 (
     Scalar (..),
     scalarGenerate,
     scalarToPoint,
+    scalarFromInteger,
+    scalarToBinary,
     pointToBinary,
     pointFromBinary,
-    pointDh,
-    parseDer,
-    rfc6979,
     pointToTPoint,
     pointFromTPoint,
-    scalarFromInteger,
-    scalarToBinary
+    pointDh,
+    parseDerSignature,
+    rfc6979,
 ) where
 
 import Control.Monad (unless)
@@ -33,12 +33,37 @@ import Foreign
 import Foreign.C
 import System.IO.Unsafe (unsafeDupablePerformIO, unsafePerformIO)
 
+newtype Bytes64 = Bytes64 {getBytes64 :: ShortByteString}
+    deriving (Read, Show, Eq, Ord)
+
+instance Storable Bytes64 where
+    sizeOf _ = 64
+    alignment _ = 1
+    peek p = Bytes64 . toShort <$> packByteString (p, 64)
+    poke p (Bytes64 k) = useByteString (fromShort k)
+        $ \(b, _) -> copyArray (castPtr p) b 64
+
+newtype Bytes32 = Bytes32 {getBytes32 :: ShortByteString}
+    deriving (Read, Show, Eq, Ord)
+
+instance Storable Bytes32 where
+    sizeOf _ = 32
+    alignment _ = 1
+    peek p = Bytes32 . toShort <$> packByteString (p, 32)
+    poke p (Bytes32 k) = useByteString (fromShort k)
+        $ \(b, _) -> copyArray (castPtr p) b 32
+
 newtype Scalar = Scalar (ForeignPtr Bytes32)
 
 scalarToBinary :: ByteArray binary => Scalar -> binary
 scalarToBinary (Scalar fk) = convert $ fromShort $ getBytes32 $ unsafePerformIO $ withForeignPtr fk peek
 
 newtype Point = Point (ForeignPtr Bytes64)
+
+data Ctx
+
+instance Eq Point where
+    a == b = (pointToBinary a :: ByteString) == pointToBinary b
 
 -- private key to public key
 -- Based on derivePubKey
@@ -98,25 +123,14 @@ pointToBinary (Point ptr) = withContext $ \ctx ->
         c = 0x0102 :: CUInt -- compressed
         z = 33 -- length of compressed pubkey
 
-data Ctx
-
-foreign import ccall "secp256k1.h secp256k1_ec_pubkey_serialize"
-    ecPubKeySerialize
-        :: Ptr Ctx
-        -> Ptr CUChar -- ^ array for encoded public key, must be large enough
-        -> Ptr CSize -- ^ size of encoded public key, will be updated
-        -> Ptr Bytes64 -- pubkey
-        -> CUInt -- context flags
-        -> IO CInt
-
 {-# NOINLINE fctx #-}
 fctx :: ForeignPtr Ctx
 fctx = unsafePerformIO $ do
-    x <- contextCreate 0x0301 -- signVerify
+    x <- ecContextCreate 0x0301 -- signVerify
     e <- getEntropy 32
-    ret <- alloca $ \s -> poke s (Bytes32 (toShort e)) >> contextRandomize x s
+    ret <- alloca $ \s -> poke s (Bytes32 (toShort e)) >> ecContextRandomize x s
     unless (isSuccess ret) $ throwCryptoError $ CryptoFailed CryptoError_InternalAssumptionFailed
-    newForeignPtr contextDestroy x
+    newForeignPtr ecContextDestroy x
 
 {-# INLINE withContext #-}
 withContext :: (Ptr Ctx -> IO a) -> a
@@ -130,77 +144,9 @@ isSuccess _ = throwCryptoError $ CryptoFailed CryptoError_InternalAssumptionFail
 packByteString :: (Ptr a, CSize) -> IO BS.ByteString
 packByteString (b, l) = BS.packCStringLen (castPtr b, fromIntegral l)
 
-foreign import ccall "secp256k1.h secp256k1_context_randomize"
-    contextRandomize
-        :: Ptr Ctx
-        -> Ptr Bytes32
-        -> IO CInt
-
-newtype Bytes64 = Bytes64 {getBytes64 :: ShortByteString}
-    deriving (Read, Show, Eq, Ord)
-
-instance Storable Bytes64 where
-    sizeOf _ = 64
-    alignment _ = 1
-    peek p = Bytes64 . toShort <$> packByteString (p, 64)
-    poke p (Bytes64 k) = useByteString (fromShort k)
-        $ \(b, _) -> copyArray (castPtr p) b 64
-
-newtype Bytes32 = Bytes32 {getBytes32 :: ShortByteString}
-    deriving (Read, Show, Eq, Ord)
-
-instance Storable Bytes32 where
-    sizeOf _ = 32
-    alignment _ = 1
-    peek p = Bytes32 . toShort <$> packByteString (p, 32)
-    poke p (Bytes32 k) = useByteString (fromShort k)
-        $ \(b, _) -> copyArray (castPtr p) b 32
-
-foreign import ccall "secp256k1.h secp256k1_context_create"
-    contextCreate
-        :: CUInt -- ctx flags
-        -> IO (Ptr Ctx)
-
-foreign import ccall "secp256k1.h &secp256k1_context_destroy"
-    contextDestroy :: FunPtr (Ptr Ctx -> IO ())
-
 useByteString :: ByteString -> ((Ptr CUChar, CSize) -> IO a) -> IO a
 useByteString bs f =
     BS.useAsCStringLen bs $ \(b, l) -> f (castPtr b, fromIntegral l)
-
-instance Eq Point where
-    a == b = (pointToBinary a :: ByteString) == pointToBinary b
-
-foreign import ccall "secp256k1.h secp256k1_ec_pubkey_create"
-    ecPubKeyCreate
-        :: Ptr Ctx
-        -> Ptr Bytes64 --Point
-        -> Ptr Bytes32 --Scalar
-        -> IO CInt
-
-foreign import ccall "secp256k1.h secp256k1_ec_seckey_verify"
-    ecSecKeyVerify
-        :: Ptr Ctx
-        -> Ptr Bytes32 --Scalar
-        -> IO CInt
-
-foreign import ccall "secp256k1.h secp256k1_ec_pubkey_parse"
-    ecPubKeyParse
-        :: Ptr Ctx
-        -> Ptr Bytes64 -- pubkey
-        -> Ptr CUChar -- ^ encoded public key array
-        -> CSize -- ^ size of encoded public key array
-        -> IO CInt
-
-foreign import ccall "secp256k1.h secp256k1_ecdh"
-    ecEcdh
-        :: Ptr Ctx
-        -> Ptr Bytes32 -- output (32 bytes)
-        -> Ptr Bytes64 -- pubkey
-        -> Ptr Bytes32 -- privkey
-        -> Ptr Int -- hash function pointer. int is just bogus
-        -> Ptr CUChar -- arbitrary data that is passed through
-        -> IO CInt
 
 pointDh :: ByteArray binary => Scalar -> Point -> binary
 pointDh (Scalar sfp) (Point pfp) =
@@ -253,8 +199,8 @@ pointToTPoint (Point fp) = withContext $ \ctx ->
         z = 65 -- length of uncompressed pubkey
 
 -- stolen from secp256k1-haskell test suite
-parseDer :: ByteString -> CryptoFailable Signature
-parseDer bs =
+parseDerSignature :: ByteString -> CryptoFailable Signature
+parseDerSignature bs =
     withContext $ \ctx ->
         BS.useAsCStringLen bs $ \(d, dl) -> alloca $ \sigbuf -> do
             ret1 <- ecdsaSignatureParseDer ctx sigbuf (castPtr d) (fromIntegral dl)
@@ -271,20 +217,6 @@ parseDer bs =
                 else do
                     return $ CryptoFailed CryptoError_SignatureInvalid
 
-foreign import ccall "secp256k1.h secp256k1_ecdsa_signature_serialize_compact"
-    ecdsaSignatureSerializeCompact
-        :: Ptr Ctx
-        -> Ptr Bytes64 -- output compact sig
-        -> Ptr Bytes64 -- sig
-        -> IO CInt
-
-foreign import ccall "secp256k1.h secp256k1_ecdsa_signature_parse_der"
-    ecdsaSignatureParseDer
-        :: Ptr Ctx
-        -> Ptr Bytes64
-        -> Ptr CUChar -- ^ encoded DER signature
-        -> CSize -- ^ size of encoded signature
-        -> IO CInt
 
 -- counter (CUInt) is included here because signing
 -- could fail with the returned k
@@ -315,10 +247,83 @@ type RFC6979Fun
     -> CUInt
     -> IO CInt
 
+secp256k1_rfc6979 :: RFC6979Fun
+secp256k1_rfc6979 = mkInner ptr_secp256k1_rfc6979
+
+------------------------------------------------------------------------
+-- Foreign bindings
+------------------------------------------------------------------------
+
+foreign import ccall "secp256k1.h secp256k1_ec_pubkey_serialize"
+    ecPubKeySerialize
+        :: Ptr Ctx
+        -> Ptr CUChar -- ^ array for encoded public key, must be large enough
+        -> Ptr CSize -- ^ size of encoded public key, will be updated
+        -> Ptr Bytes64 -- pubkey
+        -> CUInt -- context flags
+        -> IO CInt
+
+foreign import ccall "secp256k1.h secp256k1_context_randomize"
+    ecContextRandomize
+        :: Ptr Ctx
+        -> Ptr Bytes32
+        -> IO CInt
+
+foreign import ccall "secp256k1.h secp256k1_context_create"
+    ecContextCreate
+        :: CUInt -- ctx flags
+        -> IO (Ptr Ctx)
+
+foreign import ccall "secp256k1.h &secp256k1_context_destroy"
+    ecContextDestroy :: FunPtr (Ptr Ctx -> IO ())
+
+foreign import ccall "secp256k1.h secp256k1_ec_pubkey_create"
+    ecPubKeyCreate
+        :: Ptr Ctx
+        -> Ptr Bytes64 -- Point
+        -> Ptr Bytes32 -- Scalar
+        -> IO CInt
+
+foreign import ccall "secp256k1.h secp256k1_ec_seckey_verify"
+    ecSecKeyVerify
+        :: Ptr Ctx
+        -> Ptr Bytes32 -- Scalar
+        -> IO CInt
+
+foreign import ccall "secp256k1.h secp256k1_ec_pubkey_parse"
+    ecPubKeyParse
+        :: Ptr Ctx
+        -> Ptr Bytes64 -- pubkey
+        -> Ptr CUChar -- encoded public key array
+        -> CSize -- size of encoded public key array
+        -> IO CInt
+
+foreign import ccall "secp256k1.h secp256k1_ecdh"
+    ecEcdh
+        :: Ptr Ctx
+        -> Ptr Bytes32 -- output (32 bytes)
+        -> Ptr Bytes64 -- pubkey
+        -> Ptr Bytes32 -- privkey
+        -> Ptr Int -- hash function pointer. int is just bogus
+        -> Ptr CUChar -- arbitrary data that is passed through
+        -> IO CInt
+
+foreign import ccall "secp256k1.h secp256k1_ecdsa_signature_serialize_compact"
+    ecdsaSignatureSerializeCompact
+        :: Ptr Ctx
+        -> Ptr Bytes64 -- output compact sig
+        -> Ptr Bytes64 -- sig
+        -> IO CInt
+
+foreign import ccall "secp256k1.h secp256k1_ecdsa_signature_parse_der"
+    ecdsaSignatureParseDer
+        :: Ptr Ctx
+        -> Ptr Bytes64
+        -> Ptr CUChar -- encoded DER signature
+        -> CSize -- size of encoded signature
+        -> IO CInt
+
 foreign import capi "secp256k1.h value secp256k1_nonce_function_rfc6979"
     ptr_secp256k1_rfc6979 :: FunPtr RFC6979Fun
 
 foreign import ccall "dynamic" mkInner :: FunPtr RFC6979Fun -> RFC6979Fun
-
-secp256k1_rfc6979 :: RFC6979Fun
-secp256k1_rfc6979 = mkInner ptr_secp256k1_rfc6979
