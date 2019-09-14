@@ -47,13 +47,27 @@ void cryptonite_xsalsa_init(cryptonite_salsa_context *ctx, uint8_t nb_rounds,
        (x6, x7, x8, x9) is the first 128 bits of a 192-bit nonce
   */
   cryptonite_salsa_init_core(&ctx->st, keylen, key, 8, iv);
-  ctx->st.d[ 8] = load_le32(iv + 8);
-  ctx->st.d[ 9] = load_le32(iv + 12);
+
+  /* Continue initialization in a separate function that may also
+     be called independently */
+  cryptonite_xsalsa_derive(ctx, ivlen - 8, iv + 8);
+}
+
+void cryptonite_xsalsa_derive(cryptonite_salsa_context *ctx,
+                              uint32_t ivlen, const uint8_t *iv)
+{
+  /* Finish creating initial 512-bit input block:
+       (x6, x7, x8, x9) is the first 128 bits of a 192-bit nonce
+
+     Except iv has been shifted by 64 bits so there are now only 128 bits ahead.
+  */
+  ctx->st.d[ 8] += load_le32(iv + 0);
+  ctx->st.d[ 9] += load_le32(iv + 4);
 
   /* Compute (z0, z1, . . . , z15) = doubleround ^(r/2) (x0, x1, . . . , x15) */
   block hSalsa;
   memset(&hSalsa, 0, sizeof(block));
-  cryptonite_salsa_core_xor(nb_rounds, &hSalsa, &ctx->st);
+  cryptonite_salsa_core_xor(ctx->nb_rounds, &hSalsa, &ctx->st);
  
   /* Build a new 512-bit input block (x′0, x′1, . . . , x′15):
        (x′0, x′5, x′10, x′15) is the Salsa20 constant
@@ -69,8 +83,8 @@ void cryptonite_xsalsa_init(cryptonite_salsa_context *ctx, uint8_t nb_rounds,
   ctx->st.d[12] = hSalsa.d[ 7] - ctx->st.d[ 7];
   ctx->st.d[13] = hSalsa.d[ 8] - ctx->st.d[ 8];
   ctx->st.d[14] = hSalsa.d[ 9] - ctx->st.d[ 9];
-  ctx->st.d[ 6] = load_le32(iv + 16);
-  ctx->st.d[ 7] = load_le32(iv + 20);
+  ctx->st.d[ 6] = load_le32(iv + 8);
+  ctx->st.d[ 7] = load_le32(iv + 12);
   ctx->st.d[ 8] = 0;
   ctx->st.d[ 9] = 0;
 }

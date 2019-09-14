@@ -12,6 +12,7 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 module Crypto.Cipher.XSalsa
     ( initialize
+    , derive
     , combine
     , generate
     , State
@@ -44,5 +45,31 @@ initialize nbRounds key nonce
   where kLen     = B.length key
         nonceLen = B.length nonce
 
+-- | Use an already initialized context and new nonce material to derive another
+-- XSalsa context.
+--
+-- This allows a multi-level cascade where a first key @k1@ and nonce @n1@ is
+-- used to get @HState(k1,n1)@, and this value is then used as key @k2@ to build
+-- @XSalsa(k2,n2)@.  Function 'initialize' is to be called with the first 192
+-- bits of @n1|n2@, and the call to @derive@ should add the remaining 128 bits.
+--
+-- The output context always uses the same number of rounds as the input
+-- context.
+derive :: ByteArrayAccess nonce
+       => State  -- ^ base XSalsa state
+       -> nonce  -- ^ the remainder nonce (128 bits)
+       -> State  -- ^ the new XSalsa state
+derive (State stPtr') nonce
+    | nonceLen /= 16 = error "XSalsa: nonce length should be 128 bits"
+    | otherwise = unsafeDoIO $ do
+        stPtr <- B.copy stPtr' $ \stPtr ->
+            B.withByteArray nonce $ \noncePtr  ->
+                ccryptonite_xsalsa_derive stPtr nonceLen noncePtr
+        return $ State stPtr
+  where nonceLen = B.length nonce
+
 foreign import ccall "cryptonite_xsalsa_init"
     ccryptonite_xsalsa_init :: Ptr State -> Int -> Int -> Ptr Word8 -> Int -> Ptr Word8 -> IO ()
+
+foreign import ccall "cryptonite_xsalsa_derive"
+    ccryptonite_xsalsa_derive :: Ptr State -> Int -> Ptr Word8 -> IO ()

@@ -33,5 +33,6 @@
 #include "cryptonite_salsa.h"
 
 void cryptonite_xsalsa_init(cryptonite_salsa_context *ctx, uint8_t nb_rounds, uint32_t keylen, const uint8_t *key, uint32_t ivlen, const uint8_t *iv);
+void cryptonite_xsalsa_derive(cryptonite_salsa_context *ctx, uint32_t ivlen, const uint8_t *iv);
 
 #endif
