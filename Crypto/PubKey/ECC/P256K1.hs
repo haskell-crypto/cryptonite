@@ -99,16 +99,18 @@ scalarGenerate = do
 -- Based on secKey in secp256k1-haskell
 scalarFromInteger :: Integer -> CryptoFailable Scalar
 scalarFromInteger int =
-    withContext $ \ctx -> do
-        fp <- mallocForeignPtr
-        ret <-
-            withForeignPtr fp $ \p -> do
-                let Just bs = i2ospOf 32 int
+    case maybeBS of
+        Just bs -> withContext $ \ctx -> do
+            fp <- mallocForeignPtr
+            ret <- withForeignPtr fp $ \p -> do
                 poke p (Bytes32 (toShort bs))
                 ecSecKeyVerify ctx p
-        if isSuccess ret
-            then return $ CryptoPassed $ Scalar fp
-            else return $ CryptoFailed CryptoError_EcScalarOutOfBounds
+            if isSuccess ret
+                then return $ CryptoPassed $ Scalar fp
+                else return $ CryptoFailed CryptoError_EcScalarOutOfBounds
+        Nothing -> CryptoFailed CryptoError_EcScalarOutOfBounds
+    where
+        maybeBS = i2ospOf 32 int
 
 -- | Point (public key) from given ByteArrayAccess.
 -- | Public key must be encoded in compressed Bitcoin format (33 bytes).

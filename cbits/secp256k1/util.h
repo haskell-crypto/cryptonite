@@ -38,7 +38,7 @@ static void secp256k1_callback_call(const secp256k1_callback * const cb, const c
 
 #define EXPECT(x,c) __builtin_expect((x),(c))
 
-#define CHECK(cond) do { \
+#define SECP_CHECK(cond) do { \
     if (EXPECT(!(cond), 0)) { \
         TEST_FAILURE("test condition failed: " #cond); \
     } \
