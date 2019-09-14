@@ -42,13 +42,15 @@ newtype Point = Point (ForeignPtr Bytes64)
 
 -- private key to public key
 -- Based on derivePubKey
-scalarToPoint :: Scalar -> Point
+scalarToPoint :: Scalar -> CryptoFailable Point
 scalarToPoint (Scalar fk) =
     withContext $ \ctx -> withForeignPtr fk $ \k -> do
         fp <- mallocForeignPtr
         ret <- withForeignPtr fp $ \p -> ecPubKeyCreate ctx p k
-        unless (isSuccess ret) $ throwCryptoError $ CryptoFailed CryptoError_EcScalarOutOfBounds
-        return $ Point fp
+        if isSuccess ret then
+            return $ CryptoPassed $ Point fp
+        else
+            return $ CryptoFailed CryptoError_EcScalarOutOfBounds
 
 scalarGenerate :: MonadRandom randomly => randomly Scalar
 scalarGenerate = do
@@ -260,11 +262,12 @@ parseDer bs =
                 then do
                     alloca $ \pc -> do
                         ret2 <- ecdsaSignatureSerializeCompact ctx pc sigbuf
-                        unless (isSuccess ret2) $ throwCryptoError $
-                            CryptoFailed CryptoError_InternalAssumptionFailed
-                        b64 <- peek pc
-                        let (r, s) = BS.splitAt 32 $ fromShort $ getBytes64 b64
-                        return $ CryptoPassed $ Signature (os2ip r) (os2ip s)
+                        if isSuccess ret2 then do
+                            b64 <- peek pc
+                            let (r, s) = BS.splitAt 32 $ fromShort $ getBytes64 b64
+                            return $ CryptoPassed $ Signature (os2ip r) (os2ip s)
+                        else
+                            return $ CryptoFailed CryptoError_InternalAssumptionFailed
                 else do
                     return $ CryptoFailed CryptoError_SignatureInvalid
 

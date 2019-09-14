@@ -159,9 +159,11 @@ instance EllipticCurve Curve_P256K1 where
     curveSizeBits _ = 256
     curveGenerateScalar _ = P256K1.scalarGenerate
     curveGenerateKeyPair _ = toKeyPair <$> P256K1.scalarGenerate
-      where toKeyPair scalar = KeyPair (P256K1.scalarToPoint scalar) scalar
+      where toKeyPair scalar = KeyPair (toPoint scalar) scalar
+            toPoint scalar = onCryptoFailure throwErrs id $ P256K1.scalarToPoint scalar
+            throwErrs = throwCryptoError . CryptoFailed
     encodePoint _ p = P256K1.pointToBinary p
-    decodePoint _ mxy = P256K1.pointFromBinary mxy
+    decodePoint _ compressed = P256K1.pointFromBinary compressed
 
 data Curve_P384R1 = Curve_P384R1
     deriving (Show,Data)
