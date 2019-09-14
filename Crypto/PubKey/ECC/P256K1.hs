@@ -5,15 +5,16 @@ module Crypto.PubKey.ECC.P256K1 (
     Point (..),
     Scalar (..),
     scalarGenerate,
-    toPoint,
+    scalarToPoint,
     pointToBinary,
     pointFromBinary,
     pointDh,
     parseDer,
     rfc6979,
-    compactPubKeyToPoint,
+    pointToTPoint,
     pointFromTPoint,
-    scalarFromInteger
+    scalarFromInteger,
+    scalarToBinary
 ) where
 
 import Control.Monad (unless)
@@ -34,12 +35,15 @@ import System.IO.Unsafe (unsafeDupablePerformIO, unsafePerformIO)
 
 newtype Scalar = Scalar (ForeignPtr Bytes32)
 
+scalarToBinary :: ByteArray binary => Scalar -> binary
+scalarToBinary (Scalar fk) = convert $ fromShort $ getBytes32 $ unsafePerformIO $ withForeignPtr fk peek
+
 newtype Point = Point (ForeignPtr Bytes64)
 
 -- private key to public key
 -- Based on derivePubKey
-toPoint :: Scalar -> Point
-toPoint (Scalar fk) =
+scalarToPoint :: Scalar -> Point
+scalarToPoint (Scalar fk) =
     withContext $ \ctx -> withForeignPtr fk $ \k -> do
         fp <- mallocForeignPtr
         ret <- withForeignPtr fp $ \p -> ecPubKeyCreate ctx p k
@@ -136,7 +140,7 @@ newtype Bytes64 = Bytes64 {getBytes64 :: ShortByteString}
 instance Storable Bytes64 where
     sizeOf _ = 64
     alignment _ = 1
-    peek p = Bytes64 . toShort <$> packByteString (castPtr p, 64)
+    peek p = Bytes64 . toShort <$> packByteString (p, 64)
     poke p (Bytes64 k) = useByteString (fromShort k)
         $ \(b, _) -> copyArray (castPtr p) b 64
 
@@ -146,7 +150,7 @@ newtype Bytes32 = Bytes32 {getBytes32 :: ShortByteString}
 instance Storable Bytes32 where
     sizeOf _ = 32
     alignment _ = 1
-    peek p = Bytes32 . toShort <$> packByteString (castPtr p, 32)
+    peek p = Bytes32 . toShort <$> packByteString (p, 32)
     poke p (Bytes32 k) = useByteString (fromShort k)
         $ \(b, _) -> copyArray (castPtr p) b 32
 
@@ -225,33 +229,24 @@ pointFromTPoint (T.Point x y) = withContext $ \ctx ->
         Just by = i2ospOf 32 y
         bs = BS.concat [BS.pack [0x04], bx, by]
 
-compactPubKeyToPoint :: ByteArray binary => binary -> CryptoFailable T.Point
-compactPubKeyToPoint binary = withContext $ \ctx ->
-    if BS.length bs /= 33
-        then return $ CryptoFailed CryptoError_PointFormatInvalid
-        else useByteString bs $ \(buf, _) -> do
-            fp <- mallocForeignPtr
-            withForeignPtr fp $ \p -> do
-                ret <- ecPubKeyParse ctx p buf 33
-                if not $ isSuccess ret then
-                    return $ CryptoFailed CryptoError_PointFormatInvalid
-                else
-                    alloca $ \outputlen -> allocaBytes z $ \o -> do
-                        poke outputlen (fromIntegral z)
-                        ret2 <- ecPubKeySerialize ctx o outputlen p flags
-                        if not $ isSuccess ret2 then
-                            return $ CryptoFailed CryptoError_InternalAssumptionFailed
-                        else do
-                            n <- peek outputlen
-                            if n /= 65 then
-                                return $ CryptoFailed CryptoError_InternalAssumptionFailed
-                            else do
-                                outbs <- packByteString (o, n)
-                                let (_, coords) = BS.splitAt 1 outbs
-                                let (bx, by) = BS.splitAt 32 coords
-                                return $ CryptoPassed $ T.Point (os2ip bx) (os2ip by)
+pointToTPoint :: Point -> CryptoFailable T.Point
+pointToTPoint (Point fp) = withContext $ \ctx ->
+    withForeignPtr fp $ \p ->
+        alloca $ \outputlen -> allocaBytes z $ \o -> do
+            poke outputlen (fromIntegral z)
+            ret2 <- ecPubKeySerialize ctx o outputlen p flags
+            if not $ isSuccess ret2 then
+                return $ CryptoFailed CryptoError_InternalAssumptionFailed
+            else do
+                n <- peek outputlen
+                if n /= 65 then
+                    return $ CryptoFailed CryptoError_InternalAssumptionFailed
+                else do
+                    outbs <- packByteString (o, n)
+                    let (_, coords) = BS.splitAt 1 outbs
+                    let (bx, by) = BS.splitAt 32 coords
+                    return $ CryptoPassed $ T.Point (os2ip bx) (os2ip by)
     where
-        bs = convert binary
         flags = 0x0002 :: CUInt -- uncompressed
         z = 65 -- length of uncompressed pubkey
 

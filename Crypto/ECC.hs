@@ -159,21 +159,9 @@ instance EllipticCurve Curve_P256K1 where
     curveSizeBits _ = 256
     curveGenerateScalar _ = P256K1.scalarGenerate
     curveGenerateKeyPair _ = toKeyPair <$> P256K1.scalarGenerate
-      where toKeyPair scalar = KeyPair (P256K1.toPoint scalar) scalar
-    encodePoint _ p = mxy
-      where
-        mxy :: forall bs. ByteArray bs => bs
-        mxy = B.concat [uncompressed, xy]
-          where
-            uncompressed, xy :: bs
-            uncompressed = B.singleton 4
-            xy = P256K1.pointToBinary p
-    decodePoint _ mxy = case B.uncons mxy of
-        Nothing -> CryptoFailed $ CryptoError_PointSizeInvalid
-        Just (m,xy)
-            -- uncompressed
-            | m == 4 -> P256K1.pointFromBinary xy
-            | otherwise -> CryptoFailed $ CryptoError_PointFormatInvalid
+      where toKeyPair scalar = KeyPair (P256K1.scalarToPoint scalar) scalar
+    encodePoint _ p = P256K1.pointToBinary p
+    decodePoint _ mxy = P256K1.pointFromBinary mxy
 
 data Curve_P384R1 = Curve_P384R1
     deriving (Show,Data)
