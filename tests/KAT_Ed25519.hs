@@ -1,10 +1,15 @@
 {-# LANGUAGE BangPatterns      #-}
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
 module KAT_Ed25519 ( tests ) where
 
 import           Crypto.Error
 import qualified Crypto.PubKey.Ed25519 as Ed25519
 import           Imports
+
+-- We don't have test vectors for blake2
+
+#ifndef ED25519_USING_BLAKE2
 
 data Vec = Vec
     { vecSec :: ByteString
@@ -63,10 +68,13 @@ doVerifyTest (i, vec) = testCase (show i) (True @=? Ed25519.verify pub (vecMsg v
         !sig = throwCryptoError $ Ed25519.signature (vecSig vec)
         !pub = throwCryptoError $ Ed25519.publicKey (vecPub vec)
 
+#endif
 
-tests = testGroup "Ed25519"
+tests = testGroup "Ed25519" $
     [ testCase  "gen secretkey" (Ed25519.generateSecretKey *> pure ())
+#ifndef ED25519_USING_BLAKE2
     , testGroup "gen publickey" $ map doPublicKeyTest (zip [katZero..] vectors)
     , testGroup "gen signature" $ map doSignatureTest (zip [katZero..] vectors)
     , testGroup "verify sig" $ map doVerifyTest (zip [katZero..] vectors)
+#endif
     ]
