@@ -8,6 +8,7 @@
 -- Elliptic Curve Cryptography
 --
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -98,7 +99,7 @@ class EllipticCurve curve => EllipticCurveDH curve where
     -- value or an exception.
     ecdh :: proxy curve -> Scalar curve -> Point curve -> CryptoFailable SharedSecret
 
-class EllipticCurve curve => EllipticCurveArith curve where
+class (EllipticCurve curve, Eq (Point curve)) => EllipticCurveArith curve where
     -- | Add points on a curve
     pointAdd :: proxy curve -> Point curve -> Point curve -> Point curve
 
