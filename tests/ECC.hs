@@ -293,7 +293,7 @@ tests = testGroup "ECC"
     [ testGroup "decodePoint" $ map doPointDecodeTest (zip [katZero..] vectorsPoint)
     , testGroup "ECDH weak points" $ map doWeakPointECDHTest (zip [katZero..] vectorsWeakPoint)
     , testGroup "property"
-        [ testProperty "decodePoint.encodePoint==id" $ \testDRG (Curve curve) -> do
+        [ testProperty "decodePoint.encodePoint==id" $ \testDRG (Curve curve) ->
             let prx = Just curve -- using Maybe as Proxy
                 keyPair = withTestDRG testDRG $ ECC.curveGenerateKeyPair prx
                 p1 = ECC.keypairGetPublic keyPair

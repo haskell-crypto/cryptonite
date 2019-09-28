@@ -166,11 +166,11 @@ instance EllipticCurve Curve_P256R1 where
             uncompressed = B.singleton 4
             xy = P256.pointToBinary p
     decodePoint _ mxy = case B.uncons mxy of
-        Nothing -> CryptoFailed $ CryptoError_PointSizeInvalid
+        Nothing -> CryptoFailed CryptoError_PointSizeInvalid
         Just (m,xy)
             -- uncompressed
             | m == 4 -> P256.pointFromBinary xy
-            | otherwise -> CryptoFailed $ CryptoError_PointFormatInvalid
+            | otherwise -> CryptoFailed CryptoError_PointFormatInvalid
 
 instance EllipticCurveArith Curve_P256R1 where
     pointAdd  _ a b = P256.pointAdd a b
@@ -353,7 +353,7 @@ encodeECPoint (Simple.Point x y) = B.concat [uncompressed,xb,yb]
 
 decodeECPoint :: (Simple.Curve curve, ByteArray bs) => bs -> CryptoFailable (Simple.Point curve)
 decodeECPoint mxy = case B.uncons mxy of
-    Nothing     -> CryptoFailed $ CryptoError_PointSizeInvalid
+    Nothing     -> CryptoFailed CryptoError_PointSizeInvalid
     Just (m,xy)
         -- uncompressed
         | m == 4 ->
@@ -362,7 +362,7 @@ decodeECPoint mxy = case B.uncons mxy of
                 x = os2ip xb
                 y = os2ip yb
              in Simple.pointFromIntegers (x,y)
-        | otherwise -> CryptoFailed $ CryptoError_PointFormatInvalid
+        | otherwise -> CryptoFailed CryptoError_PointFormatInvalid
 
 ecPointsMulVarTime :: forall curve . Simple.Curve curve
                    => Simple.Scalar curve

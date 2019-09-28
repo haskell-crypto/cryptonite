@@ -110,7 +110,7 @@ pointAdd a b = withNewPoint $ \dx dy ->
 -- | Negate a point
 pointNegate :: Point -> Point
 pointNegate a = withNewPoint $ \dx dy ->
-    withPoint a $ \ax ay -> do
+    withPoint a $ \ax ay ->
         ccryptonite_p256e_point_negate ax ay dx dy
 
 -- | Multiply a point by a scalar
@@ -188,12 +188,12 @@ pointFromBinary ba = unsafePointFromBinary ba >>= validatePoint
     validatePoint :: Point -> CryptoFailable Point
     validatePoint p
         | pointIsValid p = CryptoPassed p
-        | otherwise      = CryptoFailed $ CryptoError_PointCoordinatesInvalid
+        | otherwise      = CryptoFailed CryptoError_PointCoordinatesInvalid
 
 -- | Convert from binary to a point, possibly invalid
 unsafePointFromBinary :: ByteArrayAccess ba => ba -> CryptoFailable Point
 unsafePointFromBinary ba
-    | B.length ba /= pointSize = CryptoFailed $ CryptoError_PublicKeySizeInvalid
+    | B.length ba /= pointSize = CryptoFailed CryptoError_PublicKeySizeInvalid
     | otherwise                =
         CryptoPassed $ withNewPoint $ \px py -> B.withByteArray ba $ \src -> do
             ccryptonite_p256_from_bin src                        (castPtr px)
@@ -266,7 +266,7 @@ scalarCmp a b = unsafeDoIO $
 -- | convert a scalar from binary
 scalarFromBinary :: ByteArrayAccess ba => ba -> CryptoFailable Scalar
 scalarFromBinary ba
-    | B.length ba /= scalarSize = CryptoFailed $ CryptoError_SecretKeySizeInvalid
+    | B.length ba /= scalarSize = CryptoFailed CryptoError_SecretKeySizeInvalid
     | otherwise                 =
         CryptoPassed $ withNewScalarFreeze $ \p -> B.withByteArray ba $ \b ->
             ccryptonite_p256_from_bin b p

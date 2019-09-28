@@ -122,10 +122,10 @@ tests = testGroup "P256"
                 t = P256.pointFromIntegers (xT, yT)
                 r = P256.pointFromIntegers (xR, yR)
              in r @=? P256.pointAdd s t
-        , testProperty "lift-to-curve" $ propertyLiftToCurve
-        , testProperty "point-add" $ propertyPointAdd
-        , testProperty "point-negate" $ propertyPointNegate
-        , testProperty "point-mul" $ propertyPointMul
+        , testProperty "lift-to-curve" propertyLiftToCurve
+        , testProperty "point-add" propertyPointAdd
+        , testProperty "point-negate" propertyPointNegate
+        , testProperty "point-mul" propertyPointMul
         ]
     ]
   where
@@ -154,7 +154,7 @@ tests = testGroup "P256"
         let p  = P256.toPoint (unP256Scalar r)
             pe = ECC.pointMul curve (unP256 r) curveGen
             pR = P256.pointNegate p
-         in ECC.pointNegate curve pe `propertyEq` (pointP256ToECC pR)
+         in ECC.pointNegate curve pe `propertyEq` pointP256ToECC pR
 
     propertyPointMul s' r' =
         let s     = modP256Scalar s'
