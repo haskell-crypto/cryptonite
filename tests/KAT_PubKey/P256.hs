@@ -54,6 +54,9 @@ unP256Scalar (P256Scalar r) =
 unP256 :: P256Scalar -> Integer
 unP256 (P256Scalar r) = r
 
+modP256Scalar :: P256Scalar -> P256Scalar
+modP256Scalar (P256Scalar r) = P256Scalar (r `mod` curveN)
+
 p256ScalarToInteger :: P256.Scalar -> Integer
 p256ScalarToInteger s = os2ip (P256.scalarToBinary s :: Bytes)
 
@@ -92,6 +95,10 @@ tests = testGroup "P256"
             let v = unP256 r `mod` curveN
                 v' = P256.scalarSub (unP256Scalar r) P256.scalarZero
              in v `propertyEq` p256ScalarToInteger v'
+        , testProperty "mul" $ \r1 r2 ->
+            let r = (unP256 r1 * unP256 r2) `mod` curveN
+                r' = P256.scalarMul (unP256Scalar r1) (unP256Scalar r2)
+             in r `propertyEq` p256ScalarToInteger r'
         , testProperty "inv" $ \r' ->
             let inv  = inverseCoprimes (unP256 r') curveN
                 inv' = P256.scalarInv (unP256Scalar r')
@@ -115,9 +122,10 @@ tests = testGroup "P256"
                 t = P256.pointFromIntegers (xT, yT)
                 r = P256.pointFromIntegers (xR, yR)
              in r @=? P256.pointAdd s t
-        , testProperty "lift-to-curve" $ propertyLiftToCurve
-        , testProperty "point-add" $ propertyPointAdd
-        , testProperty "point-negate" $ propertyPointNegate
+        , testProperty "lift-to-curve" propertyLiftToCurve
+        , testProperty "point-add" propertyPointAdd
+        , testProperty "point-negate" propertyPointNegate
+        , testProperty "point-mul" propertyPointMul
         ]
     ]
   where
@@ -146,4 +154,15 @@ tests = testGroup "P256"
         let p  = P256.toPoint (unP256Scalar r)
             pe = ECC.pointMul curve (unP256 r) curveGen
             pR = P256.pointNegate p
-         in ECC.pointNegate curve pe `propertyEq` (pointP256ToECC pR)
+         in ECC.pointNegate curve pe `propertyEq` pointP256ToECC pR
+
+    propertyPointMul s' r' =
+        let s     = modP256Scalar s'
+            r     = modP256Scalar r'
+            p     = P256.toPoint (unP256Scalar r)
+            pe    = ECC.pointMul curve (unP256 r) curveGen
+            pR    = P256.toPoint (P256.scalarMul (unP256Scalar s) (unP256Scalar r))
+            peR   = ECC.pointMul curve (unP256 s) pe
+         in propertyHold [ eqTest "p256" pR (P256.pointMul (unP256Scalar s) p)
+                         , eqTest "ecc" peR (pointP256ToECC pR)
+                         ]
