@@ -56,7 +56,7 @@ expSafe b e m
 -- hiding parameters.
 --
 -- Use this function when all the parameters are public,
--- otherwise 'expSafe' should be prefered.
+-- otherwise 'expSafe' should be preferred.
 expFast :: Integer -- ^ base
         -> Integer -- ^ exponent
         -> Integer -- ^ modulo

@@ -127,7 +127,7 @@ primalityTestMillerRabin tries !n =
     factorise :: Integer -> Integer -> (Integer, Integer)
     factorise !si !vi
         | vi `testBit` 0 = (si, vi)
-        | otherwise     = factorise (si+1) (vi `shiftR` 1) -- probably faster to not shift v continously, but just once.
+        | otherwise     = factorise (si+1) (vi `shiftR` 1) -- probably faster to not shift v continuously, but just once.
     expmod = expSafe
 
     -- when iteration reach zero, we have a probable prime

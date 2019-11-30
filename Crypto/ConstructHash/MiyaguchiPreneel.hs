@@ -44,7 +44,7 @@ compute' g = MP . foldl' (step $ g) (B.replicate bsz 0) . chunks . pad (ZERO bsz
       where
         (hd, tl) = B.splitAt bsz msg
 
--- | Compute Miyaguchi-Preneel one way compress using the infered block cipher.
+-- | Compute Miyaguchi-Preneel one way compress using the inferred block cipher.
 --   Only safe when KEY-SIZE equals to BLOCK-SIZE.
 --
 --   Simple usage /mp' msg :: MiyaguchiPreneel AES128/
