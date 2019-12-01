@@ -8,7 +8,6 @@
 -- P256 support
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE EmptyDataDecls #-}
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
 module Crypto.PubKey.ECC.P256
@@ -22,7 +21,9 @@ module Crypto.PubKey.ECC.P256
     , pointDh
     , pointsMulVarTime
     , pointIsValid
+    , pointIsAtInfinity
     , toPoint
+    , pointX
     , pointToIntegers
     , pointFromIntegers
     , pointToBinary
@@ -31,11 +32,13 @@ module Crypto.PubKey.ECC.P256
     -- * Scalar arithmetic
     , scalarGenerate
     , scalarZero
+    , scalarN
     , scalarIsZero
     , scalarAdd
     , scalarSub
     , scalarMul
     , scalarInv
+    , scalarInvSafe
     , scalarCmp
     , scalarFromBinary
     , scalarToBinary
@@ -76,6 +79,9 @@ type P256Digit  = Word32
 data P256Scalar
 data P256Y
 data P256X
+
+order :: Integer
+order = 0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
 
 ------------------------------------------------------------------------
 -- Point methods
@@ -145,6 +151,19 @@ pointIsValid :: Point -> Bool
 pointIsValid p = unsafeDoIO $ withPoint p $ \px py -> do
     r <- ccryptonite_p256_is_valid_point px py
     return (r /= 0)
+
+-- | Check if a 'Point' is the point at infinity
+pointIsAtInfinity :: Point -> Bool
+pointIsAtInfinity (Point b) = constAllZero b
+
+-- | Return the x coordinate as a 'Scalar' if the point is not at infinity
+pointX :: Point -> Maybe Scalar
+pointX p
+    | pointIsAtInfinity p = Nothing
+    | otherwise           = Just $
+        withNewScalarFreeze $ \d    ->
+        withPoint p         $ \px _ ->
+            ccryptonite_p256_mod ccryptonite_SECP256r1_n (castPtr px) (castPtr d)
 
 -- | Convert a point to (x,y) Integers
 pointToIntegers :: Point -> (Integer, Integer)
@@ -216,6 +235,10 @@ scalarGenerate = unwrap . scalarFromBinary . witness <$> getRandomBytes 32
 scalarZero :: Scalar
 scalarZero = withNewScalarFreeze $ \d -> ccryptonite_p256_init d
 
+-- | The scalar representing the curve order
+scalarN :: Scalar
+scalarN = throwCryptoError (scalarFromInteger order)
+
 -- | Check if the scalar is 0
 scalarIsZero :: Scalar -> Bool
 scalarIsZero s = unsafeDoIO $ withScalar s $ \d -> do
@@ -255,6 +278,14 @@ scalarInv :: Scalar -> Scalar
 scalarInv a =
     withNewScalarFreeze $ \b -> withScalar a $ \pa ->
         ccryptonite_p256_modinv_vartime ccryptonite_SECP256r1_n pa b
+
+-- | Give the inverse of the scalar using safe exponentiation
+--
+-- > 1 / a
+scalarInvSafe :: Scalar -> Scalar
+scalarInvSafe a =
+    withNewScalarFreeze $ \b -> withScalar a $ \pa ->
+        ccryptonite_p256e_scalar_invert pa b
 
 -- | Compare 2 Scalar
 scalarCmp :: Scalar -> Scalar -> Ordering
@@ -359,6 +390,8 @@ foreign import ccall "cryptonite_p256_mod"
     ccryptonite_p256_mod :: Ptr P256Scalar -> Ptr P256Scalar -> Ptr P256Scalar -> IO ()
 foreign import ccall "cryptonite_p256_modmul"
     ccryptonite_p256_modmul :: Ptr P256Scalar -> Ptr P256Scalar -> P256Digit -> Ptr P256Scalar -> Ptr P256Scalar -> IO ()
+foreign import ccall "cryptonite_p256e_scalar_invert"
+    ccryptonite_p256e_scalar_invert :: Ptr P256Scalar -> Ptr P256Scalar -> IO ()
 --foreign import ccall "cryptonite_p256_modinv"
 --    ccryptonite_p256_modinv :: Ptr P256Scalar -> Ptr P256Scalar -> Ptr P256Scalar -> IO ()
 foreign import ccall "cryptonite_p256_modinv_vartime"
