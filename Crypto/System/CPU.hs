@@ -31,7 +31,7 @@ import Crypto.Random.Entropy.RDRand
 import Crypto.Random.Entropy.Source
 #endif
 
--- | CPU options impacting cryptography implementation and libary performance.
+-- | CPU options impacting cryptography implementation and library performance.
 data ProcessorOption
     = AESNI   -- ^ Support for AES instructions, with flag @support_aesni@
     | PCLMUL  -- ^ Support for CLMUL instructions, with flag @support_pclmuldq@
