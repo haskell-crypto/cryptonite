@@ -1,5 +1,4 @@
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE DeriveDataTypeable #-}
 -- |
 -- Module      : Crypto.Number.ModArithmetic
 -- License     : BSD-style
@@ -71,7 +70,7 @@ exponentiation b e m
     | b == 1    = b
     | e == 0    = 1
     | e == 1    = b `mod` m
-    | even e    = let p = (exponentiation b (e `div` 2) m) `mod` m
+    | even e    = let p = exponentiation b (e `div` 2) m `mod` m
                    in (p^(2::Integer)) `mod` m
     | otherwise = (b * exponentiation b (e-1) m) `mod` m
 
@@ -98,17 +97,17 @@ inverseCoprimes g m =
 
 -- | Computes the Jacobi symbol (a/n).
 -- 0 ≤ a < n; n ≥ 3 and odd.
---  
+--
 -- The Legendre and Jacobi symbols are indistinguishable exactly when the
 -- lower argument is an odd prime, in which case they have the same value.
--- 
+--
 -- See algorithm 2.149 in "Handbook of Applied Cryptography" by Alfred J. Menezes et al.
 jacobi :: Integer -> Integer -> Maybe Integer
 jacobi a n
     | n < 3 || even n  = Nothing
     | a == 0 || a == 1 = Just a
-    | n <= a           = jacobi (a `mod` n) n       
-    | a < 0            = 
+    | n <= a           = jacobi (a `mod` n) n
+    | a < 0            =
       let b = if n `mod` 4 == 1 then 1 else -1
        in fmap (*b) (jacobi (-a) n)
     | otherwise        =
