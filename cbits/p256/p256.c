@@ -403,6 +403,7 @@ void cryptonite_p256_to_bin(const cryptonite_p256_int* src, uint8_t dst[P256_NBY
 
 // c = a + b mod MOD
 void cryptonite_p256e_modadd(const cryptonite_p256_int* MOD, const cryptonite_p256_int* a, const cryptonite_p256_int* b, cryptonite_p256_int* c) {
+  assert(c);  /* avoid repeated checks inside inlined cryptonite_p256_add */
   cryptonite_p256_digit top = cryptonite_p256_add(a, b, c);
   top = subM(MOD, top, P256_DIGITS(c), -1);
   top = subM(MOD, top, P256_DIGITS(c), MSB_COMPLEMENT(top));
@@ -411,6 +412,7 @@ void cryptonite_p256e_modadd(const cryptonite_p256_int* MOD, const cryptonite_p2
 
 // c = a - b mod MOD
 void cryptonite_p256e_modsub(const cryptonite_p256_int* MOD, const cryptonite_p256_int* a, const cryptonite_p256_int* b, cryptonite_p256_int* c) {
+  assert(c); /* avoid repeated checks inside inlined cryptonite_p256_sub */
   cryptonite_p256_digit top = cryptonite_p256_sub(a, b, c);
   top = addM(MOD, top, P256_DIGITS(c), ~MSB_COMPLEMENT(top));
   top = subM(MOD, top, P256_DIGITS(c), MSB_COMPLEMENT(top));
