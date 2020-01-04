@@ -1,5 +1,4 @@
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE DeriveDataTypeable #-}
 -- |
 -- Module      : Crypto.Number.ModArithmetic
 -- License     : BSD-style
@@ -15,8 +14,10 @@ module Crypto.Number.ModArithmetic
     -- * Inverse computing
     , inverse
     , inverseCoprimes
-    , jacobi
     , inverseFermat
+    -- * Squares
+    , jacobi
+    , squareRoot
     ) where
 
 import Control.Exception (throw, Exception)
@@ -71,7 +72,7 @@ exponentiation b e m
     | b == 1    = b
     | e == 0    = 1
     | e == 1    = b `mod` m
-    | even e    = let p = (exponentiation b (e `div` 2) m) `mod` m
+    | even e    = let p = exponentiation b (e `div` 2) m `mod` m
                    in (p^(2::Integer)) `mod` m
     | otherwise = (b * exponentiation b (e-1) m) `mod` m
 
@@ -98,17 +99,17 @@ inverseCoprimes g m =
 
 -- | Computes the Jacobi symbol (a/n).
 -- 0 ≤ a < n; n ≥ 3 and odd.
---  
+--
 -- The Legendre and Jacobi symbols are indistinguishable exactly when the
 -- lower argument is an odd prime, in which case they have the same value.
--- 
+--
 -- See algorithm 2.149 in "Handbook of Applied Cryptography" by Alfred J. Menezes et al.
 jacobi :: Integer -> Integer -> Maybe Integer
 jacobi a n
     | n < 3 || even n  = Nothing
     | a == 0 || a == 1 = Just a
-    | n <= a           = jacobi (a `mod` n) n       
-    | a < 0            = 
+    | n <= a           = jacobi (a `mod` n) n
+    | a < 0            =
       let b = if n `mod` 4 == 1 then 1 else -1
        in fmap (*b) (jacobi (-a) n)
     | otherwise        =
@@ -126,3 +127,91 @@ jacobi a n
 -- the modulus is prime but avoids side channels like in 'expSafe'.
 inverseFermat :: Integer -> Integer -> Integer
 inverseFermat g p = expSafe g (p - 2) p
+
+-- | Raised when the assumption about the modulus is invalid.
+data ModulusAssertionError = ModulusAssertionError
+    deriving (Show)
+
+instance Exception ModulusAssertionError
+
+-- | Modular square root of @g@ modulo a prime @p@.
+--
+-- If the modulus is found not to be prime, the function will raise a
+-- 'ModulusAssertionError'.
+--
+-- This implementation is variable time and should be used with public
+-- parameters only.
+squareRoot :: Integer -> Integer -> Maybe Integer
+squareRoot p
+    | p < 2     = throw ModulusAssertionError
+    | otherwise =
+        case p `divMod` 8 of
+           (v, 3) -> method1 (2 * v + 1)
+           (v, 7) -> method1 (2 * v + 2)
+           (u, 5) -> method2 u
+           (_, 1) -> tonelliShanks p
+           (0, 2) -> \a -> Just (if even a then 0 else 1)
+           _      -> throw ModulusAssertionError
+
+  where
+    x `eqMod` y = (x - y) `mod` p == 0
+
+    validate g y | (y * y) `eqMod` g = Just y
+                 | otherwise         = Nothing
+
+    -- p == 4u + 3 and u' == u + 1
+    method1 u' g =
+        let y = expFast g u' p
+         in validate g y
+
+    -- p == 8u + 5
+    method2 u g =
+        let gamma = expFast (2 * g) u p
+            g_gamma = g * gamma
+            i = (2 * g_gamma * gamma) `mod` p
+            y = (g_gamma * (i - 1)) `mod` p
+         in validate g y
+
+tonelliShanks :: Integer -> Integer -> Maybe Integer
+tonelliShanks p a
+    | aa == 0   = Just 0
+    | otherwise =
+        case expFast aa p2 p of
+            b | b == p1   -> Nothing
+              | b == 1    -> Just $ go (expFast aa ((s + 1) `div` 2) p)
+                                       (expFast aa s p)
+                                       (expFast n  s p)
+                                       e
+              | otherwise -> throw ModulusAssertionError
+  where
+    aa = a `mod` p
+    p1 = p - 1
+    p2 = p1 `div` 2
+    n  = findN 2
+
+    x `mul` y = (x * y) `mod` p
+
+    pow2m 0 x = x
+    pow2m i x = pow2m (i - 1) (x `mul` x)
+
+    (e, s) = asPowerOf2AndOdd p1
+
+    -- find a quadratic non-residue
+    findN i
+        | expFast i p2 p == p1 = i
+        | otherwise            = findN (i + 1)
+
+    -- find m such that b^(2^m) == 1 (mod p)
+    findM b i
+        | b == 1    = i
+        | otherwise = findM (b `mul` b) (i + 1)
+
+    go !x b g !r
+        | b == 1    = x
+        | otherwise =
+            let r' = findM b 0
+                z = pow2m (r - r' - 1) g
+                x' = x `mul` z
+                b' = b `mul` g'
+                g' = z `mul` z
+             in go x' b' g' r'
