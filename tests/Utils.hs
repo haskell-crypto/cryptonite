@@ -19,7 +19,7 @@ newtype TestDRG = TestDRG (Word64, Word64, Word64, Word64, Word64)
     deriving (Show,Eq)
 
 instance Arbitrary TestDRG where
-    arbitrary = TestDRG `fmap` arbitrary
+    arbitrary = TestDRG `fmap` arbitrary  -- distribution not uniform
 
 withTestDRG (TestDRG l) f = fst $ withDRG (drgNewTest l) f
 

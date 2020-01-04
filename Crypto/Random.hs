@@ -80,6 +80,10 @@ drgNewSeed (Seed seed) = initialize seed
 --
 -- It can also be used in other contexts provided the input
 -- has been properly randomly generated.
+--
+-- Note that the @Arbitrary@ instance provided by QuickCheck for 'Word64' does
+-- not have a uniform distribution.  It is often better to use instead
+-- @arbitraryBoundedRandom@.
 drgNewTest :: (Word64, Word64, Word64, Word64, Word64) -> ChaChaDRG
 drgNewTest = initializeWords
 
