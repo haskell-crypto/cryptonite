@@ -25,7 +25,7 @@
  */
 
 // This is an implementation of the P256 elliptic curve group. It's written to
-// be portable 32-bit, although it's still constant-time.
+// be portable and still constant-time.
 //
 // WARNING: Implementing these functions in a constant-time manner is far from
 //          obvious. Be careful when touching this code.
@@ -285,9 +285,9 @@ static void point_add_or_double_vartime(
   felem_diff(y_out, y_out, tmp);
 }
 
-/* copy_conditional sets out=in if mask = 0xffffffff in constant time.
+/* copy_conditional sets out=in if mask = -1 in constant time.
  *
- * On entry: mask is either 0 or 0xffffffff. */
+ * On entry: mask is either 0 or -1. */
 static void copy_conditional(felem out, const felem in, limb mask) {
   int i;
 

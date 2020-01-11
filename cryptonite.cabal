@@ -50,7 +50,8 @@ extra-source-files:  cbits/*.h
                      cbits/decaf/p448/*.h
                      cbits/decaf/ed448goldilocks/decaf_tables.c
                      cbits/decaf/ed448goldilocks/decaf.c
-                     cbits/p256/*.h
+                     cbits/include32/p256/*.h
+                     cbits/include64/p256/*.h
                      cbits/blake2/ref/*.h
                      cbits/blake2/sse/*.h
                      cbits/argon2/*.h
@@ -283,6 +284,11 @@ Library
                    , cbits/ed25519
                    , cbits/decaf/include
                    , cbits/decaf/p448
+
+  if arch(x86_64) || arch(aarch64)
+    include-dirs:      cbits/include64
+  else
+    include-dirs:      cbits/include32
 
   if arch(x86_64) || arch(aarch64)
     C-sources:         cbits/decaf/p448/arch_ref64/f_impl.c

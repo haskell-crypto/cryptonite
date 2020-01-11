@@ -25,7 +25,7 @@
  */
 
 // This is an implementation of the P256 elliptic curve group. It's written to
-// be portable 32-bit, although it's still constant-time.
+// be portable and still constant-time.
 //
 // WARNING: Implementing these functions in a constant-time manner is far from
 //          obvious. Be careful when touching this code.
@@ -170,6 +170,10 @@ void cryptonite_p256_modmul(const cryptonite_p256_int* MOD,
     // top can be any value at this point.
     // Guestimate reducer as top * MOD, since msw of MOD is -1.
     top_reducer = mulAdd(MOD, top, 0, reducer);
+#if P256_BITSPERDIGIT > 32
+    // Correction when msw of MOD has only high 32 bits set
+    top_reducer += mulAdd(MOD, top >> 32, 0, reducer);
+#endif
 
     // Subtract reducer from top | tmp.
     top = subTop(top_reducer, reducer, top, tmp + i);

@@ -25,7 +25,7 @@
  */
 
 // This is an implementation of the P256 finite field. It's written to be
-// be portable 32-bit, although it's still constant-time.
+// portable and still constant-time.
 //
 // WARNING: Implementing these functions in a constant-time manner is far from
 //          obvious. Be careful when touching this code.
