@@ -1311,3 +1311,20 @@ void cryptonite_p256e_point_negate(
     memcpy(out_x, in_x, P256_NBYTES);
     cryptonite_p256_sub(&cryptonite_SECP256r1_p, in_y, out_y);
 }
+
+/* this function is not part of the original source
+   cryptonite_p256e_point_mul sets {out_x,out_y} = n*{in_x,in_y}, where
+   n is < the order of the group.
+ */
+void cryptonite_p256e_point_mul(const cryptonite_p256_int* n,
+    const cryptonite_p256_int* in_x, const cryptonite_p256_int* in_y,
+    cryptonite_p256_int* out_x, cryptonite_p256_int* out_y) {
+  felem x, y, z, px, py;
+
+  to_montgomery(px, in_x);
+  to_montgomery(py, in_y);
+  scalar_mult(x, y, z, px, py, n);
+  point_to_affine(px, py, x, y, z);
+  from_montgomery(out_x, px);
+  from_montgomery(out_y, py);
+}
