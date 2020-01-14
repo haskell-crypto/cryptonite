@@ -229,8 +229,14 @@ static void felem_sum(felem out, const felem in, const felem in2) {
   felem_reduce_carry(out, carry);
 }
 
-/* zero31 is 0 mod p. */
-static const felem zero31 = { 0xffffffffffffc0, 0x1f7ffffffffffe0, 0xf7ffffffffffe1, 0x1f00fffffffffe1, 0xfffffffeffffe1 };
+#define two53m3 (((limb)1) << 53) - (((limb)1) << 3)
+#define two54m52p48m2 (((limb)1) << 54) - (((limb)1) << 52) + (((limb)1) << 48) - (((limb)1) << 2)
+#define two53m2p0 (((limb)1) << 53) - (((limb)1) << 2) + (((limb)1) << 0)
+#define two54m52p41m2 (((limb)1) << 54) - (((limb)1) << 52) + (((limb)1) << 41) - (((limb)1) << 2)
+#define two53m21m2p0 (((limb)1) << 53) - (((limb)1) << 21) - (((limb)1) << 2) + (((limb)1) << 0)
+
+/* zero53 is 0 mod p. */
+static const felem zero53 = { two53m3, two54m52p48m2, two53m2p0, two54m52p41m2, two53m21m2p0 };
 
 /* felem_diff sets out = in-in2.
  *
@@ -243,7 +249,7 @@ static void felem_diff(felem out, const felem in, const felem in2) {
 
    for (i = 0;; i++) {
     out[i] = in[i] - in2[i];
-    out[i] += zero31[i];
+    out[i] += zero53[i];
     out[i] += carry;
     carry = out[i] >> 51;
     out[i] &= kBottom51Bits;
@@ -253,7 +259,7 @@ static void felem_diff(felem out, const felem in, const felem in2) {
       break;
 
     out[i] = in[i] - in2[i];
-    out[i] += zero31[i];
+    out[i] += zero53[i];
     out[i] += carry;
     carry = out[i] >> 52;
     out[i] &= kBottom52Bits;
