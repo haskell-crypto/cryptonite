@@ -178,10 +178,12 @@ encodeSignature :: EllipticCurveEdDSA curve
                 => proxy curve
                 -> (Bytes, Point curve, Scalar curve)
                 -> Signature curve
-encodeSignature prx (bsR, _, sS) =
-    let bsS  = encodeScalarLE prx sS :: Bytes
-        len0 = signatureSize prx - B.length bsR - B.length bsS
-     in Signature $ B.concat [ bsR, bsS, B.zero len0 ]
+encodeSignature prx (bsR, _, sS) = Signature $
+    if len0 > 0 then B.concat [ bsR, bsS, pad0 ] else B.append bsR bsS
+  where
+    bsS  = encodeScalarLE prx sS
+    len0 = signatureSize prx - B.length bsR - B.length bsS
+    pad0 = B.zero len0
 
 decodeSignature :: EllipticCurveEdDSA curve
                 => proxy curve
