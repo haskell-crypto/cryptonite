@@ -148,9 +148,10 @@ sign prx priv pub msg =
         digR = hashFinalize $ hashUpdate (hashUpdate (hashInitWithDom prx) prefix) msg
         r    = decodeScalarNoErr prx digR
         pR   = pointBaseSmul prx r
-        sK   = getK prx pub pR msg
+        bsR  = encodePoint prx pR
+        sK   = getK prx pub bsR msg
         sS   = scalarAdd prx r (scalarMul prx sK s)
-     in encodeSignature prx (pR, sS)
+     in encodeSignature prx (bsR, pR, sS)
 
 -- | Verify a message
 verify :: (EllipticCurveEdDSA curve, ByteArrayAccess msg)
@@ -161,37 +162,36 @@ verify prx pub msg sig =
         CryptoFailed _        -> False
   where
     doVerify = do
-        (pR, sS) <- decodeSignature prx sig
+        (bsR, pR, sS) <- decodeSignature prx sig
         nPub <- pointNegate prx `fmap` publicPoint prx pub
-        let sK  = getK prx pub pR msg
+        let sK  = getK prx pub bsR msg
             pR' = pointsSmulVarTime prx sS sK nPub
         return (pR == pR')
 
 getK :: (EllipticCurveEdDSA curve, ByteArrayAccess msg)
-     => proxy curve -> PublicKey curve -> Point curve -> msg -> Scalar curve
-getK prx pub pR msg =
-    let bsR  = encodePoint prx pR :: Bytes
-        digK = hashFinalize $ hashUpdate (hashUpdate (hashUpdate (hashInitWithDom prx) bsR) pub) msg
+     => proxy curve -> PublicKey curve -> Bytes -> msg -> Scalar curve
+getK prx pub bsR msg =
+    let digK = hashFinalize $ hashUpdate (hashUpdate (hashUpdate (hashInitWithDom prx) bsR) pub) msg
      in decodeScalarNoErr prx digK
 
 encodeSignature :: EllipticCurveEdDSA curve
                 => proxy curve
-                -> (Point curve, Scalar curve)
+                -> (Bytes, Point curve, Scalar curve)
                 -> Signature curve
-encodeSignature prx (pR, sS) =
+encodeSignature prx (bsR, _, sS) =
     let bsS  = encodeScalarLE prx sS :: Bytes
-        len0 = signatureSize prx - publicKeySize prx - B.length bsS
-     in Signature $ B.concat [ encodePoint prx pR, bsS, B.zero len0 ]
+        len0 = signatureSize prx - B.length bsR - B.length bsS
+     in Signature $ B.concat [ bsR, bsS, B.zero len0 ]
 
 decodeSignature :: EllipticCurveEdDSA curve
                 => proxy curve
                 -> Signature curve
-                -> CryptoFailable (Point curve, Scalar curve)
+                -> CryptoFailable (Bytes, Point curve, Scalar curve)
 decodeSignature prx (Signature bs) = do
     let (bsR, bsS) = B.splitAt (publicKeySize prx) bs
     pR <- decodePoint prx bsR
     sS <- decodeScalarLE prx bsS
-    return (pR, sS)
+    return (bsR, pR, sS)
 
 -- implementations are supposed to decode any scalar up to the size of the digest
 decodeScalarNoErr :: (EllipticCurveEdDSA curve, ByteArrayAccess bs)
