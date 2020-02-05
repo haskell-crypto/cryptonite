@@ -283,45 +283,45 @@ pointsMulVarTime (Scalar s1) (Scalar s2) (Point p) =
         withByteArray p  $ \pp  ->
              ed25519_base_double_scalarmul_vartime out ps1 pp ps2
 
-foreign import ccall "cryptonite_ed25519_scalar_eq"
+foreign import ccall unsafe "cryptonite_ed25519_scalar_eq"
     ed25519_scalar_eq :: Ptr Scalar
                       -> Ptr Scalar
                       -> IO CInt
 
-foreign import ccall "cryptonite_ed25519_scalar_encode"
+foreign import ccall unsafe "cryptonite_ed25519_scalar_encode"
     ed25519_scalar_encode :: Ptr Word8
                           -> Ptr Scalar
                           -> IO ()
 
-foreign import ccall "cryptonite_ed25519_scalar_decode_long"
+foreign import ccall unsafe "cryptonite_ed25519_scalar_decode_long"
     ed25519_scalar_decode_long :: Ptr Scalar
                                -> Ptr Word8
                                -> CSize
                                -> IO ()
 
-foreign import ccall "cryptonite_ed25519_scalar_add"
+foreign import ccall unsafe "cryptonite_ed25519_scalar_add"
     ed25519_scalar_add :: Ptr Scalar -- sum
                        -> Ptr Scalar -- a
                        -> Ptr Scalar -- b
                        -> IO ()
 
-foreign import ccall "cryptonite_ed25519_scalar_mul"
+foreign import ccall unsafe "cryptonite_ed25519_scalar_mul"
     ed25519_scalar_mul :: Ptr Scalar -- out
                        -> Ptr Scalar -- a
                        -> Ptr Scalar -- b
                        -> IO ()
 
-foreign import ccall "cryptonite_ed25519_point_encode"
+foreign import ccall unsafe "cryptonite_ed25519_point_encode"
     ed25519_point_encode :: Ptr Word8
                          -> Ptr Point
                          -> IO ()
 
-foreign import ccall "cryptonite_ed25519_point_decode_vartime"
+foreign import ccall unsafe "cryptonite_ed25519_point_decode_vartime"
     ed25519_point_decode_vartime :: Ptr Point
                                  -> Ptr Word8
                                  -> IO CInt
 
-foreign import ccall "cryptonite_ed25519_point_eq"
+foreign import ccall unsafe "cryptonite_ed25519_point_eq"
     ed25519_point_eq :: Ptr Point
                      -> Ptr Point
                      -> IO CInt
@@ -330,23 +330,23 @@ foreign import ccall "cryptonite_ed25519_point_has_prime_order"
     ed25519_point_has_prime_order :: Ptr Point
                                   -> IO CInt
 
-foreign import ccall "cryptonite_ed25519_point_negate"
+foreign import ccall unsafe "cryptonite_ed25519_point_negate"
     ed25519_point_negate :: Ptr Point -- minus_a
                          -> Ptr Point -- a
                          -> IO ()
 
-foreign import ccall "cryptonite_ed25519_point_add"
+foreign import ccall unsafe "cryptonite_ed25519_point_add"
     ed25519_point_add :: Ptr Point -- sum
                       -> Ptr Point -- a
                       -> Ptr Point -- b
                       -> IO ()
 
-foreign import ccall "cryptonite_ed25519_point_double"
+foreign import ccall unsafe "cryptonite_ed25519_point_double"
     ed25519_point_double :: Ptr Point -- two_a
                          -> Ptr Point -- a
                          -> IO ()
 
-foreign import ccall "cryptonite_ed25519_point_mul_by_cofactor"
+foreign import ccall unsafe "cryptonite_ed25519_point_mul_by_cofactor"
     ed25519_point_mul_by_cofactor :: Ptr Point -- eight_a
                                   -> Ptr Point -- a
                                   -> IO ()
