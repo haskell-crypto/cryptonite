@@ -11,6 +11,7 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 module Crypto.PubKey.EdDSA
@@ -31,15 +32,17 @@ module Crypto.PubKey.EdDSA
     ) where
 
 import           Data.Bits
-import           Data.ByteArray (ByteArray, ByteArrayAccess, Bytes, ScrubbedBytes, View)
+import           Data.ByteArray (ByteArray, ByteArrayAccess, Bytes, ScrubbedBytes)
 import qualified Data.ByteArray as B
 
 import           Crypto.ECC
 import qualified Crypto.ECC.Edwards25519 as Edwards25519
 import           Crypto.Error
-import           Crypto.Hash
+import           Crypto.Hash.Algorithms
+import           Crypto.Hash.IO
 import           Crypto.Random
 
+import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
 
 import           Foreign.Storable
@@ -73,9 +76,9 @@ class ( EllipticCurveBasepointArith curve
     -- | Size of signatures for this curve (in bytes)
     signatureSize :: proxy curve -> Int
 
-    -- prepare hash context with specified parameters
+    -- hash with a given prefix
     type HashAlg curve :: *
-    hashInitWithDom :: proxy curve -> Context (HashAlg curve)
+    hashWithDom :: ByteArrayAccess msg => proxy curve -> [Bytes] -> msg -> Bytes
 
     -- conversion between scalar, point and public key
     pointPublic :: proxy curve -> Point curve -> PublicKey curve
@@ -86,7 +89,7 @@ class ( EllipticCurveBasepointArith curve
     -- how to use bits in a secret key
     scheduleSecret :: proxy curve
                    -> SecretKey curve
-                   -> (Scalar curve, View (Digest (HashAlg curve)))
+                   -> (Scalar curve, Bytes)
 
 
 -- Constructors
@@ -145,7 +148,7 @@ sign :: (EllipticCurveEdDSA curve, ByteArrayAccess msg)
      => proxy curve -> SecretKey curve -> PublicKey curve -> msg -> Signature curve
 sign prx priv pub msg =
     let (s, prefix) = scheduleSecret prx priv
-        digR = hashFinalize $ hashUpdate (hashUpdate (hashInitWithDom prx) prefix) msg
+        digR = hashWithDom prx [prefix] msg
         r    = decodeScalarNoErr prx digR
         pR   = pointBaseSmul prx r
         bsR  = encodePoint prx pR
@@ -170,8 +173,8 @@ verify prx pub msg sig =
 
 getK :: (EllipticCurveEdDSA curve, ByteArrayAccess msg)
      => proxy curve -> PublicKey curve -> Bytes -> msg -> Scalar curve
-getK prx pub bsR msg =
-    let digK = hashFinalize $ hashUpdate (hashUpdate (hashUpdate (hashInitWithDom prx) bsR) pub) msg
+getK prx (PublicKey pub) bsR msg =
+    let digK = hashWithDom prx [bsR, pub] msg
      in decodeScalarNoErr prx digK
 
 encodeSignature :: EllipticCurveEdDSA curve
@@ -213,7 +216,7 @@ instance EllipticCurveEdDSA Curve_Edwards25519 where
     signatureSize _ = 64
 
     type HashAlg Curve_Edwards25519 = SHA512
-    hashInitWithDom _ = hashInitWith SHA512
+    hashWithDom _ = digestDomMsg SHA512
 
     pointPublic _ = PublicKey . Edwards25519.pointEncode
     publicPoint _ = Edwards25519.pointDecode
@@ -221,9 +224,9 @@ instance EllipticCurveEdDSA Curve_Edwards25519 where
     decodeScalarLE _ = Edwards25519.scalarDecodeLong
 
     scheduleSecret prx priv =
-        (decodeScalarNoErr prx clamped, B.dropView hashed 32)
+        (decodeScalarNoErr prx clamped, B.drop 32 hashed)
       where
-        hashed  = hashWith SHA512 priv
+        hashed  = digest SHA512 ($ priv)
 
         clamped :: Bytes
         clamped = B.copyAndFreeze (B.takeView hashed 32) $ \p -> do
@@ -231,3 +234,30 @@ instance EllipticCurveEdDSA Curve_Edwards25519 where
                       b31 <- peekElemOff p 31 :: IO Word8
                       pokeElemOff p 31 ((b31 .&. 0x7F) .|. 0x40)
                       pokeElemOff p 0  (b0 .&. 0xF8)
+
+
+{-
+  Optimize hashing by limiting the number of roundtrips between Haskell and C.
+  Hash "update" functions do not use unsafe FFI call, so better concanetate
+  small fragments together and call the update function once.
+
+  Using the IO hash interface avoids context buffer copies.
+
+  Data type Digest is not used directly but converted to Bytes early. Any use of
+  withByteArray on the unpinned Digest backend would require copy through a
+  pinned trampoline.
+-}
+
+digestDomMsg :: (HashAlgorithm alg, ByteArrayAccess msg)
+             => alg -> [Bytes] -> msg -> Bytes
+digestDomMsg alg bss bs = digest alg $ \update ->
+    update (B.concat bss :: Bytes) >> update bs
+
+digest :: HashAlgorithm alg
+       => alg
+       -> ((forall bs . ByteArrayAccess bs => bs -> IO ()) -> IO ())
+       -> Bytes
+digest alg fn = B.convert $ unsafeDoIO $ do
+    mc <- hashMutableInitWith alg
+    fn (hashMutableUpdate mc)
+    hashMutableFinalize mc
