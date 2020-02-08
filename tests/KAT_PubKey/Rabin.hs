@@ -95,51 +95,51 @@ rwSignatureVectors =
         }   
     ]
 
-doBasicRabinEncryptTest key (i, vector) = testCase (show i) (Right (cipherText vector) @=? actual)
+doBasicRabinEncryptTest key i vector = testCase (show i) (Right (cipherText vector) @=? actual)
     where actual = BRabin.encryptWithSeed (seed vector) (OAEP.defaultOAEPParams SHA1) key (plainText vector)
 
-doBasicRabinDecryptTest key (i, vector) = testCase (show i) (Just (plainText vector) @=? actual)
+doBasicRabinDecryptTest key i vector = testCase (show i) (Just (plainText vector) @=? actual)
     where actual = BRabin.decrypt (OAEP.defaultOAEPParams SHA1) key (cipherText vector)
 
-doBasicRabinSignTest key (i, vector) = testCase (show i) (Right (BRabin.Signature ((os2ip $ padding vector), (signature vector))) @=? actual)
+doBasicRabinSignTest key i vector = testCase (show i) (Right (BRabin.Signature ((os2ip $ padding vector), (signature vector))) @=? actual)
     where actual = BRabin.signWith (padding vector) key SHA1 (message vector)
 
-doBasicRabinVerifyTest key (i, vector) = testCase (show i) (True @=? actual)
+doBasicRabinVerifyTest key i vector = testCase (show i) (True @=? actual)
     where actual = BRabin.verify key SHA1 (message vector) (BRabin.Signature ((os2ip $ padding vector), (signature vector)))
 
-doModifiedRabinSignTest key (i, vector) = testCase (show i) (Right (signature vector) @=? actual)
+doModifiedRabinSignTest key i vector = testCase (show i) (Right (signature vector) @=? actual)
     where actual = MRabin.sign key SHA1 (message vector)
 
-doModifiedRabinVerifyTest key (i, vector) = testCase (show i) (True @=? actual)
+doModifiedRabinVerifyTest key i vector = testCase (show i) (True @=? actual)
     where actual = MRabin.verify key SHA1 (message vector) (signature vector)
 
-doRwEncryptTest key (i, vector) = testCase (show i) (Right (cipherText vector) @=? actual)
-    where actual = RW.encryptWithSeed (seed vector) (OAEP.defaultOAEPParams SHA1) key (plainText vector) 
+doRwEncryptTest key i vector = testCase (show i) (Right (cipherText vector) @=? actual)
+    where actual = RW.encryptWithSeed (seed vector) (OAEP.defaultOAEPParams SHA1) key (plainText vector)
 
-doRwDecryptTest key (i, vector) = testCase (show i) (Just (plainText vector) @=? actual)
+doRwDecryptTest key i vector = testCase (show i) (Just (plainText vector) @=? actual)
     where actual = RW.decrypt (OAEP.defaultOAEPParams SHA1) key (cipherText vector)
 
-doRwSignTest key (i, vector) = testCase (show i) (Right (signature vector) @=? actual)
+doRwSignTest key i vector = testCase (show i) (Right (signature vector) @=? actual)
     where actual = RW.sign key SHA1 (message vector)
 
-doRwVerifyTest key (i, vector) = testCase (show i) (True @=? actual)
+doRwVerifyTest key i vector = testCase (show i) (True @=? actual)
     where actual = RW.verify key SHA1 (message vector) (signature vector)
 
 rabinTests = testGroup "Rabin"
     [ testGroup "Basic"
-        [ testGroup "encrypt" $ map (doBasicRabinEncryptTest $ BRabin.private_pub basicRabinKey) (zip [katZero..] basicRabinEncryptionVectors)
-        , testGroup "decrypt" $ map (doBasicRabinDecryptTest $ basicRabinKey) (zip [katZero..] basicRabinEncryptionVectors)
-        , testGroup "sign" $ map (doBasicRabinSignTest $ basicRabinKey) (zip [katZero..] basicRabinSignatureVectors)
-        , testGroup "verify" $ map (doBasicRabinVerifyTest $ BRabin.private_pub basicRabinKey) (zip [katZero..] basicRabinSignatureVectors)
+        [ testGroup "encrypt" $ zipWith (doBasicRabinEncryptTest $ BRabin.private_pub basicRabinKey) [katZero..] basicRabinEncryptionVectors
+        , testGroup "decrypt" $ zipWith (doBasicRabinDecryptTest basicRabinKey) [katZero..] basicRabinEncryptionVectors
+        , testGroup "sign" $ zipWith (doBasicRabinSignTest basicRabinKey) [katZero..] basicRabinSignatureVectors
+        , testGroup "verify" $ zipWith (doBasicRabinVerifyTest $ BRabin.private_pub basicRabinKey) [katZero..] basicRabinSignatureVectors
         ]
     , testGroup "Modified"
-        [ testGroup "sign" $ map (doModifiedRabinSignTest $ modifiedRabinKey) (zip [katZero..] modifiedRabinSignatureVectors)
-        , testGroup "verify" $ map (doModifiedRabinVerifyTest $ MRabin.private_pub modifiedRabinKey) (zip [katZero..] modifiedRabinSignatureVectors)
+        [ testGroup "sign" $ zipWith (doModifiedRabinSignTest modifiedRabinKey) [katZero..] modifiedRabinSignatureVectors
+        , testGroup "verify" $ zipWith (doModifiedRabinVerifyTest $ MRabin.private_pub modifiedRabinKey) [katZero..] modifiedRabinSignatureVectors
         ]
     , testGroup "RW"
-        [ testGroup "encrypt" $ map (doRwEncryptTest $ RW.private_pub rwKey) (zip [katZero..] rwEncryptionVectors)
-        , testGroup "decrypt" $ map (doRwDecryptTest $ rwKey) (zip [katZero..] rwEncryptionVectors)
-        , testGroup "sign" $ map (doRwSignTest $ rwKey) (zip [katZero..] rwSignatureVectors)
-        , testGroup "verify" $ map (doRwVerifyTest $ RW.private_pub rwKey) (zip [katZero..] rwSignatureVectors)
+        [ testGroup "encrypt" $ zipWith (doRwEncryptTest $ RW.private_pub rwKey) [katZero..] rwEncryptionVectors
+        , testGroup "decrypt" $ zipWith (doRwDecryptTest rwKey) [katZero..] rwEncryptionVectors
+        , testGroup "sign" $ zipWith (doRwSignTest rwKey) [katZero..] rwSignatureVectors
+        , testGroup "verify" $ zipWith (doRwVerifyTest $ RW.private_pub rwKey) [katZero..] rwSignatureVectors
         ]
     ]

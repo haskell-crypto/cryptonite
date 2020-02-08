@@ -65,18 +65,18 @@ vectors =
     ]
 
 
-doPublicKeyTest (i, vec) = testCase (show i) (pub @=? Ed448.toPublic sec)
+doPublicKeyTest i vec = testCase (show i) (pub @=? Ed448.toPublic sec)
   where
         !pub = throwCryptoError $ Ed448.publicKey (vecPub vec)
         !sec = throwCryptoError $ Ed448.secretKey (vecSec vec)
 
-doSignatureTest (i, vec) = testCase (show i) (sig @=? Ed448.sign sec pub (vecMsg vec))
+doSignatureTest i vec = testCase (show i) (sig @=? Ed448.sign sec pub (vecMsg vec))
   where
         !sig = throwCryptoError $ Ed448.signature (vecSig vec)
         !pub = throwCryptoError $ Ed448.publicKey (vecPub vec)
         !sec = throwCryptoError $ Ed448.secretKey (vecSec vec)
 
-doVerifyTest (i, vec) = testCase (show i) (True @=? Ed448.verify pub (vecMsg vec) sig)
+doVerifyTest i vec = testCase (show i) (True @=? Ed448.verify pub (vecMsg vec) sig)
   where
         !sig = throwCryptoError $ Ed448.signature (vecSig vec)
         !pub = throwCryptoError $ Ed448.publicKey (vecPub vec)
@@ -84,7 +84,7 @@ doVerifyTest (i, vec) = testCase (show i) (True @=? Ed448.verify pub (vecMsg vec
 
 tests = testGroup "Ed448"
     [ testCase  "gen secretkey" (Ed448.generateSecretKey *> pure ())
-    , testGroup "gen publickey" $ map doPublicKeyTest (zip [katZero..] vectors)
-    , testGroup "gen signature" $ map doSignatureTest (zip [katZero..] vectors)
-    , testGroup "verify sig" $ map doVerifyTest (zip [katZero..] vectors)
+    , testGroup "gen publickey" $ zipWith doPublicKeyTest [katZero..] vectors
+    , testGroup "gen signature" $ zipWith doSignatureTest [katZero..] vectors
+    , testGroup "verify sig" $ zipWith doVerifyTest [katZero..] vectors
     ]

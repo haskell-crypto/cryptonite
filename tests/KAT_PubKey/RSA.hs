@@ -86,17 +86,17 @@ vectorToPublic vector = RSA.PublicKey
 vectorHasSignature :: VectorRSA -> Bool
 vectorHasSignature = isRight . sig
 
-doSignatureTest (i, vector) = testCase (show i) (expected @=? actual)
+doSignatureTest i vector = testCase (show i) (expected @=? actual)
     where expected = sig vector
           actual   = RSA.sign Nothing (Just SHA1) (vectorToPrivate vector) (msg vector)
 
-doVerifyTest (i, vector) = testCase (show i) (True @=? actual)
+doVerifyTest i vector = testCase (show i) (True @=? actual)
     where actual = RSA.verify (Just SHA1) (vectorToPublic vector) (msg vector) bs
           Right bs = sig vector
 
 rsaTests = testGroup "RSA"
     [ testGroup "SHA1"
-        [ testGroup "signature" $ map doSignatureTest (zip [katZero..] vectorsSHA1)
-        , testGroup "verify" $ map doVerifyTest $ filter (vectorHasSignature . snd) (zip [katZero..] vectorsSHA1)
+        [ testGroup "signature" $ zipWith doSignatureTest [katZero..] vectorsSHA1
+        , testGroup "verify" $ zipWith doVerifyTest [katZero..] $ filter vectorHasSignature vectorsSHA1
         ]
     ]

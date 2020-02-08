@@ -28,9 +28,9 @@ vectors =
     ]
 
 kdfTests :: [TestTree]
-kdfTests = map toKDFTest $ zip is vectors
+kdfTests = zipWith toKDFTest is vectors
   where
-    toKDFTest (i, v) =
+    toKDFTest i v =
         testCase (show i)
             (CryptoPassed (kdfResult v) @=? Argon2.hash (kdfOptions v) (kdfPass v) (kdfSalt v) (B.length $ kdfResult v))
 

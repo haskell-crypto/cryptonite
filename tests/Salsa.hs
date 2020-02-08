@@ -37,7 +37,7 @@ instance Arbitrary RandomVector where
 
 tests = testGroup "Salsa"
     [ testGroup "KAT" $
-        map (\(i,f) -> testCase (show (i :: Int)) f) $ zip [1..] $ map (\(r, k,i,e) -> salsaRunSimple e r k i) vectors
+        zipWith (\i (r,k,n,e) -> testCase (show (i :: Int)) $ salsaRunSimple e r k n) [1..] vectors
     , testProperty "generate-combine" salsaGenerateCombine
     , testProperty "chunking-generate" salsaGenerateChunks
     , testProperty "chunking-combine" salsaCombineChunks

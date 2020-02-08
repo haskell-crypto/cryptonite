@@ -136,7 +136,7 @@ vectorsPoint =
         }
     ]
 
-doPointValidTest (i, vector) = testCase (show i) (valid vector @=? ECC.isPointValid (curve vector) (ECC.Point (x vector) (y vector)))
+doPointValidTest i vector = testCase (show i) (valid vector @=? ECC.isPointValid (curve vector) (ECC.Point (x vector) (y vector)))
 
 arbitraryPoint :: ECC.Curve -> Gen ECC.Point
 arbitraryPoint aCurve =
@@ -146,7 +146,7 @@ arbitraryPoint aCurve =
     pointGen = ECC.pointBaseMul aCurve <$> choose (1, n - 1)
 
 eccTests = testGroup "ECC"
-    [ testGroup "valid-point" $ map doPointValidTest (zip [katZero..] vectorsPoint)
+    [ testGroup "valid-point" $ zipWith doPointValidTest [katZero..] vectorsPoint
     , localOption (QuickCheckTests 20) $ testGroup "property"
         [ testProperty "point-add" $ \aCurve (QAInteger r1) (QAInteger r2) ->
             let curveN   = ECC.ecc_n . ECC.common_curve $ aCurve

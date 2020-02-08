@@ -81,17 +81,17 @@ vectorsKey1 =
         }
     ]
 
-doEncryptionTest key (i, vec) = testCase (show i) (Right (cipherText vec) @=? actual)
-    where actual = OAEP.encryptWithSeed (seed vec) (OAEP.defaultOAEPParams SHA1) key (message vec) 
+doEncryptionTest key i vec = testCase (show i) (Right (cipherText vec) @=? actual)
+    where actual = OAEP.encryptWithSeed (seed vec) (OAEP.defaultOAEPParams SHA1) key (message vec)
 
-doDecryptionTest key (i, vec) = testCase (show i) (Right (message vec) @=? actual)
+doDecryptionTest key i vec = testCase (show i) (Right (message vec) @=? actual)
     where actual = OAEP.decrypt Nothing (OAEP.defaultOAEPParams SHA1) key (cipherText vec)
 
 oaepTests = testGroup "RSA-OAEP"
     [ testGroup "internal"
-        [ doEncryptionTest (private_pub rsaKeyInt) (0 :: Int, vectorInt)
-        , doDecryptionTest rsaKeyInt (0 :: Int, vectorInt)
+        [ doEncryptionTest (private_pub rsaKeyInt) (0 :: Int) vectorInt
+        , doDecryptionTest rsaKeyInt (0 :: Int) vectorInt
         ]
-    , testGroup "encryption key 1024 bits" $ map (doEncryptionTest $ private_pub rsaKey1) (zip [katZero..] vectorsKey1)
-    , testGroup "decryption key 1024 bits" $ map (doDecryptionTest rsaKey1) (zip [katZero..] vectorsKey1)
+    , testGroup "encryption key 1024 bits" $ zipWith (doEncryptionTest $ private_pub rsaKey1) [katZero..] vectorsKey1
+    , testGroup "decryption key 1024 bits" $ zipWith (doDecryptionTest rsaKey1) [katZero..] vectorsKey1
     ]

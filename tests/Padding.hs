@@ -33,6 +33,6 @@ testZeroPad n (inp, sz, padded, unpadded) =
                                          ]
 
 tests = testGroup "Padding"
-    [ testGroup "Cases" $ map (uncurry testPad) (zip [1..] cases)
-    , testGroup "ZeroCases" $ map (uncurry testZeroPad) (zip [1..] zeroCases)
+    [ testGroup "Cases" $ zipWith testPad [1..] cases
+    , testGroup "ZeroCases" $ zipWith testZeroPad [1..] zeroCases
     ]

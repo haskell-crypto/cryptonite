@@ -23,8 +23,8 @@ mergeVec =
       )
     ]
 
-mergeKATs = map toProp $ zip mergeVec [(0 :: Int)..]
-  where toProp ((nbExpands, hashAlg, expected, dat), i) =
+mergeKATs = zipWith toProp mergeVec [(0 :: Int)..]
+  where toProp (nbExpands, hashAlg, expected, dat) i =
             testCase ("merge " ++ show i) (expected @=? AFIS.merge hashAlg nbExpands dat)
 
 data AFISParams = AFISParams B.ByteString Int SHA1 ChaChaDRG

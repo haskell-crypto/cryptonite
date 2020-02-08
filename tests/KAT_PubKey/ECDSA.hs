@@ -490,32 +490,32 @@ vectorToPrivate vector = ECDSA.PrivateKey (curve vector) (d vector)
 vectorToPublic :: VectorECDSA -> ECDSA.PublicKey
 vectorToPublic vector = ECDSA.PublicKey (curve vector) (q vector)
 
-doSignatureTest hashAlg (i, vector) = testCase (show i) (expected @=? actual)
+doSignatureTest hashAlg i vector = testCase (show i) (expected @=? actual)
   where expected = Just $ ECDSA.Signature (r vector) (s vector)
         actual   = ECDSA.signWith (k vector) (vectorToPrivate vector) hashAlg (msg vector)
 
-doVerifyTest hashAlg (i, vector) = testCase (show i) (True @=? actual)
+doVerifyTest hashAlg i vector = testCase (show i) (True @=? actual)
   where actual = ECDSA.verify hashAlg (vectorToPublic vector) (ECDSA.Signature (r vector) (s vector)) (msg vector)
 
 ecdsaTests = testGroup "ECDSA"
     [ testGroup "SHA1"
-        [ testGroup "signature" $ map (doSignatureTest SHA1) (zip [katZero..] vectorsSHA1)
-        , testGroup "verify" $ map (doVerifyTest SHA1) (zip [katZero..] vectorsSHA1)
+        [ testGroup "signature" $ zipWith (doSignatureTest SHA1) [katZero..] vectorsSHA1
+        , testGroup "verify" $ zipWith (doVerifyTest SHA1) [katZero..] vectorsSHA1
         ]
     , testGroup "SHA224"
-        [ testGroup "signature" $ map (doSignatureTest SHA224) (zip [katZero..] rfc6979_vectorsSHA224)
-        , testGroup "verify" $ map (doVerifyTest SHA224) (zip [katZero..] rfc6979_vectorsSHA224)
+        [ testGroup "signature" $ zipWith (doSignatureTest SHA224) [katZero..] rfc6979_vectorsSHA224
+        , testGroup "verify" $ zipWith (doVerifyTest SHA224) [katZero..] rfc6979_vectorsSHA224
         ]
     , testGroup "SHA256"
-        [ testGroup "signature" $ map (doSignatureTest SHA256) (zip [katZero..] rfc6979_vectorsSHA256)
-        , testGroup "verify" $ map (doVerifyTest SHA256) (zip [katZero..] rfc6979_vectorsSHA256)
+        [ testGroup "signature" $ zipWith (doSignatureTest SHA256) [katZero..] rfc6979_vectorsSHA256
+        , testGroup "verify" $ zipWith (doVerifyTest SHA256) [katZero..] rfc6979_vectorsSHA256
         ]
     , testGroup "SHA384"
-        [ testGroup "signature" $ map (doSignatureTest SHA384) (zip [katZero..] rfc6979_vectorsSHA384)
-        , testGroup "verify" $ map (doVerifyTest SHA384) (zip [katZero..] rfc6979_vectorsSHA384)
+        [ testGroup "signature" $ zipWith (doSignatureTest SHA384) [katZero..] rfc6979_vectorsSHA384
+        , testGroup "verify" $ zipWith (doVerifyTest SHA384) [katZero..] rfc6979_vectorsSHA384
         ]
     , testGroup "SHA512"
-        [ testGroup "signature" $ map (doSignatureTest SHA512) (zip [katZero..] rfc6979_vectorsSHA512)
-        , testGroup "verify" $ map (doVerifyTest SHA512) (zip [katZero..] rfc6979_vectorsSHA512)
+        [ testGroup "signature" $ zipWith (doSignatureTest SHA512) [katZero..] rfc6979_vectorsSHA512
+        , testGroup "verify" $ zipWith (doVerifyTest SHA512) [katZero..] rfc6979_vectorsSHA512
         ]
     ]

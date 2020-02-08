@@ -110,9 +110,9 @@ vectorsCB =
 
 tests = testGroup "XSalsa"
     [ testGroup "KAT" $
-        map (\(i,f) -> testCase (show (i :: Int)) f) $ zip [1..] $ map (\(r, k, i, p, e) -> salsaRunSimple r k i p e) vectors
+        zipWith (\i (r, k, n, p, e) -> testCase (show (i :: Int)) $ salsaRunSimple r k n p e) [1..] vectors
     , testGroup "crypto_box encryption" $
-        map (\(i,f) -> testCase (show (i :: Int)) f) $ zip [1..] $ map (\(r, k, i, p, e) -> cryptoBoxEnc r k i p e) vectorsCB
+        zipWith (\i (r, k, n, p, e) -> testCase (show (i :: Int)) $ cryptoBoxEnc r k n p e) [1..] vectorsCB
     ]
   where
       salsaRunSimple rounds key nonce plain expected =

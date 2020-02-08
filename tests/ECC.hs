@@ -275,13 +275,13 @@ vpEncodedPoint vector = let Right bs = convertFromBase Base16 (vpHex vector) in 
 cryptoError :: CryptoFailable a -> Maybe CryptoError
 cryptoError = onCryptoFailure Just (const Nothing)
 
-doPointDecodeTest (i, vector) =
+doPointDecodeTest i vector =
     case vpCurve vector of
         Curve curve ->
             let prx = Just curve -- using Maybe as Proxy
              in testCase (show i) (vpError vector @=? cryptoError (ECC.decodePoint prx $ vpEncodedPoint vector))
 
-doWeakPointECDHTest (i, vector) =
+doWeakPointECDHTest i vector =
     case vpCurve vector of
         Curve curve -> testCase (show i) $ do
             let prx = Just curve -- using Maybe as Proxy
@@ -290,8 +290,8 @@ doWeakPointECDHTest (i, vector) =
             vpError vector @=? cryptoError (ECC.ecdh prx (ECC.keypairGetPrivate keyPair) public)
 
 tests = testGroup "ECC"
-    [ testGroup "decodePoint" $ map doPointDecodeTest (zip [katZero..] vectorsPoint)
-    , testGroup "ECDH weak points" $ map doWeakPointECDHTest (zip [katZero..] vectorsWeakPoint)
+    [ testGroup "decodePoint" $ zipWith doPointDecodeTest [katZero..] vectorsPoint
+    , testGroup "ECDH weak points" $ zipWith doWeakPointECDHTest [katZero..] vectorsWeakPoint
     , testGroup "property"
         [ testProperty "decodePoint.encodePoint==id" $ \testDRG (Curve curve) ->
             let prx = Just curve -- using Maybe as Proxy

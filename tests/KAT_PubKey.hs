@@ -25,7 +25,7 @@ data VectorMgf = VectorMgf { seed :: ByteString
                            , dbMask :: ByteString
                            }
 
-doMGFTest (i, vmgf) = testCase (show i) (dbMask vmgf @=? actual)
+doMGFTest i vmgf = testCase (show i) (dbMask vmgf @=? actual)
     where actual = mgf1 SHA1 (seed vmgf) (B.length $ dbMask vmgf)
 
 vectorsMGF =
@@ -36,7 +36,7 @@ vectorsMGF =
     ]
 
 tests = testGroup "PubKey"
-    [ testGroup "MGF1" $ map doMGFTest (zip [katZero..] vectorsMGF)
+    [ testGroup "MGF1" $ zipWith doMGFTest [katZero..] vectorsMGF
     , rsaTests
     , pssTests
     , oaepTests

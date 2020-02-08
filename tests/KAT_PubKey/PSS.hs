@@ -326,23 +326,23 @@ vectorsKey8 =
         }
     ]
 
-doSignTest key (i, vector) = testCase (show i) (Right (signature vector) @=? actual)
+doSignTest key i vector = testCase (show i) (Right (signature vector) @=? actual)
     where actual = PSS.signWithSalt (salt vector) Nothing PSS.defaultPSSParamsSHA1 key (message vector)
 
-doVerifyTest key (i, vector) = testCase (show i) (True @=? actual)
+doVerifyTest key i vector = testCase (show i) (True @=? actual)
     where actual = PSS.verify PSS.defaultPSSParamsSHA1 (private_pub key) (message vector) (signature vector)
 
 pssTests = testGroup "RSA-PSS"
     [ testGroup "signature internal"
-        [ doSignTest rsaKeyInt (katZero, vectorInt) ]
+        [ doSignTest rsaKeyInt katZero vectorInt ]
     , testGroup "verify internal"
-        [ doVerifyTest rsaKeyInt (katZero, vectorInt) ]
-    , testGroup "signature key 1024" $ map (doSignTest rsaKey1) (zip [katZero..] vectorsKey1)
-    , testGroup "verify key 1024" $ map (doVerifyTest rsaKey1) (zip [katZero..] vectorsKey1)
-    , testGroup "signature key 1025" $ map (doSignTest rsaKey2) (zip [katZero..] vectorsKey2)
-    , testGroup "verify key 1025" $ map (doVerifyTest rsaKey2) (zip [katZero..] vectorsKey2)
-    , testGroup "signature key 1026" $ map (doSignTest rsaKey3) (zip [katZero..] vectorsKey3)
-    , testGroup "verify key 1026" $ map (doVerifyTest rsaKey3) (zip [katZero..] vectorsKey3)
-    , testGroup "signature key 1031" $ map (doSignTest rsaKey8) (zip [katZero..] vectorsKey8)
-    , testGroup "verify key 1031" $ map (doVerifyTest rsaKey8) (zip [katZero..] vectorsKey8)
+        [ doVerifyTest rsaKeyInt katZero vectorInt ]
+    , testGroup "signature key 1024" $ zipWith (doSignTest rsaKey1) [katZero..] vectorsKey1
+    , testGroup "verify key 1024" $ zipWith (doVerifyTest rsaKey1) [katZero..] vectorsKey1
+    , testGroup "signature key 1025" $ zipWith (doSignTest rsaKey2) [katZero..] vectorsKey2
+    , testGroup "verify key 1025" $ zipWith (doVerifyTest rsaKey2) [katZero..] vectorsKey2
+    , testGroup "signature key 1026" $ zipWith (doSignTest rsaKey3) [katZero..] vectorsKey3
+    , testGroup "verify key 1026" $ zipWith (doVerifyTest rsaKey3) [katZero..] vectorsKey3
+    , testGroup "signature key 1031" $ zipWith (doSignTest rsaKey8) [katZero..] vectorsKey8
+    , testGroup "verify key 1031" $ zipWith (doVerifyTest rsaKey8) [katZero..] vectorsKey8
     ]
