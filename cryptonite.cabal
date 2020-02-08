@@ -416,6 +416,7 @@ Test-Suite test-cryptonite
                      KAT_DES
                      KAT_Ed25519
                      KAT_Ed448
+                     KAT_EdDSA
                      KAT_CMAC
                      KAT_HKDF
                      KAT_HMAC
