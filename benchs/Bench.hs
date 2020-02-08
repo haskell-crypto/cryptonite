@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies #-}
 module Main where
 
 import Gauge.Main
@@ -328,25 +329,26 @@ benchECDSA = map doECDSABench curveHashes
                   ]
 
 benchEdDSA =
-    [ bgroup "EdDSA-Ed25519" $ benchGeneric (Just Curve_Edwards25519)
-    , bgroup "Ed25519"         benchEd25519
+    [ bgroup "EdDSA-Ed25519" benchGenEd25519
+    , bgroup "Ed25519"       benchEd25519
     ]
   where
-    benchGeneric prx =
-        [ bench "sign"   $ perBatchEnv (genEnv prx) (run_gen_sign   prx)
-        , bench "verify" $ perBatchEnv (genEnv prx) (run_gen_verify prx)
+    benchGen prx alg =
+        [ bench "sign"   $ perBatchEnv (genEnv prx alg) (run_gen_sign   prx)
+        , bench "verify" $ perBatchEnv (genEnv prx alg) (run_gen_verify prx)
         ]
 
-    benchEd25519 =
+    benchGenEd25519 = benchGen (Just Curve_Edwards25519) SHA512
+    benchEd25519    =
         [ bench "sign"   $ perBatchEnv ed25519Env run_ed25519_sign
         , bench "verify" $ perBatchEnv ed25519Env run_ed25519_verify
         ]
 
     msg = B.empty -- empty message = worst-case scenario showing API overhead
 
-    genEnv prx _ = do
+    genEnv prx alg _ = do
         sec <- EdDSA.generateSecretKey prx
-        let pub = EdDSA.toPublic prx sec
+        let pub = EdDSA.toPublic prx alg sec
             sig = EdDSA.sign prx sec pub msg
         return (sec, pub, sig)
 

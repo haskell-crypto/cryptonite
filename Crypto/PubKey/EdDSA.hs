@@ -19,7 +19,10 @@ module Crypto.PubKey.EdDSA
     , PublicKey
     , Signature
     -- * Curves with EdDSA implementation
-    , EllipticCurveEdDSA(publicKeySize, secretKeySize, signatureSize)
+    , EllipticCurveEdDSA(CurveDigestSize)
+    , publicKeySize
+    , secretKeySize
+    , signatureSize
     -- * Smart constructors
     , signature
     , publicKey
@@ -34,16 +37,19 @@ module Crypto.PubKey.EdDSA
 import           Data.Bits
 import           Data.ByteArray (ByteArray, ByteArrayAccess, Bytes, ScrubbedBytes)
 import qualified Data.ByteArray as B
+import           Data.Proxy
 
 import           Crypto.ECC
 import qualified Crypto.ECC.Edwards25519 as Edwards25519
 import           Crypto.Error
-import           Crypto.Hash.Algorithms
 import           Crypto.Hash.IO
 import           Crypto.Random
 
+import           GHC.TypeLits (KnownNat, Nat)
+
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
+import           Crypto.Internal.Nat (integralNatVal)
 
 import           Foreign.Storable
 
@@ -55,49 +61,63 @@ newtype SecretKey curve = SecretKey ScrubbedBytes
     deriving (Show,Eq,ByteArrayAccess,NFData)
 
 -- | An EdDSA public key
-newtype PublicKey curve = PublicKey Bytes
+newtype PublicKey curve hash = PublicKey Bytes
     deriving (Show,Eq,ByteArrayAccess,NFData)
 
 -- | An EdDSA signature
-newtype Signature curve = Signature Bytes
+newtype Signature curve hash = Signature Bytes
     deriving (Show,Eq,ByteArrayAccess,NFData)
 
 -- | Elliptic curves with an implementation of EdDSA
 class ( EllipticCurveBasepointArith curve
-      , HashAlgorithm (HashAlg curve)
+      , KnownNat (CurveDigestSize curve)
       ) => EllipticCurveEdDSA curve where
 
-    -- | Size of public keys for this curve (in bytes)
-    publicKeySize :: proxy curve -> Int
+    -- | Size of the digest for this curve (in bytes)
+    type CurveDigestSize curve :: Nat
 
     -- | Size of secret keys for this curve (in bytes)
     secretKeySize :: proxy curve -> Int
 
-    -- | Size of signatures for this curve (in bytes)
-    signatureSize :: proxy curve -> Int
-
     -- hash with a given prefix
-    type HashAlg curve :: *
-    hashWithDom :: ByteArrayAccess msg => proxy curve -> [Bytes] -> msg -> Bytes
+    hashWithDom :: (HashAlgorithm hash, ByteArrayAccess msg)
+                => proxy curve -> hash -> [Bytes] -> msg -> Bytes
 
     -- conversion between scalar, point and public key
-    pointPublic :: proxy curve -> Point curve -> PublicKey curve
-    publicPoint :: proxy curve -> PublicKey curve -> CryptoFailable (Point curve)
+    pointPublic :: proxy curve -> Point curve -> PublicKey curve hash
+    publicPoint :: proxy curve -> PublicKey curve hash -> CryptoFailable (Point curve)
     encodeScalarLE :: ByteArray bs => proxy curve -> Scalar curve -> bs
     decodeScalarLE :: ByteArrayAccess bs => proxy curve -> bs -> CryptoFailable (Scalar curve)
 
     -- how to use bits in a secret key
-    scheduleSecret :: proxy curve
+    scheduleSecret :: ( HashAlgorithm hash
+                      , HashDigestSize hash ~ CurveDigestSize curve
+                      )
+                   => proxy curve
+                   -> hash
                    -> SecretKey curve
                    -> (Scalar curve, Bytes)
+
+-- | Size of public keys for this curve (in bytes)
+publicKeySize :: EllipticCurveEdDSA curve => proxy curve -> Int
+publicKeySize prx = signatureSize prx `div` 2
+
+-- | Size of signatures for this curve (in bytes)
+signatureSize :: forall proxy curve . EllipticCurveEdDSA curve
+              => proxy curve -> Int
+signatureSize _ = integralNatVal (Proxy :: Proxy (CurveDigestSize curve))
 
 
 -- Constructors
 
 -- | Try to build a public key from a bytearray
-publicKey :: (EllipticCurveEdDSA curve, ByteArrayAccess ba)
-          => proxy curve -> ba -> CryptoFailable (PublicKey curve)
-publicKey prx bs
+publicKey :: ( EllipticCurveEdDSA curve
+             , HashAlgorithm hash
+             , HashDigestSize hash ~ CurveDigestSize curve
+             , ByteArrayAccess ba
+             )
+          => proxy curve -> hash -> ba -> CryptoFailable (PublicKey curve hash)
+publicKey prx _ bs
     | B.length bs == publicKeySize prx =
         CryptoPassed (PublicKey $ B.convert bs)
     | otherwise =
@@ -113,9 +133,13 @@ secretKey prx bs
         CryptoFailed CryptoError_SecretKeyStructureInvalid
 
 -- | Try to build a signature from a bytearray
-signature :: (EllipticCurveEdDSA curve, ByteArrayAccess ba)
-          => proxy curve -> ba -> CryptoFailable (Signature curve)
-signature prx bs
+signature :: ( EllipticCurveEdDSA curve
+             , HashAlgorithm hash
+             , HashDigestSize hash ~ CurveDigestSize curve
+             , ByteArrayAccess ba
+             )
+          => proxy curve -> hash -> ba -> CryptoFailable (Signature curve hash)
+signature prx _ bs
     | B.length bs == signatureSize prx =
         CryptoPassed (Signature $ B.convert bs)
     | otherwise =
@@ -130,25 +154,37 @@ generateSecretKey :: (EllipticCurveEdDSA curve, MonadRandom m)
 generateSecretKey prx = SecretKey <$> getRandomBytes (secretKeySize prx)
 
 -- | Create a public key from a secret key
-toPublic :: EllipticCurveEdDSA curve
-         => proxy curve -> SecretKey curve -> PublicKey curve
-toPublic prx priv =
-    let p = pointBaseSmul prx (secretScalar prx priv)
+toPublic :: ( EllipticCurveEdDSA curve
+            , HashAlgorithm hash
+            , HashDigestSize hash ~ CurveDigestSize curve
+            )
+         => proxy curve -> hash -> SecretKey curve -> PublicKey curve hash
+toPublic prx alg priv =
+    let p = pointBaseSmul prx (secretScalar prx alg priv)
      in pointPublic prx p
 
-secretScalar :: EllipticCurveEdDSA curve
-             => proxy curve -> SecretKey curve -> Scalar curve
-secretScalar prx priv = fst (scheduleSecret prx priv)
+secretScalar :: ( EllipticCurveEdDSA curve
+                , HashAlgorithm hash
+                , HashDigestSize hash ~ CurveDigestSize curve
+                )
+             => proxy curve -> hash -> SecretKey curve -> Scalar curve
+secretScalar prx alg priv = fst (scheduleSecret prx alg priv)
 
 
 -- EdDSA signature generation & verification
 
 -- | Sign a message using the key pair
-sign :: (EllipticCurveEdDSA curve, ByteArrayAccess msg)
-     => proxy curve -> SecretKey curve -> PublicKey curve -> msg -> Signature curve
+sign :: forall proxy curve hash msg .
+        ( EllipticCurveEdDSA curve
+        , HashAlgorithm hash
+        , ByteArrayAccess msg
+        , HashDigestSize hash ~ CurveDigestSize curve
+        )
+     => proxy curve -> SecretKey curve -> PublicKey curve hash -> msg -> Signature curve hash
 sign prx priv pub msg =
-    let (s, prefix) = scheduleSecret prx priv
-        digR = hashWithDom prx [prefix] msg
+    let alg  = undefined :: hash
+        (s, prefix) = scheduleSecret prx alg priv
+        digR = hashWithDom prx alg [prefix] msg
         r    = decodeScalarNoErr prx digR
         pR   = pointBaseSmul prx r
         bsR  = encodePoint prx pR
@@ -157,8 +193,12 @@ sign prx priv pub msg =
      in encodeSignature prx (bsR, pR, sS)
 
 -- | Verify a message
-verify :: (EllipticCurveEdDSA curve, ByteArrayAccess msg)
-       => proxy curve -> PublicKey curve -> msg -> Signature curve -> Bool
+verify :: ( EllipticCurveEdDSA curve
+          , HashAlgorithm hash
+          , HashDigestSize hash ~ CurveDigestSize curve
+          , ByteArrayAccess msg
+          )
+       => proxy curve -> PublicKey curve hash -> msg -> Signature curve hash -> Bool
 verify prx pub msg sig =
     case doVerify of
         CryptoPassed verified -> verified
@@ -171,16 +211,22 @@ verify prx pub msg sig =
             pR' = pointsSmulVarTime prx sS sK nPub
         return (pR == pR')
 
-getK :: (EllipticCurveEdDSA curve, ByteArrayAccess msg)
-     => proxy curve -> PublicKey curve -> Bytes -> msg -> Scalar curve
+getK :: forall proxy curve hash msg .
+        ( EllipticCurveEdDSA curve
+        , HashAlgorithm hash
+        , HashDigestSize hash ~ CurveDigestSize curve
+        , ByteArrayAccess msg
+        )
+     => proxy curve -> PublicKey curve hash -> Bytes -> msg -> Scalar curve
 getK prx (PublicKey pub) bsR msg =
-    let digK = hashWithDom prx [bsR, pub] msg
+    let alg  = undefined :: hash
+        digK = hashWithDom prx alg [bsR, pub] msg
      in decodeScalarNoErr prx digK
 
 encodeSignature :: EllipticCurveEdDSA curve
                 => proxy curve
                 -> (Bytes, Point curve, Scalar curve)
-                -> Signature curve
+                -> Signature curve hash
 encodeSignature prx (bsR, _, sS) = Signature $
     if len0 > 0 then B.concat [ bsR, bsS, pad0 ] else B.append bsR bsS
   where
@@ -188,9 +234,11 @@ encodeSignature prx (bsR, _, sS) = Signature $
     len0 = signatureSize prx - B.length bsR - B.length bsS
     pad0 = B.zero len0
 
-decodeSignature :: EllipticCurveEdDSA curve
+decodeSignature :: ( EllipticCurveEdDSA curve
+                   , HashDigestSize hash ~ CurveDigestSize curve
+                   )
                 => proxy curve
-                -> Signature curve
+                -> Signature curve hash
                 -> CryptoFailable (Bytes, Point curve, Scalar curve)
 decodeSignature prx (Signature bs) = do
     let (bsR, bsS) = B.splitAt (publicKeySize prx) bs
@@ -211,22 +259,20 @@ unwrap _    (CryptoPassed x) = x
 -- Ed25519 implementation
 
 instance EllipticCurveEdDSA Curve_Edwards25519 where
-    publicKeySize _ = 32
+    type CurveDigestSize Curve_Edwards25519 = 64
     secretKeySize _ = 32
-    signatureSize _ = 64
 
-    type HashAlg Curve_Edwards25519 = SHA512
-    hashWithDom _ = digestDomMsg SHA512
+    hashWithDom _ = digestDomMsg
 
     pointPublic _ = PublicKey . Edwards25519.pointEncode
     publicPoint _ = Edwards25519.pointDecode
     encodeScalarLE _ = Edwards25519.scalarEncode
     decodeScalarLE _ = Edwards25519.scalarDecodeLong
 
-    scheduleSecret prx priv =
+    scheduleSecret prx alg priv =
         (decodeScalarNoErr prx clamped, B.drop 32 hashed)
       where
-        hashed  = digest SHA512 ($ priv)
+        hashed  = digest alg ($ priv)
 
         clamped :: Bytes
         clamped = B.copyAndFreeze (B.takeView hashed 32) $ \p -> do
