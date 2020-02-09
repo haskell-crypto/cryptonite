@@ -48,7 +48,7 @@ module Crypto.PubKey.EdDSA
     ) where
 
 import           Data.Bits
-import           Data.ByteArray (ByteArray, ByteArrayAccess, Bytes, ScrubbedBytes)
+import           Data.ByteArray (ByteArray, ByteArrayAccess, Bytes, ScrubbedBytes, View)
 import qualified Data.ByteArray as B
 import           Data.ByteString (ByteString)
 import           Data.Proxy
@@ -62,6 +62,7 @@ import           Crypto.Random
 
 import           GHC.TypeLits (KnownNat, Nat)
 
+import           Crypto.Internal.Builder
 import           Crypto.Internal.Compat
 import           Crypto.Internal.Imports
 import           Crypto.Internal.Nat (integralNatVal)
@@ -96,7 +97,7 @@ class ( EllipticCurveBasepointArith curve
 
     -- hash with specified parameters
     hashWithDom :: (HashAlgorithm hash, ByteArrayAccess ctx, ByteArrayAccess msg)
-                => proxy curve -> hash -> Bool -> ctx -> [Bytes] -> msg -> Bytes
+                => proxy curve -> hash -> Bool -> ctx -> Builder -> msg -> Bytes
 
     -- conversion between scalar, point and public key
     pointPublic :: proxy curve -> Point curve -> PublicKey curve hash
@@ -111,7 +112,7 @@ class ( EllipticCurveBasepointArith curve
                    => proxy curve
                    -> hash
                    -> SecretKey curve
-                   -> (Scalar curve, Bytes)
+                   -> (Scalar curve, View Bytes)
 
 -- | Size of public keys for this curve (in bytes)
 publicKeySize :: EllipticCurveEdDSA curve => proxy curve -> Int
@@ -255,7 +256,7 @@ signPhCtx :: forall proxy curve hash ctx msg .
 signPhCtx prx ph ctx priv pub msg =
     let alg  = undefined :: hash
         (s, prefix) = scheduleSecret prx alg priv
-        digR = hashWithDom prx alg ph ctx [prefix] msg
+        digR = hashWithDom prx alg ph ctx (bytes prefix) msg
         r    = decodeScalarNoErr prx digR
         pR   = pointBaseSmul prx r
         bsR  = encodePoint prx pR
@@ -295,19 +296,18 @@ getK :: forall proxy curve hash ctx msg .
      => proxy curve -> Bool -> ctx -> PublicKey curve hash -> Bytes -> msg -> Scalar curve
 getK prx ph ctx (PublicKey pub) bsR msg =
     let alg  = undefined :: hash
-        digK = hashWithDom prx alg ph ctx [bsR, pub] msg
+        digK = hashWithDom prx alg ph ctx (bytes bsR <+> bytes pub) msg
      in decodeScalarNoErr prx digK
 
 encodeSignature :: EllipticCurveEdDSA curve
                 => proxy curve
                 -> (Bytes, Point curve, Scalar curve)
                 -> Signature curve hash
-encodeSignature prx (bsR, _, sS) = Signature $
-    if len0 > 0 then B.concat [ bsR, bsS, pad0 ] else B.append bsR bsS
+encodeSignature prx (bsR, _, sS) = Signature $ buildAndFreeze $
+    bytes bsR <+> bytes bsS <+> zero len0
   where
-    bsS  = encodeScalarLE prx sS
+    bsS  = encodeScalarLE prx sS :: Bytes
     len0 = signatureSize prx - B.length bsR - B.length bsS
-    pad0 = B.zero len0
 
 decodeSignature :: ( EllipticCurveEdDSA curve
                    , HashDigestSize hash ~ CurveDigestSize curve
@@ -339,12 +339,11 @@ instance EllipticCurveEdDSA Curve_Edwards25519 where
 
     hashWithDom _ alg ph ctx bss
         | not ph && B.null ctx = digestDomMsg alg bss
-        | otherwise            = digestDomMsg alg (bs:bss)
-      where bs = B.concat [ "SigEd25519 no Ed25519 collisions" :: ByteString
-                          , B.singleton $ if ph then 1 else 0
-                          , B.singleton $ fromIntegral $ B.length ctx
-                          , B.convert ctx
-                          ]
+        | otherwise            = digestDomMsg alg (dom <+> bss)
+      where dom = bytes ("SigEd25519 no Ed25519 collisions" :: ByteString) <+>
+                  byte (if ph then 1 else 0) <+>
+                  byte (fromIntegral $ B.length ctx) <+>
+                  bytes ctx
 
     pointPublic _ = PublicKey . Edwards25519.pointEncode
     publicPoint _ = Edwards25519.pointDecode
@@ -352,7 +351,7 @@ instance EllipticCurveEdDSA Curve_Edwards25519 where
     decodeScalarLE _ = Edwards25519.scalarDecodeLong
 
     scheduleSecret prx alg priv =
-        (decodeScalarNoErr prx clamped, B.drop 32 hashed)
+        (decodeScalarNoErr prx clamped, B.dropView hashed 32)
       where
         hashed  = digest alg ($ priv)
 
@@ -377,9 +376,9 @@ instance EllipticCurveEdDSA Curve_Edwards25519 where
 -}
 
 digestDomMsg :: (HashAlgorithm alg, ByteArrayAccess msg)
-             => alg -> [Bytes] -> msg -> Bytes
+             => alg -> Builder -> msg -> Bytes
 digestDomMsg alg bss bs = digest alg $ \update ->
-    update (B.concat bss :: Bytes) >> update bs
+    update (buildAndFreeze bss :: Bytes) >> update bs
 
 digest :: HashAlgorithm alg
        => alg

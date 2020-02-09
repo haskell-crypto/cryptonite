@@ -230,6 +230,7 @@ Library
                      Crypto.PubKey.ElGamal
                      Crypto.ECC.Simple.Types
                      Crypto.ECC.Simple.Prim
+                     Crypto.Internal.Builder
                      Crypto.Internal.ByteArray
                      Crypto.Internal.Compat
                      Crypto.Internal.CompatPrim

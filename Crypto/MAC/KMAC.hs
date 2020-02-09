@@ -27,13 +27,11 @@ import qualified Crypto.Hash as H
 import           Crypto.Hash.SHAKE (HashSHAKE(..))
 import           Crypto.Hash.Types (HashAlgorithm(..), Digest(..))
 import qualified Crypto.Hash.Types as H
-import           Foreign.Ptr (Ptr, plusPtr)
-import           Foreign.Storable (poke)
+import           Crypto.Internal.Builder
+import           Foreign.Ptr (Ptr)
 import           Data.Bits (shiftR)
-import           Data.ByteArray (ByteArray, ByteArrayAccess)
+import           Data.ByteArray (ByteArrayAccess)
 import qualified Data.ByteArray as B
-import           Data.Word (Word8)
-import           Data.Memory.PtrMethods (memSet)
 
 
 -- cSHAKE
@@ -48,7 +46,7 @@ cshakeInit n s p = H.Context $ B.allocAndFreeze c $ \(ptr :: Ptr (H.Context a)) 
     c = hashInternalContextSize (undefined :: a)
     w = hashBlockSize (undefined :: a)
     x = encodeString n <+> encodeString s
-    b = builderAllocAndFreeze (bytepad x w) :: B.Bytes
+    b = buildAndFreeze (bytepad x w) :: B.Bytes
 
 cshakeUpdate :: (HashSHAKE a, ByteArrayAccess ba)
              => H.Context a -> ba -> H.Context a
@@ -99,7 +97,7 @@ initialize str key = Context $ cshakeInit n str p
   where
     n = B.pack [75,77,65,67] :: B.Bytes  -- "KMAC"
     w = hashBlockSize (undefined :: a)
-    p = builderAllocAndFreeze (bytepad (encodeString key) w) :: B.ScrubbedBytes
+    p = buildAndFreeze (bytepad (encodeString key) w) :: B.ScrubbedBytes
 
 -- | Incrementally update a KMAC context.
 update :: (HashSHAKE a, ByteArrayAccess ba) => Context a -> ba -> Context a
@@ -114,7 +112,7 @@ finalize :: forall a . HashSHAKE a => Context a -> KMAC a
 finalize (Context ctx) = KMAC $ cshakeFinalize ctx suffix
   where
     l = cshakeOutputLength (undefined :: a)
-    suffix = builderAllocAndFreeze (rightEncode l) :: B.Bytes
+    suffix = buildAndFreeze (rightEncode l) :: B.Bytes
 
 
 -- Utilities
@@ -143,27 +141,3 @@ rightEncode x = digits <+> byte len
 i2osp :: Int -> Builder
 i2osp i | i >= 256  = i2osp (shiftR i 8) <+> byte (fromIntegral i)
         | otherwise = byte (fromIntegral i)
-
-
--- Delaying and merging ByteArray allocations
-
-data Builder = Builder !Int (Ptr Word8 -> IO ())  -- size and initializer
-
-(<+>) :: Builder -> Builder -> Builder
-(Builder s1 f1) <+> (Builder s2 f2) = Builder (s1 + s2) f
-  where f p = f1 p >> f2 (p `plusPtr` s1)
-
-builderLength :: Builder -> Int
-builderLength (Builder s _) = s
-
-builderAllocAndFreeze :: ByteArray ba => Builder -> ba
-builderAllocAndFreeze (Builder s f) = B.allocAndFreeze s f
-
-byte :: Word8 -> Builder
-byte !b = Builder 1 (`poke` b)
-
-bytes :: ByteArrayAccess ba => ba -> Builder
-bytes bs = Builder (B.length bs) (B.copyByteArrayToPtr bs)
-
-zero :: Int -> Builder
-zero s = Builder s (\p -> memSet p 0 s)
