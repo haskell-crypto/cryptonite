@@ -74,7 +74,7 @@ static inline void cpu_gf_mulx(block128 *a, const block128 *b)
 	a->q[0] = v0 >> 1 ^ ((0-(v1 & 1)) & 0xe100000000000000ULL);
 }
 
-const static uint64_t r4_0[] =
+static const uint64_t r4_0[] =
 	{ 0x0000000000000000ULL, 0x1c20000000000000ULL
 	, 0x3840000000000000ULL, 0x2460000000000000ULL
 	, 0x7080000000000000ULL, 0x6ca0000000000000ULL
