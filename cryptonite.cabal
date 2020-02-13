@@ -245,6 +245,7 @@ Library
   Build-depends:     bytestring
                    , memory >= 0.14.18
                    , basement >= 0.0.6
+                   , transformers >= 0.2.0.0
                    , ghc-prim
   ghc-options:       -Wall -fwarn-tabs -optc-O3
   if os(linux)

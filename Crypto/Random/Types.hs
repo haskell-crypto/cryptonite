@@ -5,6 +5,10 @@
 -- Stability   : experimental
 -- Portability : Good
 --
+
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 module Crypto.Random.Types
     (
       MonadRandom(..)
@@ -13,11 +17,12 @@ module Crypto.Random.Types
     , withDRG
     ) where
 
+import Control.Monad.Trans.Class
 import Crypto.Random.Entropy
 import Crypto.Internal.ByteArray
 
 -- | A monad constraint that allows to generate random bytes
-class (Functor m, Monad m) => MonadRandom m where
+class (Monad m) => MonadRandom m where
     getRandomBytes :: ByteArray byteArray => Int -> m byteArray
 
 -- | A Deterministic Random Generator (DRG) class
@@ -27,6 +32,9 @@ class DRG gen where
 
 instance MonadRandom IO where
     getRandomBytes = getEntropy
+
+instance (MonadRandom m, MonadTrans t, Monad (t m)) => MonadRandom (t m) where
+  getRandomBytes = lift . getRandomBytes
 
 -- | A simple Monad class very similar to a State Monad
 -- with the state being a DRG.
