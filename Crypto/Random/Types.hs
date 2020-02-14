@@ -17,7 +17,7 @@ import Crypto.Random.Entropy
 import Crypto.Internal.ByteArray
 
 -- | A monad constraint that allows to generate random bytes
-class (Functor m, Monad m) => MonadRandom m where
+class Monad m => MonadRandom m where
     getRandomBytes :: ByteArray byteArray => Int -> m byteArray
 
 -- | A Deterministic Random Generator (DRG) class
