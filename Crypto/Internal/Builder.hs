@@ -26,7 +26,7 @@ import           Data.Memory.PtrMethods (memSet)
 import           Foreign.Ptr (Ptr, plusPtr)
 import           Foreign.Storable (poke)
 
-import           Crypto.Internal.Imports
+import           Crypto.Internal.Imports hiding (empty)
 
 data Builder =  Builder !Int (Ptr Word8 -> IO ())  -- size and initializer
 
@@ -47,4 +47,7 @@ bytes :: ByteArrayAccess ba => ba -> Builder
 bytes bs = Builder (B.length bs) (B.copyByteArrayToPtr bs)
 
 zero :: Int -> Builder
-zero s = Builder s (\p -> memSet p 0 s)
+zero s = if s > 0 then Builder s (\p -> memSet p 0 s) else empty
+
+empty :: Builder
+empty = Builder 0 (const $ return ())
