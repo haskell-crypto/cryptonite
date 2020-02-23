@@ -14,7 +14,6 @@ module Crypto.Internal.Builder
     ( Builder
     , buildAndFreeze
     , builderLength
-    , (<+>)
     , byte
     , bytes
     , zero
@@ -23,16 +22,17 @@ module Crypto.Internal.Builder
 import           Data.ByteArray (ByteArray, ByteArrayAccess)
 import qualified Data.ByteArray as B
 import           Data.Memory.PtrMethods (memSet)
-import           Data.Word (Word8)
 
 import           Foreign.Ptr (Ptr, plusPtr)
 import           Foreign.Storable (poke)
 
+import           Crypto.Internal.Imports
+
 data Builder =  Builder !Int (Ptr Word8 -> IO ())  -- size and initializer
 
-(<+>) :: Builder -> Builder -> Builder
-(Builder s1 f1) <+> (Builder s2 f2) = Builder (s1 + s2) f
-  where f p = f1 p >> f2 (p `plusPtr` s1)
+instance Semigroup Builder where
+    (Builder s1 f1) <> (Builder s2 f2) = Builder (s1 + s2) f
+      where f p = f1 p >> f2 (p `plusPtr` s1)
 
 builderLength :: Builder -> Int
 builderLength (Builder s _) = s

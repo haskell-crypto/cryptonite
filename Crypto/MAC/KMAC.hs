@@ -28,6 +28,7 @@ import           Crypto.Hash.SHAKE (HashSHAKE(..))
 import           Crypto.Hash.Types (HashAlgorithm(..), Digest(..))
 import qualified Crypto.Hash.Types as H
 import           Crypto.Internal.Builder
+import           Crypto.Internal.Imports
 import           Foreign.Ptr (Ptr)
 import           Data.Bits (shiftR)
 import           Data.ByteArray (ByteArrayAccess)
@@ -45,7 +46,7 @@ cshakeInit n s p = H.Context $ B.allocAndFreeze c $ \(ptr :: Ptr (H.Context a)) 
   where
     c = hashInternalContextSize (undefined :: a)
     w = hashBlockSize (undefined :: a)
-    x = encodeString n <+> encodeString s
+    x = encodeString n <> encodeString s
     b = buildAndFreeze (bytepad x w) :: B.Bytes
 
 cshakeUpdate :: (HashSHAKE a, ByteArrayAccess ba)
@@ -75,7 +76,7 @@ cshakeFinalize !c s =
 -- The Eq instance is constant time.  No Show instance is provided, to avoid
 -- printing by mistake.
 newtype KMAC a = KMAC { kmacGetDigest :: Digest a }
-    deriving ByteArrayAccess
+    deriving (ByteArrayAccess,NFData)
 
 instance Eq (KMAC a) where
     (KMAC b1) == (KMAC b2) = B.constEq b1 b2
@@ -118,26 +119,26 @@ finalize (Context ctx) = KMAC $ cshakeFinalize ctx suffix
 -- Utilities
 
 bytepad :: Builder -> Int -> Builder
-bytepad x w = prefix <+> x <+> zero padLen
+bytepad x w = prefix <> x <> zero padLen
   where
     prefix = leftEncode w
     padLen = (w - builderLength prefix - builderLength x) `mod` w
 
 encodeString :: ByteArrayAccess bin => bin -> Builder
-encodeString s = leftEncode (8 * B.length s) <+> bytes s
+encodeString s = leftEncode (8 * B.length s) <> bytes s
 
 leftEncode :: Int -> Builder
-leftEncode x = byte len <+> digits
+leftEncode x = byte len <> digits
   where
     digits = i2osp x
     len    = fromIntegral (builderLength digits)
 
 rightEncode :: Int -> Builder
-rightEncode x = digits <+> byte len
+rightEncode x = digits <> byte len
   where
     digits = i2osp x
     len    = fromIntegral (builderLength digits)
 
 i2osp :: Int -> Builder
-i2osp i | i >= 256  = i2osp (shiftR i 8) <+> byte (fromIntegral i)
+i2osp i | i >= 256  = i2osp (shiftR i 8) <> byte (fromIntegral i)
         | otherwise = byte (fromIntegral i)

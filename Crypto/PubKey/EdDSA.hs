@@ -296,7 +296,7 @@ getK :: forall proxy curve hash ctx msg .
      => proxy curve -> Bool -> ctx -> PublicKey curve hash -> Bytes -> msg -> Scalar curve
 getK prx ph ctx (PublicKey pub) bsR msg =
     let alg  = undefined :: hash
-        digK = hashWithDom prx alg ph ctx (bytes bsR <+> bytes pub) msg
+        digK = hashWithDom prx alg ph ctx (bytes bsR <> bytes pub) msg
      in decodeScalarNoErr prx digK
 
 encodeSignature :: EllipticCurveEdDSA curve
@@ -304,7 +304,7 @@ encodeSignature :: EllipticCurveEdDSA curve
                 -> (Bytes, Point curve, Scalar curve)
                 -> Signature curve hash
 encodeSignature prx (bsR, _, sS) = Signature $ buildAndFreeze $
-    bytes bsR <+> bytes bsS <+> zero len0
+    bytes bsR <> bytes bsS <> zero len0
   where
     bsS  = encodeScalarLE prx sS :: Bytes
     len0 = signatureSize prx - B.length bsR - B.length bsS
@@ -339,10 +339,10 @@ instance EllipticCurveEdDSA Curve_Edwards25519 where
 
     hashWithDom _ alg ph ctx bss
         | not ph && B.null ctx = digestDomMsg alg bss
-        | otherwise            = digestDomMsg alg (dom <+> bss)
-      where dom = bytes ("SigEd25519 no Ed25519 collisions" :: ByteString) <+>
-                  byte (if ph then 1 else 0) <+>
-                  byte (fromIntegral $ B.length ctx) <+>
+        | otherwise            = digestDomMsg alg (dom <> bss)
+      where dom = bytes ("SigEd25519 no Ed25519 collisions" :: ByteString) <>
+                  byte (if ph then 1 else 0) <>
+                  byte (fromIntegral $ B.length ctx) <>
                   bytes ctx
 
     pointPublic _ = PublicKey . Edwards25519.pointEncode
