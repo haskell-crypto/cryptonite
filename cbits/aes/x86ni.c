@@ -30,6 +30,10 @@
 
 #ifdef WITH_AESNI
 
+#pragma GCC push_options
+#pragma GCC target("ssse3", "aes")
+#pragma clang attribute push (__attribute__((target("ssse3,aes"))), apply_to=function)
+
 #include <wmmintrin.h>
 #include <tmmintrin.h>
 #include <string.h>
@@ -399,5 +403,8 @@ static inline __m128i ghash_add(__m128i tag, const table_4bit htable, __m128i m)
 #undef DO_DEC_BLOCK
 
 #endif
+
+#pragma clang attribute pop
+#pragma GCC pop_options
 
 #endif
