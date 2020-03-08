@@ -11,8 +11,8 @@ option: gaugedeps extradep=gauge-0.2.1
 option: basementmin extradep=basement-0.0.8 extradep=memory-0.14.18
 
 # builds
-build: ghc-8.2 basementmin
 build: ghc-8.0 basementmin gaugedeps
+build: ghc-8.2 basementmin
 build: ghc-8.4
 build: ghc-8.6 os=linux,osx,windows
 build: ghc-8.8 os=linux,windows
