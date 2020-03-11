@@ -363,6 +363,8 @@ Library
 
   if arch(x86_64) || flag(support_sse)
     CPP-options:    -DSUPPORT_SSE
+    if arch(i386)
+      CC-options:   -msse2
 
   C-sources:      cbits/argon2/argon2.c
   include-dirs:   cbits/argon2
