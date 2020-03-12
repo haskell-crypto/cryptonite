@@ -40,7 +40,11 @@
 #include <cryptonite_aes.h>
 #include <aes/block128.h>
 
+#define TARGET_AESNI __attribute__((target("ssse3,aes")))
+#define TARGET_AESNI_PCLMUL __attribute__((target("sse4.1,aes,pclmul")))
+
 #ifdef IMPL_DEBUG
+TARGET_AESNI
 static void block128_sse_print(__m128i m)
 {
 	block128 b;

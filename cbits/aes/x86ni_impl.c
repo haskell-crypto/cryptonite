@@ -28,6 +28,7 @@
  * SUCH DAMAGE.
  */
 
+TARGET_AESNI
 void SIZED(cryptonite_aesni_encrypt_block)(aes_block *out, aes_key *key, aes_block *in)
 {
 	__m128i *k = (__m128i *) key->data;
@@ -37,6 +38,7 @@ void SIZED(cryptonite_aesni_encrypt_block)(aes_block *out, aes_key *key, aes_blo
 	_mm_storeu_si128((__m128i *) out, m);
 }
 
+TARGET_AESNI
 void SIZED(cryptonite_aesni_decrypt_block)(aes_block *out, aes_key *key, aes_block *in)
 {
 	__m128i *k = (__m128i *) key->data;
@@ -46,6 +48,7 @@ void SIZED(cryptonite_aesni_decrypt_block)(aes_block *out, aes_key *key, aes_blo
 	_mm_storeu_si128((__m128i *) out, m);
 }
 
+TARGET_AESNI
 void SIZED(cryptonite_aesni_encrypt_ecb)(aes_block *out, aes_key *key, aes_block *in, uint32_t blocks)
 {
 	__m128i *k = (__m128i *) key->data;
@@ -58,6 +61,7 @@ void SIZED(cryptonite_aesni_encrypt_ecb)(aes_block *out, aes_key *key, aes_block
 	}
 }
 
+TARGET_AESNI
 void SIZED(cryptonite_aesni_decrypt_ecb)(aes_block *out, aes_key *key, aes_block *in, uint32_t blocks)
 {
 	__m128i *k = (__m128i *) key->data;
@@ -71,6 +75,7 @@ void SIZED(cryptonite_aesni_decrypt_ecb)(aes_block *out, aes_key *key, aes_block
 	}
 }
 
+TARGET_AESNI
 void SIZED(cryptonite_aesni_encrypt_cbc)(aes_block *out, aes_key *key, aes_block *_iv, aes_block *in, uint32_t blocks)
 {
 	__m128i *k = (__m128i *) key->data;
@@ -87,6 +92,7 @@ void SIZED(cryptonite_aesni_encrypt_cbc)(aes_block *out, aes_key *key, aes_block
 	}
 }
 
+TARGET_AESNI
 void SIZED(cryptonite_aesni_decrypt_cbc)(aes_block *out, aes_key *key, aes_block *_iv, aes_block *in, uint32_t blocks)
 {
 	__m128i *k = (__m128i *) key->data;
@@ -106,6 +112,7 @@ void SIZED(cryptonite_aesni_decrypt_cbc)(aes_block *out, aes_key *key, aes_block
 	}
 }
 
+TARGET_AESNI
 void SIZED(cryptonite_aesni_encrypt_ctr)(uint8_t *output, aes_key *key, aes_block *_iv, uint8_t *input, uint32_t len)
 {
 	__m128i *k = (__m128i *) key->data;
@@ -151,6 +158,7 @@ void SIZED(cryptonite_aesni_encrypt_ctr)(uint8_t *output, aes_key *key, aes_bloc
 	return ;
 }
 
+TARGET_AESNI
 void SIZED(cryptonite_aesni_encrypt_c32_)(uint8_t *output, aes_key *key, aes_block *_iv, uint8_t *input, uint32_t len)
 {
 	__m128i *k = (__m128i *) key->data;
@@ -192,6 +200,7 @@ void SIZED(cryptonite_aesni_encrypt_c32_)(uint8_t *output, aes_key *key, aes_blo
 	return ;
 }
 
+TARGET_AESNI
 void SIZED(cryptonite_aesni_encrypt_xts)(aes_block *out, aes_key *key1, aes_key *key2,
                                aes_block *_tweak, uint32_t spoint, aes_block *in, uint32_t blocks)
 {
@@ -222,6 +231,7 @@ void SIZED(cryptonite_aesni_encrypt_xts)(aes_block *out, aes_key *key1, aes_key 
 	} while (0);
 }
 
+TARGET_AESNI
 void SIZED(cryptonite_aesni_gcm_encrypt)(uint8_t *output, aes_gcm *gcm, aes_key *key, uint8_t *input, uint32_t length)
 {
 	__m128i *k = (__m128i *) key->data;

@@ -338,7 +338,7 @@ Library
   if flag(support_aesni) && (os(linux) || os(freebsd) || os(osx)) && (arch(i386) || arch(x86_64))
     CC-options:     -DWITH_AESNI
     if flag(support_pclmuldq)
-       CC-options:  -msse4.1 -mpclmul -DWITH_PCLMUL
+      CC-options:   -DWITH_PCLMUL
     C-sources:       cbits/aes/x86ni.c
                    , cbits/aes/generic.c
                    , cbits/aes/gf.c
