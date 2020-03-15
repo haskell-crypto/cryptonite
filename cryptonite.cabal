@@ -103,6 +103,11 @@ Flag check_alignment
   Default:           False
   Manual:            True
 
+Flag use_target_attributes
+  Description:       use GCC / clang function attributes instead of global target options.
+  Default:           True
+  Manual:            True
+
 Library
   Exposed-modules:   Crypto.Cipher.AES
                      Crypto.Cipher.AESGCMSIV
@@ -336,9 +341,13 @@ Library
     c-sources:      cbits/cryptonite_rdrand.c
 
   if flag(support_aesni) && (os(linux) || os(freebsd) || os(osx)) && (arch(i386) || arch(x86_64))
-    CC-options:     -mssse3 -maes -DWITH_AESNI
+    CC-options:     -DWITH_AESNI
+    if !flag(use_target_attributes)
+      CC-options:     -mssse3 -maes
     if flag(support_pclmuldq)
-       CC-options:  -msse4.1 -mpclmul -DWITH_PCLMUL
+      CC-options:   -DWITH_PCLMUL
+      if !flag(use_target_attributes)
+        CC-options:     -msse4.1 -mpclmul
     C-sources:       cbits/aes/x86ni.c
                    , cbits/aes/generic.c
                    , cbits/aes/gf.c
@@ -385,6 +394,8 @@ Library
     Build-depends:   deepseq
   if flag(check_alignment)
     cc-options:     -DWITH_ASSERT_ALIGNMENT
+  if flag(use_target_attributes)
+    cc-options:     -DWITH_TARGET_ATTRIBUTES
 
 Test-Suite test-cryptonite
   type:              exitcode-stdio-1.0

@@ -46,6 +46,7 @@
 /* old GCC version doesn't cope with the shuffle parameters, that can take 2 values (0xff and 0xaa)
  * in our case, passed as argument despite being a immediate 8 bits constant anyway.
  * un-factorise aes_128_key_expansion into 2 version that have the shuffle parameter explicitly set */
+TARGET_AESNI
 static __m128i aes_128_key_expansion_ff(__m128i key, __m128i keygened)
 {
 	keygened = _mm_shuffle_epi32(keygened, 0xff);
@@ -55,6 +56,7 @@ static __m128i aes_128_key_expansion_ff(__m128i key, __m128i keygened)
 	return _mm_xor_si128(key, keygened);
 }
 
+TARGET_AESNI
 static __m128i aes_128_key_expansion_aa(__m128i key, __m128i keygened)
 {
 	keygened = _mm_shuffle_epi32(keygened, 0xaa);
@@ -64,6 +66,7 @@ static __m128i aes_128_key_expansion_aa(__m128i key, __m128i keygened)
 	return _mm_xor_si128(key, keygened);
 }
 
+TARGET_AESNI
 void cryptonite_aesni_init(aes_key *key, uint8_t *ikey, uint8_t size)
 {
 	__m128i k[28];
@@ -145,6 +148,7 @@ void cryptonite_aesni_init(aes_key *key, uint8_t *ikey, uint8_t size)
 /* TO OPTIMISE: use pcmulqdq... or some faster code.
  * this is the lamest way of doing it, but i'm out of time.
  * this is basically a copy of gf_mulx in gf.c */
+TARGET_AESNI
 static __m128i gfmulx(__m128i v)
 {
 	uint64_t v_[2] ALIGNMENT(16);
@@ -158,6 +162,7 @@ static __m128i gfmulx(__m128i v)
 	return v;
 }
 
+TARGET_AESNI
 static __m128i gfmul_generic(__m128i tag, const table_4bit htable)
 {
 	aes_block _t;
@@ -177,6 +182,7 @@ __m128i (*gfmul_branch_ptr)(__m128i a, const table_4bit t) = gfmul_generic;
  * Adapted from figure 5, with additional byte swapping so that interface
  * is simimar to cryptonite_aes_generic_gf_mul.
  */
+TARGET_AESNI_PCLMUL
 static __m128i gfmul_pclmuldq(__m128i a, const table_4bit htable)
 {
 	__m128i b, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9;
@@ -240,6 +246,7 @@ void cryptonite_aesni_hinit_pclmul(table_4bit htable, const block128 *h)
 	htable->q[1] = bitfn_swap64(h->q[0]);
 }
 
+TARGET_AESNI_PCLMUL
 void cryptonite_aesni_gf_mul_pclmul(block128 *a, const table_4bit htable)
 {
 	__m128i _a, _b;
@@ -257,6 +264,7 @@ void cryptonite_aesni_init_pclmul(void)
 #define gfmul(a,t) (gfmul_generic(a,t))
 #endif
 
+TARGET_AESNI
 static inline __m128i ghash_add(__m128i tag, const table_4bit htable, __m128i m)
 {
 	tag = _mm_xor_si128(tag, m);
