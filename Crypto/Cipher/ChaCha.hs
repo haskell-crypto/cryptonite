@@ -41,9 +41,9 @@ initialize :: (ByteArrayAccess key, ByteArrayAccess nonce)
            -> nonce -- ^ the nonce (64 or 96 bits)
            -> State -- ^ the initial ChaCha state
 initialize nbRounds key nonce
-    | not (kLen `elem` [16,32])       = error "ChaCha: key length should be 128 or 256 bits"
-    | not (nonceLen `elem` [8,12])    = error "ChaCha: nonce length should be 64 or 96 bits"
-    | not (nbRounds `elem` [8,12,20]) = error "ChaCha: rounds should be 8, 12 or 20"
+    | kLen `notElem` [16,32]          = error "ChaCha: key length should be 128 or 256 bits"
+    | nonceLen `notElem` [8,12]       = error "ChaCha: nonce length should be 64 or 96 bits"
+    | nbRounds `notElem` [8,12,20]    = error "ChaCha: rounds should be 8, 12 or 20"
     | otherwise                       = unsafeDoIO $ do
         stPtr <- B.alloc 132 $ \stPtr ->
             B.withByteArray nonce $ \noncePtr  ->

@@ -35,7 +35,7 @@ initialize :: (ByteArrayAccess key, ByteArrayAccess nonce)
 initialize nbRounds key nonce
     | kLen /= 32                      = error "XSalsa: key length should be 256 bits"
     | nonceLen /= 24                  = error "XSalsa: nonce length should be 192 bits"
-    | not (nbRounds `elem` [8,12,20]) = error "XSalsa: rounds should be 8, 12 or 20"
+    | nbRounds `notElem` [8,12,20]    = error "XSalsa: rounds should be 8, 12 or 20"
     | otherwise = unsafeDoIO $ do
         stPtr <- B.alloc 132 $ \stPtr ->
             B.withByteArray nonce $ \noncePtr  ->
