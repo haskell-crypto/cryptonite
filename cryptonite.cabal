@@ -105,7 +105,7 @@ Flag check_alignment
 
 Flag use_target_attributes
   Description:       use GCC / clang function attributes instead of global target options.
-  Default:           False
+  Default:           True
   Manual:            True
 
 Library
