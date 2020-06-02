@@ -52,6 +52,14 @@ mulTests = testGroup "mulF2m"
 squareTests = testGroup "squareF2m"
     [ testProperty "sqr(a) == a * a"
         $ \(Positive m) (NonNegative a) -> mulF2m m a a == squareF2m m a
+    -- disabled because we require @m@ to be a suitable modulus and there is no
+    -- way to guarantee this
+    -- , testProperty "sqrt(a) * sqrt(a) = a"
+    --     $ \(Positive m) (NonNegative aa) -> let a = sqrtF2m m aa in mulF2m m a a == modF2m m aa
+    , testProperty "sqrt(a) * sqrt(a) = a in GF(2^16)"
+        $ let m = 65581 :: Integer -- x^16 + x^5 + x^3 + x^2 + 1
+              nums = [0 .. 65535 :: Integer]
+          in  nums == [let y = sqrtF2m m x in squareF2m m y | x <- nums]
     ]
 
 invTests = testGroup "invF2m"
