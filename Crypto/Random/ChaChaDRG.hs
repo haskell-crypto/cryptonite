@@ -23,6 +23,10 @@ import qualified Crypto.Cipher.ChaCha as C
 instance DRG ChaChaDRG where
     randomBytesGenerate = generate
 
+instance PRG ChaChaDRG where
+    newPrgFromSeed seed = ChaChaDRG $ C.initializeSimple seed
+    prgSeedLength = 40
+
 -- | ChaCha Deterministic Random Generator
 newtype ChaChaDRG = ChaChaDRG C.StateSimple
     deriving (NFData)
@@ -32,7 +36,7 @@ newtype ChaChaDRG = ChaChaDRG C.StateSimple
 initialize :: ByteArrayAccess seed
            => seed        -- ^ 40 bytes of seed
            -> ChaChaDRG   -- ^ the initial ChaCha state
-initialize seed = ChaChaDRG $ C.initializeSimple seed
+initialize = newPrgFromSeed
 
 -- | Initialize a new ChaCha context from 5-tuple of words64.
 -- This interface is useful when creating a RNG out of tests generators (e.g. QuickCheck).

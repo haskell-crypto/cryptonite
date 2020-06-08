@@ -5,11 +5,17 @@
 -- Stability   : experimental
 -- Portability : Good
 --
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 module Crypto.Random.Types
     (
       MonadRandom(..)
     , MonadPseudoRandom
     , DRG(..)
+    , PRG(..)
+    , newPrgFromEntropy
+    , newPrg
     , withDRG
     ) where
 
@@ -24,6 +30,26 @@ class Monad m => MonadRandom m where
 class DRG gen where
     -- | Generate N bytes of randomness from a DRG
     randomBytesGenerate :: ByteArray byteArray => Int -> gen -> (byteArray, gen)
+
+-- | A Psuedo Random Generator (PRG) class
+--
+-- Like 'DRG' but also supports initialisation from some fixed seed.
+class DRG gen => PRG gen where
+    -- | Initialize the DRG from some fixed seed.
+    newPrgFromSeed :: ByteArrayAccess seed => seed -> gen
+    -- | Length of seed in bytes
+    prgSeedLength :: Int
+
+-- | Initialize the PRG from some entropy supplier.
+newPrgFromEntropy :: forall gen f. (PRG gen, Functor f)
+                  => (Int -> f ScrubbedBytes)
+                  -> f gen
+newPrgFromEntropy myGetEntropy =
+    newPrgFromSeed <$> myGetEntropy (prgSeedLength @gen)
+
+-- | Initialize the PRG from a 'MonadRandom'.
+newPrg :: (PRG gen, MonadRandom f) => f gen
+newPrg = newPrgFromEntropy getRandomBytes
 
 instance MonadRandom IO where
     getRandomBytes = getEntropy
