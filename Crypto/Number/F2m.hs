@@ -144,7 +144,9 @@ powF2m' fx a b
 sqrtF2m :: BinaryPolynomial -- ^Modulus
         -> Integer          -- ^a
         -> Integer
-sqrtF2m fx a = powF2m fx a (2 ^ (log2 fx - 1))
+sqrtF2m fx a = go (log2 fx - 1) a
+  where go 0 x = x
+        go n x = go (n - 1) (squareF2m fx x)
 
 -- | Extended GCD algorithm for polynomials. For @a@ and @b@ returns @(g, u, v)@ such that @a * u + b * v == g@.
 --
