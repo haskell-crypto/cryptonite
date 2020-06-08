@@ -5,9 +5,7 @@
 -- Stability   : experimental
 -- Portability : Good
 --
-{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 module Crypto.Random.Types
     (
       MonadRandom(..)
@@ -21,6 +19,7 @@ module Crypto.Random.Types
 
 import Crypto.Random.Entropy
 import Crypto.Internal.ByteArray
+import Data.Proxy
 
 -- | A monad constraint that allows to generate random bytes
 class Monad m => MonadRandom m where
@@ -38,14 +37,14 @@ class DRG gen => PRG gen where
     -- | Initialize the DRG from some fixed seed.
     newPrgFromSeed :: ByteArrayAccess seed => seed -> gen
     -- | Length of seed in bytes
-    prgSeedLength :: Int
+    prgSeedLength :: Proxy gen -> Int
 
 -- | Initialize the PRG from some entropy supplier.
 newPrgFromEntropy :: forall gen f. (PRG gen, Functor f)
                   => (Int -> f ScrubbedBytes)
                   -> f gen
 newPrgFromEntropy myGetEntropy =
-    newPrgFromSeed <$> myGetEntropy (prgSeedLength @gen)
+    newPrgFromSeed <$> myGetEntropy (prgSeedLength (Proxy :: Proxy gen))
 
 -- | Initialize the PRG from a 'MonadRandom'.
 newPrg :: (PRG gen, MonadRandom f) => f gen

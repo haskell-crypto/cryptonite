@@ -25,7 +25,7 @@ instance DRG ChaChaDRG where
 
 instance PRG ChaChaDRG where
     newPrgFromSeed seed = ChaChaDRG $ C.initializeSimple seed
-    prgSeedLength = 40
+    prgSeedLength _ = 40
 
 -- | ChaCha Deterministic Random Generator
 newtype ChaChaDRG = ChaChaDRG C.StateSimple
