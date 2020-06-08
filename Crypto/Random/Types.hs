@@ -12,8 +12,8 @@ module Crypto.Random.Types
     , MonadPseudoRandom
     , DRG(..)
     , PRG(..)
-    , newPrgFromEntropy
-    , newPrg
+    , prgNewEntropy
+    , prgNew
     , withDRG
     ) where
 
@@ -35,20 +35,20 @@ class DRG gen where
 -- Like 'DRG' but also supports initialisation from some fixed seed.
 class DRG gen => PRG gen where
     -- | Initialize the DRG from some fixed seed.
-    newPrgFromSeed :: ByteArrayAccess seed => seed -> gen
+    prgNewSeed :: ByteArrayAccess seed => seed -> gen
     -- | Length of seed in bytes
     prgSeedLength :: Proxy gen -> Int
 
 -- | Initialize the PRG from some entropy supplier.
-newPrgFromEntropy :: forall gen f. (PRG gen, Functor f)
+prgNewEntropy :: forall gen f. (PRG gen, Functor f)
                   => (Int -> f ScrubbedBytes)
                   -> f gen
-newPrgFromEntropy myGetEntropy =
-    newPrgFromSeed <$> myGetEntropy (prgSeedLength (Proxy :: Proxy gen))
+prgNewEntropy myGetEntropy =
+    prgNewSeed <$> myGetEntropy (prgSeedLength (Proxy :: Proxy gen))
 
 -- | Initialize the PRG from a 'MonadRandom'.
-newPrg :: (PRG gen, MonadRandom f) => f gen
-newPrg = newPrgFromEntropy getRandomBytes
+prgNew :: (PRG gen, MonadRandom f) => f gen
+prgNew = prgNewEntropy getRandomBytes
 
 instance MonadRandom IO where
     getRandomBytes = getEntropy
