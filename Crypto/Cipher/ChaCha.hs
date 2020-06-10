@@ -39,6 +39,9 @@ newtype StateSimple = StateSimple ScrubbedBytes -- just ChaCha's state
 
 -- | Convert a 'StateSimple' from its internal architecture-dependent
 -- representation into a little-endian 'BS.ByteString'.
+--
+-- Note: anyone that can read this string, can break the security of the RNG.
+-- Treat it with as much importance as you would a password.
 toPortable :: StateSimple -> BS.ByteString
 toPortable (StateSimple st) = unsafeMapWords toLE32 st
 
