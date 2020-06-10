@@ -12,8 +12,6 @@ module Crypto.Cipher.ChaCha
     , combine
     , generate
     , State
-    , initializeRaw
-    , generateRaw
     -- * Simple interface for DRG purpose
     , initializeSimple
     , generateSimple
@@ -55,29 +53,21 @@ initialize nbRounds key nonce
   where kLen     = B.length key
         nonceLen = B.length nonce
 
--- | Initialize raw ChaCha State
---
--- The seed need to be at least 40 bytes long
-initializeRaw :: (ByteArrayAccess seed, ByteArray state)
-                 => seed -- ^ a 40 bytes long seed
-                 -> state
-initializeRaw seed
-    | sLen < 40 = error "ChaCha Random: seed length should be 40 bytes"
-    | otherwise = unsafeDoIO $ do
-        stPtr <- B.alloc 64 $ \stPtr ->
-                    B.withByteArray seed $ \seedPtr ->
-                        ccryptonite_chacha_init_core stPtr 32 seedPtr 8 (seedPtr `plusPtr` 32)
-        return stPtr
-  where
-    sLen = B.length seed
-
 -- | Initialize simple ChaCha State
 --
 -- The seed need to be at least 40 bytes long
 initializeSimple :: ByteArrayAccess seed
                  => seed -- ^ a 40 bytes long seed
                  -> StateSimple
-initializeSimple = StateSimple . initializeRaw
+initializeSimple seed
+    | sLen < 40 = error "ChaCha Random: seed length should be 40 bytes"
+    | otherwise = unsafeDoIO $ do
+        stPtr <- B.alloc 64 $ \stPtr ->
+                    B.withByteArray seed $ \seedPtr ->
+                        ccryptonite_chacha_init_core stPtr 32 seedPtr 8 (seedPtr `plusPtr` 32)
+        return $ StateSimple stPtr
+  where
+    sLen = B.length seed
 
 -- | Combine the chacha output and an arbitrary message with a xor,
 -- and return the combined output and the new state.
@@ -107,24 +97,17 @@ generate prevSt@(State prevStMem) len
                 ccryptonite_chacha_generate dstPtr ctx (fromIntegral len)
         return (out, State st)
 
--- | Similar to 'generate' but assume certains values
-generateRaw :: (ByteArray ba, ByteArray state)
-               => state
-               -> Int
-               -> (ba, state)
-generateRaw prevSt nbBytes = unsafeDoIO $ do
-    newSt  <- B.copy prevSt (\_ -> return ())
-    output <- B.alloc nbBytes $ \dstPtr ->
-        B.withByteArray newSt $ \stPtr ->
-            ccryptonite_chacha_random 8 dstPtr stPtr (fromIntegral nbBytes)
-    return (output, newSt)
-
--- | Similar to 'generate' but assume certains values, for 'StateSimple'.
+-- | similar to 'generate' but assume certains values
 generateSimple :: ByteArray ba
                => StateSimple
                -> Int
                -> (ba, StateSimple)
-generateSimple (StateSimple prevSt) = fmap StateSimple <$> generateRaw prevSt
+generateSimple (StateSimple prevSt) nbBytes = unsafeDoIO $ do
+    newSt  <- B.copy prevSt (\_ -> return ())
+    output <- B.alloc nbBytes $ \dstPtr ->
+        B.withByteArray newSt $ \stPtr ->
+            ccryptonite_chacha_random 8 dstPtr stPtr (fromIntegral nbBytes)
+    return (output, StateSimple newSt)
 
 foreign import ccall "cryptonite_chacha_init_core"
     ccryptonite_chacha_init_core :: Ptr StateSimple -> Int -> Ptr Word8 -> Int -> Ptr Word8 -> IO ()
