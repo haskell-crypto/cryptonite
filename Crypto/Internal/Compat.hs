@@ -45,4 +45,9 @@ byteSwap64 w =
     .|. ((w `shiftR` 40) .&. 0xff00)     .|. ((w .&. 0xff00) `shiftL` 40)
     .|. ((w `shiftR` 24) .&. 0xff0000)   .|. ((w .&. 0xff0000) `shiftL` 24)
     .|. ((w `shiftR` 8)  .&. 0xff000000) .|. ((w .&. 0xff000000) `shiftL` 8)
+
+byteSwap32 :: Word32 -> Word32
+byteSwap32 w =
+        (w `shiftR` 24)              .|. (w `shiftL` 24)
+    .|. ((w `shiftR` 8)  .&. 0xff00) .|. ((w .&. 0xff00) `shiftL` 8)
 #endif

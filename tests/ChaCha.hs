@@ -31,6 +31,12 @@ data Vector = Vector Int -- rounds
 instance Arbitrary Vector where
     arbitrary = Vector 20 <$> arbitraryBS 16 <*> arbitraryBS 12
 
+data Seed = Seed ByteString
+    deriving (Show,Eq)
+
+instance Arbitrary Seed where
+    arbitrary = Seed <$> arbitraryBS 40
+
 tests = testGroup "ChaCha"
     [ testCase "8-128-K0-I0"  (chachaRunSimple b8_128_k0_i0 8 16 8)
     , testCase "12-128-K0-I0" (chachaRunSimple b12_128_k0_i0 12 16 8)
@@ -41,6 +47,7 @@ tests = testGroup "ChaCha"
     , testProperty "generate-combine" chachaGenerateCombine
     , testProperty "chunking-generate" chachaGenerateChunks
     , testProperty "chunking-combine" chachaCombineChunks
+    , testProperty "simple-round-trip" chachaSimpleRoundTrip
     ]
   where chachaRunSimple expected rounds klen nonceLen =
             let chacha = ChaCha.initialize rounds (B.replicate klen 0) (B.replicate nonceLen 0)
@@ -88,3 +95,11 @@ tests = testGroup "ChaCha"
                         let (bs1, bs2) = B.splitAt (min x (B.length bs)) bs
                             (c, next)  = ChaCha.combine chacha bs1
                          in c : loop bs2 xs next
+
+        chachaSimpleRoundTrip :: Seed -> Bool
+        chachaSimpleRoundTrip (Seed s) =
+            let st = ChaCha.initializeSimple s
+                out = fst $ ChaCha.generateSimple st 64 :: ByteString
+                st' = ChaCha.fromPortable $ ChaCha.toPortable st
+                out' = fst $ ChaCha.generateSimple st' 64
+            in (ChaCha.toPortable st == ChaCha.toPortable st' && out == out')

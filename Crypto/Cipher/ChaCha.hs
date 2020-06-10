@@ -16,12 +16,16 @@ module Crypto.Cipher.ChaCha
     , initializeSimple
     , generateSimple
     , StateSimple
+    , toPortable
+    , fromPortable
     ) where
 
-import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, ScrubbedBytes)
+import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, ScrubbedBytes, unsafeMapWords)
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Internal.Compat
+import           Crypto.Internal.Endian
 import           Crypto.Internal.Imports
+import qualified Data.ByteString as BS
 import           Foreign.Ptr
 import           Foreign.C.Types
 
@@ -32,6 +36,16 @@ newtype State = State ScrubbedBytes
 -- | ChaCha context for DRG purpose (see Crypto.Random.ChaChaDRG)
 newtype StateSimple = StateSimple ScrubbedBytes -- just ChaCha's state
     deriving (NFData)
+
+-- | Convert a 'StateSimple' from its internal architecture-dependent
+-- representation into a little-endian 'BS.ByteString'.
+toPortable :: StateSimple -> BS.ByteString
+toPortable (StateSimple st) = unsafeMapWords toLE32 st
+
+-- | Convert a 'StateSimple' from a little-endian 'BS.ByteString' into its
+-- internal architecture-dependent representation.
+fromPortable :: BS.ByteString -> StateSimple
+fromPortable bs = StateSimple $ unsafeMapWords fromLE32 bs
 
 -- | Initialize a new ChaCha context with the number of rounds,
 -- the key and the nonce associated.
