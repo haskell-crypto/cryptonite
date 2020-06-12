@@ -62,6 +62,24 @@ squareTests = testGroup "squareF2m"
           in  nums == [let y = sqrtF2m m x in squareF2m m y | x <- nums]
     ]
 
+powTests = testGroup "powF2m"
+    [ testProperty "2 is square"
+        $ \(Positive m) (NonNegative a) -> powF2m m a 2 == squareF2m m a
+    , testProperty "1 is identity"
+        $ \(Positive m) (NonNegative a) -> powF2m m a 1 == modF2m m a
+    , testProperty "0 is annihilator"
+        $ \(Positive m) (NonNegative a) -> powF2m m a 0 == modF2m m 1
+    , testProperty "(a * b) ^ c == (a ^ c) * (b ^ c)"
+        $ \(Positive m) (NonNegative a) (NonNegative b) (NonNegative c)
+            -> powF2m m (mulF2m m a b) c == mulF2m m (powF2m m a c) (powF2m m b c)
+    , testProperty "a ^ (b + c) == (a ^ b) * (a ^ c)"
+        $ \(Positive m) (NonNegative a) (NonNegative b) (NonNegative c)
+            -> powF2m m a (b + c) == mulF2m m (powF2m m a b) (powF2m m a c)
+    , testProperty "a ^ (b * c) == (a ^ b) ^ c"
+        $ \(Positive m) (NonNegative a) (NonNegative b) (NonNegative c)
+            -> powF2m m a (b * c) == powF2m m (powF2m m a b) c
+    ]
+
 invTests = testGroup "invF2m"
     [ testProperty "1 / a * a == 1"
         $ \(Positive m) (NonNegative a)
@@ -86,6 +104,7 @@ tests = testGroup "number.F2m"
     , modTests
     , mulTests
     , squareTests
+    , powTests
     , invTests
     , divTests
     ]
