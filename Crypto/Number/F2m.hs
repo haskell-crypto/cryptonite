@@ -111,10 +111,10 @@ powF2m :: BinaryPolynomial -- ^Modulus
        -> Integer          -- ^b
        -> Integer
 powF2m fx a b
-  | b == 0 = 1
-  | b > 0  = squareF2m fx x * if even b then 1 else a
-  | b < 0  = error "powF2m: negative exponents disallowed"
-  | otherwise = error "powF2m: impossible"
+  | b < 0     = error "powF2m: negative exponents disallowed"
+  | b == 0    = if fx > 1 then 1 else 0
+  | even b    = squareF2m fx x
+  | otherwise = mulF2m fx a (squareF2m' x)
   where x = powF2m fx a (b `div` 2)
 
 -- | Square rooot in F₂m.
