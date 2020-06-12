@@ -17,7 +17,6 @@ module Crypto.Number.F2m
     , squareF2m'
     , squareF2m
     , powF2m
-    , powF2m'
     , modF2m
     , sqrtF2m
     , invF2m
@@ -106,8 +105,7 @@ squareF2m' n
 -- | Exponentiation in F₂m by computing @a^b mod fx@.
 --
 -- This implements an exponentiation by squaring based solution. It inherits the
--- same restrictions as 'squareF2m'. Negative exponents are disallowed. See
--- 'powF2m'' for one that handles this case
+-- same restrictions as 'squareF2m'. Negative exponents are disallowed.
 powF2m :: BinaryPolynomial -- ^Modulus
        -> Integer          -- ^a
        -> Integer          -- ^b
@@ -118,23 +116,6 @@ powF2m fx a b
   | b < 0  = error "powF2m: negative exponents disallowed"
   | otherwise = error "powF2m: impossible"
   where x = powF2m fx a (b `div` 2)
-
--- | Exponentiation in F₂m by computing @a^b mod fx@.
---
--- This implements an exponentiation by squaring based solution. It inherits the
--- same restrictions as 'squareF2m'. 'Nothing' is returned when a negative
--- exponent is given and @a@ is not invertible.
-powF2m' :: BinaryPolynomial -- ^Modulus
-        -> Integer          -- ^a
-        -> Integer          -- ^b
-        -> Maybe Integer
-powF2m' fx a b
-  | b == 0 = Just 1
-  | b > 0  = Just $ powF2m fx a b
-  | b < 0  = case invF2m fx a of
-               Just inv -> Just $ powF2m fx inv (-b)
-               Nothing  -> Nothing
-  | otherwise = error "impossible"
 
 -- | Square rooot in F₂m.
 --
