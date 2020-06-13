@@ -2,6 +2,7 @@ module Number.F2m (tests) where
 
 import Imports hiding ((.&.))
 import Data.Bits
+import Data.Maybe
 import Crypto.Number.Basic (log2)
 import Crypto.Number.F2m
 
@@ -96,7 +97,7 @@ divTests = testGroup "divF2m"
             -> divF2m m a b == (mulF2m m a <$> invF2m m b)
     , testProperty "a * b / b == a"
         $ \(Positive m) (NonNegative a) (NonNegative b)
-            -> invF2m m b == Nothing || divF2m m (mulF2m m a b) b == Just (modF2m m a)
+            -> isNothing (invF2m m b) || divF2m m (mulF2m m a b) b == Just (modF2m m a)
     ]
 
 tests = testGroup "number.F2m"
