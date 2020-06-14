@@ -2,6 +2,7 @@ module Number.F2m (tests) where
 
 import Imports hiding ((.&.))
 import Data.Bits
+import Data.Maybe
 import Crypto.Number.Basic (log2)
 import Crypto.Number.F2m
 
@@ -52,6 +53,32 @@ mulTests = testGroup "mulF2m"
 squareTests = testGroup "squareF2m"
     [ testProperty "sqr(a) == a * a"
         $ \(Positive m) (NonNegative a) -> mulF2m m a a == squareF2m m a
+    -- disabled because we require @m@ to be a suitable modulus and there is no
+    -- way to guarantee this
+    -- , testProperty "sqrt(a) * sqrt(a) = a"
+    --     $ \(Positive m) (NonNegative aa) -> let a = sqrtF2m m aa in mulF2m m a a == modF2m m aa
+    , testProperty "sqrt(a) * sqrt(a) = a in GF(2^16)"
+        $ let m = 65581 :: Integer -- x^16 + x^5 + x^3 + x^2 + 1
+              nums = [0 .. 65535 :: Integer]
+          in  nums == [let y = sqrtF2m m x in squareF2m m y | x <- nums]
+    ]
+
+powTests = testGroup "powF2m"
+    [ testProperty "2 is square"
+        $ \(Positive m) (NonNegative a) -> powF2m m a 2 == squareF2m m a
+    , testProperty "1 is identity"
+        $ \(Positive m) (NonNegative a) -> powF2m m a 1 == modF2m m a
+    , testProperty "0 is annihilator"
+        $ \(Positive m) (NonNegative a) -> powF2m m a 0 == modF2m m 1
+    , testProperty "(a * b) ^ c == (a ^ c) * (b ^ c)"
+        $ \(Positive m) (NonNegative a) (NonNegative b) (NonNegative c)
+            -> powF2m m (mulF2m m a b) c == mulF2m m (powF2m m a c) (powF2m m b c)
+    , testProperty "a ^ (b + c) == (a ^ b) * (a ^ c)"
+        $ \(Positive m) (NonNegative a) (NonNegative b) (NonNegative c)
+            -> powF2m m a (b + c) == mulF2m m (powF2m m a b) (powF2m m a c)
+    , testProperty "a ^ (b * c) == (a ^ b) ^ c"
+        $ \(Positive m) (NonNegative a) (NonNegative b) (NonNegative c)
+            -> powF2m m a (b * c) == powF2m m (powF2m m a b) c
     ]
 
 invTests = testGroup "invF2m"
@@ -70,7 +97,7 @@ divTests = testGroup "divF2m"
             -> divF2m m a b == (mulF2m m a <$> invF2m m b)
     , testProperty "a * b / b == a"
         $ \(Positive m) (NonNegative a) (NonNegative b)
-            -> invF2m m b == Nothing || divF2m m (mulF2m m a b) b == Just (modF2m m a)
+            -> isNothing (invF2m m b) || divF2m m (mulF2m m a b) b == Just (modF2m m a)
     ]
 
 tests = testGroup "number.F2m"
@@ -78,6 +105,7 @@ tests = testGroup "number.F2m"
     , modTests
     , mulTests
     , squareTests
+    , powTests
     , invTests
     , divTests
     ]
