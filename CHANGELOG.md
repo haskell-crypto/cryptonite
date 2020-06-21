@@ -1,3 +1,13 @@
+## 0.27
+
+* Optimise AES GCM and CCM
+* Optimise P256R1 implementation
+* Various AES-NI building improvements
+* Add better ECDSA support
+* Add XSalsa derive
+* Implement square roots for ECC binary curve
+* Various tests and benchmarks
+
 ## 0.26
 
 * Add Rabin cryptosystem (and variants)
