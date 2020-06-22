@@ -52,6 +52,7 @@ data CryptoError =
     | CryptoError_SaltTooSmall
     | CryptoError_OutputLengthTooSmall
     | CryptoError_OutputLengthTooBig
+    | CryptoError_SeedTooSmall
     | CryptoError_StateSizeInvalid
     deriving (Show,Eq,Enum,Data)
 

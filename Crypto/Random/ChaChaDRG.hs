@@ -24,7 +24,7 @@ instance DRG ChaChaDRG where
     randomBytesGenerate = generate
 
 instance PRG ChaChaDRG where
-    prgNewSeed seed = ChaChaDRG $ C.initializeSimple seed
+    prgNewSeed seed = ChaChaDRG <$> C.initializeSimpleErr seed
     prgSeedLength _ = 40
 
 -- | ChaCha Deterministic Random Generator
@@ -36,7 +36,7 @@ newtype ChaChaDRG = ChaChaDRG C.StateSimple
 initialize :: ByteArrayAccess seed
            => seed        -- ^ 40 bytes of seed
            -> ChaChaDRG   -- ^ the initial ChaCha state
-initialize = prgNewSeed
+initialize = ChaChaDRG . C.initializeSimple
 
 -- | Initialize a new ChaCha context from 5-tuple of words64.
 -- This interface is useful when creating a RNG out of tests generators (e.g. QuickCheck).

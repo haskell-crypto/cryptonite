@@ -14,13 +14,14 @@ module Crypto.Cipher.ChaCha
     , State
     -- * Simple interface for DRG purpose
     , initializeSimple
+    , initializeSimpleErr
     , generateSimple
     , StateSimple
     , toPortable
     , fromPortable
     ) where
 
-import           Crypto.Error.Types (CryptoFailable (..), CryptoError (..))
+import           Crypto.Error.Types (CryptoFailable (..), CryptoError (..), throwCryptoError)
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, ScrubbedBytes, unsafeMapWords)
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Internal.Compat
@@ -79,9 +80,14 @@ initialize nbRounds key nonce
 initializeSimple :: ByteArrayAccess seed
                  => seed -- ^ a 40 bytes long seed
                  -> StateSimple
-initializeSimple seed
-    | sLen < 40 = error "ChaCha Random: seed length should be 40 bytes"
-    | otherwise = unsafeDoIO $ do
+initializeSimple = throwCryptoError . initializeSimpleErr
+
+initializeSimpleErr :: ByteArrayAccess seed
+                 => seed -- ^ a 40 bytes long seed
+                 -> CryptoFailable StateSimple
+initializeSimpleErr seed
+    | sLen < 40 = CryptoFailed CryptoError_SeedTooSmall
+    | otherwise = CryptoPassed $ unsafeDoIO $ do
         stPtr <- B.alloc 64 $ \stPtr ->
                     B.withByteArray seed $ \seedPtr ->
                         ccryptonite_chacha_init_core stPtr 32 seedPtr 8 (seedPtr `plusPtr` 32)
