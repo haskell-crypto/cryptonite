@@ -46,11 +46,8 @@ constAllZero b = unsafeDoIO $ withByteArray b $ \p -> loop p 0 0
 unsafeMapWords :: forall a ba1 ba2
                 . (ByteArrayAccess ba1, ByteArray ba2, Storable a)
                => (a -> a) -> ba1 -> ba2
-unsafeMapWords f prevSt = unsafeDoIO $ do
-    newSt  <- copy prevSt (\_ -> return ())
-    withByteArray newSt $ \stPtr -> do
-        let sz = Data.ByteArray.length prevSt `div` sizeOf (undefined :: a)
-        for_ [0 .. pred sz] $ \i -> do
-            w <- peekElemOff stPtr i
-            pokeElemOff stPtr i (f w)
-    return newSt
+unsafeMapWords f prevSt = copyAndFreeze prevSt $ \stPtr -> do
+    let sz = Data.ByteArray.length prevSt `div` sizeOf (undefined :: a)
+    for_ [0 .. pred sz] $ \i -> do
+        w <- peekElemOff stPtr i
+        pokeElemOff stPtr i (f w)

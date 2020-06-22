@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module ChaCha (tests) where
 
+import Crypto.Error
 import qualified Crypto.Cipher.ChaCha as ChaCha
 import Imports
 
@@ -100,6 +101,6 @@ tests = testGroup "ChaCha"
         chachaSimpleRoundTrip (Seed s) =
             let st = ChaCha.initializeSimple s
                 out = fst $ ChaCha.generateSimple st 64 :: ByteString
-                st' = ChaCha.fromPortable $ ChaCha.toPortable st
+                st' = throwCryptoError $ ChaCha.fromPortable $ ChaCha.toPortable st
                 out' = fst $ ChaCha.generateSimple st' 64
             in (ChaCha.toPortable st == ChaCha.toPortable st' && out == out')

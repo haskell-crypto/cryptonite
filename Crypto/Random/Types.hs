@@ -37,7 +37,7 @@ class DRG gen => PRG gen where
     -- | Initialize the DRG from some fixed seed.
     prgNewSeed :: ByteArrayAccess seed => seed -> gen
     -- | Length of seed in bytes
-    prgSeedLength :: Proxy gen -> Int
+    prgSeedLength :: proxy gen -> Int
 
 -- | Initialize the PRG from some entropy supplier.
 prgNewEntropy :: forall gen f. (PRG gen, Functor f)

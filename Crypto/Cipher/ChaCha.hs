@@ -20,6 +20,7 @@ module Crypto.Cipher.ChaCha
     , fromPortable
     ) where
 
+import           Crypto.Error.Types (CryptoFailable (..), CryptoError (..))
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, ScrubbedBytes, unsafeMapWords)
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Internal.Compat
@@ -47,8 +48,10 @@ toPortable (StateSimple st) = unsafeMapWords toLE32 st
 
 -- | Convert a 'StateSimple' from a little-endian 'BS.ByteString' into its
 -- internal architecture-dependent representation.
-fromPortable :: BS.ByteString -> StateSimple
-fromPortable bs = StateSimple $ unsafeMapWords fromLE32 bs
+fromPortable :: BS.ByteString -> CryptoFailable StateSimple
+fromPortable bs
+    | BS.length bs /= 64 = CryptoFailed CryptoError_StateSizeInvalid
+    | otherwise          = CryptoPassed $ StateSimple $ unsafeMapWords fromLE32 bs
 
 -- | Initialize a new ChaCha context with the number of rounds,
 -- the key and the nonce associated.
