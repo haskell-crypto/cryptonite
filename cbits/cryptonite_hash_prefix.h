@@ -1,14 +1,14 @@
 /*
- * Copyright (C) 2006-2009 Vincent Hanquez <vincent@snarc.org>
+ * Copyright (C) 2020 Olivier Chéron <olivier.cheron@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
+ *	notice, this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
+ *	notice, this list of conditions and the following disclaimer in the
+ *	documentation and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -21,26 +21,45 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef CRYPTOHASH_SHA1_H
-#define CRYPTOHASH_SHA1_H
+
+#ifndef CRYPTONITE_HASH_PREFIX_H
+#define CRYPTONITE_HASH_PREFIX_H
 
 #include <stdint.h>
 
-# define SHA1_BLOCK_SIZE 64
-
-struct sha1_ctx
+static inline uint32_t constant_time_msb(uint32_t a)
 {
-	uint64_t sz;
-	uint8_t  buf[SHA1_BLOCK_SIZE];
-	uint32_t h[5];
-};
+	return 0 - (a >> 31);
+}
 
-#define SHA1_DIGEST_SIZE	20
-#define SHA1_CTX_SIZE 		(sizeof(struct sha1_ctx))
+static inline uint32_t constant_time_lt(uint32_t a, uint32_t b)
+{
+	return constant_time_msb(a ^ ((a ^ b) | ((a - b) ^ b)));
+}
 
-void cryptonite_sha1_init(struct sha1_ctx *ctx);
-void cryptonite_sha1_update(struct sha1_ctx *ctx, const uint8_t *data, uint32_t len);
-void cryptonite_sha1_finalize(struct sha1_ctx *ctx, uint8_t *out);
-void cryptonite_sha1_finalize_prefix(struct sha1_ctx *ctx, const uint8_t *data, uint32_t len, uint32_t n, uint8_t *out);
+static inline uint32_t constant_time_ge(uint32_t a, uint32_t b)
+{
+	return ~constant_time_lt(a, b);
+}
+
+static inline uint32_t constant_time_is_zero(uint32_t a)
+{
+	return constant_time_msb(~a & (a - 1));
+}
+
+static inline uint32_t constant_time_eq(uint32_t a, uint32_t b)
+{
+	return constant_time_is_zero(a ^ b);
+}
+
+static inline uint64_t constant_time_msb_64(uint64_t a)
+{
+	return 0 - (a >> 63);
+}
+
+static inline uint64_t constant_time_lt_64(uint64_t a, uint64_t b)
+{
+	return constant_time_msb_64(a ^ ((a ^ b) | ((a - b) ^ b)));
+}
 
 #endif

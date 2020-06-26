@@ -57,6 +57,7 @@ extra-source-files:  cbits/*.h
                      cbits/argon2/*.h
                      cbits/argon2/*.c
                      cbits/aes/x86ni_impl.c
+                     cbits/cryptonite_hash_prefix.c
                      tests/*.hs
 
 source-repository head
