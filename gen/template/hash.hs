@@ -32,7 +32,10 @@ instance HashAlgorithm %%MODULENAME%% where
     hashInternalContextSize _ = %%CTX_SIZE_BYTES%%
     hashInternalInit          = c_%%HASHNAME%%_init
     hashInternalUpdate        = c_%%HASHNAME%%_update
-    hashInternalFinalize      = c_%%HASHNAME%%_finalize
+    hashInternalFinalize      = c_%%HASHNAME%%_finalize%{HASPREFIXINSTANCE%}
+
+instance HashAlgorithmPrefix %%MODULENAME%% where
+    hashInternalFinalizePrefix = c_%%HASHNAME%%_finalize_prefix%{HASPREFIXINSTANCE%}
 
 foreign import ccall unsafe "cryptonite_%%HASHNAME%%_init"
     c_%%HASHNAME%%_init :: Ptr (Context a)-> IO ()
@@ -41,4 +44,7 @@ foreign import ccall "cryptonite_%%HASHNAME%%_update"
     c_%%HASHNAME%%_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
 
 foreign import ccall unsafe "cryptonite_%%HASHNAME%%_finalize"
-    c_%%HASHNAME%%_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()
+    c_%%HASHNAME%%_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()%{HASPREFIXINSTANCE%}
+
+foreign import ccall "cryptonite_%%HASHNAME%%_finalize_prefix"
+    c_%%HASHNAME%%_finalize_prefix :: Ptr (Context a) -> Ptr Word8 -> Word32 -> Word32 -> Ptr (Digest a) -> IO ()%{HASPREFIXINSTANCE%}

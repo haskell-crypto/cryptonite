@@ -45,7 +45,7 @@ renderTemplate template attrs multiAttrs =
         renderAtom (Tpl n t) =
             case lookup n multiAttrs of
                 Nothing     -> error ("cannot find inner template attributes for: " ++ n)
-                Just []     -> error ("empty multiattrs for: " ++ n)
+                Just []     -> ""
                 Just (i:is) ->
                     renderTemplate t (i ++ attrs) [] ++
                     concatMap (\inAttrs -> renderTemplate t (inAttrs ++ attrs ++ [("COMMA", ",")]) []) is
