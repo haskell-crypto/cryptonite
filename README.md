@@ -52,6 +52,10 @@ On OSX <= 10.7, the system compiler doesn't understand the '-maes' option, and
 with the lack of autodetection feature builtin in .cabal file, it is left on
 the user to disable the aesni. See the [Disabling AESNI] section
 
+On CentOS 7 the default C compiler includes intrinsic header files incompatible
+with per-function target options.  Solutions are to use GCC >= 4.9 or disable
+flag *use_target_attributes* (see flag configuration examples below).
+
 Disabling AESNI
 ---------------
 
@@ -71,6 +75,13 @@ or as part of an installation:
 ```
 
 For help with cabal flags, see: [stackoverflow : is there a way to define flags for cabal](http://stackoverflow.com/questions/23523869/is-there-any-way-to-define-flags-for-cabal-dependencies)
+
+Enabling PCLMULDQ
+-----------------
+
+When the C toolchain supports it, enabling flag *support_pclmuldq* can bring
+additional security and performance for AES GCM.  A CPU with the necessary
+instruction set will use an alternate implementation selected at runtime.
 
 Links
 -----
