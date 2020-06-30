@@ -12,7 +12,6 @@ module Crypto.Random.Types
     , MonadPseudoRandom
     , DRG(..)
     , PRG(..)
-    , prgNewEntropy
     , prgNew
     , withDRG
     ) where
@@ -50,8 +49,8 @@ prgNewEntropy myGetEntropy =
     prgNewSeed <$> myGetEntropy (prgSeedLength (Proxy :: Proxy gen))
 
 -- | Initialize the PRG from a 'MonadRandom'.
-prgNew :: (PRG gen, MonadRandom f) => f (CryptoFailable gen)
-prgNew = prgNewEntropy getRandomBytes
+prgNew :: (PRG gen, MonadRandom f) => f gen
+prgNew = throwCryptoError <$> prgNewEntropy getRandomBytes
 
 instance MonadRandom IO where
     getRandomBytes = getEntropy

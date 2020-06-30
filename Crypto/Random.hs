@@ -27,7 +27,6 @@ module Crypto.Random
     , DRG(..)
     , PRG(..)
     , prgNew
-    , prgNewEntropy
     -- * Random abstraction
     , MonadRandom(..)
     , MonadPseudoRandom
