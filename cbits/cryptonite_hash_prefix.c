@@ -63,7 +63,7 @@ void CRYPTONITE_HASHED(finalize_prefix)(struct HASHED_LOWER(ctx) *ctx, const uin
 			b = 0;
 
 		/* First padding byte */
-		b |= 0x80 & (uint8_t) constant_time_eq(pos, n);;
+		b |= 0x80 & (uint8_t) constant_time_eq(pos, n);
 
 		/* Size bytes are always at the end of a block */
 		if (index >= cut_off)
