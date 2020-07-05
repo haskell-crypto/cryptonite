@@ -180,6 +180,14 @@ void cryptonite_sha384_finalize(struct sha384_ctx *ctx, uint8_t *out)
 	memcpy(out, intermediate, SHA384_DIGEST_SIZE);
 }
 
+void cryptonite_sha384_finalize_prefix(struct sha384_ctx *ctx, const uint8_t *data, uint32_t len, uint32_t n, uint8_t *out)
+{
+	uint8_t intermediate[SHA512_DIGEST_SIZE];
+
+	cryptonite_sha512_finalize_prefix(ctx, data, len, n, intermediate);
+	memcpy(out, intermediate, SHA384_DIGEST_SIZE);
+}
+
 void cryptonite_sha512_finalize(struct sha512_ctx *ctx, uint8_t *out)
 {
 	static uint8_t padding[128] = { 0x80, };
@@ -202,6 +210,38 @@ void cryptonite_sha512_finalize(struct sha512_ctx *ctx, uint8_t *out)
 	for (i = 0; i < 8; i++)
 		store_be64(out+8*i, ctx->h[i]);
 }
+
+#define HASHED(m) SHA512_##m
+#define HASHED_LOWER(m) sha512_##m
+#define CRYPTONITE_HASHED(m) cryptonite_sha512_##m
+#define SHA512_BLOCK_SIZE 128
+#define SHA512_BITS_ELEMS 2
+
+#include <cryptonite_hash_prefix.h>
+
+static inline uint32_t cryptonite_sha512_get_index(const struct sha512_ctx *ctx)
+{
+	return (uint32_t) (ctx->sz[0] & 0x7f);
+}
+
+static inline void cryptonite_sha512_incr_sz(struct sha512_ctx *ctx, uint64_t *bits, uint32_t n)
+{
+	ctx->sz[0] += n;
+	ctx->sz[1] += 1 & constant_time_lt_64(ctx->sz[0], n);
+	bits[0] = cpu_to_be64((ctx->sz[1] << 3 | ctx->sz[0] >> 61));
+	bits[1] = cpu_to_be64((ctx->sz[0] << 3));
+}
+
+static inline void cryptonite_sha512_select_digest(const struct sha512_ctx *ctx, uint8_t *out, uint32_t out_mask)
+{
+	uint32_t i;
+	uint64_t out_mask_64 = out_mask;
+	out_mask_64 |= out_mask_64 << 32;
+	for (i = 0; i < 8; i++)
+		xor_be64(out+8*i, ctx->h[i] & out_mask_64);
+}
+
+#include <cryptonite_hash_prefix.c>
 
 #include <stdio.h>
 
