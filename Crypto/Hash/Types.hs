@@ -77,6 +77,11 @@ hashContextGetAlgorithm = undefined
 -}
 
 -- | Represent a context for a given hash algorithm.
+--
+-- This type is an instance of 'ByteArrayAccess' for debugging purpose. Internal
+-- layout is architecture dependent, may contain uninitialized data fragments,
+-- and change in future versions.  The bytearray should not be used as input to
+-- cryptographic algorithms.
 newtype Context a = Context Bytes
     deriving (ByteArrayAccess,NFData)
 

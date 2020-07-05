@@ -24,6 +24,11 @@ import qualified Crypto.Internal.ByteArray as B
 import           Foreign.Ptr
 
 -- | A Mutable hash context
+--
+-- This type is an instance of 'B.ByteArrayAccess' for debugging purpose.
+-- Internal layout is architecture dependent, may contain uninitialized data
+-- fragments, and change in future versions.  The bytearray should not be used
+-- as input to cryptographic algorithms.
 newtype MutableContext a = MutableContext B.Bytes
     deriving (B.ByteArrayAccess)
 
