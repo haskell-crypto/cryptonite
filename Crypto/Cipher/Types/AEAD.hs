@@ -27,7 +27,7 @@ data AEADModeImpl st = AEADModeImpl
 -- | Authenticated Encryption with Associated Data algorithms
 data AEAD cipher = forall st . AEAD
     { aeadModeImpl :: AEADModeImpl st
-    , aeadState    :: st
+    , aeadState    :: !st
     }
 
 -- | Append some header information to an AEAD context
