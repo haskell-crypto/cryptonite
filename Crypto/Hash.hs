@@ -50,11 +50,11 @@ import           Basement.Block.Mutable (copyFromPtr, new)
 import           Crypto.Internal.Compat (unsafeDoIO)
 import           Crypto.Hash.Types
 import           Crypto.Hash.Algorithms
-import           Foreign.Ptr (Ptr)
+import           Foreign.Ptr (Ptr, plusPtr)
 import           Crypto.Internal.ByteArray (ByteArrayAccess)
 import qualified Crypto.Internal.ByteArray as B
 import qualified Data.ByteString.Lazy as L
-import           Data.Word (Word8)
+import           Data.Word (Word8, Word32)
 
 -- | Hash a strict bytestring into a digest.
 hash :: (ByteArrayAccess ba, HashAlgorithm a) => ba -> Digest a
@@ -88,9 +88,17 @@ hashUpdates :: forall a ba . (HashAlgorithm a, ByteArrayAccess ba)
 hashUpdates c l
     | null ls   = c
     | otherwise = Context $ B.copyAndFreeze c $ \(ctx :: Ptr (Context a)) ->
-        mapM_ (\b -> B.withByteArray b $ \d -> hashInternalUpdate ctx d (fromIntegral $ B.length b)) ls
+        mapM_ (\b -> B.withByteArray b (processBlocks ctx (B.length b))) ls
   where
     ls = filter (not . B.null) l
+    -- process the data in 4GB chunks to fit in uint32_t
+    processBlocks ctx bytesLeft dataPtr
+        | bytesLeft == 0 = return ()
+        | otherwise = do
+            hashInternalUpdate ctx dataPtr (fromIntegral actuallyProcessed)
+            processBlocks ctx (bytesLeft - actuallyProcessed) (dataPtr `plusPtr` actuallyProcessed)
+        where
+            actuallyProcessed = min bytesLeft (fromIntegral (maxBound :: Word32))
 
 -- | Finalize a context and return a digest.
 hashFinalize :: forall a . HashAlgorithm a
