@@ -1,3 +1,8 @@
+## 0.28
+
+* Add hash constant time capability
+* Prevent possible overflow during hashing by hashing in 4GB chunks
+
 ## 0.27
 
 * Optimise AES GCM and CCM
