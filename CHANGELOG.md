@@ -1,3 +1,18 @@
+## 0.28
+
+* Add hash constant time capability
+* Prevent possible overflow during hashing by hashing in 4GB chunks
+
+## 0.27
+
+* Optimise AES GCM and CCM
+* Optimise P256R1 implementation
+* Various AES-NI building improvements
+* Add better ECDSA support
+* Add XSalsa derive
+* Implement square roots for ECC binary curve
+* Various tests and benchmarks
+
 ## 0.26
 
 * Add Rabin cryptosystem (and variants)

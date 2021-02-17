@@ -47,9 +47,11 @@ struct sha256_ctx
 void cryptonite_sha224_init(struct sha224_ctx *ctx);
 void cryptonite_sha224_update(struct sha224_ctx *ctx, const uint8_t *data, uint32_t len);
 void cryptonite_sha224_finalize(struct sha224_ctx *ctx, uint8_t *out);
+void cryptonite_sha224_finalize_prefix(struct sha224_ctx *ctx, const uint8_t *data, uint32_t len, uint32_t n, uint8_t *out);
 
 void cryptonite_sha256_init(struct sha256_ctx *ctx);
 void cryptonite_sha256_update(struct sha256_ctx *ctx, const uint8_t *data, uint32_t len);
 void cryptonite_sha256_finalize(struct sha256_ctx *ctx, uint8_t *out);
+void cryptonite_sha256_finalize_prefix(struct sha256_ctx *ctx, const uint8_t *data, uint32_t len, uint32_t n, uint8_t *out);
 
 #endif

@@ -9,6 +9,7 @@
 --
 module Crypto.Hash.Algorithms
     ( HashAlgorithm
+    , HashAlgorithmPrefix
     -- * Hash algorithms
     , Blake2s_160(..)
     , Blake2s_224(..)
@@ -54,7 +55,7 @@ module Crypto.Hash.Algorithms
     , Whirlpool(..)
     ) where
 
-import           Crypto.Hash.Types (HashAlgorithm)
+import           Crypto.Hash.Types (HashAlgorithm, HashAlgorithmPrefix)
 import           Crypto.Hash.Blake2s
 import           Crypto.Hash.Blake2sp
 import           Crypto.Hash.Blake2b

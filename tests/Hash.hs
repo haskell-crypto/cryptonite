@@ -221,6 +221,24 @@ runhashinc :: HashAlg -> [ByteString] -> ByteString
 runhashinc (HashAlg hashAlg) v = B.convertToBase B.Base16 $ hashinc $ v
   where hashinc = hashFinalize . foldl hashUpdate (hashInitWith hashAlg)
 
+data HashPrefixAlg = forall alg . HashAlgorithmPrefix alg => HashPrefixAlg alg
+
+expectedPrefix :: [ (String, HashPrefixAlg) ]
+expectedPrefix =
+    [ ("MD5", HashPrefixAlg MD5)
+    , ("SHA1", HashPrefixAlg SHA1)
+    , ("SHA224", HashPrefixAlg SHA224)
+    , ("SHA256", HashPrefixAlg SHA256)
+    , ("SHA384", HashPrefixAlg SHA384)
+    , ("SHA512", HashPrefixAlg SHA512)
+    ]
+
+runhashpfx :: HashPrefixAlg -> ByteString -> ByteString
+runhashpfx (HashPrefixAlg hashAlg) v = B.convertToBase B.Base16 $ hashWith hashAlg v
+
+runhashpfxpfx :: HashPrefixAlg -> ByteString -> Int -> ByteString
+runhashpfxpfx (HashPrefixAlg hashAlg) v len = B.convertToBase B.Base16 $ hashPrefixWith hashAlg v len
+
 makeTestAlg (name, hashAlg, results) =
     testGroup name $ concatMap maketest (zip3 is vectors results)
   where
@@ -234,6 +252,19 @@ makeTestAlg (name, hashAlg, results) =
 makeTestChunk (hashName, hashAlg, _) =
     [ testProperty hashName $ \ckLen (ArbitraryBS0_2901 inp) ->
         runhash hashAlg inp `propertyEq` runhashinc hashAlg (chunkS ckLen inp)
+    ]
+
+makeTestPrefix (hashName, hashAlg) =
+    [ testProperty hashName $ \(ArbitraryBS0_2901 inp) (Int0_2901 len) ->
+        runhashpfx hashAlg (B.take len inp) `propertyEq` runhashpfxpfx hashAlg inp len
+    ]
+
+makeTestHybrid (hashName, HashPrefixAlg alg) =
+    [ testProperty hashName $ \(ArbitraryBS0_2901 start) (ArbitraryBS0_2901 end) -> do
+        len <- choose (0, B.length end)
+        let ref = hashWith alg (start `B.append` B.take len end)
+            hyb = hashFinalizePrefix (hashUpdate (hashInitWith alg) start) end len
+        return (ref `propertyEq` hyb)
     ]
 
 -- SHAKE128 truncation example with expected byte at final position
@@ -253,6 +284,8 @@ makeTestSHAKE128Truncation i byte =
 tests = testGroup "hash"
     [ testGroup "KATs" (map makeTestAlg expected)
     , testGroup "Chunking" (concatMap makeTestChunk expected)
+    , testGroup "Prefix" (concatMap makeTestPrefix expectedPrefix)
+    , testGroup "Hybrid" (concatMap makeTestHybrid expectedPrefix)
     , testGroup "Truncating"
         [ testGroup "SHAKE128"
             (zipWith makeTestSHAKE128Truncation [1..] shake128TruncationBytes)

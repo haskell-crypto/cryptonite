@@ -14,6 +14,7 @@
 {-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.Types
     ( HashAlgorithm(..)
+    , HashAlgorithmPrefix(..)
     , Context(..)
     , Digest(..)
     ) where
@@ -59,12 +60,28 @@ class HashAlgorithm a where
     -- | Finalize the context and set the digest raw memory to the right value
     hashInternalFinalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()
 
+-- | Hashing algorithms with a constant-time implementation.
+class HashAlgorithm a => HashAlgorithmPrefix a where
+    -- | Update the context with the first N bytes of a buffer and finalize this
+    -- context.  The code path executed is independent from N and depends only
+    -- on the complete buffer length.
+    hashInternalFinalizePrefix :: Ptr (Context a)
+                               -> Ptr Word8 -> Word32
+                               -> Word32
+                               -> Ptr (Digest a)
+                               -> IO ()
+
 {-
 hashContextGetAlgorithm :: HashAlgorithm a => Context a -> a
 hashContextGetAlgorithm = undefined
 -}
 
 -- | Represent a context for a given hash algorithm.
+--
+-- This type is an instance of 'ByteArrayAccess' for debugging purpose. Internal
+-- layout is architecture dependent, may contain uninitialized data fragments,
+-- and change in future versions.  The bytearray should not be used as input to
+-- cryptographic algorithms.
 newtype Context a = Context Bytes
     deriving (ByteArrayAccess,NFData)
 

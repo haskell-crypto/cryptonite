@@ -216,3 +216,31 @@ void cryptonite_sha1_finalize(struct sha1_ctx *ctx, uint8_t *out)
 	store_be32(out+12, ctx->h[3]);
 	store_be32(out+16, ctx->h[4]);
 }
+
+#define HASHED(m) SHA1_##m
+#define HASHED_LOWER(m) sha1_##m
+#define CRYPTONITE_HASHED(m) cryptonite_sha1_##m
+#define SHA1_BLOCK_SIZE 64
+#define SHA1_BITS_ELEMS 1
+
+static inline uint32_t cryptonite_sha1_get_index(const struct sha1_ctx *ctx)
+{
+	return (uint32_t) (ctx->sz & 0x3f);
+}
+
+static inline void cryptonite_sha1_incr_sz(struct sha1_ctx *ctx, uint64_t *bits, uint32_t n)
+{
+	ctx->sz += n;
+	*bits = cpu_to_be64(ctx->sz << 3);
+}
+
+static inline void cryptonite_sha1_select_digest(const struct sha1_ctx *ctx, uint8_t *out, uint32_t out_mask)
+{
+	xor_be32(out   , ctx->h[0] & out_mask);
+	xor_be32(out+ 4, ctx->h[1] & out_mask);
+	xor_be32(out+ 8, ctx->h[2] & out_mask);
+	xor_be32(out+12, ctx->h[3] & out_mask);
+	xor_be32(out+16, ctx->h[4] & out_mask);
+}
+
+#include <cryptonite_hash_prefix.c>

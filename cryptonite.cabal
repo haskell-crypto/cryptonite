@@ -1,5 +1,5 @@
 Name:                cryptonite
-version:             0.26
+version:             0.28
 Synopsis:            Cryptography Primitives sink
 Description:
     A repository of cryptographic primitives.
@@ -57,6 +57,7 @@ extra-source-files:  cbits/*.h
                      cbits/argon2/*.h
                      cbits/argon2/*.c
                      cbits/aes/x86ni_impl.c
+                     cbits/cryptonite_hash_prefix.c
                      tests/*.hs
 
 source-repository head

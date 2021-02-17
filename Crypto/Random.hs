@@ -86,6 +86,9 @@ drgNewSeed (Seed seed) = initialize seed
 -- Note that the @Arbitrary@ instance provided by QuickCheck for 'Word64' does
 -- not have a uniform distribution.  It is often better to use instead
 -- @arbitraryBoundedRandom@.
+--
+-- System endianness impacts how the tuple is interpreted and therefore changes
+-- the resulting DRG.
 drgNewTest :: (Word64, Word64, Word64, Word64, Word64) -> ChaChaDRG
 drgNewTest = initializeWords
 

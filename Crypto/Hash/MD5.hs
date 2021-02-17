@@ -34,6 +34,9 @@ instance HashAlgorithm MD5 where
     hashInternalUpdate        = c_md5_update
     hashInternalFinalize      = c_md5_finalize
 
+instance HashAlgorithmPrefix MD5 where
+    hashInternalFinalizePrefix = c_md5_finalize_prefix
+
 foreign import ccall unsafe "cryptonite_md5_init"
     c_md5_init :: Ptr (Context a)-> IO ()
 
@@ -42,3 +45,6 @@ foreign import ccall "cryptonite_md5_update"
 
 foreign import ccall unsafe "cryptonite_md5_finalize"
     c_md5_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()
+
+foreign import ccall "cryptonite_md5_finalize_prefix"
+    c_md5_finalize_prefix :: Ptr (Context a) -> Ptr Word8 -> Word32 -> Word32 -> Ptr (Digest a) -> IO ()
