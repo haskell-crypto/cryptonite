@@ -109,6 +109,11 @@ Flag use_target_attributes
   Default:           True
   Manual:            True
 
+Flag support_getrandom
+  Description:       use Linux getrandom syscall
+  Default:           True
+  Manual:            True
+
 Library
   Exposed-modules:   Crypto.Cipher.AES
                      Crypto.Cipher.AESGCMSIV
@@ -340,6 +345,10 @@ Library
     CPP-options:    -DSUPPORT_RDRAND
     Other-modules:  Crypto.Random.Entropy.RDRand
     c-sources:      cbits/cryptonite_rdrand.c
+
+  if flag(support_getrandom) && os(linux)
+    CPP-options:    -DSUPPORT_GETRANDOM
+    Other-modules:  Crypto.Random.Entropy.GetRandom
 
   if flag(support_aesni) && (os(linux) || os(freebsd) || os(osx)) && (arch(i386) || arch(x86_64))
     CC-options:     -DWITH_AESNI

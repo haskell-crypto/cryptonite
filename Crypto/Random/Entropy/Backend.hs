@@ -22,6 +22,8 @@ import Crypto.Random.Entropy.RDRand
 #endif
 #ifdef WINDOWS
 import Crypto.Random.Entropy.Windows
+#elif defined SUPPORT_GETRANDOM
+import Crypto.Random.Entropy.GetRandom
 #else
 import Crypto.Random.Entropy.Unix
 #endif
@@ -35,6 +37,8 @@ supportedBackends =
 #endif
 #ifdef WINDOWS
     openBackend (Proxy :: Proxy WinCryptoAPI)
+#elif defined SUPPORT_GETRANDOM
+    openBackend (Proxy :: Proxy GetRandom)
 #else
     openBackend (Proxy :: Proxy DevRandom), openBackend (Proxy :: Proxy DevURandom)
 #endif
