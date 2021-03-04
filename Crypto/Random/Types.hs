@@ -13,12 +13,14 @@ module Crypto.Random.Types
     , DRG(..)
     , PRG(..)
     , prgNew
+    , prgFork
     , withDRG
     ) where
 
 import Crypto.Error
 import Crypto.Random.Entropy
 import Crypto.Internal.ByteArray
+import Data.ByteString
 import Data.Proxy
 
 -- | A monad constraint that allows to generate random bytes
@@ -51,6 +53,33 @@ prgNewEntropy myGetEntropy =
 -- | Initialize the PRG from a 'MonadRandom'.
 prgNew :: (PRG gen, MonadRandom f) => f gen
 prgNew = throwCryptoError <$> prgNewEntropy getRandomBytes
+
+prgFork :: forall g. PRG g => g -> (g, g)
+prgFork gen =
+  {-
+  Background: security definition of a PRG is that later values cannot be
+  predicted from older values and vice versa, *unless* you know the seed or any
+  of the secret states.
+
+  Therefore, we do not need to do anything fancy like hashing the seed. In more
+  detail, this algorithm is secure because:
+
+  1. Given outputs (subsequent to generating the seed) from the old PRG, one
+     cannot predict values of the new PRG, because that would require somehow
+     deriving the seed (an old output) from the subsequent outputs, which would
+     contradict the security definition of a PRG.
+
+  2. Given outputs from the new PRG, one cannot predict values of the old PRG,
+     because again this would require deriving the seed, then deriving the
+     internal secret state of the old PRG, which would again contradict the
+     security definition of a PRG.
+
+  It *may* be theoretically possible to break the new PRG if you know the state
+  of the old PRG (to reverse-engineer what the seed was), but we assume the
+  caller consumes both PRGs and that they are not attacking themselves.
+  -}
+  let (seed, gen') = randomBytesGenerate (prgSeedLength (Proxy :: Proxy g)) gen
+  in (throwCryptoError (prgNewSeed (seed :: ByteString)), gen')
 
 instance MonadRandom IO where
     getRandomBytes = getEntropy
