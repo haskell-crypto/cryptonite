@@ -170,6 +170,7 @@ Library
                      Crypto.PubKey.ECIES
                      Crypto.PubKey.Ed25519
                      Crypto.PubKey.Ed448
+                     Crypto.PubKey.EdDSA
                      Crypto.PubKey.RSA
                      Crypto.PubKey.RSA.PKCS15
                      Crypto.PubKey.RSA.Prim
@@ -235,6 +236,7 @@ Library
                      Crypto.PubKey.ElGamal
                      Crypto.ECC.Simple.Types
                      Crypto.ECC.Simple.Prim
+                     Crypto.Internal.Builder
                      Crypto.Internal.ByteArray
                      Crypto.Internal.Compat
                      Crypto.Internal.CompatPrim
@@ -429,6 +431,7 @@ Test-Suite test-cryptonite
                      KAT_DES
                      KAT_Ed25519
                      KAT_Ed448
+                     KAT_EdDSA
                      KAT_CMAC
                      KAT_HKDF
                      KAT_HMAC
