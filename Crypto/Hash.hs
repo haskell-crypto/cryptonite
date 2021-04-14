@@ -54,7 +54,8 @@ import           Foreign.Ptr (Ptr, plusPtr)
 import           Crypto.Internal.ByteArray (ByteArrayAccess)
 import qualified Crypto.Internal.ByteArray as B
 import qualified Data.ByteString.Lazy as L
-import           Data.Word (Word8, Word32)
+import           Data.Word (Word8)
+import           Data.Int (Int32)
 
 -- | Hash a strict bytestring into a digest.
 hash :: (ByteArrayAccess ba, HashAlgorithm a) => ba -> Digest a
@@ -91,14 +92,14 @@ hashUpdates c l
         mapM_ (\b -> B.withByteArray b (processBlocks ctx (B.length b))) ls
   where
     ls = filter (not . B.null) l
-    -- process the data in 4GB chunks to fit in uint32_t
+    -- process the data in 2GB chunks to fit in uint32_t and Int on 32 bit systems
     processBlocks ctx bytesLeft dataPtr
         | bytesLeft == 0 = return ()
         | otherwise = do
             hashInternalUpdate ctx dataPtr (fromIntegral actuallyProcessed)
             processBlocks ctx (bytesLeft - actuallyProcessed) (dataPtr `plusPtr` actuallyProcessed)
         where
-            actuallyProcessed = min bytesLeft (fromIntegral (maxBound :: Word32))
+            actuallyProcessed = min bytesLeft (fromIntegral (maxBound :: Int32))
 
 -- | Finalize a context and return a digest.
 hashFinalize :: forall a . HashAlgorithm a
