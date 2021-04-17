@@ -29,6 +29,7 @@ import qualified KAT_Curve25519
 import qualified KAT_Curve448
 import qualified KAT_Ed25519
 import qualified KAT_Ed448
+import qualified KAT_EdDSA
 import qualified KAT_OTP
 import qualified KAT_PubKey
 import qualified KAT_Scrypt
@@ -67,6 +68,7 @@ tests = testGroup "cryptonite"
     , KAT_Curve448.tests
     , KAT_Ed25519.tests
     , KAT_Ed448.tests
+    , KAT_EdDSA.tests
     , KAT_PubKey.tests
     , KAT_OTP.tests
     , testGroup "KDF"
