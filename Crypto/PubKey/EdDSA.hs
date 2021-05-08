@@ -353,7 +353,7 @@ instance EllipticCurveEdDSA Curve_Edwards25519 where
     scheduleSecret prx alg priv =
         (decodeScalarNoErr prx clamped, B.dropView hashed 32)
       where
-        hashed  = digest alg ($ priv)
+        hashed  = digest alg $ \update -> update priv
 
         clamped :: Bytes
         clamped = B.copyAndFreeze (B.takeView hashed 32) $ \p -> do
