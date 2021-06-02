@@ -185,3 +185,30 @@ void cryptonite_md5_finalize(struct md5_ctx *ctx, uint8_t *out)
 	store_le32(out+ 8, ctx->h[2]);
 	store_le32(out+12, ctx->h[3]);
 }
+
+#define HASHED(m) MD5_##m
+#define HASHED_LOWER(m) md5_##m
+#define CRYPTONITE_HASHED(m) cryptonite_md5_##m
+#define MD5_BLOCK_SIZE 64
+#define MD5_BITS_ELEMS 1
+
+static inline uint32_t cryptonite_md5_get_index(const struct md5_ctx *ctx)
+{
+	return (uint32_t) (ctx->sz & 0x3f);
+}
+
+static inline void cryptonite_md5_incr_sz(struct md5_ctx *ctx, uint64_t *bits, uint32_t n)
+{
+	ctx->sz += n;
+	*bits = cpu_to_le64(ctx->sz << 3);
+}
+
+static inline void cryptonite_md5_select_digest(const struct md5_ctx *ctx, uint8_t *out, uint32_t out_mask)
+{
+	xor_le32(out   , ctx->h[0] & out_mask);
+	xor_le32(out+ 4, ctx->h[1] & out_mask);
+	xor_le32(out+ 8, ctx->h[2] & out_mask);
+	xor_le32(out+12, ctx->h[3] & out_mask);
+}
+
+#include <cryptonite_hash_prefix.c>

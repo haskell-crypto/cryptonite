@@ -42,15 +42,14 @@ module Crypto.OTP
     )
 where
 
-import           Data.Bits (shiftL, shiftR, (.&.), (.|.))
+import           Data.Bits (shiftL, (.&.), (.|.))
 import           Data.ByteArray.Mapping (fromW64BE)
 import           Data.List (elemIndex)
 import           Data.Word
-import           Foreign.Storable (poke)
 import           Control.Monad (unless)
 import           Crypto.Hash (HashAlgorithm, SHA1(..))
 import           Crypto.MAC.HMAC
-import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, Bytes)
+import           Crypto.Internal.ByteArray (ByteArrayAccess, Bytes)
 import qualified Crypto.Internal.ByteArray as B
 
 

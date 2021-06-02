@@ -28,6 +28,6 @@ vectors =
     ]
 
 tests = testGroup "Scrypt"
-    $ map toCase $ zip [(1::Int)..] vectors
-  where toCase (i, ((pass,salt,n,r,p,dklen), output)) =
+    $ zipWith toCase [(1::Int)..] vectors
+  where toCase i ((pass,salt,n,r,p,dklen), output) =
             testCase (show i) (output @=? Scrypt.generate (Scrypt.Parameters n r p dklen) pass salt)

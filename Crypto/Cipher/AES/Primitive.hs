@@ -37,6 +37,9 @@ module Crypto.Cipher.AES.Primitive
     , decryptCTR
     , decryptXTS
 
+    -- * CTR with 32-bit wrapping
+    , combineC32
+
     -- * Incremental GCM
     , gcmMode
     , gcmInit
@@ -128,7 +131,7 @@ newtype AESCCM = AESCCM ScrubbedBytes
     deriving (NFData)
 
 sizeGCM :: Int
-sizeGCM = 80
+sizeGCM = 320
 
 sizeOCB :: Int
 sizeOCB = 160
@@ -316,6 +319,21 @@ decryptXTS :: ByteArray ba
            -> ba         -- ^ input to decrypt
            -> ba         -- ^ output decrypted
 decryptXTS = doXTS c_aes_decrypt_xts
+
+-- | encrypt/decrypt using Counter mode (32-bit wrapping used in AES-GCM-SIV)
+{-# NOINLINE combineC32 #-}
+combineC32 :: ByteArray ba
+           => AES        -- ^ AES Context
+           -> IV AES     -- ^ initial vector of AES block size (usually representing a 128 bit integer)
+           -> ba         -- ^ plaintext input
+           -> ba         -- ^ ciphertext output
+combineC32 ctx iv input
+    | len <= 0          = B.empty
+    | B.length iv /= 16 = error $ "AES error: IV length must be block size (16). Its length is: " ++ show (B.length iv)
+    | otherwise = B.allocAndFreeze len doEncrypt
+  where doEncrypt o = withKeyAndIV ctx iv $ \k v -> withByteArray input $ \i ->
+                      c_aes_encrypt_c32 (castPtr o) k v i (fromIntegral len)
+        len = B.length input
 
 {-# INLINE doECB #-}
 doECB :: ByteArray ba
@@ -577,6 +595,9 @@ foreign import ccall unsafe "cryptonite_aes.h cryptonite_aes_gen_ctr_cont"
 
 foreign import ccall "cryptonite_aes.h cryptonite_aes_encrypt_ctr"
     c_aes_encrypt_ctr :: CString -> Ptr AES -> Ptr Word8 -> CString -> CUInt -> IO ()
+
+foreign import ccall "cryptonite_aes.h cryptonite_aes_encrypt_c32"
+    c_aes_encrypt_c32 :: CString -> Ptr AES -> Ptr Word8 -> CString -> CUInt -> IO ()
 
 foreign import ccall "cryptonite_aes.h cryptonite_aes_gcm_init"
     c_aes_gcm_init :: Ptr AESGCM -> Ptr AES -> Ptr Word8 -> CUInt -> IO ()

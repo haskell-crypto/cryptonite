@@ -161,6 +161,14 @@ void cryptonite_sha224_finalize(struct sha224_ctx *ctx, uint8_t *out)
 	memcpy(out, intermediate, SHA224_DIGEST_SIZE);
 }
 
+void cryptonite_sha224_finalize_prefix(struct sha224_ctx *ctx, const uint8_t *data, uint32_t len, uint32_t n, uint8_t *out)
+{
+	uint8_t intermediate[SHA256_DIGEST_SIZE];
+
+	cryptonite_sha256_finalize_prefix(ctx, data, len, n, intermediate);
+	memcpy(out, intermediate, SHA224_DIGEST_SIZE);
+}
+
 void cryptonite_sha256_finalize(struct sha256_ctx *ctx, uint8_t *out)
 {
 	static uint8_t padding[64] = { 0x80, };
@@ -182,3 +190,29 @@ void cryptonite_sha256_finalize(struct sha256_ctx *ctx, uint8_t *out)
 	for (i = 0; i < 8; i++)
 		store_be32(out+4*i, ctx->h[i]);
 }
+
+#define HASHED(m) SHA256_##m
+#define HASHED_LOWER(m) sha256_##m
+#define CRYPTONITE_HASHED(m) cryptonite_sha256_##m
+#define SHA256_BLOCK_SIZE 64
+#define SHA256_BITS_ELEMS 1
+
+static inline uint32_t cryptonite_sha256_get_index(const struct sha256_ctx *ctx)
+{
+	return (uint32_t) (ctx->sz & 0x3f);
+}
+
+static inline void cryptonite_sha256_incr_sz(struct sha256_ctx *ctx, uint64_t *bits, uint32_t n)
+{
+	ctx->sz += n;
+	*bits = cpu_to_be64(ctx->sz << 3);
+}
+
+static inline void cryptonite_sha256_select_digest(const struct sha256_ctx *ctx, uint8_t *out, uint32_t out_mask)
+{
+	uint32_t i;
+	for (i = 0; i < 8; i++)
+		xor_be32(out+4*i, ctx->h[i] & out_mask);
+}
+
+#include <cryptonite_hash_prefix.c>

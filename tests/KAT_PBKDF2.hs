@@ -67,21 +67,21 @@ tests = testGroup "PBKDF2"
     , testGroup "KATs-HMAC-SHA512" (katTests (PBKDF2.prfHMAC SHA512) vectors_hmac_sha512)
     , testGroup "KATs-HMAC-SHA512 (fast)" (katTestFastPBKDF2_SHA512 vectors_hmac_sha512)
     ]
-  where katTests prf vects = map (toKatTest prf) $ zip is vects
+  where katTests prf = zipWith (toKatTest prf) is
 
-        toKatTest prf (i, ((pass, salt, iter, dkLen), output)) =
+        toKatTest prf i ((pass, salt, iter, dkLen), output) =
             testCase (show i) (output @=? PBKDF2.generate prf (PBKDF2.Parameters iter dkLen) pass salt)
 
-        katTestFastPBKDF2_SHA1 = map toKatTestFastPBKDF2_SHA1 . zip is
-        toKatTestFastPBKDF2_SHA1 (i, ((pass, salt, iter, dkLen), output)) =
+        katTestFastPBKDF2_SHA1 = zipWith toKatTestFastPBKDF2_SHA1 is
+        toKatTestFastPBKDF2_SHA1 i ((pass, salt, iter, dkLen), output) =
             testCase (show i) (output @=? PBKDF2.fastPBKDF2_SHA1 (PBKDF2.Parameters iter dkLen) pass salt)
 
-        katTestFastPBKDF2_SHA256 = map toKatTestFastPBKDF2_SHA256 . zip is
-        toKatTestFastPBKDF2_SHA256 (i, ((pass, salt, iter, dkLen), output)) =
+        katTestFastPBKDF2_SHA256 = zipWith toKatTestFastPBKDF2_SHA256 is
+        toKatTestFastPBKDF2_SHA256 i ((pass, salt, iter, dkLen), output) =
             testCase (show i) (output @=? PBKDF2.fastPBKDF2_SHA256 (PBKDF2.Parameters iter dkLen) pass salt)
 
-        katTestFastPBKDF2_SHA512 = map toKatTestFastPBKDF2_SHA512 . zip is
-        toKatTestFastPBKDF2_SHA512 (i, ((pass, salt, iter, dkLen), output)) =
+        katTestFastPBKDF2_SHA512 = zipWith toKatTestFastPBKDF2_SHA512 is
+        toKatTestFastPBKDF2_SHA512 i ((pass, salt, iter, dkLen), output) =
             testCase (show i) (output @=? PBKDF2.fastPBKDF2_SHA512 (PBKDF2.Parameters iter dkLen) pass salt)
 
 

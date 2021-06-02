@@ -1,11 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies #-}
 module Main where
 
 import Gauge.Main
 
 import           Crypto.Cipher.AES
+import qualified Crypto.Cipher.AESGCMSIV as AESGCMSIV
 import           Crypto.Cipher.Blowfish
 import           Crypto.Cipher.CAST5
 import qualified Crypto.Cipher.ChaChaPoly1305 as CP
@@ -15,17 +17,23 @@ import           Crypto.Cipher.Types
 import           Crypto.ECC
 import           Crypto.Error
 import           Crypto.Hash
+import qualified Crypto.KDF.BCrypt as BCrypt
 import qualified Crypto.KDF.PBKDF2 as PBKDF2
 import           Crypto.Number.Basic (numBits)
 import           Crypto.Number.Generate
 import qualified Crypto.PubKey.DH as DH
 import qualified Crypto.PubKey.ECC.Types as ECC
 import qualified Crypto.PubKey.ECC.Prim as ECC
+import qualified Crypto.PubKey.ECDSA as ECDSA
+import qualified Crypto.PubKey.Ed25519 as Ed25519
+import qualified Crypto.PubKey.EdDSA as EdDSA
 import           Crypto.Random
 
 import           Control.DeepSeq (NFData)
 import           Data.ByteArray (ByteArray, Bytes)
 import qualified Data.ByteString as B
+
+import qualified Crypto.PubKey.ECC.P256 as P256
 
 import Number.F2m
 
@@ -104,12 +112,25 @@ benchPBKDF2 =
 
         params n iter = PBKDF2.Parameters iter n
 
+benchBCrypt =
+    [ bench "cryptonite-BCrypt-4"  $ nf bcrypt 4
+    , bench "cryptonite-BCrypt-5"  $ nf bcrypt 5
+    , bench "cryptonite-BCrypt-7"  $ nf bcrypt 7
+    , bench "cryptonite-BCrypt-11" $ nf bcrypt 11
+    ]
+  where
+        bcrypt :: Int -> B.ByteString
+        bcrypt cost = BCrypt.bcrypt cost mysalt mypass
+
+        mypass, mysalt :: B.ByteString
+        mypass = "password"
+        mysalt = "saltsaltsaltsalt"
 
 benchBlockCipher =
     [ bgroup "ECB" benchECB
     , bgroup "CBC" benchCBC
     ]
-  where 
+  where
         benchECB =
             [ bench "DES-input=1024" $ nf (run (undefined :: DES) cipherInit key8) input1024
             , bench "Blowfish128-input=1024" $ nf (run (undefined :: Blowfish128) cipherInit key16) input1024
@@ -148,14 +169,33 @@ benchBlockCipher =
         iv16 = maybe (error "iv size 16") id $ makeIV key16
 
 benchAE =
-    [ bench "ChaChaPoly1305" $ nf (run key32) (input64, input1024)
+    [ bench "ChaChaPoly1305" $ nf (cp key32) (input64, input1024)
+    , bench "AES-GCM" $ nf (gcm key32) (input64, input1024)
+    , bench "AES-CCM" $ nf (ccm key32) (input64, input1024)
+    , bench "AES-GCM-SIV" $ nf (gcmsiv key32) (input64, input1024)
     ]
-  where run k (ini, plain) =
+  where cp k (ini, plain) =
             let iniState            = throwCryptoError $ CP.initialize k (throwCryptoError $ CP.nonce12 nonce12)
                 afterAAD            = CP.finalizeAAD (CP.appendAAD ini iniState)
                 (out, afterEncrypt) = CP.encrypt plain afterAAD
                 outtag              = CP.finalize afterEncrypt
-             in (out, outtag)
+             in (outtag, out)
+
+        gcm k (ini, plain) =
+            let ctx = throwCryptoError (cipherInit k) :: AES256
+                state = throwCryptoError $ aeadInit AEAD_GCM ctx nonce12
+             in aeadSimpleEncrypt state ini plain 16
+
+        ccm k (ini, plain) =
+            let ctx = throwCryptoError (cipherInit k) :: AES256
+                mode = AEAD_CCM 1024 CCM_M16 CCM_L3
+                state = throwCryptoError $ aeadInit mode ctx nonce12
+             in aeadSimpleEncrypt state ini plain 16
+
+        gcmsiv k (ini, plain) =
+            let ctx = throwCryptoError (cipherInit k) :: AES256
+                iv = throwCryptoError (AESGCMSIV.nonce nonce12)
+             in AESGCMSIV.encrypt ctx iv ini plain
 
         input64 = B.replicate 64 0
         input1024 = B.replicate 1024 0
@@ -168,19 +208,41 @@ benchAE =
 benchECC =
     [ bench "pointAddTwoMuls-baseline"  $ nf run_b (n1, p1, n2, p2)
     , bench "pointAddTwoMuls-optimized" $ nf run_o (n1, p1, n2, p2)
+    , bench "pointAdd-ECC" $ nf run_c (p1, p2)
+    , bench "pointMul-ECC" $ nf run_d (n1, p2)
     ]
   where run_b (n, p, k, q) = ECC.pointAdd c (ECC.pointMul c n p)
                                             (ECC.pointMul c k q)
 
         run_o (n, p, k, q) = ECC.pointAddTwoMuls c n p k q
+        run_c (p, q) = ECC.pointAdd c p q
+        run_d (n, p) = ECC.pointMul c n p
 
         c  = ECC.getCurveByName ECC.SEC_p256r1
-        r1 = 7
-        r2 = 11
-        p1 = ECC.pointBaseMul c r1
-        p2 = ECC.pointBaseMul c r2
+        p1 = ECC.pointBaseMul c n1
+        p2 = ECC.pointBaseMul c n2
         n1 = 0x2ba9daf2363b2819e69b34a39cf496c2458a9b2a21505ea9e7b7cbca42dc7435
         n2 = 0xf054a7f60d10b8c2cf847ee90e9e029f8b0e971b09ca5f55c4d49921a11fadc1
+
+benchP256 =
+    [ bench "pointAddTwoMuls-P256"  $ nf run_p (n1, p1, n2, p2)
+    , bench "pointAdd-P256"  $ nf run_q (p1, p2)
+    , bench "pointMul-P256"  $ nf run_t (n1, p1)
+    ]
+  where run_p (n, p, k, q) = P256.pointAdd (P256.pointMul n p) (P256.pointMul k q)
+        run_q (p, q) = P256.pointAdd p q
+        run_t (n, p) = P256.pointMul n p
+
+        xS = 0xde2444bebc8d36e682edd27e0f271508617519b3221a8fa0b77cab3989da97c9
+        yS = 0xc093ae7ff36e5380fc01a5aad1e66659702de80f53cec576b6350b243042a256
+        xT = 0x55a8b00f8da1d44e62f6b3b25316212e39540dc861c89575bb8cf92e35e0986b
+        yT = 0x5421c3209c2d6c704835d82ac4c3dd90f61a8a52598b9e7ab656e9d8c8b24316
+        p1 = P256.pointFromIntegers (xS, yS)
+        p2 = P256.pointFromIntegers (xT, yT)
+        n1 = throwCryptoError $ P256.scalarFromInteger 0x2ba9daf2363b2819e69b34a39cf496c2458a9b2a21505ea9e7b7cbca42dc7435
+        n2 = throwCryptoError $ P256.scalarFromInteger 0xf054a7f60d10b8c2cf847ee90e9e029f8b0e971b09ca5f55c4d49921a11fadc1
+
+
 
 benchFFDH = map doFFDHBench primes
   where
@@ -228,15 +290,95 @@ benchECDH = map doECDHBench curves
              , ("X448",   CurveDH Curve_X448)
              ]
 
+data CurveHashECDSA =
+    forall curve hashAlg . (ECDSA.EllipticCurveECDSA curve,
+                            NFData (Scalar curve),
+                            NFData (Point curve),
+                            HashAlgorithm hashAlg) => CurveHashECDSA curve hashAlg
+
+benchECDSA = map doECDSABench curveHashes
+  where
+    doECDSABench (name, CurveHashECDSA c hashAlg) =
+        let proxy = Just c -- using Maybe as Proxy
+         in bgroup name
+                [ env (signGenerate proxy) $ bench "sign" . nfIO . signRun proxy hashAlg
+                , env (verifyGenerate proxy hashAlg) $ bench "verify" . nf (verifyRun proxy hashAlg)
+                ]
+
+    signGenerate proxy = do
+        m <- tenKB
+        s <- curveGenerateScalar proxy
+        return (s, m)
+
+    signRun proxy hashAlg (priv, msg) = ECDSA.sign proxy priv hashAlg msg
+
+    verifyGenerate proxy hashAlg = do
+        m <- tenKB
+        KeyPair p s <- curveGenerateKeyPair proxy
+        sig <- ECDSA.sign proxy s hashAlg m
+        return (p, sig, m)
+
+    verifyRun proxy hashAlg (pub, sig, msg) = ECDSA.verify proxy hashAlg pub sig msg
+
+    tenKB :: IO Bytes
+    tenKB = getRandomBytes 10240
+
+    curveHashes = [ ("secp256r1_sha256", CurveHashECDSA Curve_P256R1 SHA256)
+                  , ("secp384r1_sha384", CurveHashECDSA Curve_P384R1 SHA384)
+                  , ("secp521r1_sha512", CurveHashECDSA Curve_P521R1 SHA512)
+                  ]
+
+benchEdDSA =
+    [ bgroup "EdDSA-Ed25519" benchGenEd25519
+    , bgroup "Ed25519"       benchEd25519
+    ]
+  where
+    benchGen prx alg =
+        [ bench "sign"   $ perBatchEnv (genEnv prx alg) (run_gen_sign   prx)
+        , bench "verify" $ perBatchEnv (genEnv prx alg) (run_gen_verify prx)
+        ]
+
+    benchGenEd25519 = benchGen (Just Curve_Edwards25519) SHA512
+    benchEd25519    =
+        [ bench "sign"   $ perBatchEnv ed25519Env run_ed25519_sign
+        , bench "verify" $ perBatchEnv ed25519Env run_ed25519_verify
+        ]
+
+    msg = B.empty -- empty message = worst-case scenario showing API overhead
+
+    genEnv prx alg _ = do
+        sec <- EdDSA.generateSecretKey prx
+        let pub = EdDSA.toPublic prx alg sec
+            sig = EdDSA.sign prx sec pub msg
+        return (sec, pub, sig)
+
+    run_gen_sign prx (sec, pub, _) = return (EdDSA.sign prx sec pub msg)
+
+    run_gen_verify prx (_, pub, sig) = return (EdDSA.verify prx pub msg sig)
+
+    ed25519Env _ = do
+        sec <- Ed25519.generateSecretKey
+        let pub = Ed25519.toPublic sec
+            sig = Ed25519.sign sec pub msg
+        return (sec, pub, sig)
+
+    run_ed25519_sign (sec, pub, _) = return (Ed25519.sign sec pub msg)
+
+    run_ed25519_verify (_, pub, sig) = return (Ed25519.verify pub msg sig)
+
 main = defaultMain
     [ bgroup "hash" benchHash
     , bgroup "block-cipher" benchBlockCipher
     , bgroup "AE" benchAE
     , bgroup "pbkdf2" benchPBKDF2
+    , bgroup "bcrypt" benchBCrypt
     , bgroup "ECC" benchECC
+    , bgroup "P256" benchP256
     , bgroup "DH"
           [ bgroup "FFDH" benchFFDH
           , bgroup "ECDH" benchECDH
           ]
+    , bgroup "ECDSA" benchECDSA
+    , bgroup "EdDSA" benchEdDSA
     , bgroup "F2m" benchF2m
     ]

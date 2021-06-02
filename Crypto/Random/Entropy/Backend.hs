@@ -14,8 +14,8 @@ module Crypto.Random.Entropy.Backend
     ) where
 
 import Foreign.Ptr
+import Data.Proxy
 import Data.Word (Word8)
-import Crypto.Internal.Proxy
 import Crypto.Random.Entropy.Source
 #ifdef SUPPORT_RDRAND
 import Crypto.Random.Entropy.RDRand

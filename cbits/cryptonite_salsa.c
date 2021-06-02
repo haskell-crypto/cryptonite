@@ -120,7 +120,6 @@ void cryptonite_salsa_init_core(cryptonite_salsa_state *st,
                                 uint32_t ivlen, const uint8_t *iv)
 {
 	const uint8_t *constants = (keylen == 32) ? sigma : tau;
-	int i;
 
 	st->d[0] = load_le32_aligned(constants + 0);
 	st->d[5] = load_le32_aligned(constants + 4);

@@ -7,7 +7,6 @@ import           Crypto.Error
 import qualified Crypto.ECC as ECC
 
 import           Data.ByteArray.Encoding
-import           Data.ByteString (ByteString)
 
 import Imports
 
@@ -23,6 +22,19 @@ instance Arbitrary Curve where
         , Curve ECC.Curve_P521R1
         , Curve ECC.Curve_X25519
         , Curve ECC.Curve_X448
+        ]
+
+data CurveArith = forall curve. (ECC.EllipticCurveBasepointArith curve, Show curve) => CurveArith curve
+
+instance Show CurveArith where
+    showsPrec d (CurveArith curve) = showsPrec d curve
+
+instance Arbitrary CurveArith where
+    arbitrary = elements
+        [ CurveArith ECC.Curve_P256R1
+        , CurveArith ECC.Curve_P384R1
+        , CurveArith ECC.Curve_P521R1
+        , CurveArith ECC.Curve_Edwards25519
         ]
 
 data VectorPoint = VectorPoint
@@ -263,13 +275,13 @@ vpEncodedPoint vector = let Right bs = convertFromBase Base16 (vpHex vector) in 
 cryptoError :: CryptoFailable a -> Maybe CryptoError
 cryptoError = onCryptoFailure Just (const Nothing)
 
-doPointDecodeTest (i, vector) =
+doPointDecodeTest i vector =
     case vpCurve vector of
         Curve curve ->
             let prx = Just curve -- using Maybe as Proxy
              in testCase (show i) (vpError vector @=? cryptoError (ECC.decodePoint prx $ vpEncodedPoint vector))
 
-doWeakPointECDHTest (i, vector) =
+doWeakPointECDHTest i vector =
     case vpCurve vector of
         Curve curve -> testCase (show i) $ do
             let prx = Just curve -- using Maybe as Proxy
@@ -278,10 +290,10 @@ doWeakPointECDHTest (i, vector) =
             vpError vector @=? cryptoError (ECC.ecdh prx (ECC.keypairGetPrivate keyPair) public)
 
 tests = testGroup "ECC"
-    [ testGroup "decodePoint" $ map doPointDecodeTest (zip [katZero..] vectorsPoint)
-    , testGroup "ECDH weak points" $ map doWeakPointECDHTest (zip [katZero..] vectorsWeakPoint)
+    [ testGroup "decodePoint" $ zipWith doPointDecodeTest [katZero..] vectorsPoint
+    , testGroup "ECDH weak points" $ zipWith doWeakPointECDHTest [katZero..] vectorsWeakPoint
     , testGroup "property"
-        [ testProperty "decodePoint.encodePoint==id" $ \testDRG (Curve curve) -> do
+        [ testProperty "decodePoint.encodePoint==id" $ \testDRG (Curve curve) ->
             let prx = Just curve -- using Maybe as Proxy
                 keyPair = withTestDRG testDRG $ ECC.curveGenerateKeyPair prx
                 p1 = ECC.keypairGetPublic keyPair
@@ -299,5 +311,33 @@ tests = testGroup "ECC"
                 bobShared'   = ECC.ecdhRaw prx (ECC.keypairGetPrivate bob) (ECC.keypairGetPublic alice)
              in aliceShared == bobShared && aliceShared == CryptoPassed aliceShared'
                                          && bobShared   == CryptoPassed bobShared'
+        , testProperty "decodeScalar.encodeScalar==id" $ \testDRG (CurveArith curve) ->
+            let prx = Just curve -- using Maybe as Proxy
+                s1 = withTestDRG testDRG $ ECC.curveGenerateScalar prx
+                bs = ECC.encodeScalar prx s1 :: ByteString
+                s2 = ECC.decodeScalar prx bs
+             in CryptoPassed s1 == s2
+        , testProperty "scalarFromInteger.scalarToInteger==id" $ \testDRG (CurveArith curve) ->
+            let prx = Just curve -- using Maybe as Proxy
+                s1 = withTestDRG testDRG $ ECC.curveGenerateScalar prx
+                bs = ECC.scalarToInteger prx s1
+                s2 = ECC.scalarFromInteger prx bs
+             in CryptoPassed s1 == s2
+        , localOption (QuickCheckTests 20) $ testProperty "(a + b).P = a.P + b.P" $ \testDRG (CurveArith curve) ->
+            let prx = Just curve -- using Maybe as Proxy
+                (s, a, b) = withTestDRG testDRG $
+                                (,,) <$> ECC.curveGenerateScalar prx
+                                     <*> ECC.curveGenerateScalar prx
+                                     <*> ECC.curveGenerateScalar prx
+                p = ECC.pointBaseSmul prx s
+             in ECC.pointSmul prx (ECC.scalarAdd prx a b) p == ECC.pointAdd prx (ECC.pointSmul prx a p) (ECC.pointSmul prx b p)
+        , localOption (QuickCheckTests 20) $ testProperty "(a * b).P = a.(b.P)" $ \testDRG (CurveArith curve) ->
+            let prx = Just curve -- using Maybe as Proxy
+                (s, a, b) = withTestDRG testDRG $
+                                (,,) <$> ECC.curveGenerateScalar prx
+                                     <*> ECC.curveGenerateScalar prx
+                                     <*> ECC.curveGenerateScalar prx
+                p = ECC.pointBaseSmul prx s
+             in ECC.pointSmul prx (ECC.scalarMul prx a b) p == ECC.pointSmul prx a (ECC.pointSmul prx b p)
         ]
     ]

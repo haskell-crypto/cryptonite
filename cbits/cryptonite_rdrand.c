@@ -91,7 +91,7 @@ static inline int cryptonite_rdrand_step(RDRAND_T *buffer)
 }
 #endif
 
-/* Returns the number of bytes succesfully generated */
+/* Returns the number of bytes successfully generated */
 int cryptonite_get_rand_bytes(uint8_t *buffer, size_t len)
 {
 	RDRAND_T tmp;

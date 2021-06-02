@@ -35,6 +35,7 @@
 #include <string.h>
 #include <cryptonite_aes.h>
 #include <cryptonite_cpu.h>
+#include <aes/gf.h>
 #include <aes/x86ni.h>
 #include <aes/block128.h>
 
@@ -45,6 +46,7 @@
 /* old GCC version doesn't cope with the shuffle parameters, that can take 2 values (0xff and 0xaa)
  * in our case, passed as argument despite being a immediate 8 bits constant anyway.
  * un-factorise aes_128_key_expansion into 2 version that have the shuffle parameter explicitly set */
+TARGET_AESNI
 static __m128i aes_128_key_expansion_ff(__m128i key, __m128i keygened)
 {
 	keygened = _mm_shuffle_epi32(keygened, 0xff);
@@ -54,6 +56,7 @@ static __m128i aes_128_key_expansion_ff(__m128i key, __m128i keygened)
 	return _mm_xor_si128(key, keygened);
 }
 
+TARGET_AESNI
 static __m128i aes_128_key_expansion_aa(__m128i key, __m128i keygened)
 {
 	keygened = _mm_shuffle_epi32(keygened, 0xaa);
@@ -63,6 +66,7 @@ static __m128i aes_128_key_expansion_aa(__m128i key, __m128i keygened)
 	return _mm_xor_si128(key, keygened);
 }
 
+TARGET_AESNI
 void cryptonite_aesni_init(aes_key *key, uint8_t *ikey, uint8_t size)
 {
 	__m128i k[28];
@@ -144,6 +148,7 @@ void cryptonite_aesni_init(aes_key *key, uint8_t *ikey, uint8_t size)
 /* TO OPTIMISE: use pcmulqdq... or some faster code.
  * this is the lamest way of doing it, but i'm out of time.
  * this is basically a copy of gf_mulx in gf.c */
+TARGET_AESNI
 static __m128i gfmulx(__m128i v)
 {
 	uint64_t v_[2] ALIGNMENT(16);
@@ -157,38 +162,113 @@ static __m128i gfmulx(__m128i v)
 	return v;
 }
 
-static void unopt_gf_mul(block128 *a, block128 *b)
+TARGET_AESNI
+static __m128i gfmul_generic(__m128i tag, const table_4bit htable)
 {
-	uint64_t a0, a1, v0, v1;
-	int i, j;
-
-	a0 = a1 = 0;
-	v0 = cpu_to_be64(a->q[0]);
-	v1 = cpu_to_be64(a->q[1]);
-
-	for (i = 0; i < 16; i++)
-		for (j = 0x80; j != 0; j >>= 1) {
-			uint8_t x = b->b[i] & j;
-			a0 ^= x ? v0 : 0;
-			a1 ^= x ? v1 : 0;
-			x = (uint8_t) v1 & 1;
-			v1 = (v1 >> 1) | (v0 << 63);
-			v0 = (v0 >> 1) ^ (x ? (0xe1ULL << 56) : 0);
-		}
-	a->q[0] = cpu_to_be64(a0);
-	a->q[1] = cpu_to_be64(a1);
-}
-
-static __m128i ghash_add(__m128i tag, __m128i h, __m128i m)
-{
-	aes_block _t, _h;
-	tag = _mm_xor_si128(tag, m);
-
+	aes_block _t;
 	_mm_store_si128((__m128i *) &_t, tag);
-	_mm_store_si128((__m128i *) &_h, h);
-	unopt_gf_mul(&_t, &_h);
+	cryptonite_aes_generic_gf_mul(&_t, htable);
 	tag = _mm_load_si128((__m128i *) &_t);
 	return tag;
+}
+
+#ifdef WITH_PCLMUL
+
+__m128i (*gfmul_branch_ptr)(__m128i a, const table_4bit t) = gfmul_generic;
+#define gfmul(a,t) ((*gfmul_branch_ptr)(a,t))
+
+/* See Intel carry-less-multiplication-instruction-in-gcm-mode-paper.pdf
+ *
+ * Adapted from figure 5, with additional byte swapping so that interface
+ * is simimar to cryptonite_aes_generic_gf_mul.
+ */
+TARGET_AESNI_PCLMUL
+static __m128i gfmul_pclmuldq(__m128i a, const table_4bit htable)
+{
+	__m128i b, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8, tmp9;
+	__m128i bswap_mask = _mm_set_epi8(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15);
+
+	a = _mm_shuffle_epi8(a, bswap_mask);
+	b = _mm_loadu_si128((__m128i *) htable);
+
+	tmp3 = _mm_clmulepi64_si128(a, b, 0x00);
+	tmp4 = _mm_clmulepi64_si128(a, b, 0x10);
+	tmp5 = _mm_clmulepi64_si128(a, b, 0x01);
+	tmp6 = _mm_clmulepi64_si128(a, b, 0x11);
+
+	tmp4 = _mm_xor_si128(tmp4, tmp5);
+	tmp5 = _mm_slli_si128(tmp4, 8);
+	tmp4 = _mm_srli_si128(tmp4, 8);
+	tmp3 = _mm_xor_si128(tmp3, tmp5);
+	tmp6 = _mm_xor_si128(tmp6, tmp4);
+
+	tmp7 = _mm_srli_epi32(tmp3, 31);
+	tmp8 = _mm_srli_epi32(tmp6, 31);
+	tmp3 = _mm_slli_epi32(tmp3, 1);
+	tmp6 = _mm_slli_epi32(tmp6, 1);
+
+	tmp9 = _mm_srli_si128(tmp7, 12);
+	tmp8 = _mm_slli_si128(tmp8, 4);
+	tmp7 = _mm_slli_si128(tmp7, 4);
+	tmp3 = _mm_or_si128(tmp3, tmp7);
+	tmp6 = _mm_or_si128(tmp6, tmp8);
+	tmp6 = _mm_or_si128(tmp6, tmp9);
+
+	tmp7 = _mm_slli_epi32(tmp3, 31);
+	tmp8 = _mm_slli_epi32(tmp3, 30);
+	tmp9 = _mm_slli_epi32(tmp3, 25);
+
+	tmp7 = _mm_xor_si128(tmp7, tmp8);
+	tmp7 = _mm_xor_si128(tmp7, tmp9);
+	tmp8 = _mm_srli_si128(tmp7, 4);
+	tmp7 = _mm_slli_si128(tmp7, 12);
+	tmp3 = _mm_xor_si128(tmp3, tmp7);
+
+	tmp2 = _mm_srli_epi32(tmp3, 1);
+	tmp4 = _mm_srli_epi32(tmp3, 2);
+	tmp5 = _mm_srli_epi32(tmp3, 7);
+	tmp2 = _mm_xor_si128(tmp2, tmp4);
+	tmp2 = _mm_xor_si128(tmp2, tmp5);
+	tmp2 = _mm_xor_si128(tmp2, tmp8);
+	tmp3 = _mm_xor_si128(tmp3, tmp2);
+	tmp6 = _mm_xor_si128(tmp6, tmp3);
+
+	return _mm_shuffle_epi8(tmp6, bswap_mask);
+}
+
+void cryptonite_aesni_hinit_pclmul(table_4bit htable, const block128 *h)
+{
+	/* When pclmul is active we don't need to fill the table.  Instead we just
+	 * store H at index 0.  It is written in reverse order, so function
+	 * gfmul_pclmuldq will not byte-swap this value.
+	 */
+	htable->q[0] = bitfn_swap64(h->q[1]);
+	htable->q[1] = bitfn_swap64(h->q[0]);
+}
+
+TARGET_AESNI_PCLMUL
+void cryptonite_aesni_gf_mul_pclmul(block128 *a, const table_4bit htable)
+{
+	__m128i _a, _b;
+	_a = _mm_loadu_si128((__m128i *) a);
+	_b = gfmul_pclmuldq(_a, htable);
+	_mm_storeu_si128((__m128i *) a, _b);
+}
+
+void cryptonite_aesni_init_pclmul(void)
+{
+	gfmul_branch_ptr = gfmul_pclmuldq;
+}
+
+#else
+#define gfmul(a,t) (gfmul_generic(a,t))
+#endif
+
+TARGET_AESNI
+static inline __m128i ghash_add(__m128i tag, const table_4bit htable, __m128i m)
+{
+	tag = _mm_xor_si128(tag, m);
+	return gfmul(tag, htable);
 }
 
 #define PRELOAD_ENC_KEYS128(k) \

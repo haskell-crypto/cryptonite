@@ -40,6 +40,11 @@ extern "C" {
 #define P256_NDIGITS 8
 #define P256_NBYTES 32
 
+// n' such as n * n' = -1 mod (2^32)
+#define P256_MONTGOMERY_FACTOR 0xEE00BC4F
+
+#define P256_LITERAL(lo,hi) (lo), (hi)
+
 typedef int cryptonite_p256_err;
 typedef uint32_t cryptonite_p256_digit;
 typedef int32_t cryptonite_p256_sdigit;

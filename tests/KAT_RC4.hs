@@ -27,8 +27,8 @@ vectors =
     ]
 
 tests = testGroup "RC4"
-    $ map toKatTest $ zip is vectors
-  where toKatTest (i, (key, plainText, cipherText)) =
+    $ zipWith toKatTest is vectors
+  where toKatTest i (key, plainText, cipherText) =
             testCase (show i) (cipherText @=? snd (RC4.combine (RC4.initialize key) plainText))
         is :: [Int]
         is = [1..]

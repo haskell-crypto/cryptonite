@@ -84,28 +84,28 @@ data CurveParameters curve = CurveParameters
     , curveEccG :: Point curve -- ^ base point
     , curveEccN :: Integer     -- ^ order of G
     , curveEccH :: Integer     -- ^ cofactor
-    } deriving (Show,Eq,Data,Typeable)
+    } deriving (Show,Eq,Data)
 
 newtype CurveBinaryParam = CurveBinaryParam Integer
-    deriving (Show,Read,Eq,Data,Typeable)
+    deriving (Show,Read,Eq,Data)
 
 newtype CurvePrimeParam = CurvePrimeParam Integer
-    deriving (Show,Read,Eq,Data,Typeable)
+    deriving (Show,Read,Eq,Data)
 
 data CurveType =
       CurveBinary CurveBinaryParam
     | CurvePrime CurvePrimeParam
-    deriving (Show,Read,Eq,Data,Typeable)
+    deriving (Show,Read,Eq,Data)
 
 -- | ECC Private Number
 newtype Scalar curve = Scalar Integer
-    deriving (Show,Read,Eq,Data,Typeable,NFData)
+    deriving (Show,Read,Eq,Data,NFData)
 
 -- | Define a point on a curve.
 data Point curve =
       Point Integer Integer
     | PointO -- ^ Point at Infinity
-    deriving (Show,Read,Eq,Data,Typeable)
+    deriving (Show,Read,Eq,Data)
 
 instance NFData (Point curve) where
     rnf (Point x y) = x `seq` y `seq` ()

@@ -33,14 +33,14 @@ initialize :: (ByteArrayAccess key, ByteArrayAccess nonce)
            -> nonce  -- ^ the nonce (64 or 96 bits)
            -> State  -- ^ the initial Salsa state
 initialize nbRounds key nonce
-    | not (kLen `elem` [16,32])       = error "Salsa: key length should be 128 or 256 bits"
-    | not (nonceLen `elem` [8,12])    = error "Salsa: nonce length should be 64 or 96 bits"
-    | not (nbRounds `elem` [8,12,20]) = error "Salsa: rounds should be 8, 12 or 20"
+    | kLen `notElem` [16,32]          = error "Salsa: key length should be 128 or 256 bits"
+    | nonceLen `notElem` [8,12]       = error "Salsa: nonce length should be 64 or 96 bits"
+    | nbRounds `notElem` [8,12,20]    = error "Salsa: rounds should be 8, 12 or 20"
     | otherwise = unsafeDoIO $ do
         stPtr <- B.alloc 132 $ \stPtr ->
             B.withByteArray nonce $ \noncePtr  ->
             B.withByteArray key   $ \keyPtr ->
-                ccryptonite_salsa_init stPtr (fromIntegral nbRounds) kLen keyPtr nonceLen noncePtr
+                ccryptonite_salsa_init stPtr nbRounds kLen keyPtr nonceLen noncePtr
         return $ State stPtr
   where kLen     = B.length key
         nonceLen = B.length nonce

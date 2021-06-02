@@ -17,12 +17,11 @@ module Crypto.Hash.SHA1 ( SHA1 (..) ) where
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
 import           Data.Data
-import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 -- | SHA1 cryptographic hash algorithm
 data SHA1 = SHA1
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm SHA1 where
     type HashBlockSize           SHA1 = 64
@@ -35,6 +34,9 @@ instance HashAlgorithm SHA1 where
     hashInternalUpdate        = c_sha1_update
     hashInternalFinalize      = c_sha1_finalize
 
+instance HashAlgorithmPrefix SHA1 where
+    hashInternalFinalizePrefix = c_sha1_finalize_prefix
+
 foreign import ccall unsafe "cryptonite_sha1_init"
     c_sha1_init :: Ptr (Context a)-> IO ()
 
@@ -43,3 +45,6 @@ foreign import ccall "cryptonite_sha1_update"
 
 foreign import ccall unsafe "cryptonite_sha1_finalize"
     c_sha1_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()
+
+foreign import ccall "cryptonite_sha1_finalize_prefix"
+    c_sha1_finalize_prefix :: Ptr (Context a) -> Ptr Word8 -> Word32 -> Word32 -> Ptr (Digest a) -> IO ()

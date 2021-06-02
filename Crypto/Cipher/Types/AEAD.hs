@@ -27,24 +27,24 @@ data AEADModeImpl st = AEADModeImpl
 -- | Authenticated Encryption with Associated Data algorithms
 data AEAD cipher = forall st . AEAD
     { aeadModeImpl :: AEADModeImpl st
-    , aeadState    :: st
+    , aeadState    :: !st
     }
 
 -- | Append some header information to an AEAD context
 aeadAppendHeader :: ByteArrayAccess aad => AEAD cipher -> aad -> AEAD cipher
-aeadAppendHeader (AEAD impl st) aad = AEAD impl $ (aeadImplAppendHeader impl) st aad
+aeadAppendHeader (AEAD impl st) aad = AEAD impl $ aeadImplAppendHeader impl st aad
 
 -- | Encrypt some data and update the AEAD context
 aeadEncrypt :: ByteArray ba => AEAD cipher -> ba -> (ba, AEAD cipher)
-aeadEncrypt (AEAD impl st) ba = second (AEAD impl) $ (aeadImplEncrypt impl) st ba
+aeadEncrypt (AEAD impl st) ba = second (AEAD impl) $ aeadImplEncrypt impl st ba
 
 -- | Decrypt some data and update the AEAD context
 aeadDecrypt :: ByteArray ba => AEAD cipher -> ba -> (ba, AEAD cipher)
-aeadDecrypt (AEAD impl st) ba = second (AEAD impl) $ (aeadImplDecrypt impl) st ba
+aeadDecrypt (AEAD impl st) ba = second (AEAD impl) $ aeadImplDecrypt impl st ba
 
 -- | Finalize the AEAD context and return the authentication tag
 aeadFinalize :: AEAD cipher -> Int -> AuthTag
-aeadFinalize (AEAD impl st) n = (aeadImplFinalize impl) st n
+aeadFinalize (AEAD impl st) = aeadImplFinalize impl st
 
 -- | Simple AEAD encryption
 aeadSimpleEncrypt :: (ByteArrayAccess aad, ByteArray ba)

@@ -16,7 +16,6 @@ module Crypto.PubKey.RSA
     , generateBlinder
     ) where
 
-import Crypto.Internal.Imports
 import Crypto.Random.Types
 import Crypto.Number.ModArithmetic (inverse, inverseCoprimes)
 import Crypto.Number.Generate (generateMax)
@@ -55,7 +54,7 @@ toPositive int
 --
 generateWith :: (Integer, Integer) -- ^ chosen distinct primes p and q
              -> Int                -- ^ size in bytes
-             -> Integer            -- ^ RSA public exponant 'e'
+             -> Integer            -- ^ RSA public exponent 'e'
              -> Maybe (PublicKey, PrivateKey)
 generateWith (p,q) size e =
     case inverse e phi of
@@ -81,7 +80,7 @@ generateWith (p,q) size e =
 -- | generate a pair of (private, public) key of size in bytes.
 generate :: MonadRandom m
          => Int     -- ^ size in bytes
-         -> Integer -- ^ RSA public exponant 'e'
+         -> Integer -- ^ RSA public exponent 'e'
          -> m (PublicKey, PrivateKey)
 generate size e = loop
   where

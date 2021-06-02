@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 -- |
 -- Module      : Crypto.Hash.Algorithms
 -- License     : BSD-style
@@ -10,6 +9,7 @@
 --
 module Crypto.Hash.Algorithms
     ( HashAlgorithm
+    , HashAlgorithmPrefix
     -- * Hash algorithms
     , Blake2s_160(..)
     , Blake2s_224(..)
@@ -42,12 +42,10 @@ module Crypto.Hash.Algorithms
     , SHA3_256(..)
     , SHA3_384(..)
     , SHA3_512(..)
-#if MIN_VERSION_base(4,7,0)
     , SHAKE128(..)
     , SHAKE256(..)
     , Blake2b(..), Blake2bp(..)
     , Blake2s(..), Blake2sp(..)
-#endif
     , Skein256_224(..)
     , Skein256_256(..)
     , Skein512_224(..)
@@ -57,7 +55,7 @@ module Crypto.Hash.Algorithms
     , Whirlpool(..)
     ) where
 
-import           Crypto.Hash.Types (HashAlgorithm)
+import           Crypto.Hash.Types (HashAlgorithm, HashAlgorithmPrefix)
 import           Crypto.Hash.Blake2s
 import           Crypto.Hash.Blake2sp
 import           Crypto.Hash.Blake2b
@@ -78,7 +76,5 @@ import           Crypto.Hash.Tiger
 import           Crypto.Hash.Skein256
 import           Crypto.Hash.Skein512
 import           Crypto.Hash.Whirlpool
-#if MIN_VERSION_base(4,7,0)
 import           Crypto.Hash.SHAKE
 import           Crypto.Hash.Blake2
-#endif

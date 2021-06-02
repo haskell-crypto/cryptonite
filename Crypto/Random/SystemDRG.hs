@@ -14,7 +14,6 @@ module Crypto.Random.SystemDRG
 import           Crypto.Random.Types
 import           Crypto.Random.Entropy.Unsafe
 import           Crypto.Internal.Compat
-import           Crypto.Internal.Imports
 import           Data.ByteArray (ScrubbedBytes, ByteArray)
 import           Data.Memory.PtrMethods as B (memCopy)
 import           Data.Maybe (catMaybes)

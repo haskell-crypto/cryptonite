@@ -12,3 +12,4 @@ benchs/Hash
 *.sublime-workspace
 .cabal-sandbox/
 cabal.sandbox.config
+stack.yaml.lock

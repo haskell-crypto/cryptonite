@@ -1,8 +1,8 @@
 all:
-	cabal build
+	stack build
 
 check: QA
 	./QA
 
 QA: QA.hs
-	ghc --make QA
+	stack ghc --package haskell-src-exts --package ansi-terminal -- --make QA

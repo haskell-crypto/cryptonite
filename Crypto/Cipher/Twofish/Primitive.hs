@@ -8,15 +8,12 @@ module Crypto.Cipher.Twofish.Primitive
     ) where
 
 import           Crypto.Error
-import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray, Bytes)
+import           Crypto.Internal.ByteArray (ByteArray)
 import qualified Crypto.Internal.ByteArray as B
 import           Crypto.Internal.WordArray
-import           Crypto.Internal.Words
 import           Data.Word
-import           Data.Int
 import           Data.Bits
 import           Data.List
-import           Control.Monad
 
 -- Based on the Golang referance implementation
 -- https://github.com/golang/crypto/blob/master/twofish/twofish.go
@@ -206,7 +203,7 @@ sWords key = sWord
 
 data Column = Zero | One | Two | Three deriving (Show, Eq, Enum, Bounded)
 
-genSboxes :: ByteArray ba => KeyPackage ba -> [Word8] -> (Array32, Array32, Array32, Array32)
+genSboxes :: KeyPackage ba -> [Word8] -> (Array32, Array32, Array32, Array32)
 genSboxes keyPackage ws = (mkArray b0', mkArray b1', mkArray b2', mkArray b3')
     where range = [0..255]
           mkArray = array32 256

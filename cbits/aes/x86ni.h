@@ -40,7 +40,16 @@
 #include <cryptonite_aes.h>
 #include <aes/block128.h>
 
+#ifdef WITH_TARGET_ATTRIBUTES
+#define TARGET_AESNI __attribute__((target("ssse3,aes")))
+#define TARGET_AESNI_PCLMUL __attribute__((target("sse4.1,aes,pclmul")))
+#else
+#define TARGET_AESNI
+#define TARGET_AESNI_PCLMUL
+#endif
+
 #ifdef IMPL_DEBUG
+TARGET_AESNI
 static void block128_sse_print(__m128i m)
 {
 	block128 b;
@@ -64,6 +73,8 @@ void cryptonite_aesni_decrypt_cbc128(aes_block *out, aes_key *key, aes_block *_i
 void cryptonite_aesni_decrypt_cbc256(aes_block *out, aes_key *key, aes_block *_iv, aes_block *in, uint32_t blocks);
 void cryptonite_aesni_encrypt_ctr128(uint8_t *out, aes_key *key, aes_block *_iv, uint8_t *in, uint32_t length);
 void cryptonite_aesni_encrypt_ctr256(uint8_t *out, aes_key *key, aes_block *_iv, uint8_t *in, uint32_t length);
+void cryptonite_aesni_encrypt_c32_128(uint8_t *out, aes_key *key, aes_block *_iv, uint8_t *in, uint32_t length);
+void cryptonite_aesni_encrypt_c32_256(uint8_t *out, aes_key *key, aes_block *_iv, uint8_t *in, uint32_t length);
 void cryptonite_aesni_encrypt_xts128(aes_block *out, aes_key *key1, aes_key *key2,
                            aes_block *_tweak, uint32_t spoint, aes_block *in, uint32_t blocks);
 void cryptonite_aesni_encrypt_xts256(aes_block *out, aes_key *key1, aes_key *key2,
@@ -72,7 +83,11 @@ void cryptonite_aesni_encrypt_xts256(aes_block *out, aes_key *key1, aes_key *key
 void cryptonite_aesni_gcm_encrypt128(uint8_t *out, aes_gcm *gcm, aes_key *key, uint8_t *in, uint32_t length);
 void cryptonite_aesni_gcm_encrypt256(uint8_t *out, aes_gcm *gcm, aes_key *key, uint8_t *in, uint32_t length);
 
-void gf_mul_x86ni(block128 *res, block128 *a_, block128 *b_);
+#ifdef WITH_PCLMUL
+void cryptonite_aesni_init_pclmul(void);
+void cryptonite_aesni_hinit_pclmul(table_4bit htable, const block128 *h);
+void cryptonite_aesni_gf_mul_pclmul(block128 *a, const table_4bit htable);
+#endif
 
 #endif
 

@@ -33,7 +33,7 @@ data Params = Params
     { params_p :: Integer
     , params_g :: Integer
     , params_bits :: Int
-    } deriving (Show,Read,Eq,Data,Typeable)
+    } deriving (Show,Read,Eq,Data)
 
 instance NFData Params where
     rnf (Params p g bits) = rnf p `seq` rnf g `seq` bits `seq` ()

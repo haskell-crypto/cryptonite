@@ -17,12 +17,11 @@ module Crypto.Hash.MD4 ( MD4 (..) ) where
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
 import           Data.Data
-import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 -- | MD4 cryptographic hash algorithm
 data MD4 = MD4
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm MD4 where
     type HashBlockSize           MD4 = 64

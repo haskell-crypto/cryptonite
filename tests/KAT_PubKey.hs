@@ -16,6 +16,8 @@ import KAT_PubKey.PSS
 import KAT_PubKey.DSA
 import KAT_PubKey.ECC
 import KAT_PubKey.ECDSA
+import KAT_PubKey.RSA
+import KAT_PubKey.Rabin
 import Utils
 import qualified KAT_PubKey.P256 as P256
 
@@ -23,7 +25,7 @@ data VectorMgf = VectorMgf { seed :: ByteString
                            , dbMask :: ByteString
                            }
 
-doMGFTest (i, vmgf) = testCase (show i) (dbMask vmgf @=? actual)
+doMGFTest i vmgf = testCase (show i) (dbMask vmgf @=? actual)
     where actual = mgf1 SHA1 (seed vmgf) (B.length $ dbMask vmgf)
 
 vectorsMGF =
@@ -34,13 +36,15 @@ vectorsMGF =
     ]
 
 tests = testGroup "PubKey"
-    [ testGroup "MGF1" $ map doMGFTest (zip [katZero..] vectorsMGF)
+    [ testGroup "MGF1" $ zipWith doMGFTest [katZero..] vectorsMGF
+    , rsaTests
     , pssTests
     , oaepTests
     , dsaTests
     , eccTests
     , ecdsaTests
     , P256.tests
+    , rabinTests
     ]
 
 --newKats = [ eccKatTests ]

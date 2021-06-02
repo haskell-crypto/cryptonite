@@ -26,11 +26,12 @@ import           Crypto.PubKey.RSA.Prim
 import           Crypto.PubKey.RSA (generateBlinder)
 import           Crypto.PubKey.MaskGenFunction
 import           Crypto.Hash
+import           Crypto.Number.Basic (numBits)
 import           Data.Bits (xor, shiftR, (.&.))
 import           Data.Word
 
 import           Crypto.Internal.ByteArray (ByteArrayAccess, ByteArray)
-import qualified Crypto.Internal.ByteArray as B (convert)
+import qualified Crypto.Internal.ByteArray as B (convert, eq)
 
 import           Data.ByteString (ByteString)
 import qualified Data.ByteString as B
@@ -69,18 +70,19 @@ signDigestWithSalt :: HashAlgorithm hash
                    -> Digest hash   -- ^ Message digest
                    -> Either Error ByteString
 signDigestWithSalt salt blinder params pk digest
-    | k < hashLen + saltLen + 2 = Left InvalidParameters
-    | otherwise                 = Right $ dp blinder pk em
+    | emLen < hashLen + saltLen + 2 = Left InvalidParameters
+    | otherwise                     = Right $ dp blinder pk em
     where k        = private_size pk
+          emLen    = if emTruncate pubBits then k - 1 else k
           mHash    = B.convert digest
-          dbLen    = k - hashLen - 1
+          dbLen    = emLen - hashLen - 1
           saltLen  = B.length salt
           hashLen  = hashDigestSize (pssHash params)
-          pubBits  = private_size pk * 8 -- to change if public_size is converted in bytes
+          pubBits  = numBits (private_n pk)
           m'       = B.concat [B.replicate 8 0,mHash,salt]
           h        = B.convert $ hashWith (pssHash params) m'
           db       = B.concat [B.replicate (dbLen - saltLen - 1) 0,B.singleton 1,salt]
-          dbmask   = (pssMaskGenAlg params) h dbLen
+          dbmask   = pssMaskGenAlg params h dbLen
           maskedDB = B.pack $ normalizeToKeySize pubBits $ B.zipWith xor db dbmask
           em       = B.concat [maskedDB, h, B.singleton (pssTrailerField params)]
 
@@ -148,7 +150,7 @@ verify :: HashAlgorithm hash
        -> ByteString -- ^ Message to verify
        -> ByteString -- ^ Signature
        -> Bool
-verify params pk m s = verifyDigest params pk mHash s
+verify params pk m = verifyDigest params pk mHash
   where mHash     = hashWith (pssHash params) m
 
 -- | Verify a signature using the PSS Parameters
@@ -161,30 +163,37 @@ verifyDigest :: HashAlgorithm hash
              -> ByteString  -- ^ Signature
              -> Bool
 verifyDigest params pk digest s
-    | public_size pk /= B.length s        = False
+    | B.length s /= k                     = False
+    | B.any (/= 0) pre                    = False
     | B.last em /= pssTrailerField params = False
-    | not (B.all (== 0) ps0)              = False
+    | B.any (/= 0) ps0                    = False
     | b1 /= B.singleton 1                 = False
-    | otherwise                           = h == B.convert h'
+    | otherwise                           = B.eq h h'
         where -- parameters
               hashLen   = hashDigestSize (pssHash params)
               mHash     = B.convert digest
-              dbLen     = public_size pk - hashLen - 1
-              pubBits   = public_size pk * 8 -- to change if public_size is converted in bytes
+              k         = public_size pk
+              emLen     = if emTruncate pubBits then k - 1 else k
+              dbLen     = emLen - hashLen - 1
+              pubBits   = numBits (public_n pk)
               -- unmarshall fields
-              em        = ep pk s
-              maskedDB  = B.take (B.length em - hashLen - 1) em
+              (pre, em) = B.splitAt (k - emLen) (ep pk s) -- drop 0..1 byte
+              maskedDB  = B.take dbLen em
               h         = B.take hashLen $ B.drop (B.length maskedDB) em
-              dbmask    = (pssMaskGenAlg params) h dbLen
+              dbmask    = pssMaskGenAlg params h dbLen
               db        = B.pack $ normalizeToKeySize pubBits $ B.zipWith xor maskedDB dbmask
               (ps0,z)   = B.break (== 1) db
               (b1,salt) = B.splitAt 1 z
               m'        = B.concat [B.replicate 8 0,mHash,salt]
               h'        = hashWith (pssHash params) m'
 
+-- When the modulus has bit length 1 modulo 8 we drop the first byte.
+emTruncate :: Int -> Bool
+emTruncate bits = ((bits-1) .&. 0x7) == 0
+
 normalizeToKeySize :: Int -> [Word8] -> [Word8]
 normalizeToKeySize _    []     = [] -- very unlikely
 normalizeToKeySize bits (x:xs) = x .&. mask : xs
     where mask = if sh > 0 then 0xff `shiftR` (8-sh) else 0xff
-          sh   = ((bits-1) .&. 0x7)
+          sh   = (bits-1) .&. 0x7
 

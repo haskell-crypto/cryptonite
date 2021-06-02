@@ -25,7 +25,7 @@
  */
 
 // This is an implementation of the P256 elliptic curve group. It's written to
-// be portable 32-bit, although it's still constant-time.
+// be portable and still constant-time.
 //
 // WARNING: Implementing these functions in a constant-time manner is far from
 //          obvious. Be careful when touching this code.
@@ -40,14 +40,16 @@
 #include "p256/p256.h"
 
 const cryptonite_p256_int cryptonite_SECP256r1_n =  // curve order
-  {{0xfc632551, 0xf3b9cac2, 0xa7179e84, 0xbce6faad, -1, -1, 0, -1}};
+  {{P256_LITERAL(0xfc632551, 0xf3b9cac2), P256_LITERAL(0xa7179e84, 0xbce6faad),
+    P256_LITERAL(-1, -1), P256_LITERAL(0, -1)}};
 
 const cryptonite_p256_int cryptonite_SECP256r1_p =  // curve field size
-  {{-1, -1, -1, 0, 0, 0, 1, -1 }};
+  {{P256_LITERAL(-1, -1), P256_LITERAL(-1, 0),
+    P256_LITERAL(0, 0), P256_LITERAL(1, -1) }};
 
 const cryptonite_p256_int cryptonite_SECP256r1_b =  // curve b
-  {{0x27d2604b, 0x3bce3c3e, 0xcc53b0f6, 0x651d06b0,
-    0x769886bc, 0xb3ebbd55, 0xaa3a93e7, 0x5ac635d8}};
+  {{P256_LITERAL(0x27d2604b, 0x3bce3c3e), P256_LITERAL(0xcc53b0f6, 0x651d06b0),
+    P256_LITERAL(0x769886bc, 0xb3ebbd55), P256_LITERAL(0xaa3a93e7, 0x5ac635d8)}};
 
 void cryptonite_p256_init(cryptonite_p256_int* a) {
   memset(a, 0, sizeof(*a));
@@ -61,9 +63,10 @@ int cryptonite_p256_get_bit(const cryptonite_p256_int* scalar, int bit) {
 }
 
 int cryptonite_p256_is_zero(const cryptonite_p256_int* a) {
-  int i, result = 0;
+  cryptonite_p256_digit result = 0;
+  int i = 0;
   for (i = 0; i < P256_NDIGITS; ++i) result |= P256_DIGIT(a, i);
-  return !result;
+  return result == 0;
 }
 
 // top, c[] += a[] * b
@@ -167,6 +170,10 @@ void cryptonite_p256_modmul(const cryptonite_p256_int* MOD,
     // top can be any value at this point.
     // Guestimate reducer as top * MOD, since msw of MOD is -1.
     top_reducer = mulAdd(MOD, top, 0, reducer);
+#if P256_BITSPERDIGIT > 32
+    // Correction when msw of MOD has only high 32 bits set
+    top_reducer += mulAdd(MOD, top >> 32, 0, reducer);
+#endif
 
     // Subtract reducer from top | tmp.
     top = subTop(top_reducer, reducer, top, tmp + i);
@@ -229,7 +236,7 @@ static void cryptonite_p256_shr1(const cryptonite_p256_int* a, int highbit, cryp
     P256_DIGIT(b, i) = accu;
   }
   P256_DIGIT(b, i) = (P256_DIGIT(a, i) >> 1) |
-      (highbit << (P256_BITSPERDIGIT - 1));
+      (((cryptonite_p256_sdigit) highbit) << (P256_BITSPERDIGIT - 1));
 }
 
 // Return -1, 0, 1 for a < b, a == b or a > b respectively.
@@ -359,30 +366,163 @@ int cryptonite_p256_is_valid_point(const cryptonite_p256_int* x, const cryptonit
 }
 
 void cryptonite_p256_from_bin(const uint8_t src[P256_NBYTES], cryptonite_p256_int* dst) {
-  int i;
+  int i, n;
   const uint8_t* p = &src[0];
 
   for (i = P256_NDIGITS - 1; i >= 0; --i) {
-    P256_DIGIT(dst, i) =
-        (p[0] << 24) |
-        (p[1] << 16) |
-        (p[2] << 8) |
-        p[3];
-    p += 4;
+    cryptonite_p256_digit dig = 0;
+    n = P256_BITSPERDIGIT;
+    while (n > 0) {
+      n -= 8;
+      dig |= ((cryptonite_p256_digit) *(p++)) << n;
+    }
+    P256_DIGIT(dst, i) = dig;
   }
 }
 
 void cryptonite_p256_to_bin(const cryptonite_p256_int* src, uint8_t dst[P256_NBYTES])
 {
-	int i;
+	int i, n;
 	uint8_t* p = &dst[0];
 
 	for (i = P256_NDIGITS -1; i >= 0; --i) {
 		const cryptonite_p256_digit dig = P256_DIGIT(src, i);
-		p[0] = dig >> 24;
-		p[1] = dig >> 16;
-		p[2] = dig >> 8;
-		p[3] = dig;
-		p += 4;
+		n = P256_BITSPERDIGIT;
+		while (n > 0) {
+			n -= 8;
+			*(p++) = dig >> n;
+		}
 	}
+}
+
+/*
+  "p256e" functions are not part of the original source
+*/
+
+#define MSB_COMPLEMENT(x) (((x) >> (P256_BITSPERDIGIT - 1)) - 1)
+
+// c = a + b mod MOD
+void cryptonite_p256e_modadd(const cryptonite_p256_int* MOD, const cryptonite_p256_int* a, const cryptonite_p256_int* b, cryptonite_p256_int* c) {
+  assert(c);  /* avoid repeated checks inside inlined cryptonite_p256_add */
+  cryptonite_p256_digit top = cryptonite_p256_add(a, b, c);
+  top = subM(MOD, top, P256_DIGITS(c), -1);
+  top = subM(MOD, top, P256_DIGITS(c), MSB_COMPLEMENT(top));
+  addM(MOD, 0, P256_DIGITS(c), top);
+}
+
+// c = a - b mod MOD
+void cryptonite_p256e_modsub(const cryptonite_p256_int* MOD, const cryptonite_p256_int* a, const cryptonite_p256_int* b, cryptonite_p256_int* c) {
+  assert(c); /* avoid repeated checks inside inlined cryptonite_p256_sub */
+  cryptonite_p256_digit top = cryptonite_p256_sub(a, b, c);
+  top = addM(MOD, top, P256_DIGITS(c), ~MSB_COMPLEMENT(top));
+  top = subM(MOD, top, P256_DIGITS(c), MSB_COMPLEMENT(top));
+  addM(MOD, 0, P256_DIGITS(c), top);
+}
+
+#define NTH_DOUBLE_THEN_ADD(i, a, nth, b, out)   \
+    cryptonite_p256e_montmul(a, a, out);         \
+    for (i = 1; i < nth; i++)                    \
+        cryptonite_p256e_montmul(out, out, out); \
+    cryptonite_p256e_montmul(out, b, out);
+
+const cryptonite_p256_int cryptonite_SECP256r1_r2 = // r^2 mod n
+  {{P256_LITERAL(0xBE79EEA2, 0x83244C95), P256_LITERAL(0x49BD6FA6, 0x4699799C),
+    P256_LITERAL(0x2B6BEC59, 0x2845B239), P256_LITERAL(0xF3D95620, 0x66E12D94)}};
+
+const cryptonite_p256_int cryptonite_SECP256r1_one = {{1}};
+
+// Montgomery multiplication, i.e. c = ab/r mod n with r = 2^256.
+// Implementation is adapted from 'sc_montmul' in libdecaf.
+static void cryptonite_p256e_montmul(const cryptonite_p256_int* a, const cryptonite_p256_int* b, cryptonite_p256_int* c) {
+  int i, j, borrow;
+  cryptonite_p256_digit accum[P256_NDIGITS+1] = {0};
+  cryptonite_p256_digit hi_carry = 0;
+
+  for (i=0; i<P256_NDIGITS; i++) {
+    cryptonite_p256_digit mand = P256_DIGIT(a, i);
+    const cryptonite_p256_digit *mier = P256_DIGITS(b);
+
+    cryptonite_p256_ddigit chain = 0;
+    for (j=0; j<P256_NDIGITS; j++) {
+      chain += ((cryptonite_p256_ddigit)mand)*mier[j] + accum[j];
+      accum[j] = chain;
+      chain >>= P256_BITSPERDIGIT;
+    }
+    accum[j] = chain;
+
+    mand = accum[0] * P256_MONTGOMERY_FACTOR;
+    chain = 0;
+    mier = P256_DIGITS(&cryptonite_SECP256r1_n);
+    for (j=0; j<P256_NDIGITS; j++) {
+      chain += (cryptonite_p256_ddigit)mand*mier[j] + accum[j];
+      if (j) accum[j-1] = chain;
+      chain >>= P256_BITSPERDIGIT;
+    }
+    chain += accum[j];
+    chain += hi_carry;
+    accum[j-1] = chain;
+    hi_carry = chain >> P256_BITSPERDIGIT;
+  }
+
+  memcpy(P256_DIGITS(c), accum, sizeof(*c));
+  borrow = cryptonite_p256_sub(c, &cryptonite_SECP256r1_n, c);
+  addM(&cryptonite_SECP256r1_n, 0, P256_DIGITS(c), borrow + hi_carry);
+}
+
+// b = 1/a mod n, using Fermat's little theorem.
+void cryptonite_p256e_scalar_invert(const cryptonite_p256_int* a, cryptonite_p256_int* b) {
+  cryptonite_p256_int _1, _10, _11, _101, _111, _1010, _1111;
+  cryptonite_p256_int _10101, _101010, _101111, x6, x8, x16, x32;
+  int i;
+
+  // Montgomerize
+  cryptonite_p256e_montmul(a, &cryptonite_SECP256r1_r2, &_1);
+
+  // P-256 (secp256r1) Scalar Inversion
+  // <https://briansmith.org/ecc-inversion-addition-chains-01>
+  cryptonite_p256e_montmul(&_1     , &_1     , &_10);
+  cryptonite_p256e_montmul(&_10    , &_1     , &_11);
+  cryptonite_p256e_montmul(&_10    , &_11    , &_101);
+  cryptonite_p256e_montmul(&_10    , &_101   , &_111);
+  cryptonite_p256e_montmul(&_101   , &_101   , &_1010);
+  cryptonite_p256e_montmul(&_101   , &_1010  , &_1111);
+  NTH_DOUBLE_THEN_ADD(i, &_1010,  1   , &_1     , &_10101);
+  cryptonite_p256e_montmul(&_10101 , &_10101 , &_101010);
+  cryptonite_p256e_montmul(&_101   , &_101010, &_101111);
+  cryptonite_p256e_montmul(&_10101 , &_101010, &x6);
+  NTH_DOUBLE_THEN_ADD(i, &x6   ,  2   , &_11    , &x8);
+  NTH_DOUBLE_THEN_ADD(i, &x8   ,  8   , &x8     , &x16);
+  NTH_DOUBLE_THEN_ADD(i, &x16  , 16   , &x16    , &x32);
+
+  NTH_DOUBLE_THEN_ADD(i, &x32  , 32+32, &x32    , b);
+  NTH_DOUBLE_THEN_ADD(i, b     ,    32, &x32    , b);
+  NTH_DOUBLE_THEN_ADD(i, b     ,     6, &_101111, b);
+  NTH_DOUBLE_THEN_ADD(i, b     , 2 + 3, &_111   , b);
+  NTH_DOUBLE_THEN_ADD(i, b     , 2 + 2, &_11    , b);
+  NTH_DOUBLE_THEN_ADD(i, b     , 1 + 4, &_1111  , b);
+  NTH_DOUBLE_THEN_ADD(i, b     ,     5, &_10101 , b);
+  NTH_DOUBLE_THEN_ADD(i, b     , 1 + 3, &_101   , b);
+  NTH_DOUBLE_THEN_ADD(i, b     ,     3, &_101   , b);
+  NTH_DOUBLE_THEN_ADD(i, b     ,     3, &_101   , b);
+  NTH_DOUBLE_THEN_ADD(i, b     , 2 + 3, &_111   , b);
+  NTH_DOUBLE_THEN_ADD(i, b     , 3 + 6, &_101111, b);
+  NTH_DOUBLE_THEN_ADD(i, b     , 2 + 4, &_1111  , b);
+  NTH_DOUBLE_THEN_ADD(i, b     , 1 + 1, &_1     , b);
+  NTH_DOUBLE_THEN_ADD(i, b     , 4 + 1, &_1     , b);
+  NTH_DOUBLE_THEN_ADD(i, b     , 2 + 4, &_1111  , b);
+  NTH_DOUBLE_THEN_ADD(i, b     , 2 + 3, &_111   , b);
+  NTH_DOUBLE_THEN_ADD(i, b     , 1 + 3, &_111   , b);
+  NTH_DOUBLE_THEN_ADD(i, b     , 2 + 3, &_111   , b);
+  NTH_DOUBLE_THEN_ADD(i, b     , 2 + 3, &_101   , b);
+  NTH_DOUBLE_THEN_ADD(i, b     , 1 + 2, &_11    , b);
+  NTH_DOUBLE_THEN_ADD(i, b     , 4 + 6, &_101111, b);
+  NTH_DOUBLE_THEN_ADD(i, b     ,     2, &_11    , b);
+  NTH_DOUBLE_THEN_ADD(i, b     , 3 + 2, &_11    , b);
+  NTH_DOUBLE_THEN_ADD(i, b     , 3 + 2, &_11    , b);
+  NTH_DOUBLE_THEN_ADD(i, b     , 2 + 1, &_1     , b);
+  NTH_DOUBLE_THEN_ADD(i, b     , 2 + 5, &_10101 , b);
+  NTH_DOUBLE_THEN_ADD(i, b     , 2 + 4, &_1111  , b);
+
+  // Demontgomerize
+  cryptonite_p256e_montmul(b, &cryptonite_SECP256r1_one, b);
 }

@@ -2,10 +2,7 @@
 module KAT_HKDF (tests) where
 
 import qualified Crypto.KDF.HKDF as HKDF
-import Crypto.Hash (MD5(..), SHA1(..), SHA256(..)
-                   , Keccak_224(..), Keccak_256(..), Keccak_384(..), Keccak_512(..)
-                   , SHA3_224(..), SHA3_256(..), SHA3_384(..), SHA3_512(..)
-                   , HashAlgorithm, digestFromByteString)
+import Crypto.Hash (SHA256(..), HashAlgorithm)
 import qualified Data.ByteString as B
 
 import Imports

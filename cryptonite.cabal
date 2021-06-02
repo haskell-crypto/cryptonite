@@ -1,5 +1,5 @@
 Name:                cryptonite
-version:             0.25
+version:             0.29
 Synopsis:            Cryptography Primitives sink
 Description:
     A repository of cryptographic primitives.
@@ -8,18 +8,18 @@ Description:
     .
     * Hash: SHA1, SHA2, SHA3, SHAKE, MD2, MD4, MD5, Keccak, Skein, Ripemd, Tiger, Whirlpool, Blake2
     .
-    * MAC: HMAC, Poly1305
+    * MAC: HMAC, KMAC, Poly1305
     .
     * Asymmetric crypto: DSA, RSA, DH, ECDH, ECDSA, ECC, Curve25519, Curve448, Ed25519, Ed448
     .
-    * Key Derivation Function: PBKDF2, Scrypt, HKDF, Argon2
+    * Key Derivation Function: PBKDF2, Scrypt, HKDF, Argon2, BCrypt, BCryptPBKDF
     .
     * Cryptographic Random generation: System Entropy, Deterministic Random Generator
     .
     * Data related: Anti-Forensic Information Splitter (AFIS)
     .
     If anything cryptographic related is missing from here, submit
-    a pull request to have it added. This package strive to be a
+    a pull request to have it added. This package strives to be a
     cryptographic kitchen sink that provides cryptography for everyone.
     .
     Evaluate the security related to your requirements before using.
@@ -35,8 +35,8 @@ Stability:           experimental
 Build-Type:          Simple
 Homepage:            https://github.com/haskell-crypto/cryptonite
 Bug-reports:         https://github.com/haskell-crypto/cryptonite/issues
-Cabal-Version:       >=1.18
-tested-with:         GHC==8.0.2, GHC==7.10.3, GHC==7.8.4
+Cabal-Version:       1.18
+tested-with:         GHC==8.8.2, GHC==8.6.5, GHC==8.4.4, GHC==8.2.2, GHC==8.0.2
 extra-doc-files:     README.md CHANGELOG.md
 extra-source-files:  cbits/*.h
                      cbits/aes/*.h
@@ -50,12 +50,14 @@ extra-source-files:  cbits/*.h
                      cbits/decaf/p448/*.h
                      cbits/decaf/ed448goldilocks/decaf_tables.c
                      cbits/decaf/ed448goldilocks/decaf.c
-                     cbits/p256/*.h
+                     cbits/include32/p256/*.h
+                     cbits/include64/p256/*.h
                      cbits/blake2/ref/*.h
                      cbits/blake2/sse/*.h
                      cbits/argon2/*.h
                      cbits/argon2/*.c
                      cbits/aes/x86ni_impl.c
+                     cbits/cryptonite_hash_prefix.c
                      tests/*.hs
 
 source-repository head
@@ -102,8 +104,14 @@ Flag check_alignment
   Default:           False
   Manual:            True
 
+Flag use_target_attributes
+  Description:       use GCC / clang function attributes instead of global target options.
+  Default:           True
+  Manual:            True
+
 Library
   Exposed-modules:   Crypto.Cipher.AES
+                     Crypto.Cipher.AESGCMSIV
                      Crypto.Cipher.Blowfish
                      Crypto.Cipher.CAST5
                      Crypto.Cipher.Camellia
@@ -126,17 +134,22 @@ Library
                      Crypto.MAC.CMAC
                      Crypto.MAC.Poly1305
                      Crypto.MAC.HMAC
+                     Crypto.MAC.KMAC
                      Crypto.Number.Basic
                      Crypto.Number.F2m
                      Crypto.Number.Generate
                      Crypto.Number.ModArithmetic
+                     Crypto.Number.Nat
                      Crypto.Number.Prime
                      Crypto.Number.Serialize
+                     Crypto.Number.Serialize.LE
                      Crypto.Number.Serialize.Internal
+                     Crypto.Number.Serialize.Internal.LE
                      Crypto.KDF.Argon2
                      Crypto.KDF.PBKDF2
                      Crypto.KDF.Scrypt
                      Crypto.KDF.BCrypt
+                     Crypto.KDF.BCryptPBKDF
                      Crypto.KDF.HKDF
                      Crypto.Hash
                      Crypto.Hash.IO
@@ -153,20 +166,28 @@ Library
                      Crypto.PubKey.ECC.ECDSA
                      Crypto.PubKey.ECC.P256
                      Crypto.PubKey.ECC.Types
+                     Crypto.PubKey.ECDSA
                      Crypto.PubKey.ECIES
                      Crypto.PubKey.Ed25519
                      Crypto.PubKey.Ed448
+                     Crypto.PubKey.EdDSA
                      Crypto.PubKey.RSA
                      Crypto.PubKey.RSA.PKCS15
                      Crypto.PubKey.RSA.Prim
                      Crypto.PubKey.RSA.PSS
                      Crypto.PubKey.RSA.OAEP
                      Crypto.PubKey.RSA.Types
+                     Crypto.PubKey.Rabin.OAEP
+                     Crypto.PubKey.Rabin.Basic
+                     Crypto.PubKey.Rabin.Modified
+                     Crypto.PubKey.Rabin.RW
+                     Crypto.PubKey.Rabin.Types
                      Crypto.Random
                      Crypto.Random.Types
                      Crypto.Random.Entropy
                      Crypto.Random.EntropyPool
                      Crypto.Random.Entropy.Unsafe
+                     Crypto.System.CPU
                      Crypto.Tutorial
   Other-modules:     Crypto.Cipher.AES.Primitive
                      Crypto.Cipher.Blowfish.Box
@@ -184,6 +205,7 @@ Library
                      Crypto.Error.Types
                      Crypto.Number.Compat
                      Crypto.Hash.Types
+                     Crypto.Hash.Blake2
                      Crypto.Hash.Blake2s
                      Crypto.Hash.Blake2sp
                      Crypto.Hash.Blake2b
@@ -195,6 +217,7 @@ Library
                      Crypto.Hash.SHA512
                      Crypto.Hash.SHA512t
                      Crypto.Hash.SHA3
+                     Crypto.Hash.SHAKE
                      Crypto.Hash.Keccak
                      Crypto.Hash.MD2
                      Crypto.Hash.MD4
@@ -213,24 +236,25 @@ Library
                      Crypto.PubKey.ElGamal
                      Crypto.ECC.Simple.Types
                      Crypto.ECC.Simple.Prim
-                     Crypto.Internal.Proxy
+                     Crypto.Internal.Builder
                      Crypto.Internal.ByteArray
                      Crypto.Internal.Compat
                      Crypto.Internal.CompatPrim
                      Crypto.Internal.DeepSeq
                      Crypto.Internal.Imports
+                     Crypto.Internal.Nat
                      Crypto.Internal.Words
                      Crypto.Internal.WordArray
-  if impl(ghc >= 7.8)
-    Other-modules:   Crypto.Hash.SHAKE
-                     Crypto.Hash.Blake2
-                     Crypto.Internal.Nat
-  Build-depends:     base >= 4.6 && < 5
-                   , bytestring
-                   , memory >= 0.14.14
+  if impl(ghc < 8.0)
+    Buildable: False
+  else
+    Build-depends:   base
+
+  Build-depends:     bytestring
+                   , memory >= 0.14.18
                    , basement >= 0.0.6
                    , ghc-prim
-  ghc-options:       -Wall -fwarn-tabs -optc-O3 -fno-warn-unused-imports
+  ghc-options:       -Wall -fwarn-tabs -optc-O3
   if os(linux)
     extra-libraries: pthread
   default-language:  Haskell2010
@@ -269,7 +293,12 @@ Library
                    , cbits/decaf/include
                    , cbits/decaf/p448
 
-  if arch(x86_64)
+  if arch(x86_64) || arch(aarch64)
+    include-dirs:      cbits/include64
+  else
+    include-dirs:      cbits/include32
+
+  if arch(x86_64) || arch(aarch64)
     C-sources:         cbits/decaf/p448/arch_ref64/f_impl.c
                      , cbits/decaf/p448/f_generic.c
                      , cbits/decaf/p448/f_arithmetic.c
@@ -292,7 +321,7 @@ Library
     include-dirs:      cbits/decaf/include/arch_32
                      , cbits/decaf/p448/arch_32
 
-  if arch(x86_64)
+  if arch(x86_64) || arch(aarch64)
     C-sources: cbits/curve25519/curve25519-donna-c64.c
   else
     C-sources: cbits/curve25519/curve25519-donna.c
@@ -315,9 +344,13 @@ Library
     c-sources:      cbits/cryptonite_rdrand.c
 
   if flag(support_aesni) && (os(linux) || os(freebsd) || os(osx)) && (arch(i386) || arch(x86_64))
-    CC-options:     -mssse3 -maes -DWITH_AESNI
+    CC-options:     -DWITH_AESNI
+    if !flag(use_target_attributes)
+      CC-options:     -mssse3 -maes
     if flag(support_pclmuldq)
-       CC-options:  -msse4.1 -mpclmul -DWITH_PCLMUL
+      CC-options:   -DWITH_PCLMUL
+      if !flag(use_target_attributes)
+        CC-options:     -msse4.1 -mpclmul
     C-sources:       cbits/aes/x86ni.c
                    , cbits/aes/generic.c
                    , cbits/aes/gf.c
@@ -342,6 +375,8 @@ Library
 
   if arch(x86_64) || flag(support_sse)
     CPP-options:    -DSUPPORT_SSE
+    if arch(i386)
+      CC-options:   -msse2
 
   C-sources:      cbits/argon2/argon2.c
   include-dirs:   cbits/argon2
@@ -362,6 +397,8 @@ Library
     Build-depends:   deepseq
   if flag(check_alignment)
     cc-options:     -DWITH_ASSERT_ALIGNMENT
+  if flag(use_target_attributes)
+    cc-options:     -DWITH_TARGET_ATTRIBUTES
 
 Test-Suite test-cryptonite
   type:              exitcode-stdio-1.0
@@ -370,8 +407,10 @@ Test-Suite test-cryptonite
   Other-modules:     BlockCipher
                      ChaCha
                      BCrypt
+                     BCryptPBKDF
                      ECC
                      ECC.Edwards25519
+                     ECDSA
                      Hash
                      Imports
                      KAT_AES.KATCBC
@@ -381,6 +420,7 @@ Test-Suite test-cryptonite
                      KAT_AES.KATOCB3
                      KAT_AES.KATXTS
                      KAT_AES
+                     KAT_AESGCMSIV
                      KAT_AFIS
                      KAT_Argon2
                      KAT_Blowfish
@@ -391,9 +431,11 @@ Test-Suite test-cryptonite
                      KAT_DES
                      KAT_Ed25519
                      KAT_Ed448
+                     KAT_EdDSA
                      KAT_CMAC
                      KAT_HKDF
                      KAT_HMAC
+                     KAT_KMAC
                      KAT_MiyaguchiPreneel
                      KAT_PBKDF2
                      KAT_OTP
@@ -403,6 +445,8 @@ Test-Suite test-cryptonite
                      KAT_PubKey.OAEP
                      KAT_PubKey.PSS
                      KAT_PubKey.P256
+                     KAT_PubKey.RSA
+                     KAT_PubKey.Rabin
                      KAT_PubKey
                      KAT_RC4
                      KAT_Scrypt
@@ -416,7 +460,7 @@ Test-Suite test-cryptonite
                      Salsa
                      Utils
                      XSalsa
-  Build-Depends:     base >= 3 && < 5
+  Build-Depends:     base >= 0 && < 10
                    , bytestring
                    , memory
                    , tasty
@@ -424,7 +468,7 @@ Test-Suite test-cryptonite
                    , tasty-hunit
                    , tasty-kat
                    , cryptonite
-  ghc-options:       -Wall -fno-warn-orphans -fno-warn-missing-signatures -fno-warn-unused-imports -rtsopts
+  ghc-options:       -Wall -fno-warn-orphans -fno-warn-missing-signatures -rtsopts
   default-language:  Haskell2010
 
 Benchmark bench-cryptonite
@@ -432,7 +476,7 @@ Benchmark bench-cryptonite
   hs-source-dirs:    benchs
   Main-is:           Bench.hs
   Other-modules:     Number.F2m
-  Build-Depends:     base >= 3 && < 5
+  Build-Depends:     base
                    , bytestring
                    , deepseq
                    , memory

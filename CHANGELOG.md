@@ -1,3 +1,40 @@
+## 0.28
+
+* Add hash constant time capability
+* Prevent possible overflow during hashing by hashing in 4GB chunks
+
+## 0.27
+
+* Optimise AES GCM and CCM
+* Optimise P256R1 implementation
+* Various AES-NI building improvements
+* Add better ECDSA support
+* Add XSalsa derive
+* Implement square roots for ECC binary curve
+* Various tests and benchmarks
+
+## 0.26
+
+* Add Rabin cryptosystem (and variants)
+* Add bcrypt_pbkdf key derivation function
+* Optimize Blowfish implementation
+* Add KMAC (Keccak Message Authentication Code)
+* Add ECDSA sign/verify digest APIs
+* Hash algorithms with runtime output length
+* Update blake2 to latest upstream version
+* RSA-PSS with arbitrary key size
+* SHAKE with output length not divisible by 8
+* Add Read and Data instances for Digest type
+* Improve P256 scalar primitives
+* Fix hash truncation bug in DSA
+* Fix cost parsing for bcrypt
+* Fix ECC failures on arm64
+* Correction to PKCS#1 v1.5 padding
+* Use powModSecInteger when available
+* Drop GHC 7.8 and GHC 7.10 support, refer to pkg-guidelines
+* Optimise GCM mode
+* Add little endian serialization of integer
+
 ## 0.25
 
 * Improve digest binary conversion efficiency

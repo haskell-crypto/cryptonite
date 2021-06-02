@@ -8,10 +8,13 @@
 -- Crypto hash types definitions
 --
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.Types
     ( HashAlgorithm(..)
+    , HashAlgorithmPrefix(..)
     , Context(..)
     , Digest(..)
     ) where
@@ -19,10 +22,15 @@ module Crypto.Hash.Types
 import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArrayAccess, Bytes)
 import qualified Crypto.Internal.ByteArray as B
+import           Control.Monad.ST
+import           Data.Char (digitToInt, isHexDigit)
 import           Foreign.Ptr (Ptr)
-import           Basement.Block (Block)
+import           Basement.Block (Block, unsafeFreeze)
+import           Basement.Block.Mutable (MutableBlock, new, unsafeWrite)
 import           Basement.NormalForm (deepseq)
+import           Basement.Types.OffsetSize (CountOf(..), Offset(..))
 import           GHC.TypeLits (Nat)
+import           Data.Data (Data)
 
 -- | Class representing hashing algorithms.
 --
@@ -52,12 +60,28 @@ class HashAlgorithm a where
     -- | Finalize the context and set the digest raw memory to the right value
     hashInternalFinalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()
 
+-- | Hashing algorithms with a constant-time implementation.
+class HashAlgorithm a => HashAlgorithmPrefix a where
+    -- | Update the context with the first N bytes of a buffer and finalize this
+    -- context.  The code path executed is independent from N and depends only
+    -- on the complete buffer length.
+    hashInternalFinalizePrefix :: Ptr (Context a)
+                               -> Ptr Word8 -> Word32
+                               -> Word32
+                               -> Ptr (Digest a)
+                               -> IO ()
+
 {-
 hashContextGetAlgorithm :: HashAlgorithm a => Context a -> a
 hashContextGetAlgorithm = undefined
 -}
 
 -- | Represent a context for a given hash algorithm.
+--
+-- This type is an instance of 'ByteArrayAccess' for debugging purpose. Internal
+-- layout is architecture dependent, may contain uninitialized data fragments,
+-- and change in future versions.  The bytearray should not be used as input to
+-- cryptographic algorithms.
 newtype Context a = Context Bytes
     deriving (ByteArrayAccess,NFData)
 
@@ -71,7 +95,7 @@ newtype Context a = Context Bytes
 -- Creating a digest from a bytearray is also possible with function
 -- 'Crypto.Hash.digestFromByteString'.
 newtype Digest a = Digest (Block Word8)
-    deriving (Eq,Ord,ByteArrayAccess)
+    deriving (Eq,Ord,ByteArrayAccess, Data)
 
 instance NFData (Digest a) where
     rnf (Digest u) = u `deepseq` ()
@@ -79,3 +103,21 @@ instance NFData (Digest a) where
 instance Show (Digest a) where
     show (Digest bs) = map (toEnum . fromIntegral)
                      $ B.unpack (B.convertToBase B.Base16 bs :: Bytes)
+
+instance HashAlgorithm a => Read (Digest a) where
+    readsPrec _ str = runST $ do mut <- new (CountOf len)
+                                 loop mut len str
+      where
+        len = hashDigestSize (undefined :: a)
+
+        loop :: MutableBlock Word8 s -> Int -> String -> ST s [(Digest a, String)]
+        loop mut 0   cs          = (\b -> [(Digest b, cs)]) <$> unsafeFreeze mut
+        loop _   _   []          = return []
+        loop _   _   [_]         = return []
+        loop mut n   (c:(d:ds))
+            | not (isHexDigit c) = return []
+            | not (isHexDigit d) = return []
+            | otherwise          = do
+                let w8 = fromIntegral $ digitToInt c * 16 + digitToInt d
+                unsafeWrite mut (Offset $ len - n) w8
+                loop mut (n - 1) ds

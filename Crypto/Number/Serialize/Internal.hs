@@ -23,7 +23,7 @@ import           Foreign.Storable
 
 -- | Fill a pointer with the big endian binary representation of an integer
 --
--- If the room available @ptrSz is less than the number of bytes needed,
+-- If the room available @ptrSz@ is less than the number of bytes needed,
 -- 0 is returned. Likewise if a parameter is invalid, 0 is returned.
 --
 -- Returns the number of bytes written
@@ -69,7 +69,7 @@ os2ip ptr ptrSz
     | otherwise  = gmpImportInteger ptrSz ptr `onGmpUnsupported` loop 0 0 ptr
   where
     loop :: Integer -> Int -> Ptr Word8 -> IO Integer
-    loop !acc i p
+    loop !acc i !p
         | i == ptrSz = return acc
         | otherwise  = do
             w <- peekByteOff p i :: IO Word8

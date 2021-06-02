@@ -42,9 +42,8 @@ module Crypto.Hash.Blake2
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
 import           Data.Data
-import           Data.Typeable
 import           Data.Word (Word8, Word32)
-import           GHC.TypeLits (Nat, KnownNat, natVal)
+import           GHC.TypeLits (Nat, KnownNat)
 import           Crypto.Internal.Nat
 
 -- | Fast and secure alternative to SHA1 and HMAC-SHA1
@@ -58,7 +57,7 @@ import           Crypto.Internal.Nat
 -- * Blake2s 256
 --
 data Blake2s (bitlen :: Nat) = Blake2s
-  deriving (Show, Typeable)
+    deriving (Show,Data)
 
 instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost bitlen 256)
       => HashAlgorithm (Blake2s bitlen)
@@ -93,7 +92,7 @@ foreign import ccall unsafe "cryptonite_blake2s_finalize"
 -- * Blake2b 512
 --
 data Blake2b (bitlen :: Nat) = Blake2b
-  deriving (Show, Typeable)
+    deriving (Show,Data)
 
 instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost bitlen 512)
       => HashAlgorithm (Blake2b bitlen)
@@ -116,7 +115,7 @@ foreign import ccall unsafe "cryptonite_blake2b_finalize"
     c_blake2b_finalize :: Ptr (Context a) -> Word32 -> Ptr (Digest a) -> IO ()
 
 data Blake2sp (bitlen :: Nat) = Blake2sp
-  deriving (Show, Typeable)
+    deriving (Show,Data)
 
 instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost bitlen 256)
       => HashAlgorithm (Blake2sp bitlen)
@@ -139,7 +138,7 @@ foreign import ccall unsafe "cryptonite_blake2sp_finalize"
     c_blake2sp_finalize :: Ptr (Context a) -> Word32 -> Ptr (Digest a) -> IO ()
 
 data Blake2bp (bitlen :: Nat) = Blake2bp
-  deriving (Show, Typeable)
+    deriving (Show,Data)
 
 instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost bitlen 512)
       => HashAlgorithm (Blake2bp bitlen)

@@ -54,6 +54,7 @@ data Prop =
 data HashCustom =
       HashSimple Bits -- digest size in bits
                  Bytes -- block length in bytes
+                 Bool -- has HashAlgorithmPrefix instance?
     | HashMulti [Prop] [(Bits, Bytes)] -- list of (digest output size in *bits*, block size in bytes)
 
 hashModules =
@@ -62,22 +63,22 @@ hashModules =
     , GenHashModule "Blake2sp"  "blake2.h"    "blake2sp"  1752 (HashMulti [] [(224,64), (256,64)])
     , GenHashModule "Blake2b"   "blake2.h"    "blake2b"   248  (HashMulti [] [(160, 128), (224, 128), (256, 128), (384, 128), (512,128)])
     , GenHashModule "Blake2bp"  "blake2.h"    "blake2bp"  1768 (HashMulti [] [(512,128)])
-    , GenHashModule "MD2"       "md2.h"       "md2"       96   (HashSimple 128 16)
-    , GenHashModule "MD4"       "md4.h"       "md4"       96   (HashSimple 128 64)
-    , GenHashModule "MD5"       "md5.h"       "md5"       96   (HashSimple 128 64)
-    , GenHashModule "SHA1"      "sha1.h"      "sha1"      96   (HashSimple 160 64)
-    , GenHashModule "SHA224"    "sha256.h"    "sha224"    192  (HashSimple 224 64)
-    , GenHashModule "SHA256"    "sha256.h"    "sha256"    192  (HashSimple 256 64)
-    , GenHashModule "SHA384"    "sha512.h"    "sha384"    256  (HashSimple 384 128)
-    , GenHashModule "SHA512"    "sha512.h"    "sha512"    256  (HashSimple 512 128)
+    , GenHashModule "MD2"       "md2.h"       "md2"       96   (HashSimple 128 16 False)
+    , GenHashModule "MD4"       "md4.h"       "md4"       96   (HashSimple 128 64 False)
+    , GenHashModule "MD5"       "md5.h"       "md5"       96   (HashSimple 128 64 True)
+    , GenHashModule "SHA1"      "sha1.h"      "sha1"      96   (HashSimple 160 64 True)
+    , GenHashModule "SHA224"    "sha256.h"    "sha224"    192  (HashSimple 224 64 True)
+    , GenHashModule "SHA256"    "sha256.h"    "sha256"    192  (HashSimple 256 64 True)
+    , GenHashModule "SHA384"    "sha512.h"    "sha384"    256  (HashSimple 384 128 True)
+    , GenHashModule "SHA512"    "sha512.h"    "sha512"    256  (HashSimple 512 128 True)
     , GenHashModule "SHA512t"   "sha512.h"    "sha512t"   256  (HashMulti [] [(224,128),(256,128)])
     , GenHashModule "Keccak"    "keccak.h"    "keccak"    352  (HashMulti [VarCtx sha3CtxSize] [(224,144),(256,136),(384,104),(512,72)])
     , GenHashModule "SHA3"      "sha3.h"      "sha3"      352  (HashMulti [VarCtx sha3CtxSize] [(224,144),(256,136),(384,104),(512,72)])
-    , GenHashModule "RIPEMD160" "ripemd.h"    "ripemd160" 128  (HashSimple 160 64)
+    , GenHashModule "RIPEMD160" "ripemd.h"    "ripemd160" 128  (HashSimple 160 64 False)
     , GenHashModule "Skein256"  "skein256.h"  "skein256"  96   (HashMulti [] [(224,32),(256,32)])
     , GenHashModule "Skein512"  "skein512.h"  "skein512"  160  (HashMulti [] [(224,64),(256,64),(384,64),(512,64)])
-    , GenHashModule "Tiger"     "tiger.h"     "tiger"     96   (HashSimple 192 64)
-    , GenHashModule "Whirlpool" "whirlpool.h" "whirlpool" 168  (HashSimple 512 64)
+    , GenHashModule "Tiger"     "tiger.h"     "tiger"     96   (HashSimple 192 64 False)
+    , GenHashModule "Whirlpool" "whirlpool.h" "whirlpool" 168  (HashSimple 512 64 False)
     ]
 
 sha3CtxSize :: Bits -> Bytes
@@ -105,13 +106,16 @@ renderHashModules genOpts = do
 
         let (tpl, addVars, multiVars) =
                 case ghmCustomizable ghm of
-                    HashSimple digestSize blockLength ->
+                    HashSimple digestSize blockLength hasPrefixInstance ->
                         (hashTemplate,
                             [ ("DIGEST_SIZE_BITS" , showBits digestSize)
                             , ("DIGEST_SIZE_BYTES", showBytes digestSize)
                             , ("BLOCK_SIZE_BYTES" , showBytes blockLength)
+                            ],
+                            [ ("HASPREFIXINSTANCE",
+                                [[] | hasPrefixInstance]
+                              )
                             ]
-                        , []
                         )
                     HashMulti props customSizes ->
                         let customCtxSize =

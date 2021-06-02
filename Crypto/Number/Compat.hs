@@ -22,7 +22,9 @@ module Crypto.Number.Compat
     , gmpSizeInBytes
     , gmpSizeInBits
     , gmpExportInteger
+    , gmpExportIntegerLE
     , gmpImportInteger
+    , gmpImportIntegerLE
     ) where
 
 #ifndef MIN_VERSION_integer_gmp
@@ -70,7 +72,11 @@ gmpLog2 _ = GmpUnsupported
 -- | Compute the power modulus using extra security to remain constant
 -- time wise through GMP
 gmpPowModSecInteger :: Integer -> Integer -> Integer -> GmpSupported Integer
-#if MIN_VERSION_integer_gmp(1,0,0)
+#if MIN_VERSION_integer_gmp(1,1,0)
+gmpPowModSecInteger _ _ _ = GmpUnsupported
+#elif MIN_VERSION_integer_gmp(1,0,2)
+gmpPowModSecInteger b e m = GmpSupported (powModSecInteger b e m)
+#elif MIN_VERSION_integer_gmp(1,0,0)
 gmpPowModSecInteger _ _ _ = GmpUnsupported
 #elif MIN_VERSION_integer_gmp(0,5,1)
 gmpPowModSecInteger b e m = GmpSupported (powModSecInteger b e m)
@@ -99,7 +105,9 @@ gmpInverse _ _ = GmpUnsupported
 
 -- | Get the next prime from a specific value through GMP
 gmpNextPrime :: Integer -> GmpSupported Integer
-#if MIN_VERSION_integer_gmp(0,5,1)
+#if MIN_VERSION_integer_gmp(1,1,0)
+gmpNextPrime _ = GmpUnsupported
+#elif MIN_VERSION_integer_gmp(0,5,1)
 gmpNextPrime n = GmpSupported (nextPrimeInteger n)
 #else
 gmpNextPrime _ = GmpUnsupported
@@ -107,7 +115,9 @@ gmpNextPrime _ = GmpUnsupported
 
 -- | Test if a number is prime using Miller Rabin
 gmpTestPrimeMillerRabin :: Int -> Integer -> GmpSupported Bool
-#if MIN_VERSION_integer_gmp(0,5,1)
+#if MIN_VERSION_integer_gmp(1,1,0)
+gmpTestPrimeMillerRabin _ _ = GmpUnsupported
+#elif MIN_VERSION_integer_gmp(0,5,1)
 gmpTestPrimeMillerRabin (I# tries) !n = GmpSupported $
     case testPrimeInteger n tries of
         0# -> False
@@ -132,7 +142,7 @@ gmpSizeInBits n = GmpSupported (I# (word2Int# (sizeInBaseInteger n 2#)))
 gmpSizeInBits _ = GmpUnsupported
 #endif
 
--- | Export an integer to a memory
+-- | Export an integer to a memory (big-endian)
 gmpExportInteger :: Integer -> Ptr Word8 -> GmpSupported (IO ())
 #if MIN_VERSION_integer_gmp(1,0,0)
 gmpExportInteger n (Ptr addr) = GmpSupported $ do
@@ -146,7 +156,21 @@ gmpExportInteger n (Ptr addr) = GmpSupported $ IO $ \s ->
 gmpExportInteger _ _ = GmpUnsupported
 #endif
 
--- | Import an integer from a memory
+-- | Export an integer to a memory (little-endian)
+gmpExportIntegerLE :: Integer -> Ptr Word8 -> GmpSupported (IO ())
+#if MIN_VERSION_integer_gmp(1,0,0)
+gmpExportIntegerLE n (Ptr addr) = GmpSupported $ do
+    _ <- exportIntegerToAddr n addr 0#
+    return ()
+#elif MIN_VERSION_integer_gmp(0,5,1)
+gmpExportIntegerLE n (Ptr addr) = GmpSupported $ IO $ \s ->
+    case exportIntegerToAddr n addr 0# s of
+        (# s2, _ #) -> (# s2, () #)
+#else
+gmpExportIntegerLE _ _ = GmpUnsupported
+#endif
+
+-- | Import an integer from a memory (big-endian)
 gmpImportInteger :: Int -> Ptr Word8 -> GmpSupported (IO Integer)
 #if MIN_VERSION_integer_gmp(1,0,0)
 gmpImportInteger (I# n) (Ptr addr) = GmpSupported $
@@ -156,4 +180,16 @@ gmpImportInteger (I# n) (Ptr addr) = GmpSupported $ IO $ \s ->
     importIntegerFromAddr addr (int2Word# n) 1# s
 #else
 gmpImportInteger _ _ = GmpUnsupported
+#endif
+
+-- | Import an integer from a memory (little-endian)
+gmpImportIntegerLE :: Int -> Ptr Word8 -> GmpSupported (IO Integer)
+#if MIN_VERSION_integer_gmp(1,0,0)
+gmpImportIntegerLE (I# n) (Ptr addr) = GmpSupported $
+    importIntegerFromAddr addr (int2Word# n) 0#
+#elif MIN_VERSION_integer_gmp(0,5,1)
+gmpImportIntegerLE (I# n) (Ptr addr) = GmpSupported $ IO $ \s ->
+    importIntegerFromAddr addr (int2Word# n) 0# s
+#else
+gmpImportIntegerLE _ _ = GmpUnsupported
 #endif

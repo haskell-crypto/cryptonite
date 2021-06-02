@@ -33,7 +33,7 @@ import           Crypto.Number.Basic (numBits)
 -- | Define either a binary curve or a prime curve.
 data Curve = CurveF2m CurveBinary -- ^ 𝔽(2^m)
            | CurveFP  CurvePrime  -- ^ 𝔽p
-           deriving (Show,Read,Eq,Data,Typeable)
+           deriving (Show,Read,Eq,Data)
 
 -- | ECC Public Point
 type PublicPoint = Point
@@ -44,7 +44,7 @@ type PrivateNumber = Integer
 -- | Define a point on a curve.
 data Point = Point Integer Integer
            | PointO -- ^ Point at Infinity
-           deriving (Show,Read,Eq,Data,Typeable)
+           deriving (Show,Read,Eq,Data)
 
 instance NFData Point where
     rnf (Point x y) = x `seq` y `seq` ()
@@ -53,7 +53,7 @@ instance NFData Point where
 -- | Define an elliptic curve in 𝔽(2^m).
 -- The firt parameter is the Integer representatioin of the irreducible polynomial f(x).
 data CurveBinary = CurveBinary Integer CurveCommon
-    deriving (Show,Read,Eq,Data,Typeable)
+    deriving (Show,Read,Eq,Data)
 
 instance NFData CurveBinary where
     rnf (CurveBinary i cc) = i `seq` cc `seq` ()
@@ -61,7 +61,7 @@ instance NFData CurveBinary where
 -- | Define an elliptic curve in 𝔽p.
 -- The first parameter is the Prime Number.
 data CurvePrime = CurvePrime Integer CurveCommon
-    deriving (Show,Read,Eq,Data,Typeable)
+    deriving (Show,Read,Eq,Data)
 
 -- | Parameters in common between binary and prime curves.
 common_curve :: Curve -> CurveCommon
@@ -84,7 +84,7 @@ data CurveCommon = CurveCommon
     , ecc_g :: Point   -- ^ base point
     , ecc_n :: Integer -- ^ order of G
     , ecc_h :: Integer -- ^ cofactor
-    } deriving (Show,Read,Eq,Data,Typeable)
+    } deriving (Show,Read,Eq,Data)
 
 -- | Define names for known recommended curves.
 data CurveName =
@@ -121,7 +121,7 @@ data CurveName =
     | SEC_t409r1
     | SEC_t571k1
     | SEC_t571r1
-    deriving (Show,Read,Eq,Ord,Enum,Bounded,Data,Typeable)
+    deriving (Show,Read,Eq,Ord,Enum,Bounded,Data)
 
 {-
 curvesOIDs :: [ (CurveName, [Integer]) ]

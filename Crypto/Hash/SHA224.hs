@@ -17,12 +17,11 @@ module Crypto.Hash.SHA224 ( SHA224 (..) ) where
 import           Crypto.Hash.Types
 import           Foreign.Ptr (Ptr)
 import           Data.Data
-import           Data.Typeable
 import           Data.Word (Word8, Word32)
 
 -- | SHA224 cryptographic hash algorithm
 data SHA224 = SHA224
-    deriving (Show,Data,Typeable)
+    deriving (Show,Data)
 
 instance HashAlgorithm SHA224 where
     type HashBlockSize           SHA224 = 64
@@ -35,6 +34,9 @@ instance HashAlgorithm SHA224 where
     hashInternalUpdate        = c_sha224_update
     hashInternalFinalize      = c_sha224_finalize
 
+instance HashAlgorithmPrefix SHA224 where
+    hashInternalFinalizePrefix = c_sha224_finalize_prefix
+
 foreign import ccall unsafe "cryptonite_sha224_init"
     c_sha224_init :: Ptr (Context a)-> IO ()
 
@@ -43,3 +45,6 @@ foreign import ccall "cryptonite_sha224_update"
 
 foreign import ccall unsafe "cryptonite_sha224_finalize"
     c_sha224_finalize :: Ptr (Context a) -> Ptr (Digest a) -> IO ()
+
+foreign import ccall "cryptonite_sha224_finalize_prefix"
+    c_sha224_finalize_prefix :: Ptr (Context a) -> Ptr Word8 -> Word32 -> Word32 -> Ptr (Digest a) -> IO ()

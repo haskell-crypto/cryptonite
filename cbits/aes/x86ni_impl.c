@@ -28,6 +28,7 @@
  * SUCH DAMAGE.
  */
 
+TARGET_AESNI
 void SIZED(cryptonite_aesni_encrypt_block)(aes_block *out, aes_key *key, aes_block *in)
 {
 	__m128i *k = (__m128i *) key->data;
@@ -37,6 +38,7 @@ void SIZED(cryptonite_aesni_encrypt_block)(aes_block *out, aes_key *key, aes_blo
 	_mm_storeu_si128((__m128i *) out, m);
 }
 
+TARGET_AESNI
 void SIZED(cryptonite_aesni_decrypt_block)(aes_block *out, aes_key *key, aes_block *in)
 {
 	__m128i *k = (__m128i *) key->data;
@@ -46,6 +48,7 @@ void SIZED(cryptonite_aesni_decrypt_block)(aes_block *out, aes_key *key, aes_blo
 	_mm_storeu_si128((__m128i *) out, m);
 }
 
+TARGET_AESNI
 void SIZED(cryptonite_aesni_encrypt_ecb)(aes_block *out, aes_key *key, aes_block *in, uint32_t blocks)
 {
 	__m128i *k = (__m128i *) key->data;
@@ -58,6 +61,7 @@ void SIZED(cryptonite_aesni_encrypt_ecb)(aes_block *out, aes_key *key, aes_block
 	}
 }
 
+TARGET_AESNI
 void SIZED(cryptonite_aesni_decrypt_ecb)(aes_block *out, aes_key *key, aes_block *in, uint32_t blocks)
 {
 	__m128i *k = (__m128i *) key->data;
@@ -71,6 +75,7 @@ void SIZED(cryptonite_aesni_decrypt_ecb)(aes_block *out, aes_key *key, aes_block
 	}
 }
 
+TARGET_AESNI
 void SIZED(cryptonite_aesni_encrypt_cbc)(aes_block *out, aes_key *key, aes_block *_iv, aes_block *in, uint32_t blocks)
 {
 	__m128i *k = (__m128i *) key->data;
@@ -87,6 +92,7 @@ void SIZED(cryptonite_aesni_encrypt_cbc)(aes_block *out, aes_key *key, aes_block
 	}
 }
 
+TARGET_AESNI
 void SIZED(cryptonite_aesni_decrypt_cbc)(aes_block *out, aes_key *key, aes_block *_iv, aes_block *in, uint32_t blocks)
 {
 	__m128i *k = (__m128i *) key->data;
@@ -106,6 +112,7 @@ void SIZED(cryptonite_aesni_decrypt_cbc)(aes_block *out, aes_key *key, aes_block
 	}
 }
 
+TARGET_AESNI
 void SIZED(cryptonite_aesni_encrypt_ctr)(uint8_t *output, aes_key *key, aes_block *_iv, uint8_t *input, uint32_t len)
 {
 	__m128i *k = (__m128i *) key->data;
@@ -151,6 +158,49 @@ void SIZED(cryptonite_aesni_encrypt_ctr)(uint8_t *output, aes_key *key, aes_bloc
 	return ;
 }
 
+TARGET_AESNI
+void SIZED(cryptonite_aesni_encrypt_c32_)(uint8_t *output, aes_key *key, aes_block *_iv, uint8_t *input, uint32_t len)
+{
+	__m128i *k = (__m128i *) key->data;
+	__m128i one        = _mm_set_epi32(0,0,0,1);
+	uint32_t nb_blocks = len / 16;
+	uint32_t part_block_len = len % 16;
+
+	/* get the IV */
+	__m128i iv = _mm_loadu_si128((__m128i *) _iv);
+
+	PRELOAD_ENC(k);
+
+	for (; nb_blocks-- > 0; output += 16, input += 16) {
+		/* encrypt the iv and and xor it the input block */
+		__m128i tmp = iv;
+		DO_ENC_BLOCK(tmp);
+		__m128i m = _mm_loadu_si128((__m128i *) input);
+		m = _mm_xor_si128(m, tmp);
+
+		_mm_storeu_si128((__m128i *) output, m);
+		/* iv += 1 */
+		iv = _mm_add_epi32(iv, one);
+	}
+
+	if (part_block_len != 0) {
+		aes_block block;
+		memset(&block.b, 0, 16);
+		memcpy(&block.b, input, part_block_len);
+
+		__m128i m = _mm_loadu_si128((__m128i *) &block);
+		__m128i tmp = iv;
+
+		DO_ENC_BLOCK(tmp);
+		m = _mm_xor_si128(m, tmp);
+		_mm_storeu_si128((__m128i *) &block.b, m);
+		memcpy(output, &block.b, part_block_len);
+	}
+
+	return ;
+}
+
+TARGET_AESNI
 void SIZED(cryptonite_aesni_encrypt_xts)(aes_block *out, aes_key *key1, aes_key *key2,
                                aes_block *_tweak, uint32_t spoint, aes_block *in, uint32_t blocks)
 {
@@ -181,6 +231,7 @@ void SIZED(cryptonite_aesni_encrypt_xts)(aes_block *out, aes_key *key1, aes_key 
 	} while (0);
 }
 
+TARGET_AESNI
 void SIZED(cryptonite_aesni_gcm_encrypt)(uint8_t *output, aes_gcm *gcm, aes_key *key, uint8_t *input, uint32_t length)
 {
 	__m128i *k = (__m128i *) key->data;
@@ -191,7 +242,6 @@ void SIZED(cryptonite_aesni_gcm_encrypt)(uint8_t *output, aes_gcm *gcm, aes_key 
 
 	gcm->length_input += length;
 
-	__m128i h  = _mm_loadu_si128((__m128i *) &gcm->h);
 	__m128i tag = _mm_loadu_si128((__m128i *) &gcm->tag);
 	__m128i iv = _mm_loadu_si128((__m128i *) &gcm->civ);
 	iv = _mm_shuffle_epi8(iv, bswap_mask);
@@ -200,7 +250,7 @@ void SIZED(cryptonite_aesni_gcm_encrypt)(uint8_t *output, aes_gcm *gcm, aes_key 
 
 	for (; nb_blocks-- > 0; output += 16, input += 16) {
 		/* iv += 1 */
-		iv = _mm_add_epi64(iv, one);
+		iv = _mm_add_epi32(iv, one);
 
 		/* put back iv in big endian, encrypt it,
 		 * and xor it to input */
@@ -209,7 +259,7 @@ void SIZED(cryptonite_aesni_gcm_encrypt)(uint8_t *output, aes_gcm *gcm, aes_key 
 		__m128i m = _mm_loadu_si128((__m128i *) input);
 		m = _mm_xor_si128(m, tmp);
 
-		tag = ghash_add(tag, h, m);
+		tag = ghash_add(tag, gcm->htable, m);
 
 		/* store it out */
 		_mm_storeu_si128((__m128i *) output, m);
@@ -240,7 +290,7 @@ void SIZED(cryptonite_aesni_gcm_encrypt)(uint8_t *output, aes_gcm *gcm, aes_key 
 		block128_copy_bytes(&block, input, part_block_len);
 
 		/* iv += 1 */
-		iv = _mm_add_epi64(iv, one);
+		iv = _mm_add_epi32(iv, one);
 
 		/* put back iv in big endian mode, encrypt it and xor it with input */
 		__m128i tmp = _mm_shuffle_epi8(iv, bswap_mask);
@@ -250,7 +300,7 @@ void SIZED(cryptonite_aesni_gcm_encrypt)(uint8_t *output, aes_gcm *gcm, aes_key 
 		m = _mm_xor_si128(m, tmp);
 		m = _mm_shuffle_epi8(m, mask);
 
-		tag = ghash_add(tag, h, m);
+		tag = ghash_add(tag, gcm->htable, m);
 
 		/* make output */
 		_mm_storeu_si128((__m128i *) &block.b, m);

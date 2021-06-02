@@ -167,7 +167,6 @@ void cryptonite_skein256_update(struct skein256_ctx *ctx, const uint8_t *data, u
 void cryptonite_skein256_finalize(struct skein256_ctx *ctx, uint32_t hashlen, uint8_t *out)
 {
 	uint32_t outsize;
-	uint64_t *p = (uint64_t *) out;
 	uint64_t x[4];
 	int i, j, n;
 

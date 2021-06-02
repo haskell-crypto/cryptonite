@@ -99,8 +99,11 @@ static inline void sha3_do_chunk(uint64_t state[25], uint64_t buf[], int bufsz)
 }
 
 /*
- * Initialize a SHA-3 / SHAKE context: hashlen is the security level (and
- * half the capacity) in bits
+ * Initialize a SHA-3 / SHAKE / cSHAKE context: hashlen is the security level
+ * (and half the capacity) in bits.
+ *
+ * In case of cSHAKE, the message prefix with encoded N and S must be added with
+ * cryptonite_sha3_update.
  */
 void cryptonite_sha3_init(struct sha3_ctx *ctx, uint32_t hashlen)
 {
@@ -110,7 +113,7 @@ void cryptonite_sha3_init(struct sha3_ctx *ctx, uint32_t hashlen)
 	ctx->bufsz = bufsz;
 }
 
-/* Update a SHA-3 / SHAKE context */
+/* Update a SHA-3 / SHAKE / cSHAKE context */
 void cryptonite_sha3_update(struct sha3_ctx *ctx, const uint8_t *data, uint32_t len)
 {
 	uint32_t to_fill;
@@ -171,7 +174,7 @@ void cryptonite_sha3_finalize_with_pad_byte(struct sha3_ctx *ctx, uint8_t pad_by
 }
 
 /*
- * Extract some bytes from a finalized SHA-3 / SHAKE context.
+ * Extract some bytes from a finalized SHA-3 / SHAKE / cSHAKE context.
  * May be called multiple times.
  */
 void cryptonite_sha3_output(struct sha3_ctx *ctx, uint8_t *out, uint32_t len)
@@ -224,6 +227,12 @@ void cryptonite_sha3_finalize(struct sha3_ctx *ctx, uint32_t hashlen, uint8_t *o
 void cryptonite_sha3_finalize_shake(struct sha3_ctx *ctx)
 {
 	cryptonite_sha3_finalize_with_pad_byte(ctx, 0x1F);
+}
+
+/* Finalize a cSHAKE context. Output is read using cryptonite_sha3_output. */
+void cryptonite_sha3_finalize_cshake(struct sha3_ctx *ctx)
+{
+	cryptonite_sha3_finalize_with_pad_byte(ctx, 0x04);
 }
 
 void cryptonite_keccak_init(struct sha3_ctx *ctx, uint32_t hashlen)

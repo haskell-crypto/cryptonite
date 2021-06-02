@@ -45,10 +45,10 @@ typedef struct {
 	uint8_t data[16*14*2];
 } aes_key;
 
-/* size = 4*16+2*8= 80 */
+/* size = 19*16+2*8= 320 */
 typedef struct {
 	aes_block tag;
-	aes_block h;
+	aes_block htable[16];
 	aes_block iv;
 	aes_block civ;
 	uint64_t length_aad;
@@ -76,6 +76,12 @@ typedef struct {
 	block128 ldollar;
 	block128 li[4];
 } aes_ocb;
+
+/* size = 17*16= 272 */
+typedef struct {
+	aes_block htable[16];
+	aes_block s;
+} aes_polyval;
 
 /* in bytes: either 16,24,32 */
 void cryptonite_aes_initkey(aes_key *ctx, uint8_t *key, uint8_t size);
@@ -114,5 +120,11 @@ void cryptonite_aes_ccm_aad(aes_ccm *ccm, aes_key *key, uint8_t *input, uint32_t
 void cryptonite_aes_ccm_encrypt(uint8_t *output, aes_ccm *ccm, aes_key *key, uint8_t *input, uint32_t length);
 void cryptonite_aes_ccm_decrypt(uint8_t *output, aes_ccm *ccm, aes_key *key, uint8_t *input, uint32_t length);
 void cryptonite_aes_ccm_finish(uint8_t *tag, aes_ccm *ccm, aes_key *key);
+
+uint8_t *cryptonite_aes_cpu_init(void);
+
+void cryptonite_aes_polyval_init(aes_polyval *ctx, const aes_block *h);
+void cryptonite_aes_polyval_update(aes_polyval *ctx, const uint8_t *input, uint32_t length);
+void cryptonite_aes_polyval_finalize(aes_polyval *ctx, aes_block *dst);
 
 #endif

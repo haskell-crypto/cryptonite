@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module KAT_CAST5 (tests) where
 
-import Imports
 import BlockCipher
 import qualified Crypto.Cipher.CAST5 as CAST5
 

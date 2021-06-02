@@ -44,9 +44,19 @@ static inline void store_le32_aligned(uint8_t *dst, const uint32_t v)
 	*((uint32_t *) dst) = cpu_to_le32(v);
 }
 
+static inline void xor_le32_aligned(uint8_t *dst, const uint32_t v)
+{
+	*((uint32_t *) dst) ^= cpu_to_le32(v);
+}
+
 static inline void store_be32_aligned(uint8_t *dst, const uint32_t v)
 {
 	*((uint32_t *) dst) = cpu_to_be32(v);
+}
+
+static inline void xor_be32_aligned(uint8_t *dst, const uint32_t v)
+{
+	*((uint32_t *) dst) ^= cpu_to_be32(v);
 }
 
 static inline void store_le64_aligned(uint8_t *dst, const uint64_t v)
@@ -57,6 +67,11 @@ static inline void store_le64_aligned(uint8_t *dst, const uint64_t v)
 static inline void store_be64_aligned(uint8_t *dst, const uint64_t v)
 {
 	*((uint64_t *) dst) = cpu_to_be64(v);
+}
+
+static inline void xor_be64_aligned(uint8_t *dst, const uint64_t v)
+{
+	*((uint64_t *) dst) ^= cpu_to_be64(v);
 }
 
 #ifdef UNALIGNED_ACCESS_OK
@@ -70,19 +85,29 @@ static inline uint32_t load_le32(const uint8_t *p)
 
 #ifdef UNALIGNED_ACCESS_OK
 #define store_le32(a, b) store_le32_aligned(a, b)
+#define xor_le32(a, b) xor_le32_aligned(a, b)
 #else
 static inline void store_le32(uint8_t *dst, const uint32_t v)
 {
 	dst[0] = v; dst[1] = v >> 8; dst[2] = v >> 16; dst[3] = v >> 24;
 }
+static inline void xor_le32(uint8_t *dst, const uint32_t v)
+{
+	dst[0] ^= v; dst[1] ^= v >> 8; dst[2] ^= v >> 16; dst[3] ^= v >> 24;
+}
 #endif
 
 #ifdef UNALIGNED_ACCESS_OK
 #define store_be32(a, b) store_be32_aligned(a, b)
+#define xor_be32(a, b) xor_be32_aligned(a, b)
 #else
 static inline void store_be32(uint8_t *dst, const uint32_t v)
 {
 	dst[3] = v; dst[2] = v >> 8; dst[1] = v >> 16; dst[0] = v >> 24;
+}
+static inline void xor_be32(uint8_t *dst, const uint32_t v)
+{
+	dst[3] ^= v; dst[2] ^= v >> 8; dst[1] ^= v >> 16; dst[0] ^= v >> 24;
 }
 #endif
 
@@ -98,11 +123,17 @@ static inline void store_le64(uint8_t *dst, const uint64_t v)
 
 #ifdef UNALIGNED_ACCESS_OK
 #define store_be64(a, b) store_be64_aligned(a, b)
+#define xor_be64(a, b) xor_be64_aligned(a, b)
 #else
 static inline void store_be64(uint8_t *dst, const uint64_t v)
 {
 	dst[7] = v      ; dst[6] = v >> 8 ; dst[5] = v >> 16; dst[4] = v >> 24;
 	dst[3] = v >> 32; dst[2] = v >> 40; dst[1] = v >> 48; dst[0] = v >> 56;
+}
+static inline void xor_be64(uint8_t *dst, const uint64_t v)
+{
+	dst[7] ^= v      ; dst[6] ^= v >> 8 ; dst[5] ^= v >> 16; dst[4] ^= v >> 24;
+	dst[3] ^= v >> 32; dst[2] ^= v >> 40; dst[1] ^= v >> 48; dst[0] ^= v >> 56;
 }
 #endif
 

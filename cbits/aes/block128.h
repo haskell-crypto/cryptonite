@@ -108,6 +108,13 @@ static inline void block128_vxor(block128 *d, const block128 *s1, const block128
 	}
 }
 
+static inline void block128_byte_reverse(block128 *a)
+{
+	uint64_t s0 = a->q[0], s1 = a->q[1];
+	a->q[0] = bitfn_swap64(s1);
+	a->q[1] = bitfn_swap64(s0);
+}
+
 static inline void block128_inc_be(block128 *b)
 {
 	uint64_t v = be64_to_cpu(b->q[1]);
@@ -116,6 +123,16 @@ static inline void block128_inc_be(block128 *b)
 		b->q[1] = 0;
 	} else
 		b->q[1] = cpu_to_be64(v);
+}
+
+static inline void block128_inc32_be(block128 *b)
+{
+	b->d[3] = cpu_to_be32(be32_to_cpu(b->d[3]) + 1);
+}
+
+static inline void block128_inc32_le(block128 *b)
+{
+	b->d[0] = cpu_to_le32(le32_to_cpu(b->d[0]) + 1);
 }
 
 #ifdef IMPL_DEBUG

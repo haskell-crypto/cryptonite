@@ -4,7 +4,6 @@ module Crypto.Cipher.Utils
 
 import Crypto.Error
 import Crypto.Cipher.Types
-import Crypto.Internal.Imports
 
 import Data.ByteArray as BA
 

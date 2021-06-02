@@ -94,7 +94,7 @@ bxor = B.xor
 
 
 cipherIPT :: BlockCipher k => k -> [Word8]
-cipherIPT = expandIPT . blockSize   where
+cipherIPT = expandIPT . blockSize
 
 -- Data type which represents the smallest irreducibule binary polynomial
 -- against specified degree.

@@ -777,7 +777,6 @@ static void processBuffer(whirlpool_ctx * const ctx)
 	uint64_t K[8];        /* the round key */
 	uint64_t block[8];    /* mu(buffer) */
 	uint64_t state[8];    /* the cipher state */
-	uint64_t L[8];
 	uint8_t *buffer = ctx->buffer;
 
 	/*

@@ -8,7 +8,6 @@ where
 
 import Crypto.Hash.Algorithms (SHA1(..), SHA256(..), SHA512(..))
 import Crypto.OTP
-import Data.ByteString (ByteString)
 import Imports
 
 -- | Test values from Appendix D of http://tools.ietf.org/html/rfc4226
@@ -94,9 +93,9 @@ tests = testGroup "OTP"
         ]
     , testGroup "TOTP"
         [ testGroup "KATs"
-            [ testGroup "SHA1" (makeKATs (totp totpSHA1Params otpKey . fromIntegral) totpSHA1Expected)
-            , testGroup "SHA256" (makeKATs (totp totpSHA256Params totpSHA256Key . fromIntegral) totpSHA256Expected)
-            , testGroup "SHA512" (makeKATs (totp totpSHA512Params totpSHA512Key . fromIntegral) totpSHA512Expected)
+            [ testGroup "SHA1" (makeKATs (totp totpSHA1Params otpKey) totpSHA1Expected)
+            , testGroup "SHA256" (makeKATs (totp totpSHA256Params totpSHA256Key) totpSHA256Expected)
+            , testGroup "SHA512" (makeKATs (totp totpSHA512Params totpSHA512Key) totpSHA512Expected)
             ]
         ]
     ]

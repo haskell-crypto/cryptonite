@@ -33,6 +33,11 @@ import           Crypto.Internal.DeepSeq
 import           Crypto.Error
 
 -- | Poly1305 State
+--
+-- This type is an instance of 'ByteArrayAccess' for debugging purpose. Internal
+-- layout is architecture dependent, may contain uninitialized data fragments,
+-- and change in future versions.  The bytearray should not be used as input to
+-- cryptographic algorithms.
 newtype State = State ScrubbedBytes
     deriving (ByteArrayAccess)
 

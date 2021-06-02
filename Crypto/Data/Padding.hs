@@ -6,7 +6,7 @@
 -- Portability : unknown
 --
 -- Various cryptographic padding commonly used for block ciphers
--- or assymetric systems.
+-- or asymmetric systems.
 --
 module Crypto.Data.Padding
     ( Format(..)
