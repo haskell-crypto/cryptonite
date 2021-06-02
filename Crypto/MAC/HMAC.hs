@@ -29,7 +29,6 @@ import           Crypto.Internal.ByteArray (ScrubbedBytes, ByteArrayAccess)
 import qualified Crypto.Internal.ByteArray as B
 import           Data.Memory.PtrMethods
 import           Crypto.Internal.Compat
-import           Crypto.Internal.Imports
 import qualified Data.ByteString.Lazy as L
 
 -- | Represent an HMAC that is a phantom type with the hash used to produce the mac.
