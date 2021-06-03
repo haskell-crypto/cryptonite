@@ -12,6 +12,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Crypto.MAC.HMAC
     ( hmac
+    , hmacLazy
     , HMAC(..)
     -- * Incremental
     , Context(..)
@@ -28,6 +29,7 @@ import           Crypto.Internal.ByteArray (ScrubbedBytes, ByteArrayAccess)
 import qualified Crypto.Internal.ByteArray as B
 import           Data.Memory.PtrMethods
 import           Crypto.Internal.Compat
+import qualified Data.ByteString.Lazy as L
 
 -- | Represent an HMAC that is a phantom type with the hash used to produce the mac.
 --
@@ -39,12 +41,19 @@ newtype HMAC a = HMAC { hmacGetDigest :: Digest a }
 instance Eq (HMAC a) where
     (HMAC b1) == (HMAC b2) = B.constEq b1 b2
 
--- | compute a MAC using the supplied hashing function
+-- | Compute a MAC using the supplied hashing function
 hmac :: (ByteArrayAccess key, ByteArrayAccess message, HashAlgorithm a)
      => key     -- ^ Secret key
      -> message -- ^ Message to MAC
      -> HMAC a
 hmac secret msg = finalize $ updates (initialize secret) [msg]
+
+-- | Compute a MAC using the supplied hashing function, for a lazy input
+hmacLazy :: (ByteArrayAccess key, HashAlgorithm a)
+     => key     -- ^ Secret key
+     -> L.ByteString -- ^ Message to MAC
+     -> HMAC a
+hmacLazy secret msg = finalize $ updates (initialize secret) (L.toChunks msg)
 
 -- | Represent an ongoing HMAC state, that can be appended with 'update'
 -- and finalize to an HMAC with 'hmacFinalize'
