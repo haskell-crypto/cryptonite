@@ -165,7 +165,7 @@ static __m128i gfmulx(__m128i v)
 TARGET_AESNI
 static __m128i gfmul_generic(__m128i tag, const table_4bit htable)
 {
-	aes_block _t;
+	aes_block _t ALIGNMENT(16);
 	_mm_store_si128((__m128i *) &_t, tag);
 	cryptonite_aes_generic_gf_mul(&_t, htable);
 	tag = _mm_load_si128((__m128i *) &_t);
