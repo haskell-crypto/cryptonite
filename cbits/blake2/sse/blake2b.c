@@ -142,7 +142,7 @@ int blake2b_init_key( blake2b_state *S, size_t outlen, const void *key, size_t k
     uint8_t block[BLAKE2B_BLOCKBYTES];
     memset( block, 0, BLAKE2B_BLOCKBYTES );
     memcpy( block, key, keylen );
-    blake2b_update( S, block, BLAKE2B_BLOCKBYTES );
+    _cryptonite_blake2b_update( S, block, BLAKE2B_BLOCKBYTES );
     secure_zero_memory( block, BLAKE2B_BLOCKBYTES ); /* Burn the key from stack */
   }
   return 0;

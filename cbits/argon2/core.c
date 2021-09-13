@@ -4,7 +4,7 @@
  * Copyright 2015
  * Daniel Dinu, Dmitry Khovratovich, Jean-Philippe Aumasson, and Samuel Neves
  *
- * You may use this work under the terms of a Creative Commons CC0 1.0 
+ * You may use this work under the terms of a Creative Commons CC0 1.0
  * License/Waiver or the Apache Public License 2.0, at your option. The terms of
  * these licenses can be found at:
  *
@@ -83,25 +83,25 @@ static int blake2b_long(void *pout, size_t outlen, const void *in, size_t inlen)
     } while ((void)0, 0)
 
     if (outlen <= BLAKE2B_OUTBYTES) {
-        TRY(blake2b_init(&blake_state, outlen));
-        TRY(blake2b_update(&blake_state, outlen_bytes, sizeof(outlen_bytes)));
-        TRY(blake2b_update(&blake_state, in, inlen));
-        TRY(blake2b_final(&blake_state, out, outlen));
+        TRY(_cryptonite_blake2b_init(&blake_state, outlen));
+        TRY(_cryptonite_blake2b_update(&blake_state, outlen_bytes, sizeof(outlen_bytes)));
+        TRY(_cryptonite_blake2b_update(&blake_state, in, inlen));
+        TRY(_cryptonite_blake2b_final(&blake_state, out, outlen));
     } else {
         uint32_t toproduce;
         uint8_t out_buffer[BLAKE2B_OUTBYTES];
         uint8_t in_buffer[BLAKE2B_OUTBYTES];
-        TRY(blake2b_init(&blake_state, BLAKE2B_OUTBYTES));
-        TRY(blake2b_update(&blake_state, outlen_bytes, sizeof(outlen_bytes)));
-        TRY(blake2b_update(&blake_state, in, inlen));
-        TRY(blake2b_final(&blake_state, out_buffer, BLAKE2B_OUTBYTES));
+        TRY(_cryptonite_blake2b_init(&blake_state, BLAKE2B_OUTBYTES));
+        TRY(_cryptonite_blake2b_update(&blake_state, outlen_bytes, sizeof(outlen_bytes)));
+        TRY(_cryptonite_blake2b_update(&blake_state, in, inlen));
+        TRY(_cryptonite_blake2b_final(&blake_state, out_buffer, BLAKE2B_OUTBYTES));
         memcpy(out, out_buffer, BLAKE2B_OUTBYTES / 2);
         out += BLAKE2B_OUTBYTES / 2;
         toproduce = (uint32_t)outlen - BLAKE2B_OUTBYTES / 2;
 
         while (toproduce > BLAKE2B_OUTBYTES) {
             memcpy(in_buffer, out_buffer, BLAKE2B_OUTBYTES);
-            TRY(blake2b(out_buffer, BLAKE2B_OUTBYTES, in_buffer,
+            TRY(_cryptonite_blake2b(out_buffer, BLAKE2B_OUTBYTES, in_buffer,
                         BLAKE2B_OUTBYTES, NULL, 0));
             memcpy(out, out_buffer, BLAKE2B_OUTBYTES / 2);
             out += BLAKE2B_OUTBYTES / 2;
@@ -109,7 +109,7 @@ static int blake2b_long(void *pout, size_t outlen, const void *in, size_t inlen)
         }
 
         memcpy(in_buffer, out_buffer, BLAKE2B_OUTBYTES);
-        TRY(blake2b(out_buffer, toproduce, in_buffer, BLAKE2B_OUTBYTES, NULL,
+        TRY(_cryptonite_blake2b(out_buffer, toproduce, in_buffer, BLAKE2B_OUTBYTES, NULL,
                     0));
         memcpy(out, out_buffer, toproduce);
     }
@@ -149,7 +149,7 @@ static void store_block(void *output, const block *src) {
 }
 
 /***************Memory functions*****************/
-static 
+static
 int allocate_memory(const argon2_context *context, uint8_t **memory,
                     size_t num, size_t size) {
     size_t memory_size = num*size;
@@ -175,7 +175,7 @@ int allocate_memory(const argon2_context *context, uint8_t **memory,
 
     return ARGON2_OK;
 }
-static 
+static
 void free_memory(const argon2_context *context, uint8_t *memory,
                  size_t num, size_t size) {
     size_t memory_size = num*size;
@@ -425,7 +425,7 @@ fail:
 }
 
 #endif /* ARGON2_NO_THREADS */
-static 
+static
 int fill_memory_blocks(argon2_instance_t *instance) {
 	if (instance == NULL || instance->lanes == 0) {
 	    return ARGON2_INCORRECT_PARAMETER;
@@ -437,7 +437,7 @@ int fill_memory_blocks(argon2_instance_t *instance) {
 			fill_memory_blocks_st(instance) : fill_memory_blocks_mt(instance);
 #endif
 }
-static 
+static
 int validate_inputs(const argon2_context *context) {
     if (NULL == context) {
         return ARGON2_INCORRECT_PARAMETER;
@@ -564,7 +564,7 @@ int validate_inputs(const argon2_context *context) {
 
     return ARGON2_OK;
 }
-static 
+static
 void fill_first_blocks(uint8_t *blockhash, const argon2_instance_t *instance) {
     uint32_t l;
     /* Make the first and second block in each lane as G(H0||i||0) or
@@ -587,7 +587,7 @@ void fill_first_blocks(uint8_t *blockhash, const argon2_instance_t *instance) {
     }
     clear_internal_memory(blockhash_bytes, ARGON2_BLOCK_SIZE);
 }
-static 
+static
 void initial_hash(uint8_t *blockhash, argon2_context *context,
                   argon2_type type) {
     blake2b_state BlakeHash;
@@ -597,31 +597,31 @@ void initial_hash(uint8_t *blockhash, argon2_context *context,
         return;
     }
 
-    blake2b_init(&BlakeHash, ARGON2_PREHASH_DIGEST_LENGTH);
+    _cryptonite_blake2b_init(&BlakeHash, ARGON2_PREHASH_DIGEST_LENGTH);
 
     store32(&value, context->lanes);
-    blake2b_update(&BlakeHash, (const uint8_t *)&value, sizeof(value));
+    _cryptonite_blake2b_update(&BlakeHash, (const uint8_t *)&value, sizeof(value));
 
     store32(&value, context->outlen);
-    blake2b_update(&BlakeHash, (const uint8_t *)&value, sizeof(value));
+    _cryptonite_blake2b_update(&BlakeHash, (const uint8_t *)&value, sizeof(value));
 
     store32(&value, context->m_cost);
-    blake2b_update(&BlakeHash, (const uint8_t *)&value, sizeof(value));
+    _cryptonite_blake2b_update(&BlakeHash, (const uint8_t *)&value, sizeof(value));
 
     store32(&value, context->t_cost);
-    blake2b_update(&BlakeHash, (const uint8_t *)&value, sizeof(value));
+    _cryptonite_blake2b_update(&BlakeHash, (const uint8_t *)&value, sizeof(value));
 
     store32(&value, context->version);
-    blake2b_update(&BlakeHash, (const uint8_t *)&value, sizeof(value));
+    _cryptonite_blake2b_update(&BlakeHash, (const uint8_t *)&value, sizeof(value));
 
     store32(&value, (uint32_t)type);
-    blake2b_update(&BlakeHash, (const uint8_t *)&value, sizeof(value));
+    _cryptonite_blake2b_update(&BlakeHash, (const uint8_t *)&value, sizeof(value));
 
     store32(&value, context->pwdlen);
-    blake2b_update(&BlakeHash, (const uint8_t *)&value, sizeof(value));
+    _cryptonite_blake2b_update(&BlakeHash, (const uint8_t *)&value, sizeof(value));
 
     if (context->pwd != NULL) {
-        blake2b_update(&BlakeHash, (const uint8_t *)context->pwd,
+        _cryptonite_blake2b_update(&BlakeHash, (const uint8_t *)context->pwd,
                        context->pwdlen);
 
         if (context->flags & ARGON2_FLAG_CLEAR_PASSWORD) {
@@ -631,18 +631,18 @@ void initial_hash(uint8_t *blockhash, argon2_context *context,
     }
 
     store32(&value, context->saltlen);
-    blake2b_update(&BlakeHash, (const uint8_t *)&value, sizeof(value));
+    _cryptonite_blake2b_update(&BlakeHash, (const uint8_t *)&value, sizeof(value));
 
     if (context->salt != NULL) {
-        blake2b_update(&BlakeHash, (const uint8_t *)context->salt,
+        _cryptonite_blake2b_update(&BlakeHash, (const uint8_t *)context->salt,
                        context->saltlen);
     }
 
     store32(&value, context->secretlen);
-    blake2b_update(&BlakeHash, (const uint8_t *)&value, sizeof(value));
+    _cryptonite_blake2b_update(&BlakeHash, (const uint8_t *)&value, sizeof(value));
 
     if (context->secret != NULL) {
-        blake2b_update(&BlakeHash, (const uint8_t *)context->secret,
+        _cryptonite_blake2b_update(&BlakeHash, (const uint8_t *)context->secret,
                        context->secretlen);
 
         if (context->flags & ARGON2_FLAG_CLEAR_SECRET) {
@@ -652,16 +652,16 @@ void initial_hash(uint8_t *blockhash, argon2_context *context,
     }
 
     store32(&value, context->adlen);
-    blake2b_update(&BlakeHash, (const uint8_t *)&value, sizeof(value));
+    _cryptonite_blake2b_update(&BlakeHash, (const uint8_t *)&value, sizeof(value));
 
     if (context->ad != NULL) {
-        blake2b_update(&BlakeHash, (const uint8_t *)context->ad,
+        _cryptonite_blake2b_update(&BlakeHash, (const uint8_t *)context->ad,
                        context->adlen);
     }
 
-    blake2b_final(&BlakeHash, blockhash, ARGON2_PREHASH_DIGEST_LENGTH);
+    _cryptonite_blake2b_final(&BlakeHash, blockhash, ARGON2_PREHASH_DIGEST_LENGTH);
 }
-static 
+static
 int initialize(argon2_instance_t *instance, argon2_context *context) {
     uint8_t blockhash[ARGON2_PREHASH_SEED_LENGTH];
     int result = ARGON2_OK;
