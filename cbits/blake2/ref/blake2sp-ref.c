@@ -75,7 +75,7 @@ static int blake2sp_init_root( blake2s_state *S, size_t outlen, size_t keylen )
 }
 
 
-int blake2sp_init( blake2sp_state *S, size_t outlen )
+int _cryptonite_blake2sp_init( blake2sp_state *S, size_t outlen )
 {
   size_t i;
 
@@ -96,7 +96,7 @@ int blake2sp_init( blake2sp_state *S, size_t outlen )
   return 0;
 }
 
-int blake2sp_init_key( blake2sp_state *S, size_t outlen, const void *key, size_t keylen )
+int _cryptonite_blake2sp_init_key( blake2sp_state *S, size_t outlen, const void *key, size_t keylen )
 {
   size_t i;
 
@@ -122,7 +122,7 @@ int blake2sp_init_key( blake2sp_state *S, size_t outlen, const void *key, size_t
     memcpy( block, key, keylen );
 
     for( i = 0; i < PARALLELISM_DEGREE; ++i )
-      blake2s_update( S->S[i], block, BLAKE2S_BLOCKBYTES );
+      _cryptonite_blake2s_update( S->S[i], block, BLAKE2S_BLOCKBYTES );
 
     secure_zero_memory( block, BLAKE2S_BLOCKBYTES ); /* Burn the key from stack */
   }
@@ -130,7 +130,7 @@ int blake2sp_init_key( blake2sp_state *S, size_t outlen, const void *key, size_t
 }
 
 
-int blake2sp_update( blake2sp_state *S, const void *pin, size_t inlen )
+int _cryptonite_blake2sp_update( blake2sp_state *S, const void *pin, size_t inlen )
 {
   const unsigned char * in = (const unsigned char *)pin;
   size_t left = S->buflen;
@@ -142,7 +142,7 @@ int blake2sp_update( blake2sp_state *S, const void *pin, size_t inlen )
     memcpy( S->buf + left, in, fill );
 
     for( i = 0; i < PARALLELISM_DEGREE; ++i )
-      blake2s_update( S->S[i], S->buf + i * BLAKE2S_BLOCKBYTES, BLAKE2S_BLOCKBYTES );
+      _cryptonite_blake2s_update( S->S[i], S->buf + i * BLAKE2S_BLOCKBYTES, BLAKE2S_BLOCKBYTES );
 
     in += fill;
     inlen -= fill;
@@ -164,7 +164,7 @@ int blake2sp_update( blake2sp_state *S, const void *pin, size_t inlen )
 
     while( inlen__ >= PARALLELISM_DEGREE * BLAKE2S_BLOCKBYTES )
     {
-      blake2s_update( S->S[i], in__, BLAKE2S_BLOCKBYTES );
+      _cryptonite_blake2s_update( S->S[i], in__, BLAKE2S_BLOCKBYTES );
       in__ += PARALLELISM_DEGREE * BLAKE2S_BLOCKBYTES;
       inlen__ -= PARALLELISM_DEGREE * BLAKE2S_BLOCKBYTES;
     }
@@ -181,7 +181,7 @@ int blake2sp_update( blake2sp_state *S, const void *pin, size_t inlen )
 }
 
 
-int blake2sp_final( blake2sp_state *S, void *out, size_t outlen )
+int _cryptonite_blake2sp_final( blake2sp_state *S, void *out, size_t outlen )
 {
   uint8_t hash[PARALLELISM_DEGREE][BLAKE2S_OUTBYTES];
   size_t i;
@@ -198,20 +198,20 @@ int blake2sp_final( blake2sp_state *S, void *out, size_t outlen )
 
       if( left > BLAKE2S_BLOCKBYTES ) left = BLAKE2S_BLOCKBYTES;
 
-      blake2s_update( S->S[i], S->buf + i * BLAKE2S_BLOCKBYTES, left );
+      _cryptonite_blake2s_update( S->S[i], S->buf + i * BLAKE2S_BLOCKBYTES, left );
     }
 
-    blake2s_final( S->S[i], hash[i], BLAKE2S_OUTBYTES );
+    _cryptonite_blake2s_final( S->S[i], hash[i], BLAKE2S_OUTBYTES );
   }
 
   for( i = 0; i < PARALLELISM_DEGREE; ++i )
-    blake2s_update( S->R, hash[i], BLAKE2S_OUTBYTES );
+    _cryptonite_blake2s_update( S->R, hash[i], BLAKE2S_OUTBYTES );
 
-  return blake2s_final( S->R, out, S->outlen );
+  return _cryptonite_blake2s_final( S->R, out, S->outlen );
 }
 
 
-int blake2sp( void *out, size_t outlen, const void *in, size_t inlen, const void *key, size_t keylen )
+int _cryptonite_blake2sp( void *out, size_t outlen, const void *in, size_t inlen, const void *key, size_t keylen )
 {
   uint8_t hash[PARALLELISM_DEGREE][BLAKE2S_OUTBYTES];
   blake2s_state S[PARALLELISM_DEGREE][1];
@@ -241,7 +241,7 @@ int blake2sp( void *out, size_t outlen, const void *in, size_t inlen, const void
     memcpy( block, key, keylen );
 
     for( i = 0; i < PARALLELISM_DEGREE; ++i )
-      blake2s_update( S[i], block, BLAKE2S_BLOCKBYTES );
+      _cryptonite_blake2s_update( S[i], block, BLAKE2S_BLOCKBYTES );
 
     secure_zero_memory( block, BLAKE2S_BLOCKBYTES ); /* Burn the key from stack */
   }
@@ -262,7 +262,7 @@ int blake2sp( void *out, size_t outlen, const void *in, size_t inlen, const void
 
     while( inlen__ >= PARALLELISM_DEGREE * BLAKE2S_BLOCKBYTES )
     {
-      blake2s_update( S[i], in__, BLAKE2S_BLOCKBYTES );
+      _cryptonite_blake2s_update( S[i], in__, BLAKE2S_BLOCKBYTES );
       in__ += PARALLELISM_DEGREE * BLAKE2S_BLOCKBYTES;
       inlen__ -= PARALLELISM_DEGREE * BLAKE2S_BLOCKBYTES;
     }
@@ -271,10 +271,10 @@ int blake2sp( void *out, size_t outlen, const void *in, size_t inlen, const void
     {
       const size_t left = inlen__ - i * BLAKE2S_BLOCKBYTES;
       const size_t len = left <= BLAKE2S_BLOCKBYTES ? left : BLAKE2S_BLOCKBYTES;
-      blake2s_update( S[i], in__, len );
+      _cryptonite_blake2s_update( S[i], in__, len );
     }
 
-    blake2s_final( S[i], hash[i], BLAKE2S_OUTBYTES );
+    _cryptonite_blake2s_final( S[i], hash[i], BLAKE2S_OUTBYTES );
   }
 
   if( blake2sp_init_root( FS, outlen, keylen ) < 0 )
@@ -283,9 +283,9 @@ int blake2sp( void *out, size_t outlen, const void *in, size_t inlen, const void
   FS->last_node = 1;
 
   for( i = 0; i < PARALLELISM_DEGREE; ++i )
-    blake2s_update( FS, hash[i], BLAKE2S_OUTBYTES );
+    _cryptonite_blake2s_update( FS, hash[i], BLAKE2S_OUTBYTES );
 
-  return blake2s_final( FS, out, outlen );
+  return _cryptonite_blake2s_final( FS, out, outlen );
 }
 
 
@@ -309,7 +309,7 @@ int main( void )
   for( i = 0; i < BLAKE2_KAT_LENGTH; ++i )
   {
     uint8_t hash[BLAKE2S_OUTBYTES];
-    blake2sp( hash, BLAKE2S_OUTBYTES, buf, i, key, BLAKE2S_KEYBYTES );
+    _cryptonite_blake2sp( hash, BLAKE2S_OUTBYTES, buf, i, key, BLAKE2S_KEYBYTES );
 
     if( 0 != memcmp( hash, blake2sp_keyed_kat[i], BLAKE2S_OUTBYTES ) )
     {
@@ -326,21 +326,21 @@ int main( void )
       size_t mlen = i;
       int err = 0;
 
-      if( (err = blake2sp_init_key(&S, BLAKE2S_OUTBYTES, key, BLAKE2S_KEYBYTES)) < 0 ) {
+      if( (err = _cryptonite_blake2sp_init_key(&S, BLAKE2S_OUTBYTES, key, BLAKE2S_KEYBYTES)) < 0 ) {
         goto fail;
       }
 
       while (mlen >= step) {
-        if ( (err = blake2sp_update(&S, p, step)) < 0 ) {
+        if ( (err = _cryptonite_blake2sp_update(&S, p, step)) < 0 ) {
           goto fail;
         }
         mlen -= step;
         p += step;
       }
-      if ( (err = blake2sp_update(&S, p, mlen)) < 0) {
+      if ( (err = _cryptonite_blake2sp_update(&S, p, mlen)) < 0) {
         goto fail;
       }
-      if ( (err = blake2sp_final(&S, hash, BLAKE2S_OUTBYTES)) < 0) {
+      if ( (err = _cryptonite_blake2sp_final(&S, hash, BLAKE2S_OUTBYTES)) < 0) {
         goto fail;
       }
 

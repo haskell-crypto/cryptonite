@@ -23,11 +23,11 @@
 #include "blake2.h"
 #include "blake2-impl.h"
 
-int blake2xb_init( blake2xb_state *S, const size_t outlen ) {
-  return blake2xb_init_key(S, outlen, NULL, 0);
+int _cryptonite_blake2xb_init( blake2xb_state *S, const size_t outlen ) {
+  return _cryptonite_blake2xb_init_key(S, outlen, NULL, 0);
 }
 
-int blake2xb_init_key( blake2xb_state *S, const size_t outlen, const void *key, size_t keylen)
+int _cryptonite_blake2xb_init_key( blake2xb_state *S, const size_t outlen, const void *key, size_t keylen)
 {
   if ( outlen == 0 || outlen > 0xFFFFFFFFUL ) {
     return -1;
@@ -55,7 +55,7 @@ int blake2xb_init_key( blake2xb_state *S, const size_t outlen, const void *key, 
   memset( S->P->salt,     0, sizeof( S->P->salt ) );
   memset( S->P->personal, 0, sizeof( S->P->personal ) );
 
-  if( blake2b_init_param( S->S, S->P ) < 0 ) {
+  if( _cryptonite_blake2b_init_param( S->S, S->P ) < 0 ) {
     return -1;
   }
 
@@ -63,17 +63,17 @@ int blake2xb_init_key( blake2xb_state *S, const size_t outlen, const void *key, 
     uint8_t block[BLAKE2B_BLOCKBYTES];
     memset(block, 0, BLAKE2B_BLOCKBYTES);
     memcpy(block, key, keylen);
-    blake2b_update(S->S, block, BLAKE2B_BLOCKBYTES);
+    _cryptonite_blake2b_update(S->S, block, BLAKE2B_BLOCKBYTES);
     secure_zero_memory(block, BLAKE2B_BLOCKBYTES);
   }
   return 0;
 }
 
-int blake2xb_update( blake2xb_state *S, const void *in, size_t inlen ) {
-    return blake2b_update( S->S, in, inlen );
+int _cryptonite_blake2xb_update( blake2xb_state *S, const void *in, size_t inlen ) {
+    return _cryptonite_blake2b_update( S->S, in, inlen );
 }
 
-int blake2xb_final( blake2xb_state *S, void *out, size_t outlen) {
+int _cryptonite_blake2xb_final( blake2xb_state *S, void *out, size_t outlen) {
 
   blake2b_state C[1];
   blake2b_param P[1];
@@ -98,7 +98,7 @@ int blake2xb_final( blake2xb_state *S, void *out, size_t outlen) {
   }
 
   /* Finalize the root hash */
-  if (blake2b_final(S->S, root, BLAKE2B_OUTBYTES) < 0) {
+  if (_cryptonite_blake2b_final(S->S, root, BLAKE2B_OUTBYTES) < 0) {
     return -1;
   }
 
@@ -117,10 +117,10 @@ int blake2xb_final( blake2xb_state *S, void *out, size_t outlen) {
     /* Initialize state */
     P->digest_length = block_size;
     store32(&P->node_offset, i);
-    blake2b_init_param(C, P);
+    _cryptonite_blake2b_init_param(C, P);
     /* Process key if needed */
-    blake2b_update(C, root, BLAKE2B_OUTBYTES);
-    if (blake2b_final(C, (uint8_t *)out + i * BLAKE2B_OUTBYTES, block_size) < 0 ) {
+    _cryptonite_blake2b_update(C, root, BLAKE2B_OUTBYTES);
+    if (_cryptonite_blake2b_final(C, (uint8_t *)out + i * BLAKE2B_OUTBYTES, block_size) < 0 ) {
         return -1;
     }
     outlen -= block_size;
@@ -133,7 +133,7 @@ int blake2xb_final( blake2xb_state *S, void *out, size_t outlen) {
 
 }
 
-int blake2xb(void *out, size_t outlen, const void *in, size_t inlen, const void *key, size_t keylen)
+int _cryptonite_blake2xb(void *out, size_t outlen, const void *in, size_t inlen, const void *key, size_t keylen)
 {
   blake2xb_state S[1];
 
@@ -154,15 +154,15 @@ int blake2xb(void *out, size_t outlen, const void *in, size_t inlen, const void 
     return -1;
 
   /* Initialize the root block structure */
-  if (blake2xb_init_key(S, outlen, key, keylen) < 0) {
+  if (_cryptonite_blake2xb_init_key(S, outlen, key, keylen) < 0) {
     return -1;
   }
 
   /* Absorb the input message */
-  blake2xb_update(S, in, inlen);
+  _cryptonite_blake2xb_update(S, in, inlen);
 
   /* Compute the root node of the tree and the final hash using the counter construction */
-  return blake2xb_final(S, out, outlen);
+  return _cryptonite_blake2xb_final(S, out, outlen);
 }
 
 #if defined(BLAKE2XB_SELFTEST)
@@ -189,7 +189,7 @@ int main( void )
   for( outlen = 1; outlen <= BLAKE2_KAT_LENGTH; ++outlen )
   {
       uint8_t hash[BLAKE2_KAT_LENGTH] = {0};
-      if( blake2xb( hash, outlen, buf, BLAKE2_KAT_LENGTH, key, BLAKE2B_KEYBYTES ) < 0 ) {
+      if( _cryptonite_blake2xb( hash, outlen, buf, BLAKE2_KAT_LENGTH, key, BLAKE2B_KEYBYTES ) < 0 ) {
         goto fail;
       }
 
@@ -208,21 +208,21 @@ int main( void )
       size_t mlen = BLAKE2_KAT_LENGTH;
       int err = 0;
 
-      if( (err = blake2xb_init_key(&S, outlen, key, BLAKE2B_KEYBYTES)) < 0 ) {
+      if( (err = _cryptonite_blake2xb_init_key(&S, outlen, key, BLAKE2B_KEYBYTES)) < 0 ) {
         goto fail;
       }
 
       while (mlen >= step) {
-        if ( (err = blake2xb_update(&S, p, step)) < 0 ) {
+        if ( (err = _cryptonite_blake2xb_update(&S, p, step)) < 0 ) {
           goto fail;
         }
         mlen -= step;
         p += step;
       }
-      if ( (err = blake2xb_update(&S, p, mlen)) < 0) {
+      if ( (err = _cryptonite_blake2xb_update(&S, p, mlen)) < 0) {
         goto fail;
       }
-      if ( (err = blake2xb_final(&S, hash, outlen)) < 0) {
+      if ( (err = _cryptonite_blake2xb_final(&S, hash, outlen)) < 0) {
         goto fail;
       }
 

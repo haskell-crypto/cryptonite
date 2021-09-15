@@ -148,7 +148,7 @@ extern "C" {
   int _cryptonite_blake2s_update( blake2s_state *S, const void *in, size_t inlen );
   int _cryptonite_blake2s_final( blake2s_state *S, void *out, size_t outlen );
 
-  int _cryptonite__cryptonite_blake2b_init( blake2b_state *S, size_t outlen );
+  int _cryptonite_blake2b_init( blake2b_state *S, size_t outlen );
   int _cryptonite_blake2b_init_key( blake2b_state *S, size_t outlen, const void *key, size_t keylen );
   int _cryptonite_blake2b_init_param( blake2b_state *S, const blake2b_param *P );
   int _cryptonite_blake2b_update( blake2b_state *S, const void *in, size_t inlen );

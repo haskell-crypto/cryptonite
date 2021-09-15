@@ -45,31 +45,31 @@ static const uint8_t blake2b_sigma[12][16] =
 };
 
 
-static void _cryptonite_blake2b_set_lastnode( blake2b_state *S )
+static void blake2b_set_lastnode( blake2b_state *S )
 {
   S->f[1] = (uint64_t)-1;
 }
 
 /* Some helper functions, not necessarily useful */
-static int _cryptonite_blake2b_is_lastblock( const blake2b_state *S )
+static int blake2b_is_lastblock( const blake2b_state *S )
 {
   return S->f[0] != 0;
 }
 
-static void _cryptonite_blake2b_set_lastblock( blake2b_state *S )
+static void blake2b_set_lastblock( blake2b_state *S )
 {
-  if( S->last_node ) _cryptonite_blake2b_set_lastnode( S );
+  if( S->last_node ) blake2b_set_lastnode( S );
 
   S->f[0] = (uint64_t)-1;
 }
 
-static void _cryptonite_blake2b_increment_counter( blake2b_state *S, const uint64_t inc )
+static void blake2b_increment_counter( blake2b_state *S, const uint64_t inc )
 {
   S->t[0] += inc;
   S->t[1] += ( S->t[0] < inc );
 }
 
-static void _cryptonite_blake2b_init0( blake2b_state *S )
+static void blake2b_init0( blake2b_state *S )
 {
   size_t i;
   memset( S, 0, sizeof( blake2b_state ) );
@@ -83,7 +83,7 @@ int _cryptonite_blake2b_init_param( blake2b_state *S, const blake2b_param *P )
   const uint8_t *p = ( const uint8_t * )( P );
   size_t i;
 
-  _cryptonite_blake2b_init0( S );
+  blake2b_init0( S );
 
   /* IV XOR ParamBlock */
   for( i = 0; i < 8; ++i )
@@ -174,7 +174,7 @@ int _cryptonite_blake2b_init_key( blake2b_state *S, size_t outlen, const void *k
     G(r,7,v[ 3],v[ 4],v[ 9],v[14]); \
   } while(0)
 
-static void _cryptonite_blake2b_compress( blake2b_state *S, const uint8_t block[BLAKE2B_BLOCKBYTES] )
+static void blake2b_compress( blake2b_state *S, const uint8_t block[BLAKE2B_BLOCKBYTES] )
 {
   uint64_t m[16];
   uint64_t v[16];
@@ -229,12 +229,12 @@ int _cryptonite_blake2b_update( blake2b_state *S, const void *pin, size_t inlen 
     {
       S->buflen = 0;
       memcpy( S->buf + left, in, fill ); /* Fill buffer */
-      _cryptonite_blake2b_increment_counter( S, BLAKE2B_BLOCKBYTES );
-      _cryptonite_blake2b_compress( S, S->buf ); /* Compress */
+      blake2b_increment_counter( S, BLAKE2B_BLOCKBYTES );
+      blake2b_compress( S, S->buf ); /* Compress */
       in += fill; inlen -= fill;
       while(inlen > BLAKE2B_BLOCKBYTES) {
-        _cryptonite_blake2b_increment_counter(S, BLAKE2B_BLOCKBYTES);
-        _cryptonite_blake2b_compress( S, in );
+        blake2b_increment_counter(S, BLAKE2B_BLOCKBYTES);
+        blake2b_compress( S, in );
         in += BLAKE2B_BLOCKBYTES;
         inlen -= BLAKE2B_BLOCKBYTES;
       }
@@ -253,13 +253,13 @@ int _cryptonite_blake2b_final( blake2b_state *S, void *out, size_t outlen )
   if( out == NULL || outlen < S->outlen )
     return -1;
 
-  if( _cryptonite_blake2b_is_lastblock( S ) )
+  if( blake2b_is_lastblock( S ) )
     return -1;
 
-  _cryptonite_blake2b_increment_counter( S, S->buflen );
-  _cryptonite_blake2b_set_lastblock( S );
+  blake2b_increment_counter( S, S->buflen );
+  blake2b_set_lastblock( S );
   memset( S->buf + S->buflen, 0, BLAKE2B_BLOCKBYTES - S->buflen ); /* Padding */
-  _cryptonite_blake2b_compress( S, S->buf );
+  blake2b_compress( S, S->buf );
 
   for( i = 0; i < 8; ++i ) /* Output full hash to temp buffer */
     store64( buffer + sizeof( S->h[i] ) * i, S->h[i] );
