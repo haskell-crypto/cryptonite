@@ -12,11 +12,14 @@ module Crypto.Random.ChaChaDRG
     , initializeWords
     ) where
 
+import           Data.Bits (Bits, (.|.), shift)
+import qualified Data.ByteString as BS
 import           Crypto.Random.Types
 import           Crypto.Internal.Imports
 import           Crypto.Internal.ByteArray (ByteArray, ByteArrayAccess, ScrubbedBytes)
 import qualified Crypto.Internal.ByteArray as B
 import           Foreign.Storable (pokeElemOff)
+import           System.Random (RandomGen, genWord32, genWord64, split)
 
 import qualified Crypto.Cipher.ChaCha as C
 
@@ -44,3 +47,16 @@ generate :: ByteArray output => Int -> ChaChaDRG -> (output, ChaChaDRG)
 generate nbBytes st@(ChaChaDRG prevSt)
     | nbBytes <= 0 = (B.empty, st)
     | otherwise    = let (output, newSt) = C.generateSimple prevSt nbBytes in (output, ChaChaDRG newSt)
+
+
+genWord :: (DRG gen, Bits a, Num a) => Int -> gen -> (a, gen)
+genWord size = first bytesToWord . randomBytesGenerate size
+ where
+  bytesToWord = foldl1 concatWord . BS.foldr ((:) . fromIntegral) []
+  concatWord  = (.|.) . flip shift 8
+  first f (x, y) = (f x, y)
+
+instance RandomGen ChaChaDRG where
+  genWord32 = genWord 4
+  genWord64 = genWord 8
+  split     = error "ChaChaDRG cannot be split."

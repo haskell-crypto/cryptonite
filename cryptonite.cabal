@@ -254,6 +254,7 @@ Library
                    , memory >= 0.14.18
                    , basement >= 0.0.6
                    , ghc-prim
+                   , random >= 1.2.0
   ghc-options:       -Wall -fwarn-tabs -optc-O3
   if os(linux)
     extra-libraries: pthread
