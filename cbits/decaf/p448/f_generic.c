@@ -32,7 +32,7 @@ void cryptonite_gf_serialize (uint8_t serial[SER_BYTES], const gf x, int with_hi
     
     unsigned int j=0, fill=0;
     dword_t buffer = 0;
-    UNROLL for (unsigned int i=0; i<(with_hibit ? X_SER_BYTES : SER_BYTES); i++) {
+    for (unsigned int i=0; i<(with_hibit ? X_SER_BYTES : SER_BYTES); i++) {
         if (fill < 8 && j < NLIMBS) {
             buffer |= ((dword_t)red->limb[LIMBPERM(j)]) << fill;
             fill += LIMB_PLACE_VALUE(LIMBPERM(j));
@@ -57,8 +57,8 @@ mask_t cryptonite_gf_deserialize (gf x, const uint8_t serial[SER_BYTES], int wit
     unsigned int j=0, fill=0;
     dword_t buffer = 0;
     dsword_t scarry = 0;
-    UNROLL for (unsigned int i=0; i<NLIMBS; i++) {
-        UNROLL while (fill < LIMB_PLACE_VALUE(LIMBPERM(i)) && j < (with_hibit ? X_SER_BYTES : SER_BYTES)) {
+    for (unsigned int i=0; i<NLIMBS; i++) {
+        while (fill < LIMB_PLACE_VALUE(LIMBPERM(i)) && j < (with_hibit ? X_SER_BYTES : SER_BYTES)) {
             buffer |= ((dword_t)serial[j]) << fill;
             fill += 8;
             j++;

@@ -235,17 +235,6 @@ malloc_vector(size_t size) {
     }
 }
 
-/* PERF: vectorize vs unroll */
-#ifdef __clang__
-#if 100*__clang_major__ + __clang_minor__ > 305
-#define UNROLL _Pragma("clang loop unroll(full)")
-#endif
-#endif
-
-#ifndef UNROLL
-#define UNROLL
-#endif
-
 /* The plan on booleans:
  *
  * The external interface uses cryptonite_decaf_bool_t, but this might be a different
