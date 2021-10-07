@@ -10,6 +10,7 @@
 --
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 module Crypto.MAC.HMAC
     ( hmac
     , hmacLazy
@@ -30,13 +31,14 @@ import qualified Crypto.Internal.ByteArray as B
 import           Data.Memory.PtrMethods
 import           Crypto.Internal.Compat
 import qualified Data.ByteString.Lazy as L
+import           Data.Data (Data)
 
 -- | Represent an HMAC that is a phantom type with the hash used to produce the mac.
 --
 -- The Eq instance is constant time.  No Show instance is provided, to avoid
 -- printing by mistake.
 newtype HMAC a = HMAC { hmacGetDigest :: Digest a }
-    deriving (ByteArrayAccess)
+    deriving (ByteArrayAccess, Show, Data)
 
 instance Eq (HMAC a) where
     (HMAC b1) == (HMAC b2) = B.constEq b1 b2
@@ -93,7 +95,7 @@ initialize secret = unsafeDoIO (doHashAlg undefined)
                     <*> B.alloc blockSize (\p -> memXorWith p 0x5c keyPtr blockSize)
             return $ Context (hashUpdates initCtx [outer :: ScrubbedBytes])
                              (hashUpdates initCtx [inner :: ScrubbedBytes])
-          where 
+          where
                 blockSize  = hashBlockSize alg
                 digestSize = hashDigestSize alg
                 initCtx    = hashInitWith alg
