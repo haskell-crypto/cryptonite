@@ -36,7 +36,7 @@
 */
 static int blake2bp_init_leaf_param( blake2b_state *S, const blake2b_param *P )
 {
-  int err = blake2b_init_param(S, P);
+  int err = _cryptonite_blake2b_init_param(S, P);
   S->outlen = P->inner_length;
   return err;
 }
@@ -74,7 +74,7 @@ static int blake2bp_init_root( blake2b_state *S, size_t outlen, size_t keylen )
   memset( P->reserved, 0, sizeof( P->reserved ) );
   memset( P->salt, 0, sizeof( P->salt ) );
   memset( P->personal, 0, sizeof( P->personal ) );
-  return blake2b_init_param( S, P );
+  return _cryptonite_blake2b_init_param( S, P );
 }
 
 
