@@ -72,7 +72,7 @@ static void blake2s_increment_counter( blake2s_state *S, const uint32_t inc )
 }
 
 /* init2 xors IV with input parameter block */
-int blake2s_init_param( blake2s_state *S, const blake2s_param *P )
+int _cryptonite_blake2s_init_param( blake2s_state *S, const blake2s_param *P )
 {
   size_t i;
   /*blake2s_init0( S ); */
@@ -90,7 +90,7 @@ int blake2s_init_param( blake2s_state *S, const blake2s_param *P )
 
 
 /* Some sort of default parameter block initialization, for sequential blake2s */
-int blake2s_init( blake2s_state *S, size_t outlen )
+int _cryptonite_blake2s_init( blake2s_state *S, size_t outlen )
 {
   blake2s_param P[1];
 
@@ -110,11 +110,11 @@ int blake2s_init( blake2s_state *S, size_t outlen )
   memset( P->salt,     0, sizeof( P->salt ) );
   memset( P->personal, 0, sizeof( P->personal ) );
 
-  return blake2s_init_param( S, P );
+  return _cryptonite_blake2s_init_param( S, P );
 }
 
 
-int blake2s_init_key( blake2s_state *S, size_t outlen, const void *key, size_t keylen )
+int _cryptonite_blake2s_init_key( blake2s_state *S, size_t outlen, const void *key, size_t keylen )
 {
   blake2s_param P[1];
 
@@ -136,7 +136,7 @@ int blake2s_init_key( blake2s_state *S, size_t outlen, const void *key, size_t k
   memset( P->salt,     0, sizeof( P->salt ) );
   memset( P->personal, 0, sizeof( P->personal ) );
 
-  if( blake2s_init_param( S, P ) < 0 )
+  if( _cryptonite_blake2s_init_param( S, P ) < 0 )
     return -1;
 
   {
@@ -233,7 +233,7 @@ int _cryptonite_blake2s_update( blake2s_state *S, const void *pin, size_t inlen 
   return 0;
 }
 
-int blake2s_final( blake2s_state *S, void *out, size_t outlen )
+int _cryptonite_blake2s_final( blake2s_state *S, void *out, size_t outlen )
 {
   uint8_t buffer[BLAKE2S_OUTBYTES] = {0};
   size_t i;
@@ -275,15 +275,15 @@ int blake2s( void *out, size_t outlen, const void *in, size_t inlen, const void 
 
   if( keylen > 0 )
   {
-    if( blake2s_init_key( S, outlen, key, keylen ) < 0 ) return -1;
+    if( _cryptonite_blake2s_init_key( S, outlen, key, keylen ) < 0 ) return -1;
   }
   else
   {
-    if( blake2s_init( S, outlen ) < 0 ) return -1;
+    if( _cryptonite_blake2s_init( S, outlen ) < 0 ) return -1;
   }
 
   _cryptonite_blake2s_update( S, ( const uint8_t * )in, inlen );
-  blake2s_final( S, out, outlen );
+  _cryptonite_blake2s_final( S, out, outlen );
   return 0;
 }
 
@@ -330,7 +330,7 @@ int main( void )
       size_t mlen = i;
       int err = 0;
 
-      if( (err = blake2s_init_key(&S, BLAKE2S_OUTBYTES, key, BLAKE2S_KEYBYTES)) < 0 ) {
+      if( (err = _cryptonite_blake2s_init_key(&S, BLAKE2S_OUTBYTES, key, BLAKE2S_KEYBYTES)) < 0 ) {
         goto fail;
       }
 
@@ -344,7 +344,7 @@ int main( void )
       if ( (err = _cryptonite_blake2s_update(&S, p, mlen)) < 0) {
         goto fail;
       }
-      if ( (err = blake2s_final(&S, hash, BLAKE2S_OUTBYTES)) < 0) {
+      if ( (err = _cryptonite_blake2s_final(&S, hash, BLAKE2S_OUTBYTES)) < 0) {
         goto fail;
       }
 
