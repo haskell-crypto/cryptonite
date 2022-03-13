@@ -1,3 +1,15 @@
+## 0.30
+
+* Fix some C symbol blake2b prefix to be cryptonite_ prefix (fix mixing with other C library)
+* add hmac-lazy
+* Fix compilation with GHC 9.2
+* Drop support for GHC8.0, GHC8.2, GHC8.4, GHC8.6
+
+## 0.29
+
+* advance compilation with gmp breakage due to change upstream
+* Add native EdDSA support
+
 ## 0.28
 
 * Add hash constant time capability
