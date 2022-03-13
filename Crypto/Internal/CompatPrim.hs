@@ -23,15 +23,21 @@ module Crypto.Internal.CompatPrim
     , convert4To32
     ) where
 
-import GHC.Prim
 #if !defined(ARCH_IS_LITTLE_ENDIAN) && !defined(ARCH_IS_BIG_ENDIAN)
 import Data.Memory.Endian (getSystemEndianness, Endianness(..))
+#endif
+
+#if __GLASGOW_HASKELL__ >= 902
+import GHC.Prim
+#else
+import GHC.Prim hiding (Word32#)
+type Word32# = Word#
 #endif
 
 -- | Byteswap Word# to or from Big Endian
 --
 -- On a big endian machine, this function is a nop.
-be32Prim :: Word# -> Word#
+be32Prim :: Word32# -> Word32#
 #ifdef ARCH_IS_LITTLE_ENDIAN
 be32Prim = byteswap32Prim
 #elif defined(ARCH_IS_BIG_ENDIAN)
@@ -43,7 +49,7 @@ be32Prim w = if getSystemEndianness == LittleEndian then byteswap32Prim w else w
 -- | Byteswap Word# to or from Little Endian
 --
 -- On a little endian machine, this function is a nop.
-le32Prim :: Word# -> Word#
+le32Prim :: Word32# -> Word32#
 #ifdef ARCH_IS_LITTLE_ENDIAN
 le32Prim w = w
 #elif defined(ARCH_IS_BIG_ENDIAN)
@@ -54,16 +60,11 @@ le32Prim w = if getSystemEndianness == LittleEndian then w else byteswap32Prim w
 
 -- | Simple compatibility for byteswap the lower 32 bits of a Word#
 -- at the primitive level
-byteswap32Prim :: Word# -> Word#
-#if __GLASGOW_HASKELL__ >= 708
-byteswap32Prim w = byteSwap32# w
+byteswap32Prim :: Word32# -> Word32#
+#if __GLASGOW_HASKELL__ >= 902
+byteswap32Prim w = wordToWord32# (byteSwap32# (word32ToWord# w))
 #else
-byteswap32Prim w =
-    let !a =       uncheckedShiftL# w 24#
-        !b = and# (uncheckedShiftL# w 8#) 0x00ff0000##
-        !c = and# (uncheckedShiftRL# w 8#) 0x0000ff00##
-        !d = and# (uncheckedShiftRL# w 24#) 0x000000ff##
-     in or# a (or# b (or# c d))
+byteswap32Prim w = byteSwap32# w
 #endif
 
 -- | Combine 4 word8 [a,b,c,d] to a word32 representing [a,b,c,d]
