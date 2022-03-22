@@ -94,6 +94,11 @@ Flag support_deepseq
   Default:           True
   Manual:            True
 
+Flag support_mtl
+  Description:       define instance for MonadRandom via MTL transformers
+  Default:           False
+  Manual:            True
+
 Flag old_toolchain_inliner
   Description:       use -fgnu89-inline to workaround an old compiler / linker / glibc issue.
   Default:           False
@@ -395,6 +400,9 @@ Library
   if flag(support_deepseq)
     CPP-options:     -DWITH_DEEPSEQ_SUPPORT
     Build-depends:   deepseq
+  if flag(support_mtl)
+    CPP-options:     -DWITH_MTL_SUPPORT
+    Build-depends:   mtl
   if flag(check_alignment)
     cc-options:     -DWITH_ASSERT_ALIGNMENT
   if flag(use_target_attributes)

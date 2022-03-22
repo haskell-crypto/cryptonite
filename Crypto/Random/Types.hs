@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP, FlexibleInstances, UndecidableInstances #-}
 -- |
 -- Module      : Crypto.Random.Types
 -- License     : BSD-style
@@ -13,6 +14,10 @@ module Crypto.Random.Types
     , withDRG
     ) where
 
+#ifdef WITH_MTL_SUPPORT
+import Control.Monad.Trans
+#endif
+
 import Crypto.Random.Entropy
 import Crypto.Internal.ByteArray
 
@@ -27,6 +32,15 @@ class DRG gen where
 
 instance MonadRandom IO where
     getRandomBytes = getEntropy
+
+#ifdef WITH_MTL_SUPPORT
+instance {-# OVERLAPPABLE #-}
+    ( MonadTrans t
+    , MonadRandom m
+    , Monad (t m)
+    ) => MonadRandom (t m) where
+    getRandomBytes = lift . getRandomBytes
+#endif
 
 -- | A simple Monad class very similar to a State Monad
 -- with the state being a DRG.
