@@ -229,6 +229,12 @@ void cryptonite_sha3_finalize_shake(struct sha3_ctx *ctx)
 	cryptonite_sha3_finalize_with_pad_byte(ctx, 0x1F);
 }
 
+/* Finalize a rawSHAKE context. Output is read using cryptonite_sha3_output. */
+void cryptonite_sha3_finalize_rawshake(struct sha3_ctx *ctx)
+{
+	cryptonite_sha3_finalize_with_pad_byte(ctx, 0x07);
+}
+
 /* Finalize a cSHAKE context. Output is read using cryptonite_sha3_output. */
 void cryptonite_sha3_finalize_cshake(struct sha3_ctx *ctx)
 {
