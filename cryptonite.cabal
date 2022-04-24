@@ -134,6 +134,7 @@ Library
                      Crypto.MAC.CMAC
                      Crypto.MAC.Poly1305
                      Crypto.MAC.HMAC
+                     Crypto.MAC.KeyedBlake2
                      Crypto.MAC.KMAC
                      Crypto.Number.Basic
                      Crypto.Number.F2m
@@ -432,6 +433,7 @@ Test-Suite test-cryptonite
                      KAT_Ed25519
                      KAT_Ed448
                      KAT_EdDSA
+                     KAT_Blake2
                      KAT_CMAC
                      KAT_HKDF
                      KAT_HMAC

@@ -19,6 +19,7 @@ import qualified XSalsa
 import qualified ChaCha
 import qualified ChaChaPoly1305
 import qualified KAT_MiyaguchiPreneel
+import qualified KAT_Blake2
 import qualified KAT_CMAC
 import qualified KAT_HMAC
 import qualified KAT_KMAC
@@ -60,6 +61,7 @@ tests = testGroup "cryptonite"
         ]
     , testGroup "MAC"
         [ Poly1305.tests
+        , KAT_Blake2.tests
         , KAT_CMAC.tests
         , KAT_HMAC.tests
         , KAT_KMAC.tests
