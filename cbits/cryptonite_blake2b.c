@@ -5,6 +5,11 @@ void cryptonite_blake2b_init(blake2b_ctx *ctx, uint32_t hashlen)
 	_cryptonite_blake2b_init(ctx, hashlen / 8);
 }
 
+void cryptonite_blake2b_init_key(blake2b_ctx *ctx, uint32_t hashlen, const uint8_t *key, size_t keylen)
+{
+	_cryptonite_blake2b_init_key(ctx, hashlen / 8, (const void *) key, keylen);
+}
+
 void cryptonite_blake2b_update(blake2b_ctx *ctx, const uint8_t *data, uint32_t len)
 {
 	_cryptonite_blake2b_update(ctx, data, len);

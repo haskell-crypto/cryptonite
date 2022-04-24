@@ -6,6 +6,7 @@
 typedef blake2bp_state blake2bp_ctx;
 
 void cryptonite_blake2bp_init(blake2bp_ctx *ctx, uint32_t hashlen);
+void cryptonite_blake2bp_init_key(blake2bp_ctx *ctx, uint32_t hashlen, const uint8_t *key, size_t keylen);
 void cryptonite_blake2bp_update(blake2bp_ctx *ctx, const uint8_t *data, uint32_t len);
 void cryptonite_blake2bp_finalize(blake2bp_ctx *ctx, uint32_t hashlen, uint8_t *out);
 

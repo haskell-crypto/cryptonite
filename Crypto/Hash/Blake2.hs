@@ -33,7 +33,8 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 module Crypto.Hash.Blake2
-    ( Blake2s(..)
+    ( HashBlake2(..)
+    , Blake2s(..)
     , Blake2sp(..)
     , Blake2b(..)
     , Blake2bp(..)
@@ -45,6 +46,13 @@ import           Data.Data
 import           Data.Word (Word8, Word32)
 import           GHC.TypeLits (Nat, KnownNat)
 import           Crypto.Internal.Nat
+
+-- | Typeclass for the Blake2 family of digest functions.
+class HashAlgorithm a => HashBlake2 a where
+
+    -- | Init Blake2 algorithm with the specified key of the specified length.
+    -- The key length is specified in bytes.
+    blake2InternalKeyedInit :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
 
 -- | Fast and secure alternative to SHA1 and HMAC-SHA1
 --
@@ -72,8 +80,16 @@ instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost b
     hashInternalUpdate        = c_blake2s_update
     hashInternalFinalize p    = c_blake2s_finalize p (integralNatVal (Proxy :: Proxy bitlen))
 
+instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost bitlen 256)
+      => HashBlake2 (Blake2s bitlen)
+      where
+    blake2InternalKeyedInit p = c_blake2s_init_key p outLen
+        where outLen = integralNatVal (Proxy :: Proxy bitlen)
+
 foreign import ccall unsafe "cryptonite_blake2s_init"
     c_blake2s_init :: Ptr (Context a) -> Word32 -> IO ()
+foreign import ccall unsafe "cryptonite_blake2s_init_key"
+    c_blake2s_init_key :: Ptr (Context a) -> Word32 -> Ptr Word8 -> Word32 -> IO ()
 foreign import ccall "cryptonite_blake2s_update"
     c_blake2s_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
 foreign import ccall unsafe "cryptonite_blake2s_finalize"
@@ -107,8 +123,16 @@ instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost b
     hashInternalUpdate        = c_blake2b_update
     hashInternalFinalize p    = c_blake2b_finalize p (integralNatVal (Proxy :: Proxy bitlen))
 
+instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost bitlen 512)
+      => HashBlake2 (Blake2b bitlen)
+      where
+    blake2InternalKeyedInit p = c_blake2b_init_key p outLen
+        where outLen = integralNatVal (Proxy :: Proxy bitlen)
+
 foreign import ccall unsafe "cryptonite_blake2b_init"
     c_blake2b_init :: Ptr (Context a) -> Word32 -> IO ()
+foreign import ccall unsafe "cryptonite_blake2b_init_key"
+    c_blake2b_init_key :: Ptr (Context a) -> Word32 -> Ptr Word8 -> Word32 -> IO ()
 foreign import ccall "cryptonite_blake2b_update"
     c_blake2b_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
 foreign import ccall unsafe "cryptonite_blake2b_finalize"
@@ -130,8 +154,16 @@ instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost b
     hashInternalUpdate        = c_blake2sp_update
     hashInternalFinalize p    = c_blake2sp_finalize p (integralNatVal (Proxy :: Proxy bitlen))
 
+instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost bitlen 256)
+      => HashBlake2 (Blake2sp bitlen)
+      where
+    blake2InternalKeyedInit p = c_blake2sp_init_key p outLen
+        where outLen = integralNatVal (Proxy :: Proxy bitlen)
+
 foreign import ccall unsafe "cryptonite_blake2sp_init"
     c_blake2sp_init :: Ptr (Context a) -> Word32 -> IO ()
+foreign import ccall unsafe "cryptonite_blake2sp_init_key"
+    c_blake2sp_init_key :: Ptr (Context a) -> Word32 -> Ptr Word8 -> Word32 -> IO ()
 foreign import ccall "cryptonite_blake2sp_update"
     c_blake2sp_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
 foreign import ccall unsafe "cryptonite_blake2sp_finalize"
@@ -153,9 +185,16 @@ instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost b
     hashInternalUpdate        = c_blake2bp_update
     hashInternalFinalize p    = c_blake2bp_finalize p (integralNatVal (Proxy :: Proxy bitlen))
 
+instance (IsDivisibleBy8 bitlen, KnownNat bitlen, IsAtLeast bitlen 8, IsAtMost bitlen 512)
+      => HashBlake2 (Blake2bp bitlen)
+      where
+    blake2InternalKeyedInit p = c_blake2bp_init_key p outLen
+        where outLen = integralNatVal (Proxy :: Proxy bitlen)
 
 foreign import ccall unsafe "cryptonite_blake2bp_init"
     c_blake2bp_init :: Ptr (Context a) -> Word32 -> IO ()
+foreign import ccall unsafe "cryptonite_blake2bp_init_key"
+    c_blake2bp_init_key :: Ptr (Context a) -> Word32 -> Ptr Word8 -> Word32 -> IO ()
 foreign import ccall "cryptonite_blake2bp_update"
     c_blake2bp_update :: Ptr (Context a) -> Ptr Word8 -> Word32 -> IO ()
 foreign import ccall unsafe "cryptonite_blake2bp_finalize"
