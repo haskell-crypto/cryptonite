@@ -92,10 +92,43 @@ static void chacha_core(int rounds, block *out, const cryptonite_chacha_state *i
 	out->d[15] = cpu_to_le32(x15);
 }
 
-/* only 2 valids values are 256 (32) and 128 (16) */
-void cryptonite_chacha_init_core(cryptonite_chacha_state *st,
-                                 uint32_t keylen, const uint8_t *key,
-                                 uint32_t ivlen, const uint8_t *iv)
+static void hchacha_core(int rounds, uint32_t *out, const cryptonite_chacha_state *in)
+{
+	uint32_t x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15;
+	int i;
+
+	x0 = in->d[0]; x1 = in->d[1]; x2 = in->d[2]; x3 = in->d[3];
+	x4 = in->d[4]; x5 = in->d[5]; x6 = in->d[6]; x7 = in->d[7];
+	x8 = in->d[8]; x9 = in->d[9]; x10 = in->d[10]; x11 = in->d[11];
+	x12 = in->d[12]; x13 = in->d[13]; x14 = in->d[14]; x15 = in->d[15];
+
+	for (i = rounds; i > 0; i -= 2) {
+		QR(x0, x4, x8, x12);
+		QR(x1, x5, x9, x13);
+		QR(x2, x6, x10, x14);
+		QR(x3, x7, x11, x15);
+
+		QR(x0, x5, x10, x15);
+		QR(x1, x6, x11, x12);
+		QR(x2, x7, x8, x13);
+		QR(x3, x4, x9, x14);
+	}
+
+	/* HChaCha doesn't perform the final addition */
+
+	out[0] = cpu_to_le32(x0);
+	out[1] = cpu_to_le32(x1);
+	out[2] = cpu_to_le32(x2);
+	out[3] = cpu_to_le32(x3);
+	out[4] = cpu_to_le32(x12);
+	out[5] = cpu_to_le32(x13);
+	out[6] = cpu_to_le32(x14);
+	out[7] = cpu_to_le32(x15);
+}
+
+/* Common initialization logic for ChaCha20 and HChaCha20 */
+static void chacha_init_key_state(cryptonite_chacha_state *st,
+                                  uint32_t keylen, const uint8_t *key)
 {
 	const uint8_t *constants = (keylen == 32) ? sigma : tau;
 
@@ -117,6 +150,14 @@ void cryptonite_chacha_init_core(cryptonite_chacha_state *st,
 	st->d[9] = load_le32(key + 4);
 	st->d[10] = load_le32(key + 8);
 	st->d[11] = load_le32(key + 12);
+}
+
+/* only 2 valids values are 256 (32) and 128 (16) */
+void cryptonite_chacha_init_core(cryptonite_chacha_state *st,
+                                        uint32_t keylen, const uint8_t *key,
+                                        uint32_t ivlen, const uint8_t *iv)
+{
+	chacha_init_key_state(st, keylen, key);
 	st->d[12] = 0;
 	switch (ivlen) {
 	case 8:
@@ -133,6 +174,20 @@ void cryptonite_chacha_init_core(cryptonite_chacha_state *st,
 	}
 }
 
+
+void cryptonite_hchacha_init_core(cryptonite_chacha_state *st,
+                                  const uint8_t *key,
+                                  const uint8_t *iv)
+{
+	/* keylen is always 32 here */
+	chacha_init_key_state(st, 32, key);
+	/* fill the last 4 uint32s with the 128-bit nonce */
+	st->d[12] = load_le32(iv + 0);
+	st->d[13] = load_le32(iv + 4);
+	st->d[14] = load_le32(iv + 8);
+	st->d[15] = load_le32(iv + 12);
+}
+
 void cryptonite_chacha_init(cryptonite_chacha_context *ctx, uint8_t nb_rounds,
                             uint32_t keylen, const uint8_t *key,
                             uint32_t ivlen, const uint8_t *iv)
@@ -141,6 +196,39 @@ void cryptonite_chacha_init(cryptonite_chacha_context *ctx, uint8_t nb_rounds,
 	ctx->nb_rounds = nb_rounds;
 	cryptonite_chacha_init_core(&ctx->st, keylen, key, ivlen, iv);
 }
+
+void cryptonite_hchacha(uint8_t nb_rounds, const uint8_t *keyin, const uint8_t *iv,
+                        uint8_t *keyout)
+{
+	cryptonite_chacha_state st;
+
+	cryptonite_hchacha_init_core(&st, keyin, iv);
+	/* output to uint32_t* and do a memcpy to avoid
+	   violating the strict aliasing rule */
+	uint32_t keyout32[8];
+	hchacha_core(nb_rounds, keyout32, &st);
+	memset(&st, 0, sizeof(st));
+	memcpy(keyout, keyout32, 32);
+
+	memset(keyout32, 0, 32);
+}
+
+/* XChaCha: 256-bit key, 192-bit nonce version of ChaCha.*/
+void cryptonite_xchacha_init(cryptonite_chacha_context *ctx, uint8_t nb_rounds,
+                             const uint8_t *key, const uint8_t *iv)
+{
+	memset(ctx, 0, sizeof(*ctx));
+	ctx->nb_rounds = nb_rounds;
+
+	/* perform HChaCha with the key and the first 16 bytes of the nonce
+	to get the subkey */
+	uint8_t subkey[32];
+	cryptonite_hchacha(nb_rounds, key, iv, subkey);
+	/* perform regular ChaCha with the generated subkey and the last 8 bytes
+	of the input IV */
+	cryptonite_chacha_init_core(&ctx->st, 32, subkey, 8, iv + 16);
+}
+
 
 void cryptonite_chacha_combine(uint8_t *dst, cryptonite_chacha_context *ctx, const uint8_t *src, uint32_t bytes)
 {

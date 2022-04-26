@@ -38,10 +38,13 @@
 module Crypto.Cipher.ChaChaPoly1305
     ( State
     , Nonce
+    , XNonce
     , nonce12
     , nonce8
+    , nonce24
     , incrementNonce
     , initialize
+    , initializeX
     , appendAAD
     , finalizeAAD
     , encrypt
@@ -81,6 +84,14 @@ instance ByteArrayAccess Nonce where
   withByteArray (Nonce8  n) = B.withByteArray n
   withByteArray (Nonce12 n) = B.withByteArray n
 
+-- | Extended nonce for XChaChaPoly1305.
+newtype XNonce = Nonce24 Bytes
+
+instance ByteArrayAccess XNonce where
+  length (Nonce24 n) = B.length n
+  withByteArray (Nonce24 n) = B.withByteArray n
+
+
 -- Based on the following pseudo code:
 --
 -- chacha20_aead_encrypt(aad, key, iv, constant, plaintext):
@@ -117,6 +128,13 @@ nonce8 constant iv
     | B.length iv       /= 8 = CryptoFailed CryptoError_IvSizeInvalid
     | otherwise              = CryptoPassed . Nonce8 . B.concat $ [constant, iv]
 
+-- | 24 bytes IV, extended nonce constructor
+nonce24 :: ByteArrayAccess ba
+        => ba -> CryptoFailable XNonce
+nonce24 iv
+    | B.length iv /= 24 = CryptoFailed CryptoError_IvSizeInvalid
+    | otherwise         = CryptoPassed . Nonce24 . B.convert $ iv
+
 -- | Increment a nonce
 incrementNonce :: Nonce -> Nonce
 incrementNonce (Nonce8  n) = Nonce8  $ incrementNonce' n 4
@@ -143,15 +161,33 @@ initialize :: ByteArrayAccess key
 initialize key (Nonce8  nonce) = initialize' key nonce
 initialize key (Nonce12 nonce) = initialize' key nonce
 
+
 initialize' :: ByteArrayAccess key
             => key -> Bytes -> CryptoFailable State
 initialize' key nonce
     | B.length key /= 32 = CryptoFailed CryptoError_KeySizeInvalid
-    | otherwise          = CryptoPassed $ State encState polyState 0 0
-  where
-    rootState           = ChaCha.initialize 20 key nonce
+    | otherwise          = CryptoPassed $ initFromRootState rootState
+  where rootState = ChaCha.initialize 20 key nonce
+
+
+initFromRootState :: ChaCha.State -> State
+initFromRootState rootState = State encState polyState 0 0
+  where 
     (polyKey, encState) = ChaCha.generate rootState 64
     polyState           = throwCryptoError $ Poly1305.initialize (B.take 32 polyKey :: ScrubbedBytes)
+
+
+-- | Initialize a new XChaChaPoly1305 State
+--
+-- The key length needs to be 256 bits, and the nonce
+-- procured using `nonce24`.
+initializeX :: ByteArrayAccess key
+            => key -> XNonce -> CryptoFailable State
+initializeX key (Nonce24 nonce)
+    | B.length key /= 32 = CryptoFailed CryptoError_KeySizeInvalid
+    | otherwise          = CryptoPassed $ initFromRootState rootState
+  where rootState = ChaCha.initializeX 20 key nonce
+
 
 -- | Append Authenticated Data to the State and return
 -- the new modified State.

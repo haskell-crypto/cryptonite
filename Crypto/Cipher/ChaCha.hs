@@ -9,6 +9,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Crypto.Cipher.ChaCha
     ( initialize
+    , initializeX
     , combine
     , generate
     , State
@@ -49,6 +50,28 @@ initialize nbRounds key nonce
             B.withByteArray nonce $ \noncePtr  ->
             B.withByteArray key   $ \keyPtr ->
                 ccryptonite_chacha_init stPtr  nbRounds kLen keyPtr nonceLen noncePtr
+        return $ State stPtr
+  where kLen     = B.length key
+        nonceLen = B.length nonce
+
+-- | Initialize a new XChaCha context with the number of rounds,
+-- the key and the nonce associated.
+--
+-- An XChaCha state can be used like a regular ChaCha state after initialisation.
+initializeX :: (ByteArrayAccess key, ByteArrayAccess nonce)
+            => Int   -- ^ number of rounds (8,12,20)
+            -> key   -- ^ the key (256 bits)
+            -> nonce -- ^ the nonce (192 bits)
+            -> State -- ^ the initial ChaCha state
+initializeX nbRounds key nonce
+    | kLen /= 32                      = error "XChaCha: key length should be 256 bits"
+    | nonceLen /= 24                  = error "XChaCha: nonce length should be 192 bits"
+    | nbRounds `notElem` [8,12,20]    = error "XChaCha: rounds should be 8, 12 or 20"
+    | otherwise                       = unsafeDoIO $ do
+        stPtr <- B.alloc 132 $ \stPtr ->
+            B.withByteArray nonce $ \noncePtr  ->
+            B.withByteArray key   $ \keyPtr ->
+                ccryptonite_xchacha_init stPtr nbRounds keyPtr noncePtr
         return $ State stPtr
   where kLen     = B.length key
         nonceLen = B.length nonce
@@ -114,6 +137,9 @@ foreign import ccall "cryptonite_chacha_init_core"
 
 foreign import ccall "cryptonite_chacha_init"
     ccryptonite_chacha_init :: Ptr State -> Int -> Int -> Ptr Word8 -> Int -> Ptr Word8 -> IO ()
+
+foreign import ccall "cryptonite_xchacha_init"
+    ccryptonite_xchacha_init :: Ptr State -> Int -> Ptr Word8 -> Ptr Word8 -> IO ()
 
 foreign import ccall "cryptonite_chacha_combine"
     ccryptonite_chacha_combine :: Ptr Word8 -> Ptr State -> Ptr Word8 -> CUInt -> IO ()
