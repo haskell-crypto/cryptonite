@@ -27,7 +27,7 @@
 #define SER_BYTES 56
 typedef struct cryptonite_gf_448_s {
     word_t limb[NLIMBS];
-} __attribute__((aligned(16))) cryptonite_gf_448_s, cryptonite_gf_448_t[1];
+} VECTOR_ALIGNED cryptonite_gf_448_s, cryptonite_gf_448_t[1];
 
 #define GF_LIT_LIMB_BITS  56
 #define GF_BITS           448
@@ -38,6 +38,7 @@ typedef struct cryptonite_gf_448_s {
 #define cryptonite_gf_s              cryptonite_gf_448_s
 #define cryptonite_gf_eq             cryptonite_gf_448_eq
 #define cryptonite_gf_hibit          cryptonite_gf_448_hibit
+#define cryptonite_gf_lobit          cryptonite_gf_448_lobit
 #define cryptonite_gf_copy           cryptonite_gf_448_copy
 #define cryptonite_gf_add            cryptonite_gf_448_add
 #define cryptonite_gf_sub            cryptonite_gf_448_sub
@@ -81,10 +82,11 @@ void cryptonite_gf_mulw_unsigned (cryptonite_gf_s *__restrict__ out, const gf a,
 void cryptonite_gf_sqr (cryptonite_gf_s *__restrict__ out, const gf a);
 mask_t cryptonite_gf_isr(gf a, const gf x); /** a^2 x = 1, QNR, or 0 if x=0.  Return true if successful */
 mask_t cryptonite_gf_eq (const gf x, const gf y);
+mask_t cryptonite_gf_lobit (const gf x);
 mask_t cryptonite_gf_hibit (const gf x);
 
 void cryptonite_gf_serialize (uint8_t *serial, const gf x,int with_highbit);
-mask_t cryptonite_gf_deserialize (gf x, const uint8_t serial[SER_BYTES],int with_highbit);
+mask_t cryptonite_gf_deserialize (gf x, const uint8_t serial[SER_BYTES],int with_hibit,uint8_t hi_nmask);
 
 
 #ifdef __cplusplus

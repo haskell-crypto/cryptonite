@@ -48,10 +48,23 @@ static const scalar_t point_scalarmul_adjustment = {{{
 
 const uint8_t cryptonite_decaf_x448_base_point[CRYPTONITE_DECAF_X448_PUBLIC_BYTES] = { 0x05 };
 
-#if COFACTOR==8 || EDDSA_USE_SIGMA_ISOGENY
-    static const gf SQRT_ONE_MINUS_D = {FIELD_LITERAL(
-        /* NONE */
-    )};
+#define RISTRETTO_FACTOR DECAF_448_RISTRETTO_FACTOR
+const gf RISTRETTO_FACTOR = {FIELD_LITERAL(
+    0x42ef0f45572736, 0x7bf6aa20ce5296, 0xf4fd6eded26033, 0x968c14ba839a66, 0xb8d54b64a2d780, 0x6aa0a1f1a7b8a5, 0x683bf68d722fa2, 0x22d962fbeb24f7
+)};
+
+#if IMAGINE_TWIST
+#define TWISTED_D (-(EDWARDS_D))
+#else
+#define TWISTED_D ((EDWARDS_D)-1)
+#endif
+
+#if TWISTED_D < 0
+#define EFF_D (-(TWISTED_D))
+#define NEG_D 1
+#else
+#define EFF_D TWISTED_D
+#define NEG_D 0
 #endif
 
 /* End of template stuff */
@@ -62,7 +75,7 @@ const uint8_t cryptonite_decaf_x448_base_point[CRYPTONITE_DECAF_X448_PUBLIC_BYTE
 #error "Currently require IMAGINE_TWIST (and thus p=5 mod 8) for cofactor 8"
         /* OK, but why?
          * Two reasons: #1: There are bugs when COFACTOR == && IMAGINE_TWIST
-         # #2: 
+         # #2:
          */
 #endif
 
@@ -73,7 +86,7 @@ const uint8_t cryptonite_decaf_x448_base_point[CRYPTONITE_DECAF_X448_PUBLIC_BYTE
 #if (COFACTOR != 8) && (COFACTOR != 4)
     #error "COFACTOR must be 4 or 8"
 #endif
- 
+
 #if IMAGINE_TWIST
     extern const gf SQRT_MINUS_ONE;
 #endif
@@ -109,128 +122,111 @@ cryptonite_gf_invert(gf y, const gf x, int assert_nonzero) {
     cryptonite_gf_copy(y, t2);
 }
 
-/** Return high bit of x = low bit of 2x mod p */
-static mask_t cryptonite_gf_lobit(const gf x) {
-    gf y;
-    cryptonite_gf_copy(y,x);
-    cryptonite_gf_strong_reduce(y);
-    return -(y->limb[0]&1);
-}
-
 /** identity = (0,1) */
 const point_t API_NS(point_identity) = {{{{{0}}},{{{1}}},{{{1}}},{{{0}}}}};
 
+/* Predeclare because not static: called by elligator */
 void API_NS(deisogenize) (
     cryptonite_gf_s *__restrict__ s,
-    cryptonite_gf_s *__restrict__ minus_t_over_s,
+    cryptonite_gf_s *__restrict__ inv_el_sum,
+    cryptonite_gf_s *__restrict__ inv_el_m1,
     const point_t p,
-    mask_t toggle_hibit_s,
-    mask_t toggle_hibit_t_over_s,
+    mask_t toggle_s,
+    mask_t toggle_altx,
     mask_t toggle_rotation
 );
 
 void API_NS(deisogenize) (
     cryptonite_gf_s *__restrict__ s,
-    cryptonite_gf_s *__restrict__ minus_t_over_s,
+    cryptonite_gf_s *__restrict__ inv_el_sum,
+    cryptonite_gf_s *__restrict__ inv_el_m1,
     const point_t p,
-    mask_t toggle_hibit_s,
-    mask_t toggle_hibit_t_over_s,
+    mask_t toggle_s,
+    mask_t toggle_altx,
     mask_t toggle_rotation
 ) {
 #if COFACTOR == 4 && !IMAGINE_TWIST
-    (void) toggle_rotation;
-    
-    gf b, d;
-    cryptonite_gf_s *c = s, *a = minus_t_over_s;
-    cryptonite_gf_mulw(a, p->y, 1-EDWARDS_D);
-    cryptonite_gf_mul(c, a, p->t);     /* -dYT, with EDWARDS_D = d-1 */
-    cryptonite_gf_mul(a, p->x, p->z); 
-    cryptonite_gf_sub(d, c, a);  /* aXZ-dYT with a=-1 */
-    cryptonite_gf_add(a, p->z, p->y); 
-    cryptonite_gf_sub(b, p->z, p->y); 
-    cryptonite_gf_mul(c, b, a);
-    cryptonite_gf_mulw(b, c, -EDWARDS_D); /* (a-d)(Z+Y)(Z-Y) */
-    mask_t ok = cryptonite_gf_isr (a,b); /* r in the paper */
-    (void)ok; assert(ok | cryptonite_gf_eq(b,ZERO));
-    cryptonite_gf_mulw (b, a, -EDWARDS_D); /* u in the paper */
+    (void)toggle_rotation; /* Only applies to cofactor 8 */
+    gf t1;
+    cryptonite_gf_s *t2 = s, *t3=inv_el_sum, *t4=inv_el_m1;
 
-    cryptonite_gf_mul(c,a,d); /* r(aZX-dYT) */
-    cryptonite_gf_mul(a,b,p->z); /* uZ */
-    cryptonite_gf_add(a,a,a); /* 2uZ */
-    
-    mask_t tg = toggle_hibit_t_over_s ^ ~cryptonite_gf_hibit(minus_t_over_s);
-    cryptonite_gf_cond_neg(minus_t_over_s, tg); /* t/s <-? -t/s */
-    cryptonite_gf_cond_neg(c, tg); /* u <- -u if negative. */
-    
-    cryptonite_gf_add(d,c,p->y);
-    cryptonite_gf_mul(s,b,d);
-    cryptonite_gf_cond_neg(s, toggle_hibit_s ^ cryptonite_gf_hibit(s));
-#else
+    cryptonite_gf_add(t1,p->x,p->t);
+    cryptonite_gf_sub(t2,p->x,p->t);
+    cryptonite_gf_mul(t3,t1,t2); /* t3 = num */
+    cryptonite_gf_sqr(t2,p->x);
+    cryptonite_gf_mul(t1,t2,t3);
+    cryptonite_gf_mulw(t2,t1,-1-TWISTED_D); /* -x^2 * (a-d) * num */
+    cryptonite_gf_isr(t1,t2);    /* t1 = isr */
+    cryptonite_gf_mul(t2,t1,t3); /* t2 = ratio */
+    cryptonite_gf_mul(t4,t2,RISTRETTO_FACTOR);
+    mask_t negx = cryptonite_gf_lobit(t4) ^ toggle_altx;
+    cryptonite_gf_cond_neg(t2, negx);
+    cryptonite_gf_mul(t3,t2,p->z);
+    cryptonite_gf_sub(t3,t3,p->t);
+    cryptonite_gf_mul(t2,t3,p->x);
+    cryptonite_gf_mulw(t4,t2,-1-TWISTED_D);
+    cryptonite_gf_mul(s,t4,t1);
+    mask_t lobs = cryptonite_gf_lobit(s);
+    cryptonite_gf_cond_neg(s,lobs);
+    cryptonite_gf_copy(inv_el_m1,p->x);
+    cryptonite_gf_cond_neg(inv_el_m1,~lobs^negx^toggle_s);
+    cryptonite_gf_add(inv_el_m1,inv_el_m1,p->t);
+#elif COFACTOR == 8 && IMAGINE_TWIST
     /* More complicated because of rotation */
-    /* MAGIC This code is wrong for certain non-Curve25519 curves;
-     * check if it's because of Cofactor==8 or IMAGINE_TWIST */
-    
-    gf c, d;
-    cryptonite_gf_s *b = s, *a = minus_t_over_s;
+    gf t1,t2,t3,t4,t5;
+    cryptonite_gf_add(t1,p->z,p->y);
+    cryptonite_gf_sub(t2,p->z,p->y);
+    cryptonite_gf_mul(t3,t1,t2);      /* t3 = num */
+    cryptonite_gf_mul(t2,p->x,p->y);  /* t2 = den */
+    cryptonite_gf_sqr(t1,t2);
+    cryptonite_gf_mul(t4,t1,t3);
+    cryptonite_gf_mulw(t1,t4,-1-TWISTED_D);
+    cryptonite_gf_isr(t4,t1);         /* isqrt(num*(a-d)*den^2) */
+    cryptonite_gf_mul(t1,t2,t4);
+    cryptonite_gf_mul(t2,t1,RISTRETTO_FACTOR); /* t2 = "iden" in ristretto.sage */
+    cryptonite_gf_mul(t1,t3,t4);                 /* t1 = "inum" in ristretto.sage */
 
-    #if IMAGINE_TWIST
-        gf x, t;
-        cryptonite_gf_div_qnr(x,p->x);
-        cryptonite_gf_div_qnr(t,p->t);
-        cryptonite_gf_add ( a, p->z, x );
-        cryptonite_gf_sub ( b, p->z, x );
-        cryptonite_gf_mul ( c, a, b ); /* "zx" = Z^2 - aX^2 = Z^2 - X^2 */
-    #else
-        const cryptonite_gf_s *x = p->x, *t = p->t;
-        cryptonite_gf_sqr ( a, p->z );
-        cryptonite_gf_sqr ( b, p->x );
-        cryptonite_gf_add ( c, a, b ); /* "zx" = Z^2 - aX^2 = Z^2 + X^2 */
-    #endif
-    /* Here: c = "zx" in the SAGE code = Z^2 - aX^2 */
-    
-    cryptonite_gf_mul ( a, p->z, t ); /* "tz" = T*Z */
-    cryptonite_gf_sqr ( b, a );
-    cryptonite_gf_mul ( d, b, c ); /* (TZ)^2 * (Z^2-aX^2) */
-    mask_t ok = cryptonite_gf_isr(b, d);
-    (void)ok; assert(ok | cryptonite_gf_eq(d,ZERO));
-    cryptonite_gf_mul ( d, b, a ); /* "osx" = 1 / sqrt(z^2-ax^2) */
-    cryptonite_gf_mul ( a, b, c ); 
-    cryptonite_gf_mul ( b, a, d ); /* 1/tz */
+    /* Calculate altxy = iden*inum*i*t^2*(d-a) */
+    cryptonite_gf_mul(t3,t1,t2);
+    cryptonite_gf_mul_i(t4,t3);
+    cryptonite_gf_mul(t3,t4,p->t);
+    cryptonite_gf_mul(t4,t3,p->t);
+    cryptonite_gf_mulw(t3,t4,TWISTED_D+1);      /* iden*inum*i*t^2*(d-1) */
+    mask_t rotate = toggle_rotation ^ cryptonite_gf_lobit(t3);
 
-    mask_t rotate;
-    #if (COFACTOR == 8)
-        gf e;
-        cryptonite_gf_sqr(e, p->z);
-        cryptonite_gf_mul(a, e, b); /* z^2 / tz = z/t = 1/xy */
-        rotate = cryptonite_gf_hibit(a) ^ toggle_rotation;
-        /* Curve25519: cond select between zx * 1/tz or sqrt(1-d); y=-x */
-        cryptonite_gf_mul ( a, b, c ); 
-        cryptonite_gf_cond_sel ( a, a, SQRT_ONE_MINUS_D, rotate );
-        cryptonite_gf_cond_sel ( e, p->y, x, rotate );
-    #else
-        const cryptonite_gf_s *e = x;
-        (void)toggle_rotation;
-        rotate = 0;
-    #endif
-    
-    cryptonite_gf_mul ( c, a, d ); // new "osx"
-    cryptonite_gf_mul ( a, c, p->z );
-    cryptonite_gf_add ( minus_t_over_s, a, a ); // 2 * "osx" * Z
-    cryptonite_gf_mul ( d, b, p->z );
-    
-    mask_t tg = toggle_hibit_t_over_s ^~ cryptonite_gf_hibit(minus_t_over_s);
-    cryptonite_gf_cond_neg ( minus_t_over_s, tg );
-    cryptonite_gf_cond_neg ( c, rotate ^ tg );
-    cryptonite_gf_add ( d, d, c );
-    cryptonite_gf_mul ( s, d, e ); /* here "x" = y unless rotate */
-    cryptonite_gf_cond_neg ( s, toggle_hibit_s ^ cryptonite_gf_hibit(s) );
+    /* Rotate if altxy is negative */
+    cryptonite_gf_cond_swap(t1,t2,rotate);
+    cryptonite_gf_mul_i(t4,p->x);
+    cryptonite_gf_cond_sel(t4,p->y,t4,rotate);  /* t4 = "fac" = ix if rotate, else y */
+
+    cryptonite_gf_mul_i(t5,RISTRETTO_FACTOR); /* t5 = imi */
+    cryptonite_gf_mul(t3,t5,t2);                /* iden * imi */
+    cryptonite_gf_mul(t2,t5,t1);
+    cryptonite_gf_mul(t5,t2,p->t);              /* "altx" = iden*imi*t */
+    mask_t negx = cryptonite_gf_lobit(t5) ^ toggle_altx;
+
+    cryptonite_gf_cond_neg(t1,negx^rotate);
+    cryptonite_gf_mul(t2,t1,p->z);
+    cryptonite_gf_add(t2,t2,ONE);
+    cryptonite_gf_mul(inv_el_sum,t2,t4);
+    cryptonite_gf_mul(s,inv_el_sum,t3);
+
+    mask_t negs = cryptonite_gf_lobit(s);
+    cryptonite_gf_cond_neg(s,negs);
+
+    mask_t negz = ~negs ^ toggle_s ^ negx;
+    cryptonite_gf_copy(inv_el_m1,p->z);
+    cryptonite_gf_cond_neg(inv_el_m1,negz);
+    cryptonite_gf_sub(inv_el_m1,inv_el_m1,t4);
+#else
+#error "Cofactor must be 4 (with no IMAGINE_TWIST) or 8 (with IMAGINE_TWIST)"
 #endif
 }
 
 void API_NS(point_encode)( unsigned char ser[SER_BYTES], const point_t p ) {
-    gf s, mtos;
-    API_NS(deisogenize)(s,mtos,p,0,0,0);
-    cryptonite_gf_serialize(ser,s,0);
+    gf s,ie1,ie2;
+    API_NS(deisogenize)(s,ie1,ie2,p,0,0,0);
+    cryptonite_gf_serialize(ser,s,1);
 }
 
 cryptonite_decaf_error_t API_NS(point_decode) (
@@ -238,88 +234,53 @@ cryptonite_decaf_error_t API_NS(point_decode) (
     const unsigned char ser[SER_BYTES],
     cryptonite_decaf_bool_t allow_identity
 ) {
-    gf s, a, b, c, d, e, f;
-    mask_t succ = cryptonite_gf_deserialize(s, ser, 0);
-    mask_t zero = cryptonite_gf_eq(s, ZERO);
-    succ &= bool_to_mask(allow_identity) | ~zero;
-    cryptonite_gf_sqr ( a, s ); /* s^2 */
+    gf s, s2, num, tmp;
+    cryptonite_gf_s *tmp2=s2, *ynum=p->z, *isr=p->x, *den=p->t;
+
+    mask_t succ = cryptonite_gf_deserialize(s, ser, 1, 0);
+    succ &= bool_to_mask(allow_identity) | ~cryptonite_gf_eq(s, ZERO);
+    succ &= ~cryptonite_gf_lobit(s);
+
+    cryptonite_gf_sqr(s2,s);                  /* s^2 = -as^2 */
 #if IMAGINE_TWIST
-    cryptonite_gf_sub ( f, ONE, a ); /* f = 1-as^2 = 1-s^2*/
-#else
-    cryptonite_gf_add ( f, ONE, a ); /* f = 1-as^2 = 1+s^2 */
+    cryptonite_gf_sub(s2,ZERO,s2);            /* -as^2 */
 #endif
-    succ &= ~ cryptonite_gf_eq( f, ZERO );
-    cryptonite_gf_sqr ( b, f );  /* (1-as^2)^2 = 1 - 2as^2 + a^2 s^4 */
-    cryptonite_gf_mulw ( c, a, 4*IMAGINE_TWIST-4*EDWARDS_D ); 
-    cryptonite_gf_add ( c, c, b ); /* t^2 = 1 + (2a-4d) s^2 + s^4 */
-    cryptonite_gf_mul ( d, f, s ); /* s * (1-as^2) for denoms */
-    cryptonite_gf_sqr ( e, d );    /* s^2 * (1-as^2)^2 */
-    cryptonite_gf_mul ( b, c, e ); /* t^2 * s^2 * (1-as^2)^2 */
-    
-    succ &= cryptonite_gf_isr(e,b) | cryptonite_gf_eq(b,ZERO); /* e = 1/(t s (1-as^2)) */
-    cryptonite_gf_mul ( b, e, d ); /* 1 / t */
-    cryptonite_gf_mul ( d, e, c ); /* t / (s(1-as^2)) */
-    cryptonite_gf_mul ( e, d, f ); /* t / s */
-    mask_t negtos = cryptonite_gf_hibit(e);
-    cryptonite_gf_cond_neg(b, negtos);
-    cryptonite_gf_cond_neg(d, negtos);
+    cryptonite_gf_sub(den,ONE,s2);            /* 1+as^2 */
+    cryptonite_gf_add(ynum,ONE,s2);           /* 1-as^2 */
+    cryptonite_gf_mulw(num,s2,-4*TWISTED_D);
+    cryptonite_gf_sqr(tmp,den);               /* tmp = den^2 */
+    cryptonite_gf_add(num,tmp,num);           /* num = den^2 - 4*d*s^2 */
+    cryptonite_gf_mul(tmp2,num,tmp);          /* tmp2 = num*den^2 */
+    succ &= cryptonite_gf_isr(isr,tmp2);      /* isr = 1/sqrt(num*den^2) */
+    cryptonite_gf_mul(tmp,isr,den);           /* isr*den */
+    cryptonite_gf_mul(p->y,tmp,ynum);         /* isr*den*(1-as^2) */
+    cryptonite_gf_mul(tmp2,tmp,s);            /* s*isr*den */
+    cryptonite_gf_add(tmp2,tmp2,tmp2);        /* 2*s*isr*den */
+    cryptonite_gf_mul(tmp,tmp2,isr);          /* 2*s*isr^2*den */
+    cryptonite_gf_mul(p->x,tmp,num);          /* 2*s*isr^2*den*num */
+    cryptonite_gf_mul(tmp,tmp2,RISTRETTO_FACTOR); /* 2*s*isr*den*magic */
+    cryptonite_gf_cond_neg(p->x,cryptonite_gf_lobit(tmp)); /* flip x */
+
+#if COFACTOR==8
+    /* Additionally check y != 0 and x*y*isomagic nonegative */
+    succ &= ~cryptonite_gf_eq(p->y,ZERO);
+    cryptonite_gf_mul(tmp,p->x,p->y);
+    cryptonite_gf_mul(tmp2,tmp,RISTRETTO_FACTOR);
+    succ &= ~cryptonite_gf_lobit(tmp2);
+#endif
 
 #if IMAGINE_TWIST
-    cryptonite_gf_add ( p->z, ONE, a); /* Z = 1+as^2 = 1-s^2 */
-#else
-    cryptonite_gf_sub ( p->z, ONE, a); /* Z = 1+as^2 = 1-s^2 */
+    cryptonite_gf_copy(tmp,p->x);
+    cryptonite_gf_mul_i(p->x,tmp);
 #endif
 
-#if COFACTOR == 8
-    cryptonite_gf_mul ( a, p->z, d); /* t(1+s^2) / s(1-s^2) = 2/xy */
-    succ &= ~cryptonite_gf_lobit(a); /* = ~cryptonite_gf_hibit(a/2), since cryptonite_gf_hibit(x) = cryptonite_gf_lobit(2x) */
-#endif
-    
-    cryptonite_gf_mul ( a, f, b ); /* y = (1-s^2) / t */
-    cryptonite_gf_mul ( p->y, p->z, a ); /* Y = yZ */
-#if IMAGINE_TWIST
-    cryptonite_gf_add ( b, s, s );
-    cryptonite_gf_mul(p->x, b, SQRT_MINUS_ONE); /* Curve25519 */
-#else
-    cryptonite_gf_add ( p->x, s, s );
-#endif
-    cryptonite_gf_mul ( p->t, p->x, a ); /* T = 2s (1-as^2)/t */
-    
-#if UNSAFE_CURVE_HAS_POINTS_AT_INFINITY
-    /* This can't happen for any of the supported configurations.
-     *
-     * If it can happen (because s=1), it's because the curve has points
-     * at infinity, which means that there may be critical security bugs
-     * elsewhere in the library.  In that case, it's better that you hit
-     * the assertion in point_valid, which will happen in the test suite
-     * since it tests s=1.
-     *
-     * This debugging option is to allow testing of IMAGINE_TWIST = 0 on
-     * Ed25519, without hitting that assertion.  Don't use it in
-     * production.
-     */
-    succ &= ~cryptonite_gf_eq(p->z,ZERO);
-#endif
-    
-    p->y->limb[0] -= zero;
+    /* Fill in z and t */
+    cryptonite_gf_copy(p->z,ONE);
+    cryptonite_gf_mul(p->t,p->x,p->y);
+
     assert(API_NS(point_valid)(p) | ~succ);
-    
     return cryptonite_decaf_succeed_if(mask_to_bool(succ));
 }
-
-#if IMAGINE_TWIST
-#define TWISTED_D (-(EDWARDS_D))
-#else
-#define TWISTED_D ((EDWARDS_D)-1)
-#endif
-
-#if TWISTED_D < 0
-#define EFF_D (-(TWISTED_D))
-#define NEG_D 1
-#else
-#define EFF_D TWISTED_D
-#define NEG_D 0
-#endif
 
 void API_NS(point_sub) (
     point_t p,
@@ -352,7 +313,7 @@ void API_NS(point_sub) (
     cryptonite_gf_mul ( p->y, a, b );
     cryptonite_gf_mul ( p->t, b, c );
 }
-    
+
 void API_NS(point_add) (
     point_t p,
     const point_t q,
@@ -544,7 +505,7 @@ prepare_fixed_window(
     point_t tmp;
     pniels_t pn;
     int i;
-    
+
     point_double_internal(tmp, b, 0);
     pt_to_pniels(pn, tmp);
     pt_to_pniels(multiples[0], b);
@@ -553,7 +514,7 @@ prepare_fixed_window(
         add_pniels_to_pt(tmp, pn, 0);
         pt_to_pniels(multiples[i], tmp);
     }
-    
+
     cryptonite_decaf_bzero(pn,sizeof(pn));
     cryptonite_decaf_bzero(tmp,sizeof(tmp));
 }
@@ -567,11 +528,11 @@ void API_NS(point_scalarmul) (
         WINDOW_MASK = (1<<WINDOW)-1,
         WINDOW_T_MASK = WINDOW_MASK >> 1,
         NTABLE = 1<<(WINDOW-1);
-        
+
     scalar_t scalar1x;
     API_NS(scalar_add)(scalar1x, scalar, point_scalarmul_adjustment);
     API_NS(scalar_halve)(scalar1x,scalar1x);
-    
+
     /* Set up a precomputed table with odd multiples of b. */
     pniels_t pn, multiples[NTABLE];
     point_t tmp;
@@ -590,7 +551,7 @@ void API_NS(point_scalarmul) (
         bits &= WINDOW_MASK;
         mask_t inv = (bits>>(WINDOW-1))-1;
         bits ^= inv;
-    
+
         /* Add in from table.  Compute t only on last iteration. */
         constant_time_lookup(pn, multiples, sizeof(pn), NTABLE, bits & WINDOW_T_MASK);
         cond_neg_niels(pn->n, inv);
@@ -608,10 +569,10 @@ void API_NS(point_scalarmul) (
             add_pniels_to_pt(tmp, pn, i ? -1 : 0);
         }
     }
-    
+
     /* Write out the answer */
     API_NS(point_copy)(a,tmp);
-    
+
     cryptonite_decaf_bzero(scalar1x,sizeof(scalar1x));
     cryptonite_decaf_bzero(pn,sizeof(pn));
     cryptonite_decaf_bzero(multiples,sizeof(multiples));
@@ -629,13 +590,13 @@ void API_NS(point_double_scalarmul) (
         WINDOW_MASK = (1<<WINDOW)-1,
         WINDOW_T_MASK = WINDOW_MASK >> 1,
         NTABLE = 1<<(WINDOW-1);
-        
+
     scalar_t scalar1x, scalar2x;
     API_NS(scalar_add)(scalar1x, scalarb, point_scalarmul_adjustment);
     API_NS(scalar_halve)(scalar1x,scalar1x);
     API_NS(scalar_add)(scalar2x, scalarc, point_scalarmul_adjustment);
     API_NS(scalar_halve)(scalar2x,scalar2x);
-    
+
     /* Set up a precomputed table with odd multiples of b. */
     pniels_t pn, multiples1[NTABLE], multiples2[NTABLE];
     point_t tmp;
@@ -660,7 +621,7 @@ void API_NS(point_double_scalarmul) (
         mask_t inv2 = (bits2>>(WINDOW-1))-1;
         bits1 ^= inv1;
         bits2 ^= inv2;
-    
+
         /* Add in from table.  Compute t only on last iteration. */
         constant_time_lookup(pn, multiples1, sizeof(pn), NTABLE, bits1 & WINDOW_T_MASK);
         cond_neg_niels(pn->n, inv1);
@@ -681,10 +642,10 @@ void API_NS(point_double_scalarmul) (
         cond_neg_niels(pn->n, inv2);
         add_pniels_to_pt(tmp, pn, i?-1:0);
     }
-    
+
     /* Write out the answer */
     API_NS(point_copy)(a,tmp);
-    
+
 
     cryptonite_decaf_bzero(scalar1x,sizeof(scalar1x));
     cryptonite_decaf_bzero(scalar2x,sizeof(scalar2x));
@@ -705,34 +666,34 @@ void API_NS(point_dual_scalarmul) (
         WINDOW_MASK = (1<<WINDOW)-1,
         WINDOW_T_MASK = WINDOW_MASK >> 1,
         NTABLE = 1<<(WINDOW-1);
-        
+
     scalar_t scalar1x, scalar2x;
     API_NS(scalar_add)(scalar1x, scalar1, point_scalarmul_adjustment);
     API_NS(scalar_halve)(scalar1x,scalar1x);
     API_NS(scalar_add)(scalar2x, scalar2, point_scalarmul_adjustment);
     API_NS(scalar_halve)(scalar2x,scalar2x);
-    
+
     /* Set up a precomputed table with odd multiples of b. */
     point_t multiples1[NTABLE], multiples2[NTABLE], working, tmp;
     pniels_t pn;
-    
+
     API_NS(point_copy)(working, b);
 
     /* Initialize. */
     int i,j;
-    
+
     for (i=0; i<NTABLE; i++) {
         API_NS(point_copy)(multiples1[i], API_NS(point_identity));
         API_NS(point_copy)(multiples2[i], API_NS(point_identity));
     }
 
-    for (i=0; i<SCALAR_BITS; i+=WINDOW) {   
+    for (i=0; i<SCALAR_BITS; i+=WINDOW) {
         if (i) {
             for (j=0; j<WINDOW-1; j++)
                 point_double_internal(working, working, -1);
             point_double_internal(working, working, 0);
         }
-        
+
         /* Fetch another block of bits */
         word_t bits1 = scalar1x->limb[i/WBITS] >> (i%WBITS),
                bits2 = scalar2x->limb[i/WBITS] >> (i%WBITS);
@@ -746,7 +707,7 @@ void API_NS(point_dual_scalarmul) (
         mask_t inv2 = (bits2>>(WINDOW-1))-1;
         bits1 ^= inv1;
         bits2 ^= inv2;
-        
+
         pt_to_pniels(pn, working);
 
         constant_time_lookup(tmp, multiples1, sizeof(tmp), NTABLE, bits1 & WINDOW_T_MASK);
@@ -754,26 +715,26 @@ void API_NS(point_dual_scalarmul) (
         /* add_pniels_to_pt(multiples1[bits1 & WINDOW_T_MASK], pn, 0); */
         add_pniels_to_pt(tmp, pn, 0);
         constant_time_insert(multiples1, tmp, sizeof(tmp), NTABLE, bits1 & WINDOW_T_MASK);
-        
-        
+
+
         constant_time_lookup(tmp, multiples2, sizeof(tmp), NTABLE, bits2 & WINDOW_T_MASK);
         cond_neg_niels(pn->n, inv1^inv2);
         /* add_pniels_to_pt(multiples2[bits2 & WINDOW_T_MASK], pn, 0); */
         add_pniels_to_pt(tmp, pn, 0);
         constant_time_insert(multiples2, tmp, sizeof(tmp), NTABLE, bits2 & WINDOW_T_MASK);
     }
-    
+
     if (NTABLE > 1) {
         API_NS(point_copy)(working, multiples1[NTABLE-1]);
         API_NS(point_copy)(tmp    , multiples2[NTABLE-1]);
-    
+
         for (i=NTABLE-1; i>1; i--) {
             API_NS(point_add)(multiples1[i-1], multiples1[i-1], multiples1[i]);
             API_NS(point_add)(multiples2[i-1], multiples2[i-1], multiples2[i]);
             API_NS(point_add)(working, working, multiples1[i-1]);
             API_NS(point_add)(tmp,     tmp,     multiples2[i-1]);
         }
-    
+
         API_NS(point_add)(multiples1[0], multiples1[0], multiples1[1]);
         API_NS(point_add)(multiples2[0], multiples2[0], multiples2[1]);
         point_double_internal(working, working, 0);
@@ -800,8 +761,8 @@ cryptonite_decaf_bool_t API_NS(point_eq) ( const point_t p, const point_t q ) {
     cryptonite_gf_mul ( a, p->y, q->x );
     cryptonite_gf_mul ( b, q->y, p->x );
     mask_t succ = cryptonite_gf_eq(a,b);
-    
-    #if (COFACTOR == 8) && IMAGINE_TWIST
+
+    #if (COFACTOR == 8)
         cryptonite_gf_mul ( a, p->y, q->y );
         cryptonite_gf_mul ( b, q->x, p->x );
         #if !(IMAGINE_TWIST)
@@ -811,12 +772,12 @@ cryptonite_decaf_bool_t API_NS(point_eq) ( const point_t p, const point_t q ) {
             * But because of the *i twist, it's actually
             * (x,y) <-> (iy,ix)
             */
-    
+
            /* No code, just a comment. */
         #endif
         succ |= cryptonite_gf_eq(a,b);
     #endif
-    
+
     return mask_to_bool(succ);
 }
 
@@ -865,7 +826,7 @@ void API_NS(point_debugging_pscale) (
 ) {
     gf gfac,tmp;
     /* NB this means you'll never pscale by negative numbers for p521 */
-    ignore_result(cryptonite_gf_deserialize(gfac,factor,0));
+    ignore_result(cryptonite_gf_deserialize(gfac,factor,0,0));
     cryptonite_gf_cond_sel(gfac,gfac,ONE,cryptonite_gf_eq(gfac,ZERO));
     cryptonite_gf_mul(tmp,p->x,gfac);
     cryptonite_gf_copy(q->x,tmp);
@@ -884,7 +845,7 @@ static void cryptonite_gf_batch_invert (
 ) {
     gf t1;
     assert(n>1);
-  
+
     cryptonite_gf_copy(out[1], in[0]);
     int i;
     for (i=1; i<(int) (n-1); i++) {
@@ -916,34 +877,34 @@ static void batch_normalize_niels (
         cryptonite_gf_mul(product, table[i]->a, zis[i]);
         cryptonite_gf_strong_reduce(product);
         cryptonite_gf_copy(table[i]->a, product);
-        
+
         cryptonite_gf_mul(product, table[i]->b, zis[i]);
         cryptonite_gf_strong_reduce(product);
         cryptonite_gf_copy(table[i]->b, product);
-        
+
         cryptonite_gf_mul(product, table[i]->c, zis[i]);
         cryptonite_gf_strong_reduce(product);
         cryptonite_gf_copy(table[i]->c, product);
     }
-    
+
     cryptonite_decaf_bzero(product,sizeof(product));
 }
 
 void API_NS(precompute) (
     precomputed_s *table,
     const point_t base
-) { 
+) {
     const unsigned int n = COMBS_N, t = COMBS_T, s = COMBS_S;
     assert(n*t*s >= SCALAR_BITS);
-  
+
     point_t working, start, doubles[t-1];
     API_NS(point_copy)(working, base);
     pniels_t pn_tmp;
-  
+
     gf zs[n<<(t-1)], zis[n<<(t-1)];
-  
+
     unsigned int i,j,k;
-    
+
     /* Compute n tables */
     for (i=0; i<n; i++) {
 
@@ -975,7 +936,7 @@ void API_NS(precompute) (
 
             for (k=0; delta>1; k++)
                 delta >>=1;
-            
+
             if (gray & (1<<k)) {
                 API_NS(point_add)(start, start, doubles[k]);
             } else {
@@ -983,9 +944,9 @@ void API_NS(precompute) (
             }
         }
     }
-    
+
     batch_normalize_niels(table->table,(const gf *)zs,zis,n<<(t-1));
-    
+
     cryptonite_decaf_bzero(zs,sizeof(zs));
     cryptonite_decaf_bzero(zis,sizeof(zis));
     cryptonite_decaf_bzero(pn_tmp,sizeof(pn_tmp));
@@ -1012,26 +973,26 @@ void API_NS(precomputed_scalarmul) (
     int i;
     unsigned j,k;
     const unsigned int n = COMBS_N, t = COMBS_T, s = COMBS_S;
-    
+
     scalar_t scalar1x;
     API_NS(scalar_add)(scalar1x, scalar, precomputed_scalarmul_adjustment);
     API_NS(scalar_halve)(scalar1x,scalar1x);
-    
+
     niels_t ni;
-    
+
     for (i=s-1; i>=0; i--) {
         if (i != (int)s-1) point_double_internal(out,out,0);
-        
+
         for (j=0; j<n; j++) {
             int tab = 0;
-         
+
             for (k=0; k<t; k++) {
                 unsigned int bit = i + s*(k + j*t);
                 if (bit < SCALAR_BITS) {
                     tab |= (scalar1x->limb[bit/WBITS] >> (bit%WBITS) & 1) << k;
                 }
             }
-            
+
             mask_t invert = (tab>>(t-1))-1;
             tab ^= invert;
             tab &= (1<<(t-1)) - 1;
@@ -1046,7 +1007,7 @@ void API_NS(precomputed_scalarmul) (
             }
         }
     }
-    
+
     cryptonite_decaf_bzero(ni,sizeof(ni));
     cryptonite_decaf_bzero(scalar1x,sizeof(scalar1x));
 }
@@ -1078,11 +1039,11 @@ cryptonite_decaf_error_t API_NS(direct_scalarmul) (
     return succ;
 }
 
-void API_NS(point_mul_by_cofactor_and_encode_like_eddsa) (
+void API_NS(point_mul_by_ratio_and_encode_like_eddsa) (
     uint8_t enc[CRYPTONITE_DECAF_EDDSA_448_PUBLIC_BYTES],
     const point_t p
 ) {
-    
+
     /* The point is now on the twisted curve.  Move it to untwisted. */
     gf x, y, z, t;
     point_t q;
@@ -1091,7 +1052,7 @@ void API_NS(point_mul_by_cofactor_and_encode_like_eddsa) (
 #else
     API_NS(point_copy)(q,p);
 #endif
-    
+
 #if EDDSA_USE_SIGMA_ISOGENY
     {
         /* Use 4-isogeny like ed25519:
@@ -1116,15 +1077,20 @@ void API_NS(point_mul_by_cofactor_and_encode_like_eddsa) (
         cryptonite_gf_mul ( y, u, t ); // (x^2+y^2)(2z^2-y^2+x^2)
         cryptonite_gf_mul ( u, z, t );
         cryptonite_gf_copy( z, u );
-        cryptonite_gf_mul ( u, x, SQRT_ONE_MINUS_D );
-        cryptonite_gf_copy( x, u );
-        cryptonite_decaf_bzero(u,sizeof(u));
+        cryptonite_gf_mul ( u, x, RISTRETTO_FACTOR );
+#if IMAGINE_TWIST
+        cryptonite_gf_mul_i( x, u );
+#else
+#error "... probably wrong"
+        gf_copy( x, u );
+#endif
+        decaf_bzero(u,sizeof(u));
     }
 #elif IMAGINE_TWIST
     {
         API_NS(point_double)(q,q);
         API_NS(point_double)(q,q);
-        cryptonite_gf_mul_qnr(x, q->x);
+        cryptonite_gf_mul_i(x, q->x);
         cryptonite_gf_copy(y, q->y);
         cryptonite_gf_copy(z, q->z);
     }
@@ -1137,10 +1103,10 @@ void API_NS(point_mul_by_cofactor_and_encode_like_eddsa) (
         cryptonite_gf_add( u, x, t );
         cryptonite_gf_add( z, q->y, q->x );
         cryptonite_gf_sqr ( y, z);
-        cryptonite_gf_sub ( y, u, y );
+        cryptonite_gf_sub ( y, y, u );
         cryptonite_gf_sub ( z, t, x );
         cryptonite_gf_sqr ( x, q->z );
-        cryptonite_gf_add ( t, x, x); 
+        cryptonite_gf_add ( t, x, x);
         cryptonite_gf_sub ( t, t, z);
         cryptonite_gf_mul ( x, t, y );
         cryptonite_gf_mul ( y, z, u );
@@ -1152,7 +1118,7 @@ void API_NS(point_mul_by_cofactor_and_encode_like_eddsa) (
     cryptonite_gf_invert(z,z,1);
     cryptonite_gf_mul(t,x,z);
     cryptonite_gf_mul(x,y,z);
-    
+
     /* Encode */
     enc[CRYPTONITE_DECAF_EDDSA_448_PRIVATE_BYTES-1] = 0;
     cryptonite_gf_serialize(enc, x, 1);
@@ -1166,7 +1132,7 @@ void API_NS(point_mul_by_cofactor_and_encode_like_eddsa) (
 }
 
 
-cryptonite_decaf_error_t API_NS(point_decode_like_eddsa_and_ignore_cofactor) (
+cryptonite_decaf_error_t API_NS(point_decode_like_eddsa_and_mul_by_ratio) (
     point_t p,
     const uint8_t enc[CRYPTONITE_DECAF_EDDSA_448_PUBLIC_BYTES]
 ) {
@@ -1175,8 +1141,8 @@ cryptonite_decaf_error_t API_NS(point_decode_like_eddsa_and_ignore_cofactor) (
 
     mask_t low = ~word_is_zero(enc2[CRYPTONITE_DECAF_EDDSA_448_PRIVATE_BYTES-1] & 0x80);
     enc2[CRYPTONITE_DECAF_EDDSA_448_PRIVATE_BYTES-1] &= ~0x80;
-    
-    mask_t succ = cryptonite_gf_deserialize(p->y, enc2, 1);
+
+    mask_t succ = cryptonite_gf_deserialize(p->y, enc2, 1, 0);
 #if 0 == 0
     succ &= word_is_zero(enc2[CRYPTONITE_DECAF_EDDSA_448_PRIVATE_BYTES-1]);
 #endif
@@ -1191,14 +1157,14 @@ cryptonite_decaf_error_t API_NS(point_decode_like_eddsa_and_ignore_cofactor) (
         cryptonite_gf_mulw(p->t,p->x,EDWARDS_D); /* dy^2 */
     #endif
     cryptonite_gf_sub(p->t,ONE,p->t); /* denom = 1-dy^2 or 1-d + dy^2 */
-    
+
     cryptonite_gf_mul(p->x,p->z,p->t);
     succ &= cryptonite_gf_isr(p->t,p->x); /* 1/sqrt(num * denom) */
-    
+
     cryptonite_gf_mul(p->x,p->t,p->z); /* sqrt(num / denom) */
-    cryptonite_gf_cond_neg(p->x,~cryptonite_gf_lobit(p->x)^low);
+    cryptonite_gf_cond_neg(p->x,cryptonite_gf_lobit(p->x)^low);
     cryptonite_gf_copy(p->z,ONE);
-  
+
     #if EDDSA_USE_SIGMA_ISOGENY
     {
        /* Use 4-isogeny like ed25519:
@@ -1221,8 +1187,9 @@ cryptonite_decaf_error_t API_NS(point_decode_like_eddsa_and_ignore_cofactor) (
         cryptonite_gf_sub ( p->t, a, c ); // y^2 - x^2
         cryptonite_gf_sqr ( p->x, p->z );
         cryptonite_gf_add ( p->z, p->x, p->x );
-        cryptonite_gf_sub ( a, p->z, p->t ); // 2z^2 - y^2 + x^2
-        cryptonite_gf_mul ( c, a, SQRT_ONE_MINUS_D );
+        cryptonite_gf_sub ( c, p->z, p->t ); // 2z^2 - y^2 + x^2
+        cryptonite_gf_div_i ( a, c );
+        cryptonite_gf_mul ( c, a, RISTRETTO_FACTOR );
         cryptonite_gf_mul ( p->x, b, p->t); // (2xy)(y^2-x^2)
         cryptonite_gf_mul ( p->z, p->t, c ); // (y^2-x^2)sd(2z^2 - y^2 + x^2)
         cryptonite_gf_mul ( p->y, d, c ); // (y^2+x^2)sd(2z^2 - y^2 + x^2)
@@ -1231,7 +1198,7 @@ cryptonite_decaf_error_t API_NS(point_decode_like_eddsa_and_ignore_cofactor) (
         cryptonite_decaf_bzero(b,sizeof(b));
         cryptonite_decaf_bzero(c,sizeof(c));
         cryptonite_decaf_bzero(d,sizeof(d));
-    } 
+    }
     #elif IMAGINE_TWIST
     {
         cryptonite_gf_mul(p->t,p->x,SQRT_MINUS_ONE);
@@ -1262,9 +1229,10 @@ cryptonite_decaf_error_t API_NS(point_decode_like_eddsa_and_ignore_cofactor) (
         cryptonite_decaf_bzero(d,sizeof(d));
     }
     #endif
-    
+
     cryptonite_decaf_bzero(enc2,sizeof(enc2));
     assert(API_NS(point_valid)(p) || ~succ);
+
     return cryptonite_decaf_succeed_if(mask_to_bool(succ));
 }
 
@@ -1274,30 +1242,30 @@ cryptonite_decaf_error_t cryptonite_decaf_x448 (
     const uint8_t scalar[X_PRIVATE_BYTES]
 ) {
     gf x1, x2, z2, x3, z3, t1, t2;
-    ignore_result(cryptonite_gf_deserialize(x1,base,1));
+    ignore_result(cryptonite_gf_deserialize(x1,base,1,0));
     cryptonite_gf_copy(x2,ONE);
     cryptonite_gf_copy(z2,ZERO);
     cryptonite_gf_copy(x3,x1);
     cryptonite_gf_copy(z3,ONE);
-    
+
     int t;
     mask_t swap = 0;
-    
+
     for (t = X_PRIVATE_BITS-1; t>=0; t--) {
         uint8_t sb = scalar[t/8];
-        
+
         /* Scalar conditioning */
         if (t/8==0) sb &= -(uint8_t)COFACTOR;
         else if (t == X_PRIVATE_BITS-1) sb = -1;
-        
+
         mask_t k_t = (sb>>(t%8)) & 1;
         k_t = -k_t; /* set to all 0s or all 1s */
-        
+
         swap ^= k_t;
         cryptonite_gf_cond_swap(x2,x3,swap);
         cryptonite_gf_cond_swap(z2,z3,swap);
         swap = k_t;
-        
+
         cryptonite_gf_add_nr(t1,x2,z2); /* A = x2 + z2 */        /* 2+e */
         cryptonite_gf_sub_nr(t2,x2,z2); /* B = x2 - z2 */        /* 3+e */
         cryptonite_gf_sub_nr(z2,x3,z3); /* D = x3 - z3 */        /* 3+e */
@@ -1309,17 +1277,17 @@ cryptonite_decaf_error_t cryptonite_decaf_x448 (
         cryptonite_gf_mul(z3,x1,z2);    /* z3 = x1(DA-CB)^2 */
         cryptonite_gf_add_nr(z2,x2,x3); /* (DA+CB) */            /* 2+e */
         cryptonite_gf_sqr(x3,z2);       /* x3 = (DA+CB)^2 */
-        
+
         cryptonite_gf_sqr(z2,t1);       /* AA = A^2 */
         cryptonite_gf_sqr(t1,t2);       /* BB = B^2 */
         cryptonite_gf_mul(x2,z2,t1);    /* x2 = AA*BB */
         cryptonite_gf_sub_nr(t2,z2,t1); /* E = AA-BB */          /* 3+e */
-        
+
         cryptonite_gf_mulw(t1,t2,-EDWARDS_D); /* E*-d = a24*E */
         cryptonite_gf_add_nr(t1,t1,z2); /* AA + a24*E */         /* 2+e */
         cryptonite_gf_mul(z2,t2,t1); /* z2 = E(AA+a24*E) */
     }
-    
+
     /* Finish */
     cryptonite_gf_cond_swap(x2,x3,swap);
     cryptonite_gf_cond_swap(z2,z3,swap);
@@ -1327,7 +1295,7 @@ cryptonite_decaf_error_t cryptonite_decaf_x448 (
     cryptonite_gf_mul(x1,x2,z2);
     cryptonite_gf_serialize(out,x1,1);
     mask_t nz = ~cryptonite_gf_eq(x1,ZERO);
-    
+
     cryptonite_decaf_bzero(x1,sizeof(x1));
     cryptonite_decaf_bzero(x2,sizeof(x2));
     cryptonite_decaf_bzero(z2,sizeof(z2));
@@ -1335,7 +1303,7 @@ cryptonite_decaf_error_t cryptonite_decaf_x448 (
     cryptonite_decaf_bzero(z3,sizeof(z3));
     cryptonite_decaf_bzero(t1,sizeof(t1));
     cryptonite_decaf_bzero(t2,sizeof(t2));
-    
+
     return cryptonite_decaf_succeed_if(mask_to_bool(nz));
 }
 
@@ -1345,19 +1313,12 @@ void cryptonite_decaf_ed448_convert_public_key_to_x448 (
     const uint8_t ed[CRYPTONITE_DECAF_EDDSA_448_PUBLIC_BYTES]
 ) {
     gf y;
-    {
-        uint8_t enc2[CRYPTONITE_DECAF_EDDSA_448_PUBLIC_BYTES];
-        memcpy(enc2,ed,sizeof(enc2));
+    const uint8_t mask = (uint8_t)(0xFE<<(7));
+    ignore_result(cryptonite_gf_deserialize(y, ed, 1, mask));
 
-        /* retrieve y from the ed compressed point */
-        enc2[CRYPTONITE_DECAF_EDDSA_448_PUBLIC_BYTES-1] &= ~0x80;
-        ignore_result(cryptonite_gf_deserialize(y, enc2, 0));
-        cryptonite_decaf_bzero(enc2,sizeof(enc2));
-    }
-    
     {
         gf n,d;
-        
+
 #if EDDSA_USE_SIGMA_ISOGENY
         /* u = (1+y)/(1-y)*/
         cryptonite_gf_add(n, y, ONE); /* n = y+1 */
@@ -1376,7 +1337,7 @@ void cryptonite_decaf_ed448_convert_public_key_to_x448 (
         cryptonite_gf_mul(n, y, d); /* y^2 * (1-dy^2) / (1-y^2) */
         cryptonite_gf_serialize(x,n,1);
 #endif /* EDDSA_USE_SIGMA_ISOGENY */
-        
+
         cryptonite_decaf_bzero(y,sizeof(y));
         cryptonite_decaf_bzero(n,sizeof(n));
         cryptonite_decaf_bzero(d,sizeof(d));
@@ -1390,6 +1351,26 @@ void cryptonite_decaf_x448_generate_key (
     cryptonite_decaf_x448_derive_public_key(out,scalar);
 }
 
+void API_NS(point_mul_by_ratio_and_encode_like_x448) (
+    uint8_t out[X_PUBLIC_BYTES],
+    const point_t p
+) {
+    point_t q;
+#if COFACTOR == 8
+    point_double_internal(q,p,1);
+#else
+    API_NS(point_copy)(q,p);
+#endif
+    cryptonite_gf_invert(q->t,q->x,0); /* 1/x */
+    cryptonite_gf_mul(q->z,q->t,q->y); /* y/x */
+    cryptonite_gf_sqr(q->y,q->z); /* (y/x)^2 */
+#if IMAGINE_TWIST
+    cryptonite_gf_sub(q->y,ZERO,q->y);
+#endif
+    cryptonite_gf_serialize(out,q->y,1);
+    API_NS(point_destroy(q));
+}
+
 void cryptonite_decaf_x448_derive_public_key (
     uint8_t out[X_PUBLIC_BYTES],
     const uint8_t scalar[X_PRIVATE_BYTES]
@@ -1398,46 +1379,20 @@ void cryptonite_decaf_x448_derive_public_key (
     uint8_t scalar2[X_PRIVATE_BYTES];
     memcpy(scalar2,scalar,sizeof(scalar2));
     scalar2[0] &= -(uint8_t)COFACTOR;
-    
+
     scalar2[X_PRIVATE_BYTES-1] &= ~(-1u<<((X_PRIVATE_BITS+7)%8));
     scalar2[X_PRIVATE_BYTES-1] |= 1<<((X_PRIVATE_BITS+7)%8);
-    
+
     scalar_t the_scalar;
     API_NS(scalar_decode_long)(the_scalar,scalar2,sizeof(scalar2));
-    
-    /* We're gonna isogenize by 2, so divide by 2.
-     *
-     * Why by 2, even though it's a 4-isogeny?
-     *
-     * The isogeny map looks like
-     * Montgomery <-2-> Jacobi <-2-> Edwards
-     *
-     * Since the Jacobi base point is the PREimage of the iso to
-     * the Montgomery curve, and we're going
-     * Jacobi -> Edwards -> Jacobi -> Montgomery,
-     * we pick up only a factor of 2 over Jacobi -> Montgomery. 
-     */
-    API_NS(scalar_halve)(the_scalar,the_scalar);
+
+    /* Compensate for the encoding ratio */
+    for (unsigned i=1; i<CRYPTONITE_DECAF_X448_ENCODE_RATIO; i<<=1) {
+        API_NS(scalar_halve)(the_scalar,the_scalar);
+    }
     point_t p;
     API_NS(precomputed_scalarmul)(p,API_NS(precomputed_base),the_scalar);
-    
-    /* Isogenize to Montgomery curve.
-     *
-     * Why isn't this just a separate function, eg cryptonite_decaf_encode_like_x448?
-     * Basically because in general it does the wrong thing if there is a cofactor
-     * component in the input.  In this function though, there isn't a cofactor
-     * component in the input.
-     */
-    cryptonite_gf_invert(p->t,p->x,0); /* 1/x */
-    cryptonite_gf_mul(p->z,p->t,p->y); /* y/x */
-    cryptonite_gf_sqr(p->y,p->z); /* (y/x)^2 */
-#if IMAGINE_TWIST
-    cryptonite_gf_sub(p->y,ZERO,p->y);
-#endif
-    cryptonite_gf_serialize(out,p->y,1);
-        
-    cryptonite_decaf_bzero(scalar2,sizeof(scalar2));
-    API_NS(scalar_destroy)(the_scalar);
+    API_NS(point_mul_by_ratio_and_encode_like_x448)(out,p);
     API_NS(point_destroy)(p);
 }
 
@@ -1456,7 +1411,7 @@ static int recode_wnaf (
 ) {
     unsigned int table_size = SCALAR_BITS/(table_bits+1) + 3;
     int position = table_size - 1; /* at the end */
-    
+
     /* place the end marker */
     control[position].power = -1;
     control[position].addend = 0;
@@ -1466,7 +1421,7 @@ static int recode_wnaf (
      * in the actual code that uses it, all for an expected reduction of like 1/5 op.
      * Probably not worth it.
      */
-    
+
     uint64_t current = scalar->limb[0] & 0xFFFF;
     uint32_t mask = (1<<(table_bits+1))-1;
 
@@ -1477,7 +1432,7 @@ static int recode_wnaf (
             /* Refill the 16 high bits of current */
             current += (uint32_t)((scalar->limb[w/B_OVER_16]>>(16*(w%B_OVER_16)))<<16);
         }
-        
+
         while (current & 0xFFFF) {
             assert(position >= 0);
             uint32_t pos = __builtin_ctz((uint32_t)current), odd = (uint32_t)current >> pos;
@@ -1491,7 +1446,7 @@ static int recode_wnaf (
         current >>= 16;
     }
     assert(current==0);
-    
+
     position++;
     unsigned int n = table_size - position;
     unsigned int i;
@@ -1524,20 +1479,20 @@ prepare_wnaf_table(
         add_pniels_to_pt(tmp, twop,0);
         pt_to_pniels(output[i], tmp);
     }
-    
+
     API_NS(point_destroy)(tmp);
     cryptonite_decaf_bzero(twop,sizeof(twop));
 }
 
 extern const gf API_NS(precomputed_wnaf_as_fe)[];
 static const niels_t *API_NS(wnaf_base) = (const niels_t *)API_NS(precomputed_wnaf_as_fe);
-const size_t API_NS(sizeof_precomputed_wnafs)
+const size_t API_NS(sizeof_precomputed_wnafs) __attribute((visibility("hidden")))
     = sizeof(niels_t)<<CRYPTONITE_DECAF_WNAF_FIXED_TABLE_BITS;
 
 void API_NS(precompute_wnafs) (
     niels_t out[1<<CRYPTONITE_DECAF_WNAF_FIXED_TABLE_BITS],
     const point_t base
-);
+) __attribute__ ((visibility ("hidden")));
 
 void API_NS(precompute_wnafs) (
     niels_t out[1<<CRYPTONITE_DECAF_WNAF_FIXED_TABLE_BITS],
@@ -1552,7 +1507,7 @@ void API_NS(precompute_wnafs) (
         cryptonite_gf_copy(zs[i], tmp[i]->z);
     }
     batch_normalize_niels(out, (const gf *)zs, zis, 1<<CRYPTONITE_DECAF_WNAF_FIXED_TABLE_BITS);
-    
+
     cryptonite_decaf_bzero(tmp,sizeof(tmp));
     cryptonite_decaf_bzero(zs,sizeof(zs));
     cryptonite_decaf_bzero(zis,sizeof(zis));
@@ -1568,13 +1523,13 @@ void API_NS(base_double_scalarmul_non_secret) (
         table_bits_pre = CRYPTONITE_DECAF_WNAF_FIXED_TABLE_BITS;
     struct smvt_control control_var[SCALAR_BITS/(table_bits_var+1)+3];
     struct smvt_control control_pre[SCALAR_BITS/(table_bits_pre+1)+3];
-    
+
     int ncb_pre = recode_wnaf(control_pre, scalar1, table_bits_pre);
     int ncb_var = recode_wnaf(control_var, scalar2, table_bits_var);
-  
+
     pniels_t precmp_var[1<<table_bits_var];
     prepare_wnaf_table(precmp_var, base2, table_bits_var);
-  
+
     int contp=0, contv=0, i = control_var[0].power;
 
     if (i < 0) {
@@ -1592,7 +1547,7 @@ void API_NS(base_double_scalarmul_non_secret) (
         niels_to_pt(combo, API_NS(wnaf_base)[control_pre[0].addend >> 1]);
         contp++;
     }
-    
+
     for (i--; i >= 0; i--) {
         int cv = (i==control_var[contv].power), cp = (i==control_pre[contp].power);
         point_double_internal(combo,combo,i && !(cv||cp));
@@ -1619,7 +1574,7 @@ void API_NS(base_double_scalarmul_non_secret) (
             contp++;
         }
     }
-    
+
     /* This function is non-secret, but whatever this is cheap. */
     cryptonite_decaf_bzero(control_var,sizeof(control_var));
     cryptonite_decaf_bzero(control_pre,sizeof(control_pre));

@@ -52,14 +52,25 @@ mask_t cryptonite_gf_hibit(const gf x) {
     return -(y->limb[0]&1);
 }
 
+/** Return high bit of x = low bit of 2x mod p */
+mask_t cryptonite_gf_lobit(const gf x) {
+    gf y;
+    cryptonite_gf_copy(y,x);
+    cryptonite_gf_strong_reduce(y);
+    return -(y->limb[0]&1);
+}
+
 /** Deserialize from wire format; return -1 on success and 0 on failure. */
-mask_t cryptonite_gf_deserialize (gf x, const uint8_t serial[SER_BYTES], int with_hibit) {
+mask_t cryptonite_gf_deserialize (gf x, const uint8_t serial[SER_BYTES], int with_hibit, uint8_t hi_nmask) {
     unsigned int j=0, fill=0;
     dword_t buffer = 0;
     dsword_t scarry = 0;
+    const unsigned nbytes = with_hibit ? X_SER_BYTES : SER_BYTES;
     UNROLL for (unsigned int i=0; i<NLIMBS; i++) {
-        UNROLL while (fill < LIMB_PLACE_VALUE(LIMBPERM(i)) && j < (with_hibit ? X_SER_BYTES : SER_BYTES)) {
-            buffer |= ((dword_t)serial[j]) << fill;
+        UNROLL while (fill < LIMB_PLACE_VALUE(LIMBPERM(i)) && j < nbytes) {
+            uint8_t sj = serial[j];
+            if (j==nbytes-1) sj &= ~hi_nmask;
+            buffer |= ((dword_t)sj) << fill;
             fill += 8;
             j++;
         }

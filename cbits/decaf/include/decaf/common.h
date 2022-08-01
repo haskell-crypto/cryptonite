@@ -13,7 +13,9 @@
 #define __CRYPTONITE_DECAF_COMMON_H__ 1
 
 #include <stdint.h>
+#if defined (__GNUC__)  // File only exists for GNU compilers
 #include <sys/types.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,14 +23,35 @@ extern "C" {
 
 /* Goldilocks' build flags default to hidden and stripping executables. */
 /** @cond internal */
-#if defined(DOXYGEN) && !defined(__attribute__)
-#define __attribute__((x))
+#if DOXYGEN || defined(__attribute__)
+#define __attribute__(x)
+#define NOINLINE
 #endif
+
+/* Aliasing MSVC preprocessing to GNU preprocessing */
+#if defined _MSC_VER
+#   define __attribute__(x)        // Turn off attribute code
+#   define __attribute(x)
+#   define __restrict__ __restrict  // Use MSVC restrict code
+#   if defined _DLL
+#       define CRYPTONITE_DECAF_API_VIS __declspec(dllexport)  // MSVC for visibility
+#   else
+#       define CRYPTONITE_DECAF_API_VIS __declspec(dllimport)
+#   endif
+
+//#   define DECAF_NOINLINE __declspec(noinline) // MSVC for noinline
+//#   define DECAF_INLINE __forceinline // MSVC for always inline
+//#   define DECAF_WARN_UNUSED _Check_return_
+#else // MSVC
 #define CRYPTONITE_DECAF_API_VIS __attribute__((visibility("default")))
+#define CRYPTONITE_DECAF_API_IMPORT
+#endif
+
+// The following are disabled for MSVC
 #define CRYPTONITE_DECAF_NOINLINE  __attribute__((noinline))
+#define CRYPTONITE_DECAF_INLINE inline __attribute__((always_inline,unused))
 #define CRYPTONITE_DECAF_WARN_UNUSED __attribute__((warn_unused_result))
 #define CRYPTONITE_DECAF_NONNULL __attribute__((nonnull))
-#define CRYPTONITE_DECAF_INLINE inline __attribute__((always_inline,unused))
 // Cribbed from libnotmuch
 #if defined (__clang_major__) && __clang_major__ >= 3 \
     || defined (__GNUC__) && __GNUC__ >= 5 \
@@ -53,7 +76,7 @@ extern "C" {
         #define CRYPTONITE_DECAF_WORD_BITS 32 /**< The number of bits in a word */
     #endif
 #endif
-    
+
 #if CRYPTONITE_DECAF_WORD_BITS == 64
 typedef uint64_t cryptonite_decaf_word_t;      /**< Word size for internal computations */
 typedef int64_t cryptonite_decaf_sword_t;      /**< Signed word size for internal computations */
@@ -69,7 +92,7 @@ typedef int64_t cryptonite_decaf_dsword_t;     /**< Signed double-word size for 
 #else
 #error "Only supporting CRYPTONITE_DECAF_WORD_BITS = 32 or 64 for now"
 #endif
-    
+ 
 /** CRYPTONITE_DECAF_TRUE = -1 so that CRYPTONITE_DECAF_TRUE & x = x */
 static const cryptonite_decaf_bool_t CRYPTONITE_DECAF_TRUE = -(cryptonite_decaf_bool_t)1;
 
@@ -95,22 +118,22 @@ cryptonite_decaf_successful(cryptonite_decaf_error_t e) {
     cryptonite_decaf_dword_t w = ((cryptonite_decaf_word_t)e) ^  ((cryptonite_decaf_word_t)CRYPTONITE_DECAF_SUCCESS);
     return (w-1)>>CRYPTONITE_DECAF_WORD_BITS;
 }
-    
+
 /** Overwrite data with zeros.  Uses memset_s if available. */
-void cryptonite_decaf_bzero (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_bzero (
     void *data,
     size_t size
-) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_API_VIS;
+) CRYPTONITE_DECAF_NONNULL;
 
 /** Compare two buffers, returning CRYPTONITE_DECAF_TRUE if they are equal. */
-cryptonite_decaf_bool_t cryptonite_decaf_memeq (
+cryptonite_decaf_bool_t CRYPTONITE_DECAF_API_VIS cryptonite_decaf_memeq (
     const void *data1,
     const void *data2,
     size_t size
-) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_WARN_UNUSED CRYPTONITE_DECAF_API_VIS;
-    
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_WARN_UNUSED;
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
-    
+
 #endif /* __CRYPTONITE_DECAF_COMMON_H__ */

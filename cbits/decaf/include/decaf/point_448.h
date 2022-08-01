@@ -34,7 +34,7 @@ extern "C" {
 /** @brief Galois field element internal structure */
 typedef struct cryptonite_gf_448_s {
     cryptonite_decaf_word_t limb[512/CRYPTONITE_DECAF_WORD_BITS];
-} __attribute__((aligned(16))) cryptonite_gf_448_s, cryptonite_gf_448_t[1];
+} __attribute__((aligned(32))) cryptonite_gf_448_s, cryptonite_gf_448_t[1];
 #endif /* __CRYPTONITE_DECAF_448_GF_DEFINED__ */
 /** @endcond */
 
@@ -52,16 +52,22 @@ typedef struct cryptonite_gf_448_s {
 /** Number of bits in the "which" field of an elligator inverse */
 #define CRYPTONITE_DECAF_448_INVERT_ELLIGATOR_WHICH_BITS 3
 
+/** The cofactor the curve would have, if we hadn't removed it */
+#define CRYPTONITE_DECAF_448_REMOVED_COFACTOR 4
+
+/** X448 encoding ratio. */
+#define CRYPTONITE_DECAF_X448_ENCODE_RATIO 2
+
 /** Number of bytes in an x448 public key */
 #define CRYPTONITE_DECAF_X448_PUBLIC_BYTES 56
 
 /** Number of bytes in an x448 private key */
 #define CRYPTONITE_DECAF_X448_PRIVATE_BYTES 56
 
-/** Twisted Edwards extended homogeneous coordinates */
+/** Representation of a point on the elliptic curve. */
 typedef struct cryptonite_decaf_448_point_s {
     /** @cond internal */
-    cryptonite_gf_448_t x,y,z,t;
+    cryptonite_gf_448_t x,y,z,t; /* Twisted extended homogeneous coordinates */
     /** @endcond */
 } cryptonite_decaf_448_point_t[1];
 
@@ -72,30 +78,50 @@ struct cryptonite_decaf_448_precomputed_s;
 typedef struct cryptonite_decaf_448_precomputed_s cryptonite_decaf_448_precomputed_s; 
 
 /** Size and alignment of precomputed point tables. */
-extern const size_t cryptonite_decaf_448_sizeof_precomputed_s CRYPTONITE_DECAF_API_VIS, cryptonite_decaf_448_alignof_precomputed_s CRYPTONITE_DECAF_API_VIS;
+CRYPTONITE_DECAF_API_VIS extern const size_t cryptonite_decaf_448_sizeof_precomputed_s, cryptonite_decaf_448_alignof_precomputed_s;
 
-/** Scalar is stored packed, because we don't need the speed. */
+/** Representation of an element of the scalar field. */
 typedef struct cryptonite_decaf_448_scalar_s {
     /** @cond internal */
     cryptonite_decaf_word_t limb[CRYPTONITE_DECAF_448_SCALAR_LIMBS];
     /** @endcond */
 } cryptonite_decaf_448_scalar_t[1];
 
-/** A scalar equal to 1. */
-extern const cryptonite_decaf_448_scalar_t cryptonite_decaf_448_scalar_one CRYPTONITE_DECAF_API_VIS;
+#if defined _MSC_VER
+/** The scalar 1. */
+extern const cryptonite_decaf_448_scalar_t CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_scalar_one;
 
-/** A scalar equal to 0. */
-extern const cryptonite_decaf_448_scalar_t cryptonite_decaf_448_scalar_zero CRYPTONITE_DECAF_API_VIS;
+/** The scalar 0. */
+extern const cryptonite_decaf_448_scalar_t CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_scalar_zero;
 
-/** The identity point on the curve. */
-extern const cryptonite_decaf_448_point_t cryptonite_decaf_448_point_identity CRYPTONITE_DECAF_API_VIS;
+/** The identity (zero) point on the curve. */
+extern const cryptonite_decaf_448_point_t CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_point_identity;
 
-/** An arbitrarily chosen base point on the curve. */
-extern const cryptonite_decaf_448_point_t cryptonite_decaf_448_point_base CRYPTONITE_DECAF_API_VIS;
+/** An arbitrarily-chosen base point on the curve. */
+extern const cryptonite_decaf_448_point_t CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_point_base;
 
-/** Precomputed table for the base point on the curve. */
-extern const struct cryptonite_decaf_448_precomputed_s *cryptonite_decaf_448_precomputed_base CRYPTONITE_DECAF_API_VIS;
+/** Precomputed table of multiples of the base point on the curve. */
+extern const struct CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_precomputed_s *cryptonite_decaf_448_precomputed_base;
 
+
+#else // _MSC_VER
+
+/** The scalar 1. */
+CRYPTONITE_DECAF_API_VIS extern const cryptonite_decaf_448_scalar_t cryptonite_decaf_448_scalar_one;
+
+/** The scalar 0. */
+CRYPTONITE_DECAF_API_VIS extern const cryptonite_decaf_448_scalar_t cryptonite_decaf_448_scalar_zero;
+
+/** The identity (zero) point on the curve. */
+CRYPTONITE_DECAF_API_VIS extern const cryptonite_decaf_448_point_t cryptonite_decaf_448_point_identity;
+
+/** An arbitrarily-chosen base point on the curve. */
+CRYPTONITE_DECAF_API_VIS extern const cryptonite_decaf_448_point_t cryptonite_decaf_448_point_base;
+
+/** Precomputed table of multiples of the base point on the curve. */
+CRYPTONITE_DECAF_API_VIS extern const struct cryptonite_decaf_448_precomputed_s *cryptonite_decaf_448_precomputed_base;
+
+#endif // _MSC_VER
 /**
  * @brief Read a scalar from wire format or from bytes.
  *
@@ -106,10 +132,10 @@ extern const struct cryptonite_decaf_448_precomputed_s *cryptonite_decaf_448_pre
  * @retval CRYPTONITE_DECAF_FAILURE The scalar was greater than the modulus,
  * and has been reduced modulo that modulus.
  */
-cryptonite_decaf_error_t cryptonite_decaf_448_scalar_decode (
+cryptonite_decaf_error_t CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_scalar_decode (
     cryptonite_decaf_448_scalar_t out,
     const unsigned char ser[CRYPTONITE_DECAF_448_SCALAR_BYTES]
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_WARN_UNUSED CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_WARN_UNUSED CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
 
 /**
  * @brief Read a scalar from wire format or from bytes.  Reduces mod
@@ -119,11 +145,11 @@ cryptonite_decaf_error_t cryptonite_decaf_448_scalar_decode (
  * @param [in] ser_len Length of serialized form.
  * @param [out] out Deserialized form.
  */
-void cryptonite_decaf_448_scalar_decode_long (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_scalar_decode_long (
     cryptonite_decaf_448_scalar_t out,
     const unsigned char *ser,
     size_t ser_len
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
     
 /**
  * @brief Serialize a scalar to wire format.
@@ -131,10 +157,10 @@ void cryptonite_decaf_448_scalar_decode_long (
  * @param [out] ser Serialized form of a scalar.
  * @param [in] s Deserialized scalar.
  */
-void cryptonite_decaf_448_scalar_encode (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_scalar_encode (
     unsigned char ser[CRYPTONITE_DECAF_448_SCALAR_BYTES],
     const cryptonite_decaf_448_scalar_t s
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE CRYPTONITE_DECAF_NOINLINE;
         
 /**
  * @brief Add two scalars.  The scalars may use the same memory.
@@ -142,11 +168,11 @@ void cryptonite_decaf_448_scalar_encode (
  * @param [in] b Another scalar.
  * @param [out] out a+b.
  */
-void cryptonite_decaf_448_scalar_add (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_scalar_add (
     cryptonite_decaf_448_scalar_t out,
     const cryptonite_decaf_448_scalar_t a,
     const cryptonite_decaf_448_scalar_t b
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
 
 /**
  * @brief Compare two scalars.
@@ -155,10 +181,10 @@ void cryptonite_decaf_448_scalar_add (
  * @retval CRYPTONITE_DECAF_TRUE The scalars are equal.
  * @retval CRYPTONITE_DECAF_FALSE The scalars are not equal.
  */    
-cryptonite_decaf_bool_t cryptonite_decaf_448_scalar_eq (
+cryptonite_decaf_bool_t CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_scalar_eq (
     const cryptonite_decaf_448_scalar_t a,
     const cryptonite_decaf_448_scalar_t b
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_WARN_UNUSED CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_WARN_UNUSED CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
 
 /**
  * @brief Subtract two scalars.  The scalars may use the same memory.
@@ -166,11 +192,11 @@ cryptonite_decaf_bool_t cryptonite_decaf_448_scalar_eq (
  * @param [in] b Another scalar.
  * @param [out] out a-b.
  */  
-void cryptonite_decaf_448_scalar_sub (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_scalar_sub (
     cryptonite_decaf_448_scalar_t out,
     const cryptonite_decaf_448_scalar_t a,
     const cryptonite_decaf_448_scalar_t b
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
 
 /**
  * @brief Multiply two scalars.  The scalars may use the same memory.
@@ -178,21 +204,21 @@ void cryptonite_decaf_448_scalar_sub (
  * @param [in] b Another scalar.
  * @param [out] out a*b.
  */  
-void cryptonite_decaf_448_scalar_mul (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_scalar_mul (
     cryptonite_decaf_448_scalar_t out,
     const cryptonite_decaf_448_scalar_t a,
     const cryptonite_decaf_448_scalar_t b
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
         
 /**
 * @brief Halve a scalar.  The scalars may use the same memory.
 * @param [in] a A scalar.
 * @param [out] out a/2.
 */
-void cryptonite_decaf_448_scalar_halve (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_scalar_halve (
    cryptonite_decaf_448_scalar_t out,
    const cryptonite_decaf_448_scalar_t a
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
 
 /**
  * @brief Invert a scalar.  When passed zero, return 0.  The input and output may alias.
@@ -200,10 +226,10 @@ void cryptonite_decaf_448_scalar_halve (
  * @param [out] out 1/a.
  * @return CRYPTONITE_DECAF_SUCCESS The input is nonzero.
  */  
-cryptonite_decaf_error_t cryptonite_decaf_448_scalar_invert (
+cryptonite_decaf_error_t CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_scalar_invert (
     cryptonite_decaf_448_scalar_t out,
     const cryptonite_decaf_448_scalar_t a
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_WARN_UNUSED CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_WARN_UNUSED CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
 
 /**
  * @brief Copy a scalar.  The scalars may use the same memory, in which
@@ -223,10 +249,10 @@ static inline void CRYPTONITE_DECAF_NONNULL cryptonite_decaf_448_scalar_copy (
  * @param [in] a An integer.
  * @param [out] out Will become equal to a.
  */  
-void cryptonite_decaf_448_scalar_set_unsigned (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_scalar_set_unsigned (
     cryptonite_decaf_448_scalar_t out,
     uint64_t a
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL;
+) CRYPTONITE_DECAF_NONNULL;
 
 /**
  * @brief Encode a point as a sequence of bytes.
@@ -234,10 +260,10 @@ void cryptonite_decaf_448_scalar_set_unsigned (
  * @param [out] ser The byte representation of the point.
  * @param [in] pt The point to encode.
  */
-void cryptonite_decaf_448_point_encode (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_point_encode (
     uint8_t ser[CRYPTONITE_DECAF_448_SER_BYTES],
     const cryptonite_decaf_448_point_t pt
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
 
 /**
  * @brief Decode a point from a sequence of bytes.
@@ -253,11 +279,11 @@ void cryptonite_decaf_448_point_encode (
  * @retval CRYPTONITE_DECAF_FAILURE The decoding didn't succeed, because
  * ser does not represent a point.
  */
-cryptonite_decaf_error_t cryptonite_decaf_448_point_decode (
+cryptonite_decaf_error_t CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_point_decode (
     cryptonite_decaf_448_point_t pt,
     const uint8_t ser[CRYPTONITE_DECAF_448_SER_BYTES],
     cryptonite_decaf_bool_t allow_identity
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_WARN_UNUSED CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_WARN_UNUSED CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
 
 /**
  * @brief Copy a point.  The input and output may alias,
@@ -282,10 +308,10 @@ static inline void CRYPTONITE_DECAF_NONNULL cryptonite_decaf_448_point_copy (
  * @retval CRYPTONITE_DECAF_TRUE The points are equal.
  * @retval CRYPTONITE_DECAF_FALSE The points are not equal.
  */
-cryptonite_decaf_bool_t cryptonite_decaf_448_point_eq (
+cryptonite_decaf_bool_t CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_point_eq (
     const cryptonite_decaf_448_point_t a,
     const cryptonite_decaf_448_point_t b
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_WARN_UNUSED CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_WARN_UNUSED CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
 
 /**
  * @brief Add two points to produce a third point.  The
@@ -296,11 +322,11 @@ cryptonite_decaf_bool_t cryptonite_decaf_448_point_eq (
  * @param [in] a An addend.
  * @param [in] b An addend.
  */
-void cryptonite_decaf_448_point_add (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_point_add (
     cryptonite_decaf_448_point_t sum,
     const cryptonite_decaf_448_point_t a,
     const cryptonite_decaf_448_point_t b
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL;
+) CRYPTONITE_DECAF_NONNULL;
 
 /**
  * @brief Double a point.  Equivalent to
@@ -309,10 +335,10 @@ void cryptonite_decaf_448_point_add (
  * @param [out] two_a The sum a+a.
  * @param [in] a A point.
  */
-void cryptonite_decaf_448_point_double (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_point_double (
     cryptonite_decaf_448_point_t two_a,
     const cryptonite_decaf_448_point_t a
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL;
+) CRYPTONITE_DECAF_NONNULL;
 
 /**
  * @brief Subtract two points to produce a third point.  The
@@ -323,11 +349,11 @@ void cryptonite_decaf_448_point_double (
  * @param [in] a The minuend.
  * @param [in] b The subtrahend.
  */
-void cryptonite_decaf_448_point_sub (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_point_sub (
     cryptonite_decaf_448_point_t diff,
     const cryptonite_decaf_448_point_t a,
     const cryptonite_decaf_448_point_t b
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL;
+) CRYPTONITE_DECAF_NONNULL;
     
 /**
  * @brief Negate a point to produce another point.  The input
@@ -336,10 +362,10 @@ void cryptonite_decaf_448_point_sub (
  * @param [out] nega The negated input point
  * @param [in] a The input point.
  */
-void cryptonite_decaf_448_point_negate (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_point_negate (
    cryptonite_decaf_448_point_t nega,
    const cryptonite_decaf_448_point_t a
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL;
+) CRYPTONITE_DECAF_NONNULL;
 
 /**
  * @brief Multiply a base point by a scalar: scaled = scalar*base.
@@ -348,11 +374,11 @@ void cryptonite_decaf_448_point_negate (
  * @param [in] base The point to be scaled.
  * @param [in] scalar The scalar to multiply by.
  */
-void cryptonite_decaf_448_point_scalarmul (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_point_scalarmul (
     cryptonite_decaf_448_point_t scaled,
     const cryptonite_decaf_448_point_t base,
     const cryptonite_decaf_448_scalar_t scalar
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
 
 /**
  * @brief Multiply a base point by a scalar: scaled = scalar*base.
@@ -371,34 +397,65 @@ void cryptonite_decaf_448_point_scalarmul (
  * @retval CRYPTONITE_DECAF_FAILURE The scalarmul didn't succeed, because
  * base does not represent a point.
  */
-cryptonite_decaf_error_t cryptonite_decaf_448_direct_scalarmul (
+cryptonite_decaf_error_t CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_direct_scalarmul (
     uint8_t scaled[CRYPTONITE_DECAF_448_SER_BYTES],
     const uint8_t base[CRYPTONITE_DECAF_448_SER_BYTES],
     const cryptonite_decaf_448_scalar_t scalar,
     cryptonite_decaf_bool_t allow_identity,
     cryptonite_decaf_bool_t short_circuit
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_WARN_UNUSED CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_WARN_UNUSED CRYPTONITE_DECAF_NOINLINE;
 
 /**
- * @brief RFC 7748 Diffie-Hellman scalarmul.  This function uses a different
- * (non-Decaf) encoding.
+ * @brief RFC 7748 Diffie-Hellman scalarmul, used to compute shared secrets.
+ * This function uses a different (non-Decaf) encoding.
  *
- * @param [out] scaled The scaled point base*scalar
- * @param [in] base The point to be scaled.
- * @param [in] scalar The scalar to multiply by.
+ * @param [out] shared The shared secret base*scalar
+ * @param [in] base The other party's public key, used as the base of the scalarmul.
+ * @param [in] scalar The private scalar to multiply by.
  *
  * @retval CRYPTONITE_DECAF_SUCCESS The scalarmul succeeded.
  * @retval CRYPTONITE_DECAF_FAILURE The scalarmul didn't succeed, because the base
  * point is in a small subgroup.
  */
-cryptonite_decaf_error_t cryptonite_decaf_x448 (
+cryptonite_decaf_error_t CRYPTONITE_DECAF_API_VIS cryptonite_decaf_x448 (
     uint8_t out[CRYPTONITE_DECAF_X448_PUBLIC_BYTES],
     const uint8_t base[CRYPTONITE_DECAF_X448_PUBLIC_BYTES],
     const uint8_t scalar[CRYPTONITE_DECAF_X448_PRIVATE_BYTES]
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_WARN_UNUSED CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_WARN_UNUSED CRYPTONITE_DECAF_NOINLINE;
+
+/**
+ * @brief Multiply a point by DECAF_X448_ENCODE_RATIO,
+ * then encode it like RFC 7748.
+ *
+ * This function is mainly used internally, but is exported in case
+ * it will be useful.
+ *
+ * The ratio is necessary because the internal representation doesn't
+ * track the cofactor information, so on output we must clear the cofactor.
+ * This would multiply by the cofactor, but in fact internally libdecaf's
+ * points are always even, so it multiplies by half the cofactor instead.
+ *
+ * As it happens, this aligns with the base point definitions; that is,
+ * if you pass the Decaf/Ristretto base point to this function, the result
+ * will be DECAF_X448_ENCODE_RATIO times the X448
+ * base point.
+ *
+ * @param [out] out The scaled and encoded point.
+ * @param [in] p The point to be scaled and encoded.
+ */
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_point_mul_by_ratio_and_encode_like_x448 (
+    uint8_t out[CRYPTONITE_DECAF_X448_PUBLIC_BYTES],
+    const cryptonite_decaf_448_point_t p
+) CRYPTONITE_DECAF_NONNULL;
+
 
 /** The base point for X448 Diffie-Hellman */
-extern const uint8_t cryptonite_decaf_x448_base_point[CRYPTONITE_DECAF_X448_PUBLIC_BYTES] CRYPTONITE_DECAF_API_VIS;
+extern const uint8_t
+#ifndef DOXYGEN
+    /* For some reason Doxygen chokes on this despite the defense in common.h... */
+    CRYPTONITE_DECAF_API_VIS
+#endif
+    cryptonite_decaf_x448_base_point[CRYPTONITE_DECAF_X448_PUBLIC_BYTES];
 
 /**
  * @brief RFC 7748 Diffie-Hellman base point scalarmul.  This function uses
@@ -407,13 +464,13 @@ extern const uint8_t cryptonite_decaf_x448_base_point[CRYPTONITE_DECAF_X448_PUBL
  * @deprecated Renamed to cryptonite_decaf_x448_derive_public_key.
  * I have no particular timeline for removing this name.
  *
- * @param [out] scaled The scaled point base*scalar
- * @param [in] scalar The scalar to multiply by.
+ * @param [out] out The public key base*scalar.
+ * @param [in] scalar The private scalar.
  */
-void cryptonite_decaf_x448_generate_key (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_x448_generate_key (
     uint8_t out[CRYPTONITE_DECAF_X448_PUBLIC_BYTES],
     const uint8_t scalar[CRYPTONITE_DECAF_X448_PRIVATE_BYTES]
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE CRYPTONITE_DECAF_DEPRECATED("Renamed to cryptonite_decaf_x448_derive_public_key");
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE CRYPTONITE_DECAF_DEPRECATED("Renamed to cryptonite_decaf_x448_derive_public_key");
     
 /**
  * @brief RFC 7748 Diffie-Hellman base point scalarmul.  This function uses
@@ -421,14 +478,13 @@ void cryptonite_decaf_x448_generate_key (
  *
  * Does exactly the same thing as cryptonite_decaf_x448_generate_key,
  * but has a better name.
- *
- * @param [out] scaled The scaled point base*scalar
- * @param [in] scalar The scalar to multiply by.
+ * @param [out] out The public key base*scalar
+ * @param [in] scalar The private scalar.
  */
-void cryptonite_decaf_x448_derive_public_key (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_x448_derive_public_key (
     uint8_t out[CRYPTONITE_DECAF_X448_PUBLIC_BYTES],
     const uint8_t scalar[CRYPTONITE_DECAF_X448_PRIVATE_BYTES]
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
 
 /* FUTURE: uint8_t cryptonite_decaf_448_encode_like_curve448) */
 
@@ -441,10 +497,10 @@ void cryptonite_decaf_x448_derive_public_key (
  * @param [out] a A precomputed table of multiples of the point.
  * @param [in] b Any point.
  */
-void cryptonite_decaf_448_precompute (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_precompute (
     cryptonite_decaf_448_precomputed_s *a,
     const cryptonite_decaf_448_point_t b
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
 
 /**
  * @brief Multiply a precomputed base point by a scalar:
@@ -457,11 +513,11 @@ void cryptonite_decaf_448_precompute (
  * @param [in] base The point to be scaled.
  * @param [in] scalar The scalar to multiply by.
  */
-void cryptonite_decaf_448_precomputed_scalarmul (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_precomputed_scalarmul (
     cryptonite_decaf_448_point_t scaled,
     const cryptonite_decaf_448_precomputed_s *base,
     const cryptonite_decaf_448_scalar_t scalar
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
 
 /**
  * @brief Multiply two base points by two scalars:
@@ -476,13 +532,13 @@ void cryptonite_decaf_448_precomputed_scalarmul (
  * @param [in] base2 A second point to be scaled.
  * @param [in] scalar2 A second scalar to multiply by.
  */
-void cryptonite_decaf_448_point_double_scalarmul (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_point_double_scalarmul (
     cryptonite_decaf_448_point_t combo,
     const cryptonite_decaf_448_point_t base1,
     const cryptonite_decaf_448_scalar_t scalar1,
     const cryptonite_decaf_448_point_t base2,
     const cryptonite_decaf_448_scalar_t scalar2
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
     
 /**
  * Multiply one base point by two scalars:
@@ -499,13 +555,13 @@ void cryptonite_decaf_448_point_double_scalarmul (
  * @param [in] scalar1 A first scalar to multiply by.
  * @param [in] scalar2 A second scalar to multiply by.
  */
-void cryptonite_decaf_448_point_dual_scalarmul (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_point_dual_scalarmul (
     cryptonite_decaf_448_point_t a1,
     cryptonite_decaf_448_point_t a2,
     const cryptonite_decaf_448_point_t base1,
     const cryptonite_decaf_448_scalar_t scalar1,
     const cryptonite_decaf_448_scalar_t scalar2
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
 
 /**
  * @brief Multiply two base points by two scalars:
@@ -522,12 +578,12 @@ void cryptonite_decaf_448_point_dual_scalarmul (
  * @warning: This function takes variable time, and may leak the scalars
  * used.  It is designed for signature verification.
  */
-void cryptonite_decaf_448_base_double_scalarmul_non_secret (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_base_double_scalarmul_non_secret (
     cryptonite_decaf_448_point_t combo,
     const cryptonite_decaf_448_scalar_t scalar1,
     const cryptonite_decaf_448_point_t base2,
     const cryptonite_decaf_448_scalar_t scalar2
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
 
 /**
  * @brief Constant-time decision between two points.  If pick_b
@@ -538,12 +594,12 @@ void cryptonite_decaf_448_base_double_scalarmul_non_secret (
  * @param [in] b Any point.
  * @param [in] pick_b If nonzero, choose point b.
  */
-void cryptonite_decaf_448_point_cond_sel (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_point_cond_sel (
     cryptonite_decaf_448_point_t out,
     const cryptonite_decaf_448_point_t a,
     const cryptonite_decaf_448_point_t b,
     cryptonite_decaf_word_t pick_b
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
 
 /**
  * @brief Constant-time decision between two scalars.  If pick_b
@@ -554,12 +610,12 @@ void cryptonite_decaf_448_point_cond_sel (
  * @param [in] b Any scalar.
  * @param [in] pick_b If nonzero, choose scalar b.
  */
-void cryptonite_decaf_448_scalar_cond_sel (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_scalar_cond_sel (
     cryptonite_decaf_448_scalar_t out,
     const cryptonite_decaf_448_scalar_t a,
     const cryptonite_decaf_448_scalar_t b,
     cryptonite_decaf_word_t pick_b
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
 
 /**
  * @brief Test that a point is valid, for debugging purposes.
@@ -568,9 +624,9 @@ void cryptonite_decaf_448_scalar_cond_sel (
  * @retval CRYPTONITE_DECAF_TRUE The point is valid.
  * @retval CRYPTONITE_DECAF_FALSE The point is invalid.
  */
-cryptonite_decaf_bool_t cryptonite_decaf_448_point_valid (
+cryptonite_decaf_bool_t CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_point_valid (
     const cryptonite_decaf_448_point_t to_test
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_WARN_UNUSED CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_WARN_UNUSED CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
 
 /**
  * @brief Torque a point, for debugging purposes.  The output
@@ -579,10 +635,10 @@ cryptonite_decaf_bool_t cryptonite_decaf_448_point_valid (
  * @param [out] q The point to torque.
  * @param [in] p The point to torque.
  */
-void cryptonite_decaf_448_point_debugging_torque (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_point_debugging_torque (
     cryptonite_decaf_448_point_t q,
     const cryptonite_decaf_448_point_t p
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
 
 /**
  * @brief Projectively scale a point, for debugging purposes.
@@ -593,11 +649,11 @@ void cryptonite_decaf_448_point_debugging_torque (
  * @param [in] p The point to scale.
  * @param [in] factor Serialized GF factor to scale.
  */
-void cryptonite_decaf_448_point_debugging_pscale (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_point_debugging_pscale (
     cryptonite_decaf_448_point_t q,
     const cryptonite_decaf_448_point_t p,
     const unsigned char factor[CRYPTONITE_DECAF_448_SER_BYTES]
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
 
 /**
  * @brief Almost-Elligator-like hash to curve.
@@ -627,11 +683,11 @@ void cryptonite_decaf_448_point_debugging_pscale (
  * @param [in] hashed_data Output of some hash function.
  * @param [out] pt The data hashed to the curve.
  */
-void
+void CRYPTONITE_DECAF_API_VIS 
 cryptonite_decaf_448_point_from_hash_nonuniform (
     cryptonite_decaf_448_point_t pt,
     const unsigned char hashed_data[CRYPTONITE_DECAF_448_HASH_BYTES]
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
 
 /**
  * @brief Indifferentiable hash function encoding to curve.
@@ -641,10 +697,10 @@ cryptonite_decaf_448_point_from_hash_nonuniform (
  * @param [in] hashed_data Output of some hash function.
  * @param [out] pt The data hashed to the curve.
  */ 
-void cryptonite_decaf_448_point_from_hash_uniform (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_point_from_hash_uniform (
     cryptonite_decaf_448_point_t pt,
     const unsigned char hashed_data[2*CRYPTONITE_DECAF_448_HASH_BYTES]
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE;
 
 /**
  * @brief Inverse of elligator-like hash to curve.
@@ -656,6 +712,16 @@ void cryptonite_decaf_448_point_from_hash_uniform (
  * inverse sampling, this function succeeds or fails
  * independently for different "which" values.
  *
+ * This function isn't guaranteed to find every possible
+ * preimage, but it finds all except a small finite number.
+ * In particular, when the number of bits in the modulus isn't
+ * a multiple of 8 (i.e. for curve25519), it sets the high bits
+ * independently, which enables the generated data to be uniform.
+ * But it doesn't add p, so you'll never get exactly p from this
+ * function.  This might change in the future, especially if
+ * we ever support eg Brainpool curves, where this could cause
+ * real nonuniformity.
+ *
  * @param [out] recovered_hash Encoded data.
  * @param [in] pt The point to encode.
  * @param [in] which A value determining which inverse point
@@ -664,12 +730,12 @@ void cryptonite_decaf_448_point_from_hash_uniform (
  * @retval CRYPTONITE_DECAF_SUCCESS The inverse succeeded.
  * @retval CRYPTONITE_DECAF_FAILURE The inverse failed.
  */
-cryptonite_decaf_error_t
+cryptonite_decaf_error_t CRYPTONITE_DECAF_API_VIS 
 cryptonite_decaf_448_invert_elligator_nonuniform (
     unsigned char recovered_hash[CRYPTONITE_DECAF_448_HASH_BYTES],
     const cryptonite_decaf_448_point_t pt,
     uint32_t which
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE CRYPTONITE_DECAF_WARN_UNUSED;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE CRYPTONITE_DECAF_WARN_UNUSED;
 
 /**
  * @brief Inverse of elligator-like hash to curve.
@@ -689,33 +755,31 @@ cryptonite_decaf_448_invert_elligator_nonuniform (
  * @retval CRYPTONITE_DECAF_SUCCESS The inverse succeeded.
  * @retval CRYPTONITE_DECAF_FAILURE The inverse failed.
  */
-cryptonite_decaf_error_t
+cryptonite_decaf_error_t CRYPTONITE_DECAF_API_VIS 
 cryptonite_decaf_448_invert_elligator_uniform (
     unsigned char recovered_hash[2*CRYPTONITE_DECAF_448_HASH_BYTES],
     const cryptonite_decaf_448_point_t pt,
     uint32_t which
-) CRYPTONITE_DECAF_API_VIS CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE CRYPTONITE_DECAF_WARN_UNUSED;
+) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_NOINLINE CRYPTONITE_DECAF_WARN_UNUSED;
 
-/**
- * @brief Overwrite scalar with zeros.
- */
-void cryptonite_decaf_448_scalar_destroy (
+/** Securely erase a scalar. */
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_scalar_destroy (
     cryptonite_decaf_448_scalar_t scalar
-) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_API_VIS;
+) CRYPTONITE_DECAF_NONNULL;
 
-/**
- * @brief Overwrite point with zeros.
+/** Securely erase a point by overwriting it with zeros.
+ * @warning This causes the point object to become invalid.
  */
-void cryptonite_decaf_448_point_destroy (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_point_destroy (
     cryptonite_decaf_448_point_t point
-) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_API_VIS;
+) CRYPTONITE_DECAF_NONNULL;
 
-/**
- * @brief Overwrite precomputed table with zeros.
+/** Securely erase a precomputed table by overwriting it with zeros.
+ * @warning This causes the table object to become invalid.
  */
-void cryptonite_decaf_448_precomputed_destroy (
+void CRYPTONITE_DECAF_API_VIS cryptonite_decaf_448_precomputed_destroy (
     cryptonite_decaf_448_precomputed_s *pre
-) CRYPTONITE_DECAF_NONNULL CRYPTONITE_DECAF_API_VIS;
+) CRYPTONITE_DECAF_NONNULL;
 
 #ifdef __cplusplus
 } /* extern "C" */
