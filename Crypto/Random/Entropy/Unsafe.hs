@@ -25,10 +25,9 @@ replenish :: Int -> [EntropyBackend] -> Ptr Word8 -> IO ()
 replenish _        []       _   = fail "cryptonite: random: cannot get any source of entropy on this system"
 replenish poolSize backends ptr = loop 0 backends ptr poolSize
   where loop :: Int -> [EntropyBackend] -> Ptr Word8 -> Int -> IO ()
-        loop retry [] p n | n == 0     = return ()
-                          | retry == 3 = error "cryptonite: random: cannot fully replenish"
+        loop _     _  _ 0 = return ()
+        loop retry [] p n | retry == 3 = error "cryptonite: random: cannot fully replenish"
                           | otherwise  = loop (retry+1) backends p n
-        loop _     (_:_)  _ 0 = return ()
         loop retry (b:bs) p n = do
             r <- gatherBackend b p n
             loop retry bs (p `plusPtr` r) (n - r)
