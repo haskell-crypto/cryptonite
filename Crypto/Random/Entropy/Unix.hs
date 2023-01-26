@@ -61,7 +61,7 @@ withDev filepath f = openDev filepath >>= \h ->
         Just fd -> f fd `E.finally` closeDev fd
 
 closeDev :: H -> IO ()
-closeDev h = hClose h
+closeDev h = hClose h `E.catch` \(_ :: IOException) -> return ()
 
 gatherDevEntropy :: H -> Ptr Word8 -> Int -> IO Int
 gatherDevEntropy h ptr sz =
